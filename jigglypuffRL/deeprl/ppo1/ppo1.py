@@ -27,7 +27,7 @@ class PPO1():
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
     """
-    def __init__(self, policy, value, env, timesteps_per_actorbatch=1000, gamma=0.99, clip_param=0.2, actor_batch_size=8, epochs=1000, lr_policy=0.001, lr_value=0.005, policy_copy_interval = 20, tensorboard_log=None, seed=0, device='cuda'):
+    def __init__(self, policy, value, env, timesteps_per_actorbatch=200, gamma=0.99, clip_param=0.2, actor_batch_size=8, epochs=1000, lr_policy=0.001, lr_value=0.005, policy_copy_interval = 20, tensorboard_log=None, seed=0, device='cuda'):
         self.policy = policy 
         self.value = value
         self.env = env
@@ -70,24 +70,21 @@ class PPO1():
         self.optimizer_policy = opt.Adam(self.policy_new.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
-    # TODO (ajaysub110): support for stochastic policy in case of continuous action spaces
     def select_action(self, s):
         state = torch.from_numpy(s).type(torch.FloatTensor).to(self.device)
 
         # create distribution based on policy_old output
-        probs_old = self.policy_old(Variable(state))
-        probs_new = self.policy_new(Variable(state))
+        action, c_old = self.policy_old.sample_action(Variable(state))
+        _, c_new = self.policy_new.sample_action(Variable(state))
         val = self.value_fn(Variable(state))
-        c = Categorical(probs=probs_old)
-        action = c.sample()
 
         # store policy probs and value function for current traj
         self.policy_old.policy_hist = torch.cat(
-            [self.policy_old.policy_hist, probs_old[action].unsqueeze(0)]
+            [self.policy_old.policy_hist, c_old.log_prob(action).exp().prod().unsqueeze(0)]
         )
 
         self.policy_new.policy_hist = torch.cat(
-            [self.policy_new.policy_hist, probs_new[action].unsqueeze(0)]
+            [self.policy_new.policy_hist, c_new.log_prob(action).exp().prod().unsqueeze(0)]
         )
 
         self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val])
@@ -160,7 +157,7 @@ class PPO1():
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
                     a = self.select_action(s)
-                    s, r, done, _ = self.env.step(a.item())
+                    s, r, done, _ = self.env.step(np.array(a))
 
                     self.policy_old.traj_reward.append(r)
 
