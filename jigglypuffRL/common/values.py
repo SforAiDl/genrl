@@ -7,12 +7,14 @@ import gym
 
 # TODO (ajaysub110): add other value classes
 
+
 class MlpValue(nn.Module):
     """
     Value object that implements actor critic, using a MLP (1 layers of 24)
     :param env: (Gym environment) The environment to learn from
     :param n_hidden: (int) number of neurons in hidden layers
     """
+
     def __init__(self, env, n_hidden=24):
         super(MlpValue, self).__init__()
 
@@ -35,11 +37,15 @@ class MlpValue(nn.Module):
 
         return model(x)
 
-value_registry = {
-    'MlpValue': MlpValue
-}
+
+value_registry = {"MlpValue": MlpValue}
+
 
 def get_value_from_name(name):
     if name not in value_registry:
-        raise ValueError("Error: unknown value type {}, the only ones available are {}".format(name, list(value_registry.keys)))
+        raise ValueError(
+            "Error: unknown value type {}, the only ones available are {}".format(
+                name, list(value_registry.keys)
+            )
+        )
     return value_registry[name]

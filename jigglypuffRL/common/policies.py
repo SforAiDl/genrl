@@ -7,12 +7,14 @@ import gym
 
 # TODO (ajaysub110): add other policy classes
 
+
 class MlpPolicy(nn.Module):
     """
     Policy object that implements actor critic, using a MLP (2 layers of 24)
     :param env: (Gym environment) The environment to learn from
     :param n_hidden: (int) number of neurons in hidden layers
     """
+
     def __init__(self, env, n_hidden=16):
         super(MlpPolicy, self).__init__()
 
@@ -45,11 +47,11 @@ class MlpPolicy(nn.Module):
         x = nn.ReLU()(self.fc2(x))
         y = self.fc3(x)
 
-        if isinstance(self.env.action_space,gym.spaces.Box):
+        if isinstance(self.env.action_space, gym.spaces.Box):
             mean = y
             log_std = self.fc4(x)
             return (mean, log_std)
-        elif isinstance(self.env.action_space,gym.spaces.Discrete):
+        elif isinstance(self.env.action_space, gym.spaces.Discrete):
             return y
 
     def sample_action(self, x):
@@ -62,15 +64,19 @@ class MlpPolicy(nn.Module):
             mean, log_std = x
             log_std = torch.clamp(log_std, -20, 2)
             c = Normal(mean, log_std.exp())
-        
+
         action = c.sample()
         return action, c
 
-policy_registry = {
-    'MlpPolicy': MlpPolicy
-}
+
+policy_registry = {"MlpPolicy": MlpPolicy}
+
 
 def get_policy_from_name(name):
     if name not in policy_registry:
-        raise ValueError("Error: unknown policy type {}, the only ones available are {}".format(name, list(policy_registry.keys)))
+        raise ValueError(
+            "Error: unknown policy type {}, the only ones available are {}".format(
+                name, list(policy_registry.keys)
+            )
+        )
     return policy_registry[name]

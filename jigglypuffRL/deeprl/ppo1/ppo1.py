@@ -6,9 +6,15 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 import gym
 
-from jigglypuffRL.common import MlpPolicy, MlpValue, get_policy_from_name, get_value_from_name
-    
-class PPO1():
+from jigglypuffRL.common import (
+    MlpPolicy,
+    MlpValue,
+    get_policy_from_name,
+    get_value_from_name,
+)
+
+
+class PPO1:
     """
     Proximal Policy Optimization algorithm (Clipped policy).
     Paper: https://arxiv.org/abs/1707.06347
@@ -27,8 +33,25 @@ class PPO1():
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
     """
-    def __init__(self, policy, value, env, timesteps_per_actorbatch=200, gamma=0.99, clip_param=0.2, actor_batch_size=8, epochs=1000, lr_policy=0.001, lr_value=0.005, policy_copy_interval = 20, tensorboard_log=None, seed=0, device='cuda'):
-        self.policy = policy 
+
+    def __init__(
+        self,
+        policy,
+        value,
+        env,
+        timesteps_per_actorbatch=200,
+        gamma=0.99,
+        clip_param=0.2,
+        actor_batch_size=8,
+        epochs=1000,
+        lr_policy=0.001,
+        lr_value=0.005,
+        policy_copy_interval=20,
+        tensorboard_log=None,
+        seed=0,
+        device="cuda",
+    ):
+        self.policy = policy
         self.value = value
         self.env = env
         self.timesteps_per_actorbatch = timesteps_per_actorbatch
@@ -43,10 +66,10 @@ class PPO1():
         self.policy_copy_interval = policy_copy_interval
 
         # Assign device
-        if 'cuda' in device and torch.cuda.is_available():
+        if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
         else:
-            self.device = torch.device('cpu')
+            self.device = torch.device("cpu")
 
         # Assign seed
         self.env.seed(seed)
@@ -56,18 +79,24 @@ class PPO1():
         self.writer = None
         if self.tensorboard_log is not None:
             from torch.utils.tensorboard import SummaryWriter
+
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
     def create_model(self):
         # Instantiate networks and optimizers
-        self.policy_new, self.policy_old = get_policy_from_name(self.policy)(self.env), get_policy_from_name(self.policy)(self.env)
+        self.policy_new, self.policy_old = (
+            get_policy_from_name(self.policy)(self.env),
+            get_policy_from_name(self.policy)(self.env),
+        )
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
         self.policy_old.load_state_dict(self.policy_new.state_dict())
         self.value_fn = get_value_from_name(self.value)(self.env).to(self.device)
-        self.optimizer_policy = opt.Adam(self.policy_new.parameters(), lr=self.lr_policy)
+        self.optimizer_policy = opt.Adam(
+            self.policy_new.parameters(), lr=self.lr_policy
+        )
         self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
     def select_action(self, s):
@@ -80,11 +109,17 @@ class PPO1():
 
         # store policy probs and value function for current traj
         self.policy_old.policy_hist = torch.cat(
-            [self.policy_old.policy_hist, c_old.log_prob(action).exp().prod().unsqueeze(0)]
+            [
+                self.policy_old.policy_hist,
+                c_old.log_prob(action).exp().prod().unsqueeze(0),
+            ]
         )
 
         self.policy_new.policy_hist = torch.cat(
-            [self.policy_new.policy_hist, c_new.log_prob(action).exp().prod().unsqueeze(0)]
+            [
+                self.policy_new.policy_hist,
+                c_new.log_prob(action).exp().prod().unsqueeze(0),
+            ]
         )
 
         self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val])
@@ -104,16 +139,21 @@ class PPO1():
         # advantage estimation
         returns = torch.FloatTensor(returns).to(self.device)
         A = Variable(returns) - Variable(self.value_fn.value_hist)
-        
+
         # compute policy and value loss
         ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
-        clipping = torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param).mul(A).to(self.device)
+        clipping = (
+            torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
+            .mul(A)
+            .to(self.device)
+        )
 
         loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, A), clipping)).mul(
-                -1).unsqueeze(0)
+            torch.mean(torch.min(torch.mul(ratio, A), clipping)).mul(-1).unsqueeze(0)
         )
-        loss_value = nn.MSELoss()(self.value_fn.value_hist, Variable(returns)).unsqueeze(0)
+        loss_value = nn.MSELoss()(
+            self.value_fn.value_hist, Variable(returns)
+        ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
         self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
@@ -164,7 +204,9 @@ class PPO1():
                     if done:
                         break
 
-                epoch_reward += np.sum(self.policy_old.traj_reward) / self.actor_batch_size
+                epoch_reward += (
+                    np.sum(self.policy_old.traj_reward) / self.actor_batch_size
+                )
                 self.get_traj_loss()
 
             self.update_policy(ep)
@@ -180,7 +222,8 @@ class PPO1():
         if self.tensorboard_log:
             self.writer.close()
 
-if __name__ == '__main__':
-    env = gym.make('LunarLander-v2')
-    algo = PPO1('MlpPolicy','MlpValue',env)
+
+if __name__ == "__main__":
+    env = gym.make("LunarLander-v2")
+    algo = PPO1("MlpPolicy", "MlpValue", env)
     algo.learn()
