@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 from torch.autograd import Variable
-from torch.distributions import Categorical
 import gym
 
 from jigglypuffRL.common import (
@@ -48,8 +47,9 @@ class PPO1:
         lr_value=0.005,
         policy_copy_interval=20,
         tensorboard_log=None,
-        seed=0,
-        device="cuda",
+        seed=None,
+        render=False,
+        device="cpu",
     ):
         self.policy = policy
         self.value = value
@@ -63,6 +63,7 @@ class PPO1:
         self.lr_value = lr_value
         self.tensorboard_log = tensorboard_log
         self.seed = seed
+        self.render = render
         self.policy_copy_interval = policy_copy_interval
 
         # Assign device
@@ -72,8 +73,12 @@ class PPO1:
             self.device = torch.device("cpu")
 
         # Assign seed
-        self.env.seed(seed)
-        torch.manual_seed(seed)
+        if seed is not None:
+            torch.manual_seed(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+            np.random.seed(seed)
+            self.env.seed(seed)
 
         # init writer if tensorboard
         self.writer = None
@@ -100,7 +105,7 @@ class PPO1:
         self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
     def select_action(self, s):
-        state = torch.from_numpy(s).type(torch.FloatTensor).to(self.device)
+        state = torch.from_numpy(s).float().to(self.device)
 
         # create distribution based on policy_old output
         action, c_old = self.policy_old.sample_action(Variable(state))
@@ -199,6 +204,9 @@ class PPO1:
                     a = self.select_action(s)
                     s, r, done, _ = self.env.step(np.array(a))
 
+                    if self.render:
+                        env.render()
+
                     self.policy_old.traj_reward.append(r)
 
                     if done:
@@ -225,5 +233,5 @@ class PPO1:
 
 if __name__ == "__main__":
     env = gym.make("LunarLander-v2")
-    algo = PPO1("MlpPolicy", "MlpValue", env)
+    algo = PPO1("MlpPolicy", "MlpValue", env, render=True)
     algo.learn()
