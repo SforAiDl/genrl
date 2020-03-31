@@ -24,14 +24,14 @@ class BasePolicy(nn.Module):
         if isinstance(env.observation_space, gym.spaces.Box):
             self.state_space = env.observation_space.shape[0]
         else:
-            print("Env type {} is not supported yet".format(type(env)))
+            raise NotImplementedError
 
         if isinstance(env.action_space, gym.spaces.Discrete):
             self.action_space = env.action_space.n
         elif isinstance(env.action_space, gym.spaces.Box):
             self.action_space = env.action_space.shape[0]
         else:
-            print("Env type {} is not supported yet".format(type(env)))
+            raise NotImplementedError
 
     def forward(self, x):
         raise NotImplementedError
@@ -47,9 +47,7 @@ class BasePolicy(nn.Module):
             log_std = torch.clamp(log_std, -20, 2)
             c = Normal(mean, log_std.exp())
         else:
-            print(
-                "{} action spaces are not supported".format(type(self.env.action_space))
-            )
+            raise NotImplementedError
 
         action = c.sample()
         return action, c
