@@ -1,10 +1,12 @@
 import os
 
+import codecs
 from setuptools import setup, find_packages
 
 ## Basic information
 NAME = "jigglypuff-rl"
 DESCRIPTION = "PyTorch implementations of reinforcement learning algorithms."
+VERSION = '0.0.2.dev2'
 AUTHOR = "Society for Artificial Intelligence and Deep Learning"
 EMAIL = "ajaysubramanian110@gmail.com"
 LICENSE = "MIT"
@@ -43,15 +45,32 @@ CLASSIFIERS  = (
 PROJECT = os.path.abspath(os.path.dirname(__file__))
 REQUIRE_PATH = "requirements.txt"
 VERSION_PATH = os.path.join(PACKAGE, "version.py")
-PKG_DESCRIBE = "DESCRIPTION.md"
+PKG_DESCRIBE = "README.md"
 
 ## Directories to ignore in find_packages
 EXCLUDES = ()
 
+## helper functions
+def read(*parts):
+    """
+    returns contents of file
+    """
+    with codecs.open(os.path.join(PROJECT, *parts), "rb", "utf-8") as f:
+        return f.read()
+
+def get_requires(path=REQUIRE_PATH):
+    """
+    generates requirements from file path given as REQUIRE_PATH
+    """
+    for line in read(path).splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            yield line
+
 ## Define the configuration
 config = {
     "name": NAME,
-    "version": '0.0.1',
+    "version": VERSION,
     "description": DESCRIPTION,
     "long_description": LONG_DESCRIPTION,
     "long_description_content_type": 'text/markdown',

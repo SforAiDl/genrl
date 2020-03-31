@@ -1,9 +1,12 @@
 # JigglypuffRL
+[![pypi](https://img.shields.io/badge/pypi-jigglypuff--rl-blue)](https://pypi.org/project/jigglypuff-rl/)
+[![GitHub license](https://img.shields.io/github/license/SforAiDl/JigglypuffRL)](https://github.com/SforAiDl/JigglypuffRL)
 
 ## Installation
+We suggest creating a conda virtual environment before installing our package.
 ```
-conda env update --name JigglypuffRL --file environment.yml
-conda activate JigglypuffRL
+conda create -n JgRL_env python=3.6 pip
+conda activate JgRL_env
 
 pip install jigglypuff-rl
 ```
