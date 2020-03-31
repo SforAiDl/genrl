@@ -8,7 +8,54 @@ import gym
 # TODO (ajaysub110): add other policy classes
 
 
-class MlpPolicy(nn.Module):
+class BasePolicy(nn.Module):
+    """
+    Base policy that all other policies should inherit.
+    :param env: (Gym environment) The environment to learn from
+    """
+
+    def __init__(self, env):
+        super(BasePolicy, self).__init__()
+
+        self.state_space = None
+        self.action_space = None
+        self.env = env
+
+        if isinstance(env.observation_space, gym.spaces.Box):
+            self.state_space = env.observation_space.shape[0]
+        else:
+            print("Env type {} is not supported yet".format(type(env)))
+
+        if isinstance(env.action_space, gym.spaces.Discrete):
+            self.action_space = env.action_space.n
+        elif isinstance(env.action_space, gym.spaces.Box):
+            self.action_space = env.action_space.shape[0]
+        else:
+            print("Env type {} is not supported yet".format(type(env)))
+
+    def forward(self, x):
+        raise NotImplementedError
+
+    def sample_action(self, x):
+        x = self.forward(x)
+
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            x = nn.Softmax(dim=-1)(x)
+            c = Categorical(probs=x)
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            mean, log_std = x
+            log_std = torch.clamp(log_std, -20, 2)
+            c = Normal(mean, log_std.exp())
+        else:
+            print(
+                "{} action spaces are not supported".format(type(self.env.action_space))
+            )
+
+        action = c.sample()
+        return action, c
+
+
+class MlpPolicy(BasePolicy):
     """
     Policy object that implements actor critic, using a MLP (2 layers of 24)
     :param env: (Gym environment) The environment to learn from
@@ -19,17 +66,6 @@ class MlpPolicy(nn.Module):
         super(MlpPolicy, self).__init__()
 
         self.n_hidden = n_hidden
-        self.state_space = None
-        self.action_space = None
-        self.env = env
-
-        if isinstance(env.observation_space, gym.spaces.Box):
-            self.state_space = env.observation_space.shape[0]
-
-        if isinstance(env.action_space, gym.spaces.Discrete):
-            self.action_space = env.action_space.n
-        elif isinstance(env.action_space, gym.spaces.Box):
-            self.action_space = env.action_space.shape[0]
 
         self.fc1 = nn.Linear(self.state_space, n_hidden)
         self.fc2 = nn.Linear(n_hidden, n_hidden)
@@ -53,20 +89,6 @@ class MlpPolicy(nn.Module):
             return (mean, log_std)
         elif isinstance(self.env.action_space, gym.spaces.Discrete):
             return y
-
-    def sample_action(self, x):
-        x = self.forward(x)
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            x = nn.Softmax(dim=-1)(x)
-            c = Categorical(probs=x)
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            mean, log_std = x
-            log_std = torch.clamp(log_std, -20, 2)
-            c = Normal(mean, log_std.exp())
-
-        action = c.sample()
-        return action, c
 
 
 policy_registry = {"MlpPolicy": MlpPolicy}
