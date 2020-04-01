@@ -205,7 +205,7 @@ class PPO1:
                     s, r, done, _ = self.env.step(np.array(a))
 
                     if self.render:
-                        env.render()
+                        self.env.render()
 
                     self.policy_old.traj_reward.append(r)
 
@@ -227,7 +227,8 @@ class PPO1:
             if ep % self.policy_copy_interval == 0:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-        if self.tensorboard_log:
+        self.env.close()
+	if self.tensorboard_log:
             self.writer.close()
 
 

@@ -183,7 +183,7 @@ class VPG:
                     s, r, done, _ = self.env.step(np.array(a))
 
                     if self.render:
-                        env.render()
+                        self.env.render()
 
                     self.policy_fn.traj_reward.append(r)
 
@@ -202,7 +202,7 @@ class VPG:
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, ep)
 
-        env.close()
+        self.env.close()
         if self.tensorboard_log:
             self.writer.close()
             
