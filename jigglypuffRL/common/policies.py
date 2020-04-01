@@ -61,7 +61,7 @@ class MlpPolicy(BasePolicy):
     """
 
     def __init__(self, env, n_hidden=16):
-        super(MlpPolicy, self).__init__()
+        super(MlpPolicy, self).__init__(env)
 
         self.n_hidden = n_hidden
 
