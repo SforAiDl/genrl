@@ -15,7 +15,7 @@ from jigglypuffRL.common import (
 
 class VPG:
     """
-    Vanilla Policy Gradient algorithm (Clipped policy).
+    Vanilla Policy Gradient algorithm
     Paper: https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
     :param policy: (str) The policy model to use (MlpPolicy)
     :param value: (str) The value function model to use (MlpValue)
@@ -131,15 +131,10 @@ class VPG:
         A = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        clipping = (
-            torch.clamp(self.policy_fn.policy_hist, 1 - self.clip_param, 1 + self.clip_param)
-            .mul(A)
-            .to(self.device)
-        )
+        loss_policy = torch.sum(
+  	    torch.mul(self.policy_fn.policy_hist, A)
+	).mul(-1).unsqueeze(0)
 
-        loss_policy = (
-            torch.mean(torch.min(torch.mul(self.policy_fn.policy_hist, A), clipping)).mul(-1).unsqueeze(0)
-        )
         loss_value = nn.MSELoss()(
             self.value_fn.value_hist, Variable(returns)
         ).unsqueeze(0)
