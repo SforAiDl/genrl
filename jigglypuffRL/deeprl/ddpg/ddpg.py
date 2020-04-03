@@ -6,7 +6,7 @@ import gym
 from copy import deepcopy
 import random
 
-from jigglypuffRL.common import ActorCritic, ReplayBuffer, MlpCritic, MlpActor
+from jigglypuffRL.common import ActorCritic, ReplayBuffer
 
 class DDPG:
     def __init__(self,
@@ -61,18 +61,18 @@ class DDPG:
         self.create_model(network_type)
 
     def create_model(self, network_type):
-        self.ac = ActorCritic(self.env, network_type, self.n_hidden, noise_std=self.noise_std)
-        self.ac_targ = deepcopy(self.ac)
+        self.ac = ActorCritic(self.env, network_type, self.n_hidden, noise_std=self.noise_std).to(self.device)
+        self.ac_targ = deepcopy(self.ac).to(self.device)
 
         for p in self.ac_targ.parameters():
             p.requires_grad = False
 
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        self.replay_buffer = ReplayBuffer(self.replay_size, device=self.device)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
     def select_action(self, s):
-        a = self.ac.select_action(torch.as_tensor(s, dtype=torch.float32))
+        a = self.ac.select_action(torch.as_tensor(s, dtype=torch.float32, device=self.device))
         a += self.noise_std * np.random.randn(self.env.action_space.shape[0])
         return np.clip(a, -self.env.action_space.high[0],self.env.action_space.high[0])
 
@@ -122,7 +122,7 @@ class DDPG:
                 a = self.env.action_space.sample()
 
             s1, r, d, _ = self.env.step(a)
-            if self.render and t > 12000:
+            if self.render:
                 self.env.render()
             ep_r += r
             ep_len += 1

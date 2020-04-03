@@ -6,7 +6,7 @@ from torch.autograd import Variable
 import gym
 from jigglypuffRL.common import BasePolicy
 
-
+# base classes
 class BaseActor(nn.Module):
     def __init__(self, env):
         super(BaseActor, self).__init__()
@@ -36,17 +36,6 @@ class BaseActor(nn.Module):
         c = self.action_distribution(x)
         action = c.sample()
         return action, c
-
-    def deterministic_action(self, x, noise_std):
-        x = self.forward(x)
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            x = nn.Softmax(dim=-1)(x)
-            return torch.argmax(x)
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            x = nn.Tanh()(x)
-            a = self.action_limit * x
-            a += Normal(0,noise_std).sample((self.action_dim,))
-            return torch.clamp(a, -self.action_limit, self.action_limit)
 
     def action_distribution(self, x):
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -87,7 +76,7 @@ class BaseCritic(nn.Module):
     def forward(self):
         raise NotImplementedError
 
-
+# Inherited classes
 class ActorCritic(nn.Module):
     def __init__(self, env, network_type, n_hidden, noise_std=0, det_stoc='det'):
         super(ActorCritic, self).__init__()
@@ -104,7 +93,7 @@ class ActorCritic(nn.Module):
     def select_action(self, x):
         with torch.no_grad():
             if self.det_stoc == 'det':
-                return self.actor(x).numpy()
+                return self.actor(x).cpu().numpy()
             elif self.det_stoc == 'stoc':
                 return self.actor.sample_action(x)
             else:
