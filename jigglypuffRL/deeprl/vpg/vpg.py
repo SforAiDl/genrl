@@ -93,7 +93,7 @@ class VPG:
         # Instantiate networks and optimizers
         self.policy_fn = get_policy_from_name(self.policy)(self.env).to(self.device)
         self.value_fn = get_value_from_name(self.value)(self.env).to(self.device)
-        
+
         self.optimizer_policy = opt.Adam(self.policy_fn.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
@@ -106,10 +106,7 @@ class VPG:
 
         # store policy probs and value function for current traj
         self.policy_fn.policy_hist = torch.cat(
-            [
-                self.policy_fn.policy_hist,
-                c.log_prob(action).unsqueeze(0),
-            ]
+            [self.policy_fn.policy_hist, c.log_prob(action).unsqueeze(0),]
         )
 
         self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val])
@@ -131,9 +128,9 @@ class VPG:
         A = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        loss_policy = torch.sum(
-  	    torch.mul(self.policy_fn.policy_hist, A)
-	).mul(-1).unsqueeze(0)
+        loss_policy = (
+            torch.sum(torch.mul(self.policy_fn.policy_hist, A)).mul(-1).unsqueeze(0)
+        )
 
         loss_value = nn.MSELoss()(
             self.value_fn.value_hist, Variable(returns)
@@ -205,7 +202,8 @@ class VPG:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-            
+
+
 if __name__ == "__main__":
     env = gym.make("CartPole-v1")
     algo = VPG("MlpPolicy", "MlpValue", env, epochs=500, render=True)

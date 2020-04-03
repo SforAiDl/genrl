@@ -228,7 +228,7 @@ class PPO1:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
         self.env.close()
-	if self.tensorboard_log:
+        if self.tensorboard_log:
             self.writer.close()
 
 
