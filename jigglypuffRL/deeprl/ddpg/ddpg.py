@@ -9,6 +9,30 @@ import random
 from jigglypuffRL.common import ActorCritic, ReplayBuffer
 
 class DDPG:
+    """
+    Deep Deterministic Policy Gradient algorithm (DDPG)
+    Paper: https://arxiv.org/abs/1509.02971
+    :param network_type: (str) The deep neural network layer types ['Mlp']
+    :param env: (Gym environment) The environment to learn from
+    :param gamma: (float) discount factor
+    :param replay_size: (int) Replay memory size
+    :param batch_size: (int) Update batch size
+    :param lr_p: (float) Policy network learning rate
+    :param lr_q: (float) Q network learning rate
+    :param polyak: (float) Polyak averaging weight to update target network
+    :param epochs: (int) Number of epochs
+    :param start_steps: (int) Number of exploratory steps at start
+    :param steps_per_epoch: (int) Number of steps per epoch
+    :param noise_std: (float) Standard deviation for action noise
+    :param max_ep_len: (int) Maximum steps per episode
+    :param start_update: (int) Number of steps before first parameter update
+    :param update_interval: (int) Number of steps between parameter updates
+    :param n_hidden: (int) Number of neurons in hidden layers
+    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param seed (int): seed for torch and gym
+    :param render (boolean): if environment is to be rendered
+    :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    """
     def __init__(self,
         network_type, env,
         gamma=0.99, replay_size=1000000,batch_size=100,
@@ -44,6 +68,7 @@ class DDPG:
         else:
             self.device = torch.device("cpu")
 
+        # Assign seed
         if seed is not None:
             torch.manual_seed(seed)
             torch.backends.cudnn.deterministic = True
@@ -52,6 +77,7 @@ class DDPG:
             self.env.seed(seed)
             random.seed(seed)
 
+        # Setup tensorboard writer
         self.writer = None
         if self.tensorboard_log is not None:
             from torch.utils.tensorboard import SummaryWriter
@@ -64,6 +90,7 @@ class DDPG:
         self.ac = ActorCritic(self.env, network_type, self.n_hidden, noise_std=self.noise_std).to(self.device)
         self.ac_targ = deepcopy(self.ac).to(self.device)
 
+        # freeze target network params
         for p in self.ac_targ.parameters():
             p.requires_grad = False
 
@@ -73,6 +100,7 @@ class DDPG:
 
     def select_action(self, s):
         a = self.ac.select_action(torch.as_tensor(s, dtype=torch.float32, device=self.device))
+        # add noise to output from policy network
         a += self.noise_std * np.random.randn(self.env.action_space.shape[0])
         return np.clip(a, -self.env.action_space.high[0],self.env.action_space.high[0])
 
@@ -95,6 +123,7 @@ class DDPG:
         loss_q.backward()
         self.optimizer_q.step()
 
+        # freeze critic params for policy update
         for p in self.ac.critic.parameters():
             p.requires_grad = False 
 
@@ -103,9 +132,11 @@ class DDPG:
         loss_p.backward()
         self.optimizer_policy.step()
 
+        # unfreeze critic params
         for p in self.ac.critic.parameters():
             p.requires_grad = True 
 
+        # update target network
         with torch.no_grad():
             for p, p_targ in zip(self.ac.parameters(),self.ac_targ.parameters()):
                 p_targ.data.mul_(self.polyak)
@@ -116,6 +147,7 @@ class DDPG:
         total_steps = self.steps_per_epoch * self.epochs
 
         for t in range(total_steps):
+            # execute single transition
             if t > self.start_steps:
                 a = self.select_action(s)
             else:
@@ -127,6 +159,7 @@ class DDPG:
             ep_r += r
             ep_len += 1
 
+            # dont set d to True if max_ep_len reached
             d = False if ep_len == self.max_ep_len else d
 
             self.replay_buffer.push((s,a,r,s1,d))
@@ -142,6 +175,7 @@ class DDPG:
                 s, ep_r, ep_len = self.env.reset(), 0, 0
                 ep += 1
 
+            # update params
             if t >= self.start_update and t % self.update_interval == 0:
                 for _ in range(self.update_interval):
                     s_b, a_b, r_b, s1_b, d_b = self.replay_buffer.sample(self.batch_size)
