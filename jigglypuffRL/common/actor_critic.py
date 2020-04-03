@@ -76,9 +76,10 @@ class BaseCritic(nn.Module):
     def forward(self):
         raise NotImplementedError
 
+
 # Inherited classes
 class ActorCritic(nn.Module):
-    def __init__(self, env, network_type, n_hidden, noise_std=0, det_stoc='det'):
+    def __init__(self, env, network_type, n_hidden, noise_std=0, det_stoc="det"):
         super(ActorCritic, self).__init__()
 
         self.actor, self.critic = get_actor_critic_from_name(network_type)
@@ -92,12 +93,13 @@ class ActorCritic(nn.Module):
 
     def select_action(self, x):
         with torch.no_grad():
-            if self.det_stoc == 'det':
+            if self.det_stoc == "det":
                 return self.actor(x).cpu().numpy()
-            elif self.det_stoc == 'stoc':
+            elif self.det_stoc == "stoc":
                 return self.actor.sample_action(x)
             else:
                 raise ValueError
+
 
 class MlpActor(BaseActor):
     def __init__(self, env, n_hidden):
@@ -110,13 +112,7 @@ class MlpActor(BaseActor):
         self.fc3 = nn.Linear(n_hidden, self.action_dim)
 
     def forward(self, x):
-        model = nn.Sequential(
-            self.fc1,
-            nn.ReLU(),
-            self.fc2,
-            nn.ReLU(),
-            self.fc3
-        )
+        model = nn.Sequential(self.fc1, nn.ReLU(), self.fc2, nn.ReLU(), self.fc3)
 
         if isinstance(self.env.action_space, gym.spaces.Discrete):
             x = nn.Softmax(dim=-1)(model(x))
@@ -126,24 +122,19 @@ class MlpActor(BaseActor):
 
         return x
 
+
 class MlpCritic(BaseCritic):
     def __init__(self, env, n_hidden):
         super(MlpCritic, self).__init__(env)
 
-        self.fc1 = nn.Linear(self.state_dim+self.action_dim, n_hidden)
+        self.fc1 = nn.Linear(self.state_dim + self.action_dim, n_hidden)
         self.fc2 = nn.Linear(n_hidden, n_hidden)
         self.fc3 = nn.Linear(n_hidden, 1)
 
     def forward(self, s, a):
-        model = nn.Sequential(
-            self.fc1,
-            nn.ReLU(),
-            self.fc2,
-            nn.ReLU(),
-            self.fc3
-        )
+        model = nn.Sequential(self.fc1, nn.ReLU(), self.fc2, nn.ReLU(), self.fc3)
 
-        return torch.squeeze(model(torch.cat([s,a], dim=-1)))
+        return torch.squeeze(model(torch.cat([s, a], dim=-1)))
 
 
 registry = {"Mlp": (MlpActor, MlpCritic)}

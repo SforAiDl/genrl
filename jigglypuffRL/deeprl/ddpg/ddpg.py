@@ -8,6 +8,7 @@ import random
 
 from jigglypuffRL.common import ActorCritic, ReplayBuffer
 
+
 class DDPG:
     """
     Deep Deterministic Policy Gradient algorithm (DDPG)
@@ -33,34 +34,49 @@ class DDPG:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
     """
-    def __init__(self,
-        network_type, env,
-        gamma=0.99, replay_size=1000000,batch_size=100,
-        lr_p=0.001,lr_q=0.001,polyak=0.995,
-        epochs=100,start_steps=10000,steps_per_epoch=4000,
-        noise_std=0.1,max_ep_len=1000,start_update=1000,
-        update_interval=50, n_hidden=32, tensorboard_log=None,seed=None,
-        render=False,device='cpu'
+
+    def __init__(
+        self,
+        network_type,
+        env,
+        gamma=0.99,
+        replay_size=1000000,
+        batch_size=100,
+        lr_p=0.001,
+        lr_q=0.001,
+        polyak=0.995,
+        epochs=100,
+        start_steps=10000,
+        steps_per_epoch=4000,
+        noise_std=0.1,
+        max_ep_len=1000,
+        start_update=1000,
+        update_interval=50,
+        n_hidden=32,
+        tensorboard_log=None,
+        seed=None,
+        render=False,
+        device="cpu",
     ):
 
-        self.env=env 
-        self.gamma=gamma
-        self.replay_size=replay_size
-        self.batch_size=batch_size
-        self.lr_p=lr_p
-        self.lr_q=lr_q
-        self.polyak=polyak
-        self.epochs=epochs
-        self.start_steps=start_steps
-        self.steps_per_epoch=steps_per_epoch
-        self.noise_std=noise_std
-        self.max_ep_len=max_ep_len
-        self.start_update=start_update
-        self.update_interval=update_interval
+        self.env = env
+        self.gamma = gamma
+        self.replay_size = replay_size
+        self.batch_size = batch_size
+        self.lr_p = lr_p
+        self.lr_q = lr_q
+        self.polyak = polyak
+        self.epochs = epochs
+        self.start_steps = start_steps
+        self.steps_per_epoch = steps_per_epoch
+        self.noise_std = noise_std
+        self.max_ep_len = max_ep_len
+        self.start_update = start_update
+        self.update_interval = update_interval
         self.n_hidden = n_hidden
-        self.tensorboard_log=tensorboard_log
-        self.seed=seed
-        self.render=render
+        self.tensorboard_log = tensorboard_log
+        self.seed = seed
+        self.render = render
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -87,7 +103,9 @@ class DDPG:
         self.create_model(network_type)
 
     def create_model(self, network_type):
-        self.ac = ActorCritic(self.env, network_type, self.n_hidden, noise_std=self.noise_std).to(self.device)
+        self.ac = ActorCritic(
+            self.env, network_type, self.n_hidden, noise_std=self.noise_std
+        ).to(self.device)
         self.ac_targ = deepcopy(self.ac).to(self.device)
 
         # freeze target network params
@@ -99,17 +117,19 @@ class DDPG:
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
     def select_action(self, s):
-        a = self.ac.select_action(torch.as_tensor(s, dtype=torch.float32, device=self.device))
+        a = self.ac.select_action(
+            torch.as_tensor(s, dtype=torch.float32, device=self.device)
+        )
         # add noise to output from policy network
         a += self.noise_std * np.random.randn(self.env.action_space.shape[0])
-        return np.clip(a, -self.env.action_space.high[0],self.env.action_space.high[0])
+        return np.clip(a, -self.env.action_space.high[0], self.env.action_space.high[0])
 
-    def get_q_loss(self, s,a,r,s1,d):
-        q = self.ac.value(s,a)
+    def get_q_loss(self, s, a, r, s1, d):
+        q = self.ac.value(s, a)
 
         with torch.no_grad():
             q_pi_targ = self.ac_targ.value(s1, self.ac_targ.actor(s1))
-            target = r + self.gamma * (1-d) * q_pi_targ
+            target = r + self.gamma * (1 - d) * q_pi_targ
 
         return nn.MSELoss()(q, target)
 
@@ -117,15 +137,15 @@ class DDPG:
         q_pi = self.ac.value(s, self.ac.actor(s))
         return -torch.mean(q_pi)
 
-    def update_params(self, s,a,r,s1,d):
+    def update_params(self, s, a, r, s1, d):
         self.optimizer_q.zero_grad()
-        loss_q = self.get_q_loss(s,a,r,s1,d)
+        loss_q = self.get_q_loss(s, a, r, s1, d)
         loss_q.backward()
         self.optimizer_q.step()
 
         # freeze critic params for policy update
         for p in self.ac.critic.parameters():
-            p.requires_grad = False 
+            p.requires_grad = False
 
         self.optimizer_policy.zero_grad()
         loss_p = self.get_p_loss(s)
@@ -134,13 +154,13 @@ class DDPG:
 
         # unfreeze critic params
         for p in self.ac.critic.parameters():
-            p.requires_grad = True 
+            p.requires_grad = True
 
         # update target network
         with torch.no_grad():
-            for p, p_targ in zip(self.ac.parameters(),self.ac_targ.parameters()):
+            for p, p_targ in zip(self.ac.parameters(), self.ac_targ.parameters()):
                 p_targ.data.mul_(self.polyak)
-                p_targ.data.add_((1-self.polyak)*p.data)
+                p_targ.data.add_((1 - self.polyak) * p.data)
 
     def learn(self):
         s, ep_r, ep_len, ep = self.env.reset(), 0, 0, 0
@@ -162,7 +182,7 @@ class DDPG:
             # dont set d to True if max_ep_len reached
             d = False if ep_len == self.max_ep_len else d
 
-            self.replay_buffer.push((s,a,r,s1,d))
+            self.replay_buffer.push((s, a, r, s1, d))
 
             s = s1
 
@@ -170,7 +190,7 @@ class DDPG:
                 if ep % 20 == 0:
                     print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, t))
                 if self.tensorboard_log:
-                    self.writer.add_scalar('episode_reward',ep_r,t)
+                    self.writer.add_scalar("episode_reward", ep_r, t)
 
                 s, ep_r, ep_len = self.env.reset(), 0, 0
                 ep += 1
@@ -178,14 +198,17 @@ class DDPG:
             # update params
             if t >= self.start_update and t % self.update_interval == 0:
                 for _ in range(self.update_interval):
-                    s_b, a_b, r_b, s1_b, d_b = self.replay_buffer.sample(self.batch_size)
+                    s_b, a_b, r_b, s1_b, d_b = self.replay_buffer.sample(
+                        self.batch_size
+                    )
                     self.update_params(s_b, a_b, r_b, s1_b, d_b)
 
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
 
-if __name__ == '__main__':
-    env = gym.make('Pendulum-v0')
-    algo = DDPG('Mlp', env)
+
+if __name__ == "__main__":
+    env = gym.make("Pendulum-v0")
+    algo = DDPG("Mlp", env)
     algo.learn()
