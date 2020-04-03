@@ -28,7 +28,7 @@ class DDPG:
     :param max_ep_len: (int) Maximum steps per episode
     :param start_update: (int) Number of steps before first parameter update
     :param update_interval: (int) Number of steps between parameter updates
-    :param n_hidden: (int) Number of neurons in hidden layers
+    :param layers: (tuple or list) Number of neurons in hidden layers
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param seed (int): seed for torch and gym
     :param render (boolean): if environment is to be rendered
@@ -52,7 +52,7 @@ class DDPG:
         max_ep_len=1000,
         start_update=1000,
         update_interval=50,
-        n_hidden=32,
+        layers=(32, 32),
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -73,7 +73,7 @@ class DDPG:
         self.max_ep_len = max_ep_len
         self.start_update = start_update
         self.update_interval = update_interval
-        self.n_hidden = n_hidden
+        self.layers = layers
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
@@ -104,7 +104,7 @@ class DDPG:
 
     def create_model(self, network_type):
         self.ac = ActorCritic(
-            self.env, network_type, self.n_hidden, noise_std=self.noise_std
+            self.env, network_type, self.layers, noise_std=self.noise_std
         ).to(self.device)
         self.ac_targ = deepcopy(self.ac).to(self.device)
 
@@ -112,7 +112,7 @@ class DDPG:
         for p in self.ac_targ.parameters():
             p.requires_grad = False
 
-        self.replay_buffer = ReplayBuffer(self.replay_size, device=self.device)
+        self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
@@ -201,6 +201,9 @@ class DDPG:
                     s_b, a_b, r_b, s1_b, d_b = self.replay_buffer.sample(
                         self.batch_size
                     )
+                    s_b, a_b, r_b, s1_b, d_b = (
+                        x.to(self.device) for x in [s_b, a_b, r_b, s1_b, d_b]
+                    )
                     self.update_params(s_b, a_b, r_b, s1_b, d_b)
 
         self.env.close()
@@ -210,5 +213,5 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("Mlp", env)
+    algo = DDPG("Mlp", env, seed=0)
     algo.learn()

@@ -79,12 +79,12 @@ class BaseCritic(nn.Module):
 
 # Inherited classes
 class ActorCritic(nn.Module):
-    def __init__(self, env, network_type, n_hidden, noise_std=0, det_stoc="det"):
+    def __init__(self, env, network_type, layers, noise_std=0, det_stoc="det"):
         super(ActorCritic, self).__init__()
 
         self.actor, self.critic = get_actor_critic_from_name(network_type)
-        self.actor = self.actor(env, n_hidden)
-        self.critic = self.critic(env, n_hidden)
+        self.actor = self.actor(env, layers)
+        self.critic = self.critic(env, layers)
         self.det_stoc = det_stoc
         self.noise_std = noise_std
 
@@ -102,39 +102,31 @@ class ActorCritic(nn.Module):
 
 
 class MlpActor(BaseActor):
-    def __init__(self, env, n_hidden):
+    def __init__(self, env, layers):
         super(MlpActor, self).__init__(env)
 
         self.action_limit = env.action_space.high[0]
-
-        self.fc1 = nn.Linear(self.state_dim, n_hidden)
-        self.fc2 = nn.Linear(n_hidden, n_hidden)
-        self.fc3 = nn.Linear(n_hidden, self.action_dim)
+        self.model = mlp([self.state_dim] + list(layers) + [self.action_dim])
 
     def forward(self, x):
-        model = nn.Sequential(self.fc1, nn.ReLU(), self.fc2, nn.ReLU(), self.fc3)
 
         if isinstance(self.env.action_space, gym.spaces.Discrete):
-            x = nn.Softmax(dim=-1)(model(x))
+            x = nn.Softmax(dim=-1)(self.model(x))
         elif isinstance(self.env.action_space, gym.spaces.Box):
-            x = nn.Tanh()(model(x))
+            x = nn.Tanh()(self.model(x))
             x = self.action_limit * x
 
         return x
 
 
 class MlpCritic(BaseCritic):
-    def __init__(self, env, n_hidden):
+    def __init__(self, env, layers):
         super(MlpCritic, self).__init__(env)
 
-        self.fc1 = nn.Linear(self.state_dim + self.action_dim, n_hidden)
-        self.fc2 = nn.Linear(n_hidden, n_hidden)
-        self.fc3 = nn.Linear(n_hidden, 1)
+        self.model = mlp([self.state_dim + self.action_dim] + list(layers) + [1])
 
     def forward(self, s, a):
-        model = nn.Sequential(self.fc1, nn.ReLU(), self.fc2, nn.ReLU(), self.fc3)
-
-        return torch.squeeze(model(torch.cat([s, a], dim=-1)))
+        return torch.squeeze(self.model(torch.cat([s, a], dim=-1)))
 
 
 registry = {"Mlp": (MlpActor, MlpCritic)}
@@ -148,3 +140,12 @@ def get_actor_critic_from_name(name):
             )
         )
     return registry[name]
+
+
+# helper methods
+def mlp(sizes):
+    layers = []
+    for j in range(len(sizes) - 1):  # 0, 1, 2
+        act = nn.ReLU if j < len(sizes) - 2 else nn.Identity
+        layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
+    return nn.Sequential(*layers)

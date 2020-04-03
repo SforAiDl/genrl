@@ -5,9 +5,8 @@ import numpy as np
 
 
 class ReplayBuffer:
-    def __init__(self, size, device):
+    def __init__(self, size):
         self.size = size
-        self.device = device
         self.memory = deque([], maxlen=size)
 
     def push(self, x):
@@ -17,7 +16,7 @@ class ReplayBuffer:
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
         return (
-            torch.as_tensor(v, dtype=torch.float32, device=self.device)
+            torch.as_tensor(v, dtype=torch.float32)
             for v in [state, action, reward, next_state, done]
         )
 
