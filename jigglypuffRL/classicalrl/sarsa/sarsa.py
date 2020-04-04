@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import torch
 
 class SARSA:
     '''
@@ -25,7 +26,9 @@ class SARSA:
         gamma=0.95,
         lmbda=0.90,
         decay_rate_epsilon=0.999,
-        thres_reward=0.8):
+        tensorboard_log=None,
+        seed=None,
+        render=None):
         
         self.env = env
         self.max_iterations = max_iterations
@@ -35,10 +38,26 @@ class SARSA:
         self.alpha = alpha 
         self.gamma = gamma
         self.lmbda = lmbda
-        self.thres_reward = thres_reward
+        self.tensorboard_log = tensorboard_log
+        self.seed = seed
+        self.render = render
+        
+        # Assign seed
+        if seed is not None:
+            torch.manual_seed(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+            np.random.seed(seed)
+            self.env.seed(seed)
+            
+        self.writer = None
+        if self.tensorboard_log is not None:
+            from torch.utils.tensorboard import SummaryWriter
+
+            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
         
         # Set up the Q table 
-        self.Q_table = np.zeros((self.env.observation_space.n,self.env.action_space.n))  
+        self.Q_table = np.zeros((self.env.observation_space.n,self.env.action_space.n)) 
         # Set up eligibility traces
         self.e_table = np.zeros((self.env.observation_space.n,self.env.action_space.n))  
         
@@ -54,7 +73,6 @@ class SARSA:
     def update(self, r, state1, action1, state2, action2):
         self.e_table[state1,action1] += 1
         delta = r + self.gamma * self.Q_table[state2, action2] - self.Q_table[state1, action1]
-#         self.Q_table[state1,action1] += self.alpha * delta
         for s in range(self.env.observation_space.n):
             for a in range(self.env.action_space.n):
                 self.Q_table[s,a] = self.Q_table[s,a] + self.alpha * delta * self.e_table[s,a]
@@ -69,7 +87,10 @@ class SARSA:
             
             for t in range(self.max_iterations):
                 state2, reward, done, info = self.env.step(action1)
-    
+                
+                if self.render:
+                        self.env.render()
+                        
                 action2 = self.select_action(state2)
                 
                 self.update(reward, state1, action1, state2, action2)
@@ -82,7 +103,7 @@ class SARSA:
                     break
                 
             if ep % 5000 == 0:
-                #report every 5000 steps, test 100 games to get avarage point score for statistics and verify if it is solved
+                #report every 5000 episodes, test 100 games to get avarage point score for statistics
                 rew_average = 0.
                 
                 for i in range(100):
@@ -93,11 +114,15 @@ class SARSA:
                         obs, rew, done, info = self.env.step(action)
                         rew_average += rew
                 rew_average=rew_average/100
-                print('Episode {} avarage reward: {}'.format(ep,rew_average))
-
-                if rew_average > self.thres_reward:
-                    print(f"{self.env.unwrapped.spec.id} solved")
-                    break
+                print('Episode {} Reward: {}'.format(ep,rew_average))
+            
+                if self.tensorboard_log:
+                    self.writer.add_scalar("Reward", rew_average, ep)
+        
+            self.env.close()
+        if self.tensorboard_log:
+            self.writer.close()
+        
         return self.Q_table
         
         
