@@ -70,7 +70,7 @@ class SARSA:
             
         return action
         
-    def update(self, r, state1, action1, state2, action2):
+    def update_params(self, r, state1, action1, state2, action2):
         self.e_table[state1,action1] += 1
         delta = r + self.gamma * self.Q_table[state2, action2] - self.Q_table[state1, action1]
         for s in range(self.env.observation_space.n):
@@ -93,7 +93,7 @@ class SARSA:
                         
                 action2 = self.select_action(state2)
                 
-                self.update(reward, state1, action1, state2, action2)
+                self.update_params(reward, state1, action1, state2, action2)
                 
                 state1 = state2 
                 action1 = action2
