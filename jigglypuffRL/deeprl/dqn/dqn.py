@@ -185,7 +185,9 @@ class DQN:
 
             if frame_idx % 200 == 0 and (self.plot_loss_reward_graph == True):
                 self.plot(frame_idx)
-
+        
+        if self.tensorboard_log:
+            self.writer.close()
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
