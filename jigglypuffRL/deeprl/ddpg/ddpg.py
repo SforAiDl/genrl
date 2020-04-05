@@ -223,16 +223,12 @@ class DDPG:
             if done:
                 ep += 1
                 print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, ep_t))
-                if self.tensorboard_log:
-                    self.writer.add_scalar("eval_episode_reward", ep_r, ep_t)
                 s = self.env.reset()
                 ep_r, ep_t = 0, 0
             else:
                 s = s1
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
 
 if __name__ == "__main__":
