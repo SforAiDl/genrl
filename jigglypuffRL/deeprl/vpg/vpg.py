@@ -10,6 +10,8 @@ from jigglypuffRL.common import (
     MlpValue,
     get_policy_from_name,
     get_value_from_name,
+    save_params,
+    load_params
 )
 
 
@@ -28,9 +30,16 @@ class VPG:
     :param lr_policy: (float) policy network learning rate
     :param lr_value: (float) value network learning rate
     :param policy_copy_interval: (int) number of optimizer before copying params from new policy to old policy
+    :param save_interval: (int) Number of episodes between saves of models
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param pretrained: (boolean) if model has already been trained
+    :param save_name: (str) model save name (if None, model hasn't been pretrained)
+    :param save_version: (int) model save version (if None, model hasn't been pretrained)
+    :param save: (function) save function to save model with all parameters
+    :param load: (function) load function to load pretrained model with all parameters
+    :param checkpoint: (dict) dictionary of all class parameters
     """
 
     def __init__(
@@ -46,10 +55,14 @@ class VPG:
         lr_policy=0.001,
         lr_value=0.005,
         policy_copy_interval=20,
+        save_interval=200,
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
+        pretrained=False,
+        save_name=None,
+        save_version=None
     ):
         self.policy = policy
         self.value = value
@@ -65,6 +78,13 @@ class VPG:
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
+        self.save_interval = save_interval
+        self.pretrained = pretrained
+        self.save_name = save_name
+        self.save_version = save_version
+        self.save = save_params
+        self.load = load_params
+        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -93,6 +113,15 @@ class VPG:
         # Instantiate networks and optimizers
         self.policy_fn = get_policy_from_name(self.policy)(self.env).to(self.device)
         self.value_fn = get_value_from_name(self.value)(self.env).to(self.device)
+
+        # load paramaters if already trained
+        if self.pretrained:
+            self.load(self.save_name, self.save_version)
+            self.policy_fn.load_state_dict(self.checkpoint['policy_weights'])
+            self.value_fn.load_state_dict(self.checkpoint['value_weights'])
+            for key, item in self.checkpoint.items():
+                if key not in ['policy_weights', 'value_weights']:
+                    setattr(self, key, item)
 
         self.optimizer_policy = opt.Adam(self.policy_fn.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
@@ -198,6 +227,14 @@ class VPG:
                 print("Episode: {}, reward: {}".format(ep, epoch_reward))
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, ep)
+
+            if ep % self.save_interval == 0:
+                self.checkpoint['policy_weights'] = self.policy_fn.state_dict()
+                self.checkpoint['value_weights'] = self.value_fn.state_dict()
+                if self.save_name is None:
+                    self.save_name = "{}-{}".format(self.policy, self.value)
+                self.save_version = int(ep/self.save_interval)
+                self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
