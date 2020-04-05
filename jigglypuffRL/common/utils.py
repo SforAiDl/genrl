@@ -1,26 +1,18 @@
 import torch
 
 
-def save_params(algo, name=None, version=None):
-    if name is None:
-        name = algo.network_type
-
-    checkpoint = {'algo': name,
-                  'weights': algo.ac.state_dict()}
-
-    if version is None:
-        torch.save(checkpoint, "{}.pt".format(name))
+def save_params(algo):
+    if algo.save_version is None:
+        torch.save(algo.checkpoint, "{}.pt".format(algo.save_name))
     else:
-        torch.save(checkpoint, "{}-{}.pt".format(name, version))
-    return checkpoint
+        torch.save(algo.checkpoint, "{}-{}.pt".format(algo.save_name, algo.save_version))
 
 
-def load_params(name, version=None):
+def load_params(algo):
     try:
-        if version is None:
-            checkpoint = torch.load("{}.pt").format(name)
+        if algo.save_version is None:
+            algo.checkpoint = torch.load("{}.pt").format(algo.save_name)
         else:
-            checkpoint = torch.load("{}-{}.pt".format(name, version))
+            algo.checkpoint = torch.load("{}-{}.pt".format(algo.save_name, algo.save_version))
     except FileNotFoundError:
         raise Exception("Check name and version number again")
-    return checkpoint
