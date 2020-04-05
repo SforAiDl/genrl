@@ -6,7 +6,7 @@ import gym
 from copy import deepcopy
 import random
 
-from jigglypuffRL.common import ActorCritic, ReplayBuffer
+from jigglypuffRL.common import ActorCritic, ReplayBuffer, evaluate 
 
 
 class DDPG:
@@ -33,6 +33,7 @@ class DDPG:
     :param seed (int): seed for torch and gym
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param evaluate: (function) function to evaluate model 
     """
 
     def __init__(
@@ -56,7 +57,7 @@ class DDPG:
         tensorboard_log=None,
         seed=None,
         render=False,
-        device="cpu",
+        device="cpu"
     ):
 
         self.env = env
@@ -77,6 +78,7 @@ class DDPG:
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
+        self.evaluate = evaluate
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -209,29 +211,10 @@ class DDPG:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-    def evaluate(self, num_timesteps=1000):
-        s = self.env.reset()
-        ep, ep_r, ep_t = 0, 0, 0
-
-        print("\nEvaluating...")
-        for t in range(num_timesteps):
-            a = self.select_action(s)
-            s1, r, done, _ = env.step(a)
-            ep_r += r
-            ep_t += 1
-
-            if done:
-                ep += 1
-                print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, ep_t))
-                s = self.env.reset()
-                ep_r, ep_t = 0, 0
-            else:
-                s = s1
-
-        self.env.close()
 
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
     algo = DDPG("Mlp", env, seed=0)
     algo.learn()
+    algo.evaluate()

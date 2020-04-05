@@ -10,6 +10,7 @@ from jigglypuffRL.common import (
     MlpValue,
     get_policy_from_name,
     get_value_from_name,
+    evaluate
 )
 
 
@@ -31,6 +32,7 @@ class PPO1:
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param evaluate: (function) function to evaluate model
     """
 
     def __init__(
@@ -49,7 +51,7 @@ class PPO1:
         tensorboard_log=None,
         seed=None,
         render=False,
-        device="cpu",
+        device="cpu"
     ):
         self.policy = policy
         self.value = value
@@ -65,6 +67,7 @@ class PPO1:
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
+        self.evaluate = evaluate
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -230,30 +233,10 @@ class PPO1:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-            
-    def evaluate(self, num_timesteps=1000):
-        s = self.env.reset()
-        ep, ep_r, ep_t = 0, 0, 0
-
-        print("\nEvaluating...")
-        for t in range(num_timesteps):
-            a = self.select_action(s)
-            s1, r, done, _ = env.step(a)
-            ep_r += r
-            ep_t += 1
-
-            if done:
-                ep += 1
-                print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, ep_t))
-                s = self.env.reset()
-                ep_r, ep_t = 0, 0
-            else:
-                s = s1
-
-        self.env.close()
 
 
 if __name__ == "__main__":
     env = gym.make("LunarLander-v2")
     algo = PPO1("MlpPolicy", "MlpValue", env, render=True)
     algo.learn()
+    algo.evaluate()

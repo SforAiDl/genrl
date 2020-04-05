@@ -10,6 +10,7 @@ from jigglypuffRL.common import (
     MlpValue,
     get_policy_from_name,
     get_value_from_name,
+    evaluate
 )
 
 
@@ -31,6 +32,7 @@ class VPG:
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param evaluate: (function) function to evaluate model 
     """
 
     def __init__(
@@ -65,6 +67,7 @@ class VPG:
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
+        self.evaluate = evaluate
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -228,3 +231,4 @@ if __name__ == "__main__":
     env = gym.make("CartPole-v1")
     algo = VPG("MlpPolicy", "MlpValue", env, epochs=500, render=True)
     algo.learn()
+    algo.evaluate()
