@@ -37,6 +37,9 @@ class DDPG:
     :param pretrained: (boolean) if model has already been trained
     :param save_name: (str) model save name (if None, model hasn't been pretrained)
     :param save_version: (int) model save version (if None, model hasn't been pretrained)
+    :param save: (function) save function to save model with all parameters
+    :param load: (function) load function to load pretrained model with all parameters
+    :param checkpoint: (dict) dictionary of all class parameters
     """
 
     def __init__(
@@ -90,6 +93,9 @@ class DDPG:
         self.pretrained = pretrained
         self.save_name = save_name
         self.save_version = save_version
+        self.save = save_params
+        self.load = load_params
+        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -118,13 +124,16 @@ class DDPG:
     def create_model(self):
         self.ac = ActorCritic(
             self.env, self.network_type, self.layers, noise_std=self.noise_std
-        )
+        ).to(self.device)
 
+        # load paramaters if already trained
         if self.pretrained:
-            checkpoint = load_params(self.save_name, self.save_version)
-            self.ac.load_state_dict(checkpoint['weights'])
+            self.checkpoint = self.load(self.save_name, self.save_version)
+            self.ac.load_state_dict(self.checkpoint['weights'])
+            for key, item in self.checkpoint.items():
+                if key != 'weights':
+                    setattr(self, key, item)
 
-        self.ac.to(self.device)
         self.ac_targ = deepcopy(self.ac).to(self.device)
 
         # freeze target network params
@@ -224,10 +233,13 @@ class DDPG:
                         x.to(self.device) for x in [s_b, a_b, r_b, s1_b, d_b]
                     )
                     self.update_params(s_b, a_b, r_b, s1_b, d_b)
-            
-            # save params in file
+
             if t >= self.start_update and t % self.save_interval == 0:
-                save_params(self, name="DDPG", version="{}".format(int(t/self.save_interval)))
+                if self.save_name is None:
+                    self.save_name = self.network_type
+                self.save_version = int(t/self.save_interval)
+                self.checkpoint['weights'] = self.ac.state_dict()
+                self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
