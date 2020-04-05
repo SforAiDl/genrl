@@ -209,6 +209,30 @@ class DDPG:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
+    def evaluate(self, num_timesteps=1000):
+        s = self.env.reset()
+        ep, ep_r, ep_t = 0, 0, 0
+
+        print("\nEvaluating...")
+        for t in range(num_timesteps):
+            a = self.select_action(s)
+            s1, r, done, _ = env.step(a)
+            ep_r += r
+            ep_t += 1
+
+            if done:
+                ep += 1
+                print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, ep_t))
+                if self.tensorboard_log:
+                    self.writer.add_scalar("eval_episode_reward", ep_r, ep_t)
+                s = self.env.reset()
+                ep_r, ep_t = 0, 0
+            else:
+                s = s1
+
+        self.env.close()
+        if self.tensorboard_log:
+            self.writer.close()
 
 
 if __name__ == "__main__":
