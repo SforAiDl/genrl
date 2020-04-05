@@ -231,4 +231,4 @@ if __name__ == "__main__":
     env = gym.make("CartPole-v1")
     algo = VPG("MlpPolicy", "MlpValue", env, epochs=500, render=True)
     algo.learn()
-    algo.evaluate()
+    algo.evaluate(algo)

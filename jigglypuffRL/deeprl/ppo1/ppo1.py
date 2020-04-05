@@ -239,4 +239,4 @@ if __name__ == "__main__":
     env = gym.make("LunarLander-v2")
     algo = PPO1("MlpPolicy", "MlpValue", env, render=True)
     algo.learn()
-    algo.evaluate()
+    algo.evaluate(algo)
