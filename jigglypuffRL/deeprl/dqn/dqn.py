@@ -21,7 +21,7 @@ class DQN:
     """
     Deep Q Networks 
     Paper: https://arxiv.org/pdf/1312.5602.pdf
-    :param network_type: (str) The deep neural network layer types ['Mlp']
+    :param network_type: (str) The deep neural network layer types ['MLP']
     :param env: (Gym environment) The environment to learn from
     :param epochs: (int) Number of epochs
     :param max_iterations_per_epoch: (int) Number of iterations per epoch
