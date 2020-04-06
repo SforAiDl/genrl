@@ -111,7 +111,7 @@ class GaussianBandits(Bandit):
 
 class EpsGreedyGaussianBandit(GaussianBandits):
     """
-    Multi-Armed Bandit Solver with EpsGreedy Action Selection Strategy. Refer 2.3 of Reinforcement Learning: An Introduction
+    Multi-Armed Bandit Solver with EpsGreedy Action Selection Strategy. Refer 2.3 of Reinforcement Learning: An Introduction. Each arm is modeled as a Gaussian distribution.
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     :param eps: (float) Probability with which a random action is to be selected.
@@ -235,6 +235,12 @@ class SoftmaxActionSelection(GaussianBandits):
 
 
 class BernoulliBandits(Bandit):
+    """
+    Multi-Armed Bandits with Bernoulli probabilities.
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    """
+
     def __init__(self, bandits=1, arms=10):
         super(BernoulliBandits, self).__init__(bandits, arms)
         self._init_probabilities = np.random.random()
@@ -279,6 +285,13 @@ class BernoulliBandits(Bandit):
 
 
 class EpsGreedyBernoulliBandit(BernoulliBandits):
+    """
+    Multi-Armed Bandit Solver with EpsGreedy Action Selection Strategy. Refer 2.3 of Reinforcement Learning: An Introduction. Each arm is modeled as a Bernoulli RV.
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    :param eps: (float) Probability with which a random action is to be selected.
+    """
+
     def __init__(self, bandits=1, arms=10, eps=0.01):
         super(EpsGreedyBernoulliBandit, self).__init__(bandits, arms)
         self._eps = eps
@@ -301,6 +314,12 @@ class EpsGreedyBernoulliBandit(BernoulliBandits):
 
 
 class UCBBernoulliBandit(BernoulliBandits):
+    """
+    Multi-Armed Bandit Solver with Upper Confidence Bound Based Action Selection. Refer 2.7 of Reinforcement Learning: An Introduction. Each Arm modeled as a Bernoulli RV.
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    """
+
     def __init__(self, bandits=1, arms=10):
         super(UCBBernoulliBandit, self).__init__(bandits, arms)
 
@@ -327,6 +346,14 @@ class UCBBernoulliBandit(BernoulliBandits):
 
 
 class BayesianUCBBernoulliBandit(BernoulliBandits):
+    """
+    Multi-Armed Bandit Solver with Bayesian UCB action selection. Refer 2.7 of Reinforcement Learning: An Introduction. Each arm modeled as a Bernoulli RV.
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    :param alpha: (int) alpha value of Beta distribution
+    :param beta: (int) beta value of Beta distribution
+    """
+
     def __init__(self, bandits, arms, a=1, b=1, c=3):
         super(BayesianUCBBernoulliBandit, self).__init__(bandits, arms)
         self._c = c
@@ -368,6 +395,14 @@ class BayesianUCBBernoulliBandit(BernoulliBandits):
 
 
 class ThompsonSampling(BernoulliBandits):
+    """
+    Multi-Armed Bandit Solver with Thompson Sampling or Probability Matching.
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    :param alpha: (int) alpha value of Beta distribution
+    :param beta: (int) beta value of Beta distribution
+    """
+
     def __init__(self, bandits=1, arms=10, alpha=1, beta=1):
         super(ThompsonSampling, self).__init__(bandits, arms)
         self._a = alpha * np.ones_like(self.counts)
