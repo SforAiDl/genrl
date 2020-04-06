@@ -1,5 +1,4 @@
 import numpy as np
-from abc import ABC
 
 
 class Bandit(object):
@@ -19,7 +18,7 @@ class Bandit(object):
         return self._nbandits
 
 
-class BernoulliBandits(Bandit):
+class GaussianBandits(Bandit):
     def __init__(self, bandits=1, arms=1):
         super(BernoulliBandits, self).__init__(bandits, arms)
         self._rewards = np.random.normal(size=(bandits, arms))
