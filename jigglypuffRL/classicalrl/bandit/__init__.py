@@ -1,5 +1,9 @@
 from jigglypuffRL.classicalrl.bandit.bandit import (
-    EpsGreedy,
+    EpsGreedyBernoulliBandit,
+    EpsGreedyGaussianBandit,
     SoftmaxActionSelection,
-    UCB,
+    UCBBernoulliBandit,
+    UCBGaussianBandit,
+    BayesianUCBBernoulliBandit,
+    ThompsonSampling,
 )
