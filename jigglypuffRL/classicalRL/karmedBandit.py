@@ -8,7 +8,7 @@ class Bandit(object):
         self._narms = arms
 
     def learn(self, n_timesteps=None):
-        raise NotImplementedError  
+        raise NotImplementedError
 
     @property
     def arms(self):
@@ -16,7 +16,7 @@ class Bandit(object):
 
     @property
     def nbandits(self):
-        return self._nbandits  
+        return self._nbandits
 
 
 class BernoulliBandits(Bandit):
@@ -28,7 +28,7 @@ class BernoulliBandits(Bandit):
 
     def learn(self, n_timesteps=None):
         raise NotImplementedError
-    
+
     @property
     def Q(self):
         return self._Q
@@ -62,10 +62,12 @@ class EpsGreedy(BernoulliBandits):
             reward = self.get_reward(bandit, action)
             R_step.append(reward)
             self.update_regret(bandit, action)
-            self.Q[bandit, action] += (reward - self.Q[bandit, action])/(self.counts[bandit, action] + 1)
+            self.Q[bandit, action] += (reward - self.Q[bandit, action]) / (
+                self.counts[bandit, action] + 1
+            )
             self.counts[bandit, action] += 1
         return R_step
-            
+
     def get_action(self, bandit):
         if np.random.random() < self.eps:
             action = np.random.randint(0, self.arms)
@@ -103,16 +105,20 @@ class UCB(BernoulliBandits):
         R_step = []
         for bandit in range(self.nbandits):
             action = self.get_action(i, bandit)
-            self.counts[bandit,action] += 1
+            self.counts[bandit, action] += 1
             reward = self.get_reward(bandit, action)
             R_step.append(reward)
-            self.Q[bandit, action] += (reward - self.Q[bandit, action])/(self.counts[bandit, action] + 1)
+            self.Q[bandit, action] += (reward - self.Q[bandit, action]) / (
+                self.counts[bandit, action] + 1
+            )
             self.counts[bandit, action] += 1
             self.update_regret(bandit, action)
         return R_step
-            
+
     def get_action(self, t, bandit):
-        action = np.argmax(self.Q[bandit] + np.sqrt(2*np.log(t)/self.counts[bandit]))        
+        action = np.argmax(
+            self.Q[bandit] + np.sqrt(2 * np.log(t) / self.counts[bandit])
+        )
         return action
 
     def get_reward(self, bandit, action):

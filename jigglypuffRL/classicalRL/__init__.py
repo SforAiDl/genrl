@@ -1,1 +1,6 @@
-from jigglypuffRL.classicalRL.karmedBandit import Bandit, BernoulliBandits, EpsGreedy, UCB
+from jigglypuffRL.classicalRL.karmedBandit import (
+    Bandit,
+    BernoulliBandits,
+    EpsGreedy,
+    UCB,
+)
