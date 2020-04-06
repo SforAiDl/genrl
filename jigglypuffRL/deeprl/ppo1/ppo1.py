@@ -37,9 +37,6 @@ class PPO1:
     :param pretrained: (boolean) if model has already been trained
     :param save_name: (str) model save name (if None, model hasn't been pretrained)
     :param save_version: (int) model save version (if None, model hasn't been pretrained)
-    :param save: (function) save function to save model with all parameters
-    :param load: (function) load function to load pretrained model with all parameters
-    :param checkpoint: (dict) dictionary of all class parameters
     """
 
     def __init__(
