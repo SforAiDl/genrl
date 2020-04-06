@@ -1,2 +1,2 @@
 from jigglypuffRL.deeprl import PPO1, VPG, DDPG
-from jigglypuffRL.classicalrl import SARSA, EpsGreedy, SoftmaxActionSelection, UCB, EpsGreedyBernoulli, UCBBernoulli
+from jigglypuffRL.classicalrl import SARSA, EpsGreedyBernoulliBandit, EpsGreedyGaussianBandit, UCBBernoulliBandit, UCBGaussianBandit, BayesianUCBBernoulliBandit, ThompsonSampling
