@@ -2,6 +2,11 @@ import numpy as np
 
 
 class Bandit(object):
+    """
+    Base Class for Multi-armed Bandits
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    """
     def __init__(self, bandits=1, arms=1):
         self._nbandits = bandits
         self._narms = arms
@@ -19,6 +24,11 @@ class Bandit(object):
 
 
 class GaussianBandits(Bandit):
+    """
+    Multi-Armed Bandits with Stationary Rewards following a Gaussian distribution.
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    """
     def __init__(self, bandits=1, arms=1):
         super(GaussianBandits, self).__init__(bandits, arms)
         self._rewards = np.random.normal(size=(bandits, arms))
@@ -57,6 +67,12 @@ class GaussianBandits(Bandit):
 
 
 class EpsGreedy(GaussianBandits):
+    """
+    Multi-Armed Bandit Solver with EpsGreedy Action Selection Strategy. Refer 2.3 of Reinforcement Learning: An Introduction
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    :param eps: (float) Probability with which a random action is to be selected.
+    """
     def __init__(self, bandits=1, arms=10, eps=0.05):
         super(EpsGreedy, self).__init__(bandits, arms)
         self._eps = eps
@@ -100,6 +116,11 @@ class EpsGreedy(GaussianBandits):
 
 
 class UCB(GaussianBandits):
+    """
+    Multi-Armed Bandit Solver with Upper Confidence Bound Based Action Selection. Refer 2.7 of Reinforcement Learning: An Introduction
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    """
     def __init__(self, bandits=1, arms=10):
         super(UCB, self).__init__(bandits, arms)
         self._counts = np.zeros_like(self.rewards)
@@ -153,6 +174,12 @@ class UCB(GaussianBandits):
 
 
 class SoftmaxActionSelection(GaussianBandits):
+    """
+    Multi-Armed Bandit Softmax based Action Selection. Refer 2.8 of Reinforcement Learning: An Introduction
+    :param bandits: (int) Number of Bandits
+    :param arms: (int) Number of arms in each bandit
+    :param temp: (float) Temperature value for Softmax.
+    """
     def __init__(self, bandits=1, arms=10, temp=0.01):
         super(SoftmaxActionSelection, self).__init__(bandits, arms)
         self._temp = temp
