@@ -323,3 +323,43 @@ class UCBBernoulliBandit(BernoulliBandits):
                 self.update(bandit, arm, reward)
             self.avg_reward.append(np.mean(bandit_reward))
 
+
+
+class BayesianUCBBernoulliBandit(BernoulliBandits):
+    def __init__(self, bandits, arms, a=1, b=1, c=3):
+        super(BayesianUCBBernoulliBandit, self).__init__(bandits, arms)
+        self._c = c
+        self._a = a*np.ones_like(self.counts)
+        self._b = b*np.ones_like(self.counts)
+
+    @property
+    def Q(self):
+        return self.a/(self.a + self.b)
+
+    @property
+    def a(self):
+        return self._a
+
+    @property
+    def b(self):
+        return self._b
+
+    @property
+    def c(self):
+        return self._c
+
+    def learn(self, n_timesteps=1000):
+        for i in range(n_timesteps):
+            r = self.step(i)
+            self.avg_reward.append(np.mean(r))
+
+    def get_action(self, t, bandit):
+        return np.argmax(self.Q[bandit] + beta.std(self.a[bandit], self.b[bandit]) * self.c)
+
+    def update(self, bandit, action, reward):
+        self.a[bandit, action] += reward
+        self.b[bandit, action] += 1-reward
+        self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
+        self.regrets.append(self.regret)
+        self.counts[bandit, action] += 1
+
