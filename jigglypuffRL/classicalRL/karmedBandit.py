@@ -42,7 +42,7 @@ class GaussianBandits(Bandit):
     @property
     def counts(self):
         return self._counts
- 
+
     @property
     def regrets(self):
         return self._regrets
@@ -151,15 +151,16 @@ class UCB(GaussianBandits):
                 self.update_regret(bandit, arm)
             self.avg_reward.append(np.mean(bandit_reward))
 
+
 class SoftmaxActionSelection(GaussianBandits):
     def __init__(self, bandits=1, arms=10, temp=0.01):
         super(SoftmaxActionSelection, self).__init__(bandits, arms)
         self._temp = temp
 
     def softmax(self, x):
-        exp = np.exp(x/self.temp)
+        exp = np.exp(x / self.temp)
         total = np.sum(exp)
-        return exp/total
+        return exp / total
 
     @property
     def temp(self):
@@ -211,7 +212,7 @@ class SoftmaxActionSelection(GaussianBandits):
                 self.update_regret(bandit, arm)
             self.avg_reward.append(np.mean(bandit_reward))
 
-    
+
 if __name__ == "__main__":
     epsGreedyBandit = EpsGreedy(50, 10, 0.05)
     epsGreedyBandit.learn(1000)
