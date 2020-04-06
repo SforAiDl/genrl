@@ -7,6 +7,7 @@ class Bandit(object):
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     """
+
     def __init__(self, bandits=1, arms=1):
         self._nbandits = bandits
         self._narms = arms
@@ -29,6 +30,7 @@ class GaussianBandits(Bandit):
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     """
+
     def __init__(self, bandits=1, arms=1):
         super(GaussianBandits, self).__init__(bandits, arms)
         self._rewards = np.random.normal(size=(bandits, arms))
@@ -73,6 +75,7 @@ class EpsGreedy(GaussianBandits):
     :param arms: (int) Number of arms in each bandit
     :param eps: (float) Probability with which a random action is to be selected.
     """
+
     def __init__(self, bandits=1, arms=10, eps=0.05):
         super(EpsGreedy, self).__init__(bandits, arms)
         self._eps = eps
@@ -121,6 +124,7 @@ class UCB(GaussianBandits):
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     """
+
     def __init__(self, bandits=1, arms=10):
         super(UCB, self).__init__(bandits, arms)
         self._counts = np.zeros_like(self.rewards)
@@ -180,6 +184,7 @@ class SoftmaxActionSelection(GaussianBandits):
     :param arms: (int) Number of arms in each bandit
     :param temp: (float) Temperature value for Softmax.
     """
+
     def __init__(self, bandits=1, arms=10, temp=0.01):
         super(SoftmaxActionSelection, self).__init__(bandits, arms)
         self._temp = temp

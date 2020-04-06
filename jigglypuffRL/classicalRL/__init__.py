@@ -3,5 +3,5 @@ from jigglypuffRL.classicalRL.karmedBandit import (
     GaussianBandits,
     EpsGreedy,
     UCB,
-    SoftmaxActionSelection
+    SoftmaxActionSelection,
 )
