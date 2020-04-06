@@ -5,5 +5,5 @@ from jigglypuffRL.classicalrl.bandit.bandit import (
     UCBBernoulliBandit,
     UCBGaussianBandit,
     BayesianUCBBernoulliBandit,
-    ThompsonSampling
+    ThompsonSampling,
 )

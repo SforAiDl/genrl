@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import beta
 
+
 class Bandit(object):
     """
     Base Class for Multi-armed Bandits
@@ -34,7 +35,7 @@ class Bandit(object):
     @property
     def regret(self):
         return self._regret
-    
+
     @property
     def avg_reward(self):
         return self._avg_reward
@@ -97,7 +98,7 @@ class GaussianBandits(Bandit):
     @property
     def avg_reward(self):
         return self._avg_reward
- 
+
     def step(self, t):
         bandit_rewards = []
         for bandit in range(self.nbandits):
@@ -214,7 +215,7 @@ class SoftmaxActionSelection(GaussianBandits):
             self.update(bandit, action, reward)
         return R_step
 
-    def get_action(self, t,bandit):
+    def get_action(self, t, bandit):
         probabilities = self.softmax(self.Q[bandit])
         action = np.random.choice(range(self.arms), p=probabilities)
         return action
@@ -237,7 +238,7 @@ class BernoulliBandits(Bandit):
     def __init__(self, bandits=1, arms=10):
         super(BernoulliBandits, self).__init__(bandits, arms)
         self._init_probabilities = np.random.random()
-        self._Q = self._init_probabilities*np.ones_like(self.counts)
+        self._Q = self._init_probabilities * np.ones_like(self.counts)
         self._regrets = [0]
         self._regret = 0
         self._avg_reward = []
@@ -251,7 +252,9 @@ class BernoulliBandits(Bandit):
     def update(self, bandit, action, reward):
         self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self.regrets.append(self.regret)
-        self.Q[bandit, action] += 1./(self.counts[bandit, action]+1)*(reward - self.Q[bandit, action])
+        self.Q[bandit, action] += (
+            1.0 / (self.counts[bandit, action] + 1) * (reward - self.Q[bandit, action])
+        )
         self.counts[bandit, action] += 1
 
     @property
@@ -275,12 +278,11 @@ class BernoulliBandits(Bandit):
         return bandit_rewards
 
 
-
 class EpsGreedyBernoulliBandit(BernoulliBandits):
     def __init__(self, bandits=1, arms=10, eps=0.01):
         super(EpsGreedyBernoulliBandit, self).__init__(bandits, arms)
         self._eps = eps
-    
+
     def learn(self, n_timesteps=1000):
         for t in range(n_timesteps):
             Rt = self.step(t)
@@ -301,7 +303,7 @@ class EpsGreedyBernoulliBandit(BernoulliBandits):
 class UCBBernoulliBandit(BernoulliBandits):
     def __init__(self, bandits=1, arms=10):
         super(UCBBernoulliBandit, self).__init__(bandits, arms)
-    
+
     def learn(self, n_timesteps=1000):
         self.initial_run()
         for t in range(n_timesteps):
@@ -324,17 +326,16 @@ class UCBBernoulliBandit(BernoulliBandits):
             self.avg_reward.append(np.mean(bandit_reward))
 
 
-
 class BayesianUCBBernoulliBandit(BernoulliBandits):
     def __init__(self, bandits, arms, a=1, b=1, c=3):
         super(BayesianUCBBernoulliBandit, self).__init__(bandits, arms)
         self._c = c
-        self._a = a*np.ones_like(self.counts)
-        self._b = b*np.ones_like(self.counts)
+        self._a = a * np.ones_like(self.counts)
+        self._b = b * np.ones_like(self.counts)
 
     @property
     def Q(self):
-        return self.a/(self.a + self.b)
+        return self.a / (self.a + self.b)
 
     @property
     def a(self):
@@ -354,11 +355,13 @@ class BayesianUCBBernoulliBandit(BernoulliBandits):
             self.avg_reward.append(np.mean(r))
 
     def get_action(self, t, bandit):
-        return np.argmax(self.Q[bandit] + beta.std(self.a[bandit], self.b[bandit]) * self.c)
+        return np.argmax(
+            self.Q[bandit] + beta.std(self.a[bandit], self.b[bandit]) * self.c
+        )
 
     def update(self, bandit, action, reward):
         self.a[bandit, action] += reward
-        self.b[bandit, action] += 1-reward
+        self.b[bandit, action] += 1 - reward
         self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self.regrets.append(self.regret)
         self.counts[bandit, action] += 1
@@ -367,12 +370,12 @@ class BayesianUCBBernoulliBandit(BernoulliBandits):
 class ThompsonSampling(BernoulliBandits):
     def __init__(self, bandits=1, arms=10, alpha=1, beta=1):
         super(ThompsonSampling, self).__init__(bandits, arms)
-        self._a = alpha*np.ones_like(self.counts)
-        self._b = beta*np.ones_like(self.counts)
+        self._a = alpha * np.ones_like(self.counts)
+        self._b = beta * np.ones_like(self.counts)
 
     @property
     def Q(self):
-        return self.a/(self.a + self.b)
+        return self.a / (self.a + self.b)
 
     @property
     def a(self):
@@ -402,7 +405,7 @@ class ThompsonSampling(BernoulliBandits):
 
     def update(self, bandit, action, reward):
         self.a[bandit, action] += reward
-        self.b[bandit, action] += 1-reward
+        self.b[bandit, action] += 1 - reward
         self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self.regrets.append(self.regret)
         self.counts[bandit, action] += 1
@@ -420,11 +423,11 @@ if __name__ == "__main__":
     softmaxBandit = SoftmaxActionSelection(1, 10)
     softmaxBandit.learn(1000)
 
-    plt.plot(epsGreedyBandit.regrets, label='eps greedy')
-    plt.plot(ucbBandit.regrets, label='ucb')
-    plt.plot(softmaxBandit.regrets, label='softmax')
+    plt.plot(epsGreedyBandit.regrets, label="eps greedy")
+    plt.plot(ucbBandit.regrets, label="ucb")
+    plt.plot(softmaxBandit.regrets, label="softmax")
     plt.legend()
-    plt.savefig('GuassianBanditsRegret.png')
+    plt.savefig("GuassianBanditsRegret.png")
     plt.cla()
 
     epsbernoulli = EpsGreedyBernoulliBandit(1, 10, 0.05)
@@ -439,9 +442,9 @@ if __name__ == "__main__":
     bayesianbandit = BayesianUCBBernoulliBandit(1, 10)
     bayesianbandit.learn(1000)
 
-    plt.plot(epsbernoulli.regrets, label='eps')
-    plt.plot(ucbbernoulli.regrets, label='ucb')
-    plt.plot(bayesianbandit.regrets, label='Bayesian UCB')
-    plt.plot(thsampling.regrets, label='Thompson Sampling')
+    plt.plot(epsbernoulli.regrets, label="eps")
+    plt.plot(ucbbernoulli.regrets, label="ucb")
+    plt.plot(bayesianbandit.regrets, label="Bayesian UCB")
+    plt.plot(thsampling.regrets, label="Thompson Sampling")
     plt.legend()
-    plt.savefig('BernoulliBanditsRegret.png')
+    plt.savefig("BernoulliBanditsRegret.png")
