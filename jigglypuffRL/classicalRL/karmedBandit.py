@@ -210,3 +210,14 @@ class SoftmaxActionSelection(GaussianBandits):
                 )
                 self.update_regret(bandit, arm)
             self.avg_reward.append(np.mean(bandit_reward))
+
+    
+if __name__ == "__main__":
+    epsGreedyBandit = EpsGreedy(50, 10, 0.05)
+    epsGreedyBandit.learn(1000)
+
+    ucbBandit = UCB(50, 100)
+    ucbBandit.learn(1000)
+
+    softmaxBandit = SoftmaxActionSelection(50, 10)
+    softmaxBandit.learn(1000)
