@@ -10,7 +10,6 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 import torch.nn.functional as F
 
-from IPython.display import clear_output
 import matplotlib.pyplot as plt
 
 from jigglypuffRL.common import ReplayBuffer
@@ -121,11 +120,9 @@ class DQN:
 
         q_values = self.model(state)
         next_q_values = self.model(next_state)
-        # print(f"q_values: {q_values}, next_q_values: {next_q_values}")
         q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
         next_q_value = next_q_values.max(1)[0]
         expected_q_value = reward + self.gamma * next_q_value * (1 - done)
-        # print(f"q_value: {q_value}")
         loss = (q_value - Variable(expected_q_value.data)).pow(2).mean()
         self.loss_hist.append(loss)
 
@@ -142,11 +139,10 @@ class DQN:
             -1.0 * frame_idx / self.epsilon_decay
         )
 
-    def plot(self, frame_idx):
-        clear_output(True)
+    def plot(self):
         plt.figure(figsize=(20, 5))
         plt.subplot(131)
-        plt.title("frame %s. reward: %s" % (frame_idx, np.mean(self.reward_hist[-10:])))
+        plt.title("Average reward for last 10 frames: %s" % (np.mean(self.reward_hist[-10:])))
         plt.plot(self.reward_hist)
         plt.subplot(132)
         plt.title("loss")
@@ -169,7 +165,7 @@ class DQN:
             done = False if ep_len == self.max_ep_len else done
 
             if done or (ep_len == self.max_ep_len):
-                if ep % 20 == 0 and (self.plot_loss_reward_graph == False):
+                if ep % 20 == 0:
                     print(
                         "Ep: {}, reward: {}, frame_idx: {}".format(ep, ep_r, frame_idx)
                     )
@@ -183,8 +179,8 @@ class DQN:
             if self.replay_buffer.get_len() > self.batch_size:
                 self.update_params()
 
-            if frame_idx % 200 == 0 and (self.plot_loss_reward_graph == True):
-                self.plot(frame_idx)
+        if self.plot_loss_reward_graph == True:
+            self.plot()
         
         if self.tensorboard_log:
             self.writer.close()
