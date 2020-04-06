@@ -24,6 +24,9 @@ class GaussianBandits(Bandit):
         self._rewards = np.random.normal(size=(bandits, arms))
         self._Q = np.zeros_like(self.rewards)
         self._counts = np.zeros_like(self.rewards)
+        self._regret = 0.0
+        self._regrets = [0.0]
+        self._avg_reward = []
 
     def learn(self, n_timesteps=None):
         raise NotImplementedError
@@ -39,17 +42,26 @@ class GaussianBandits(Bandit):
     @property
     def counts(self):
         return self._counts
+ 
+    @property
+    def regrets(self):
+        return self._regrets
+
+    @property
+    def regret(self):
+        return self._regret
+
+    @property
+    def avg_reward(self):
+        return self._avg_reward
 
 
 class EpsGreedy(GaussianBandits):
     def __init__(self, bandits=1, arms=10, eps=0.05):
         super(EpsGreedy, self).__init__(bandits, arms)
         self._eps = eps
-        self.regret = 0.0
-        self.regrets = [0.0]
 
     def learn(self, n_timesteps=1000):
-        self.avg_reward = []
         for i in range(n_timesteps):
             r_step = self.one_step(i)
             self.avg_reward.append(np.mean(r_step))
@@ -79,7 +91,7 @@ class EpsGreedy(GaussianBandits):
         return reward
 
     def update_regret(self, bandit, action):
-        self.regret += max(self.Q[bandit]) - self.Q[bandit][action]
+        self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self.regrets.append(self.regret)
 
     @property
@@ -91,11 +103,9 @@ class UCB(GaussianBandits):
     def __init__(self, bandits=1, arms=10):
         super(UCB, self).__init__(bandits, arms)
         self._counts = np.zeros_like(self.rewards)
-        self.regret = 0.0
-        self._regrets = [0.0]
 
     def learn(self, n_timesteps=1000):
-        self.avg_reward = []
+        self.initial_run()
         for i in range(n_timesteps):
             r = self.one_step(i)
             self.avg_reward.append(np.mean(r))
@@ -125,13 +135,19 @@ class UCB(GaussianBandits):
         return reward
 
     def update_regret(self, bandit, action):
-        self.regret += max(self.Q[bandit]) - self.Q[bandit][action]
+        self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self._regrets.append(self.regret)
 
-    @property
-    def counts(self):
-        return self._counts
+    def initial_run(self):
+        for bandit in range(self.nbandits):
+            bandit_reward = []
+            for arm in range(self.arms):
+                self.counts[bandit, arm] += 1
+                reward = self.get_reward(bandit, arm)
+                bandit_reward.append(reward)
+                self.Q[bandit, arm] += (reward - self.Q[bandit, arm]) / (
+                    self.counts[bandit, arm] + 1
+                )
+                self.update_regret(bandit, arm)
+            self.avg_reward.append(np.mean(bandit_reward))
 
-    @property
-    def regrets(self):
-        return self._regrets
