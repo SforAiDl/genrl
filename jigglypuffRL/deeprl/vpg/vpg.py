@@ -11,7 +11,7 @@ from jigglypuffRL.common import (
     get_policy_from_name,
     get_value_from_name,
     save_params,
-    load_params
+    load_params,
 )
 
 
@@ -59,7 +59,7 @@ class VPG:
         device="cpu",
         pretrained=False,
         save_name=None,
-        save_version=None
+        save_version=None,
     ):
         self.policy = policy
         self.value = value
@@ -114,10 +114,10 @@ class VPG:
         # load paramaters if already trained
         if self.pretrained:
             self.load(self.save_name, self.save_version)
-            self.policy_fn.load_state_dict(self.checkpoint['policy_weights'])
-            self.value_fn.load_state_dict(self.checkpoint['value_weights'])
+            self.policy_fn.load_state_dict(self.checkpoint["policy_weights"])
+            self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
-                if key not in ['policy_weights', 'value_weights']:
+                if key not in ["policy_weights", "value_weights"]:
                     setattr(self, key, item)
 
         self.optimizer_policy = opt.Adam(self.policy_fn.parameters(), lr=self.lr_policy)
@@ -226,11 +226,11 @@ class VPG:
                     self.writer.add_scalar("reward", epoch_reward, ep)
 
             if ep % self.save_interval == 0:
-                self.checkpoint['policy_weights'] = self.policy_fn.state_dict()
-                self.checkpoint['value_weights'] = self.value_fn.state_dict()
+                self.checkpoint["policy_weights"] = self.policy_fn.state_dict()
+                self.checkpoint["value_weights"] = self.value_fn.state_dict()
                 if self.save_name is None:
                     self.save_name = "{}-{}".format(self.policy, self.value)
-                self.save_version = int(ep/self.save_interval)
+                self.save_version = int(ep / self.save_interval)
                 self.save(self)
 
         self.env.close()
