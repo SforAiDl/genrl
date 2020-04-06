@@ -47,8 +47,8 @@ class GaussianBandits(Bandit):
         self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self.regrets.append(self.regret)
         self.Q[bandit, action] += (reward - self.Q[bandit, action]) / (
-                self.counts[bandit, action] + 1
-            )
+            self.counts[bandit, action] + 1
+        )
         self.counts[bandit, action] += 1
 
     @property
@@ -155,7 +155,6 @@ class UCB(GaussianBandits):
         reward = np.random.normal(self.rewards[bandit, action])
         return reward
 
-
     def initial_run(self):
         for bandit in range(self.nbandits):
             bandit_reward = []
@@ -223,6 +222,7 @@ class SoftmaxActionSelection(GaussianBandits):
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+
     epsGreedyBandit = EpsGreedy(50, 10, 0.05)
     epsGreedyBandit.learn(1000)
 
