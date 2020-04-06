@@ -363,3 +363,47 @@ class BayesianUCBBernoulliBandit(BernoulliBandits):
         self.regrets.append(self.regret)
         self.counts[bandit, action] += 1
 
+
+class ThompsonSampling(BernoulliBandits):
+    def __init__(self, bandits=1, arms=10, alpha=1, beta=1):
+        super(ThompsonSampling, self).__init__(bandits, arms)
+        self._a = alpha*np.ones_like(self.counts)
+        self._b = beta*np.ones_like(self.counts)
+
+    @property
+    def Q(self):
+        return self.a/(self.a + self.b)
+
+    @property
+    def a(self):
+        return self._a
+
+    @property
+    def b(self):
+        return self._b
+
+    def learn(self, n_timesteps=1000):
+        for i in range(n_timesteps):
+            r = self.step(i)
+            self.avg_reward.append(np.mean(r))
+
+    def step(self, i):
+        R_step = []
+        for bandit in range(self.nbandits):
+            sample = np.random.beta(self.a[bandit], self.b[bandit])
+            action = self.get_action(sample)
+            reward = self.get_reward(bandit, action)
+            R_step.append(reward)
+            self.update(bandit, action, reward)
+        return R_step
+
+    def get_action(self, sample):
+        return np.argmax(sample)
+
+    def update(self, bandit, action, reward):
+        self.a[bandit, action] += reward
+        self.b[bandit, action] += 1-reward
+        self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
+        self.regrets.append(self.regret)
+        self.counts[bandit, action] += 1
+
