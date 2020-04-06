@@ -407,3 +407,41 @@ class ThompsonSampling(BernoulliBandits):
         self.regrets.append(self.regret)
         self.counts[bandit, action] += 1
 
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    epsGreedyBandit = EpsGreedyGaussianBandit(1, 10, 0.05)
+    epsGreedyBandit.learn(1000)
+
+    ucbBandit = UCBGaussianBandit(1, 100)
+    ucbBandit.learn(1000)
+
+    softmaxBandit = SoftmaxActionSelection(1, 10)
+    softmaxBandit.learn(1000)
+
+    plt.plot(epsGreedyBandit.regrets, label='eps greedy')
+    plt.plot(ucbBandit.regrets, label='ucb')
+    plt.plot(softmaxBandit.regrets, label='softmax')
+    plt.legend()
+    plt.savefig('GuassianBanditsRegret.png')
+    plt.cla()
+
+    epsbernoulli = EpsGreedyBernoulliBandit(1, 10, 0.05)
+    epsbernoulli.learn(1000)
+
+    ucbbernoulli = UCBBernoulliBandit(1, 10)
+    ucbbernoulli.learn(1000)
+
+    thsampling = ThompsonSampling(1, 10)
+    thsampling.learn(1000)
+
+    bayesianbandit = BayesianUCBBernoulliBandit(1, 10)
+    bayesianbandit.learn(1000)
+
+    plt.plot(epsbernoulli.regrets, label='eps')
+    plt.plot(ucbbernoulli.regrets, label='ucb')
+    plt.plot(bayesianbandit.regrets, label='Bayesian UCB')
+    plt.plot(thsampling.regrets, label='Thompson Sampling')
+    plt.legend()
+    plt.savefig('BernoulliBanditsRegret.png')
