@@ -275,3 +275,25 @@ class BernoulliBandits(Bandit):
         return bandit_rewards
 
 
+
+class EpsGreedyBernoulliBandit(BernoulliBandits):
+    def __init__(self, bandits=1, arms=10, eps=0.01):
+        super(EpsGreedyBernoulliBandit, self).__init__(bandits, arms)
+        self._eps = eps
+    
+    def learn(self, n_timesteps=1000):
+        for t in range(n_timesteps):
+            Rt = self.step(t)
+            self.avg_reward.append(Rt)
+
+    def get_action(self, t, bandit):
+        if np.random.random() > self.eps:
+            action = np.argmax(self.Q[bandit])
+        else:
+            action = np.random.randint(0, self.arms)
+        return action
+
+    @property
+    def eps(self):
+        return self._eps
+
