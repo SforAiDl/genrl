@@ -64,7 +64,7 @@ class DDPG:
         device="cpu",
         pretrained=False,
         save_name=None,
-        save_version=None
+        save_version=None,
     ):
 
         self.env = env
@@ -126,9 +126,9 @@ class DDPG:
         # load paramaters if already trained
         if self.pretrained:
             self.checkpoint = self.load(self.save_name, self.save_version)
-            self.ac.load_state_dict(self.checkpoint['weights'])
+            self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
-                if key != 'weights':
+                if key != "weights":
                     setattr(self, key, item)
 
         self.ac_targ = deepcopy(self.ac).to(self.device)
@@ -234,8 +234,8 @@ class DDPG:
             if t >= self.start_update and t % self.save_interval == 0:
                 if self.save_name is None:
                     self.save_name = self.network_type
-                self.save_version = int(t/self.save_interval)
-                self.checkpoint['weights'] = self.ac.state_dict()
+                self.save_version = int(t / self.save_interval)
+                self.checkpoint["weights"] = self.ac.state_dict()
                 self.save(self)
 
         self.env.close()
