@@ -6,7 +6,7 @@ import gym
 from copy import deepcopy
 import random
 
-from jigglypuffRL.common import ActorCritic, ReplayBuffer, evaluate 
+from jigglypuffRL.common import ActorCritic, ReplayBuffer, evaluate, save_params, load_params
 
 
 class DDPG:
@@ -28,12 +28,18 @@ class DDPG:
     :param max_ep_len: (int) Maximum steps per episode
     :param start_update: (int) Number of steps before first parameter update
     :param update_interval: (int) Number of steps between parameter updates
+    :param save_interval: (int) Number of steps between saves of models
     :param layers: (tuple or list) Number of neurons in hidden layers
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param seed (int): seed for torch and gym
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
-    :param evaluate: (function) function to evaluate model 
+    :param seed: (int) seed for torch and gym
+    :param render: (boolean) if environment is to be rendered
+    :param device: (str) device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param pretrained: (boolean) if model has already been trained
+    :param save_name: (str) model save name (if None, model hasn't been pretrained)
+    :param save_version: (int) model save version (if None, model hasn't been pretrained)
     """
 
     def __init__(
@@ -53,11 +59,15 @@ class DDPG:
         max_ep_len=1000,
         start_update=1000,
         update_interval=50,
+        save_interval=5000,
         layers=(32, 32),
         tensorboard_log=None,
         seed=None,
         render=False,
-        device="cpu"
+        device="cpu",
+        pretrained=False,
+        save_name=None,
+        save_version=None,
     ):
 
         self.env = env
@@ -74,11 +84,19 @@ class DDPG:
         self.max_ep_len = max_ep_len
         self.start_update = start_update
         self.update_interval = update_interval
+        self.save_interval = save_interval
         self.layers = layers
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
+        self.network_type = network_type
+        self.pretrained = pretrained
+        self.save_name = save_name
+        self.save_version = save_version
+        self.save = save_params
+        self.load = load_params
+        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -102,12 +120,21 @@ class DDPG:
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
-        self.create_model(network_type)
+        self.create_model()
 
-    def create_model(self, network_type):
+    def create_model(self):
         self.ac = ActorCritic(
-            self.env, network_type, self.layers, noise_std=self.noise_std
+            self.env, self.network_type, self.layers, noise_std=self.noise_std
         ).to(self.device)
+
+        # load paramaters if already trained
+        if self.pretrained:
+            self.checkpoint = self.load(self.save_name, self.save_version)
+            self.ac.load_state_dict(self.checkpoint["weights"])
+            for key, item in self.checkpoint.items():
+                if key != "weights":
+                    setattr(self, key, item)
+
         self.ac_targ = deepcopy(self.ac).to(self.device)
 
         # freeze target network params
@@ -207,6 +234,13 @@ class DDPG:
                         x.to(self.device) for x in [s_b, a_b, r_b, s1_b, d_b]
                     )
                     self.update_params(s_b, a_b, r_b, s1_b, d_b)
+
+            if t >= self.start_update and t % self.save_interval == 0:
+                if self.save_name is None:
+                    self.save_name = self.network_type
+                self.save_version = int(t / self.save_interval)
+                self.checkpoint["weights"] = self.ac.state_dict()
+                self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
