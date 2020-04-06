@@ -151,3 +151,62 @@ class UCB(GaussianBandits):
                 self.update_regret(bandit, arm)
             self.avg_reward.append(np.mean(bandit_reward))
 
+class SoftmaxActionSelection(GaussianBandits):
+    def __init__(self, bandits=1, arms=10, temp=0.01):
+        super(SoftmaxActionSelection, self).__init__(bandits, arms)
+        self._temp = temp
+
+    def softmax(self, x):
+        exp = np.exp(x/self.temp)
+        total = np.sum(exp)
+        return exp/total
+
+    @property
+    def temp(self):
+        return self._temp
+
+    def learn(self, n_timesteps=1000):
+        self.initial_run()
+        for i in range(n_timesteps):
+            r = self.one_step(i)
+            self.avg_reward.append(np.mean(r))
+
+    def one_step(self, i):
+        R_step = []
+        for bandit in range(self.nbandits):
+            action = self.get_action(bandit)
+            self.counts[bandit, action] += 1
+            reward = self.get_reward(bandit, action)
+            R_step.append(reward)
+            self.Q[bandit, action] += (reward - self.Q[bandit, action]) / (
+                self.counts[bandit, action] + 1
+            )
+            self.counts[bandit, action] += 1
+            self.update_regret(bandit, action)
+        return R_step
+
+    def get_action(self, bandit):
+        probabilities = self.softmax(self.Q[bandit])
+        action = np.random.choice(range(self.arms), p=probabilities)
+        return action
+
+    def get_reward(self, bandit, action):
+        reward = np.random.normal(self.rewards[bandit, action])
+        return reward
+
+    def update_regret(self, bandit, action):
+        self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
+        self._regrets.append(self.regret)
+
+    def initial_run(self):
+        for bandit in range(self.nbandits):
+            bandit_reward = []
+            for arm in range(self.arms):
+                self.counts[bandit, arm] += 1
+                reward = self.get_reward(bandit, arm)
+                bandit_reward.append(reward)
+                self.Q[bandit, arm] += (reward - self.Q[bandit, arm]) / (
+                    self.counts[bandit, arm] + 1
+                )
+                self.update_regret(bandit, arm)
+            self.avg_reward.append(np.mean(bandit_reward))
