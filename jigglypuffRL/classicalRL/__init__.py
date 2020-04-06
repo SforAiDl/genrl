@@ -1,6 +1,6 @@
 from jigglypuffRL.classicalRL.karmedBandit import (
     Bandit,
-    BernoulliBandits,
+    GaussianBandits,
     EpsGreedy,
     UCB,
 )

@@ -20,7 +20,7 @@ class Bandit(object):
 
 class GaussianBandits(Bandit):
     def __init__(self, bandits=1, arms=1):
-        super(BernoulliBandits, self).__init__(bandits, arms)
+        super(GaussianBandits, self).__init__(bandits, arms)
         self._rewards = np.random.normal(size=(bandits, arms))
         self._Q = np.zeros_like(self.rewards)
         self._counts = np.zeros_like(self.rewards)
@@ -41,7 +41,7 @@ class GaussianBandits(Bandit):
         return self._counts
 
 
-class EpsGreedy(BernoulliBandits):
+class EpsGreedy(GaussianBandits):
     def __init__(self, bandits=1, arms=10, eps=0.05):
         super(EpsGreedy, self).__init__(bandits, arms)
         self._eps = eps
@@ -87,7 +87,7 @@ class EpsGreedy(BernoulliBandits):
         return self._eps
 
 
-class UCB(BernoulliBandits):
+class UCB(GaussianBandits):
     def __init__(self, bandits=1, arms=10):
         super(UCB, self).__init__(bandits, arms)
         self._counts = np.zeros_like(self.rewards)
