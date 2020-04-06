@@ -19,9 +19,11 @@ from jigglypuffRL.deeprl.dqn.utils import DQN_Mlp
 class DQN:
     """
     Deep Q Networks 
-    Paper: https://arxiv.org/pdf/1312.5602.pdf
+    Paper: (DQN) https://arxiv.org/pdf/1312.5602.pdf
+    Paper: (Double DQN) https://arxiv.org/abs/1509.06461
     :param network_type: (str) The deep neural network layer types ['MLP']
     :param env: (Gym environment) The environment to learn from
+    :param double_dqn: (boolean) For training Double DQN
     :param epochs: (int) Number of epochs
     :param max_iterations_per_epoch: (int) Number of iterations per epoch
     :param max_ep_len: (int) Maximum steps per episode
@@ -40,6 +42,7 @@ class DQN:
         self,
         network_type,
         env,
+        double_dqn = False,
         epochs=100,
         max_iterations_per_epoch=100,
         max_ep_len=1000,
@@ -54,6 +57,7 @@ class DQN:
         device="cpu",
     ):
         self.env = env
+        self.double_dqn = double_dqn
         self.max_epochs = epochs
         self.max_iterations_per_epoch = max_iterations_per_epoch
         self.max_ep_len = max_ep_len
@@ -99,8 +103,15 @@ class DQN:
         if network_type == "MLP":
             self.model = DQN_Mlp(self.env)
 
+        if self.double_dqn and (network_type == "MLP"):
+            self.model = DQN_Mlp(self.env)
+            self.target_model = DQN_Mlp(self.env) 
+
         self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
+
+    def update_target_model(self):
+        self.target_model.load_state_dict(self.model.state_dict())
 
     def select_action(self, state, frame_idx):
         epsilon = self.calculate_epsilon_by_frame(frame_idx)
@@ -119,7 +130,11 @@ class DQN:
         done = Variable(torch.FloatTensor(done))
 
         q_values = self.model(state)
-        next_q_values = self.model(next_state)
+        if self.double_dqn:
+            next_q_values = self.target_model(next_state)
+        else:
+            next_q_values = self.model(next_state)
+
         q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
         next_q_value = next_q_values.max(1)[0]
         expected_q_value = reward + self.gamma * next_q_value * (1 - done)
@@ -153,9 +168,16 @@ class DQN:
         total_steps = self.max_epochs * self.max_iterations_per_epoch
         state, ep_r, ep, ep_len = self.env.reset(), 0, 0, 0
 
+        if self.double_dqn : 
+            self.update_target_model()
+
         for frame_idx in range(1, total_steps + 1):
             action = self.select_action(state, frame_idx)
             next_state, reward, done, _ = self.env.step(action)
+
+            if self.render:
+                self.env.render()
+
             self.replay_buffer.push((state, action, reward, next_state, done))
 
             state = next_state
@@ -179,13 +201,19 @@ class DQN:
             if self.replay_buffer.get_len() > self.batch_size:
                 self.update_params()
 
+            if frame_idx % 100 == 0 and self.double_dqn:
+                self.update_target_model()
+
         if self.plot_loss_reward_graph == True:
             self.plot()
         
         if self.tensorboard_log:
             self.writer.close()
+        
+        if self.render:
+            self.env.close()
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = DQN("MLP", env, plot_loss_reward_graph=True)
+    algo = DQN("MLP", env, double_dqn=True ,plot_loss_reward_graph=True)
     algo.learn()
