@@ -297,3 +297,29 @@ class EpsGreedyBernoulliBandit(BernoulliBandits):
     def eps(self):
         return self._eps
 
+
+class UCBBernoulliBandit(BernoulliBandits):
+    def __init__(self, bandits=1, arms=10):
+        super(UCBBernoulliBandit, self).__init__(bandits, arms)
+    
+    def learn(self, n_timesteps=1000):
+        self.initial_run()
+        for t in range(n_timesteps):
+            Rt = self.step(t)
+            self.avg_reward.append(Rt)
+
+    def get_action(self, t, bandit):
+        action = np.argmax(
+            self.Q[bandit] + np.sqrt(2 * np.log(t) / self.counts[bandit])
+        )
+        return action
+
+    def initial_run(self):
+        for bandit in range(self.nbandits):
+            bandit_reward = []
+            for arm in range(self.arms):
+                reward = self.get_reward(bandit, arm)
+                bandit_reward.append(reward)
+                self.update(bandit, arm, reward)
+            self.avg_reward.append(np.mean(bandit_reward))
+
