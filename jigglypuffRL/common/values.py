@@ -4,13 +4,16 @@ import torch.nn as nn
 from jigglypuffRL.common.base import BaseValue
 from jigglypuffRL.common.utils import mlp
 
-def _get_val_model(arch, val_type, s_dim, hidden, a_dim=None,):
-    if val_type is 'V':
-        return arch([s_dim]+list(hidden)+[1])
-    elif val_type is 'Qsa':
-        return arch([s_dim+a_dim]+list(hidden)+[1])
-    elif val_type is 'Qs':
-        return arch([s_dim]+list(hidden)+[a_dim])
+
+def _get_val_model(
+    arch, val_type, s_dim, hidden, a_dim=None,
+):
+    if val_type is "V":
+        return arch([s_dim] + list(hidden) + [1])
+    elif val_type is "Qsa":
+        return arch([s_dim + a_dim] + list(hidden) + [1])
+    elif val_type is "Qs":
+        return arch([s_dim] + list(hidden) + [a_dim])
 
 
 class MlpValue(BaseValue):
@@ -21,7 +24,8 @@ class MlpValue(BaseValue):
     :param val_type: (str) type of value function. 'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
     :param hidden: (tuple or list) sizes of hidden layers
     """
-    def __init__(self, s_dim, a_dim=None, val_type='V', hidden=(32,32)):
+
+    def __init__(self, s_dim, a_dim=None, val_type="V", hidden=(32, 32)):
         super(MlpValue, self).__init__()
 
         self.s_dim = s_dim

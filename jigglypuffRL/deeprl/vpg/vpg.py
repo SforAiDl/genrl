@@ -12,7 +12,7 @@ from jigglypuffRL.common import (
     get_value_from_name,
     evaluate,
     save_params,
-    load_params
+    load_params,
 )
 
 
@@ -238,7 +238,7 @@ class VPG:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-            
+
     def evaluate(self, num_timesteps=1000):
         s = self.env.reset()
         ep, ep_r, ep_t = 0, 0, 0
@@ -259,6 +259,7 @@ class VPG:
                 s = s1
 
         self.env.close()
+
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v1")

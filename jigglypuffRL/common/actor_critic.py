@@ -5,6 +5,7 @@ from jigglypuffRL.common.base import BaseActorCritic
 from jigglypuffRL.common.policies import MlpPolicy
 from jigglypuffRL.common.values import MlpValue
 
+
 class MlpActorCritic(BaseActorCritic):
     """
     MLP Actor Critic
@@ -15,7 +16,18 @@ class MlpActorCritic(BaseActorCritic):
     :param disc: (bool) discrete action space?
     :param det: (bool) deterministic policy?
     """
-    def __init__(self, s_dim, a_dim, hidden=(32,32), val_type='V', disc=True, det=True, *args, **kwargs):
+
+    def __init__(
+        self,
+        s_dim,
+        a_dim,
+        hidden=(32, 32),
+        val_type="V",
+        disc=True,
+        det=True,
+        *args,
+        **kwargs
+    ):
         super(MlpActorCritic, self).__init__(disc, det)
 
         self.actor = MlpPolicy(s_dim, a_dim, hidden, disc, det, **kwargs)

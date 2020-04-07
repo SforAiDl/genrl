@@ -1,7 +1,8 @@
 import numpy as np
-import torch 
+import torch
 import torch.nn as nn
 from torch.distributions import Categorical, Normal
+
 
 class BasePolicy(nn.Module):
     def __init__(self, disc, det, **kwargs):
@@ -9,11 +10,11 @@ class BasePolicy(nn.Module):
 
         self.disc = disc
         self.det = det
-        self.a_lim = kwargs['a_lim'] if 'a_lim' in kwargs else 1.0
-        self.a_var = kwargs['a_var'] if 'a_var' in kwargs else 0.1
+        self.a_lim = kwargs["a_lim"] if "a_lim" in kwargs else 1.0
+        self.a_var = kwargs["a_var"] if "a_var" in kwargs else 0.1
 
         self.model = None
-        
+
     def forward(self, s):
         return self.model(s)
 
@@ -54,10 +55,10 @@ class BaseActorCritic(nn.Module):
         super(BaseActorCritic, self).__init__()
 
         self.actor = None
-        self.critic = None 
+        self.critic = None
 
     def get_action(self, s):
-        s = torch.as_tensor(s).float()  
+        s = torch.as_tensor(s).float()
         return self.actor.get_action(s)
 
     def get_value(self, x):
