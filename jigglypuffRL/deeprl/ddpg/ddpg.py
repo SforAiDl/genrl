@@ -6,7 +6,13 @@ import gym
 from copy import deepcopy
 import random
 
-from jigglypuffRL.common import ActorCritic, ReplayBuffer, evaluate, save_params, load_params
+from jigglypuffRL.common import (
+    ActorCritic,
+    ReplayBuffer,
+    evaluate,
+    save_params,
+    load_params,
+)
 
 
 class DDPG:

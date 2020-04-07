@@ -1,5 +1,17 @@
 import gym
 import torch
+import torch.nn as nn
+
+
+def mlp(sizes):
+    """
+    generate MLP model given sizes of each layer
+    """
+    layers = []
+    for j in range(len(sizes) - 1):
+        act = nn.ReLU if j < len(sizes) - 2 else nn.Identity
+        layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
+    return nn.Sequential(*layers)
 
 
 def evaluate(algo, num_timesteps=1000):
@@ -24,8 +36,8 @@ def evaluate(algo, num_timesteps=1000):
             s = s1
 
     algo.env.close()
-    print("Average Reward: {}".format(total_r/num_timesteps))
-    
+    print("Average Reward: {}".format(total_r / num_timesteps))
+
 
 def save_params(algo):
     if algo.save_version is None:
