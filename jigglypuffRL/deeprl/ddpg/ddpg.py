@@ -6,7 +6,7 @@ import gym
 from copy import deepcopy
 import random
 
-from jigglypuffRL.common import ActorCritic, ReplayBuffer, save_params, load_params
+from jigglypuffRL.common import ActorCritic, ReplayBuffer, evaluate, save_params, load_params
 
 
 class DDPG:
@@ -31,6 +31,9 @@ class DDPG:
     :param save_interval: (int) Number of steps between saves of models
     :param layers: (tuple or list) Number of neurons in hidden layers
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param seed (int): seed for torch and gym
+    :param render (boolean): if environment is to be rendered
+    :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
     :param seed: (int) seed for torch and gym
     :param render: (boolean) if environment is to be rendered
     :param device: (str) device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
@@ -86,6 +89,7 @@ class DDPG:
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
+        self.evaluate = evaluate
         self.network_type = network_type
         self.pretrained = pretrained
         self.save_name = save_name
@@ -247,3 +251,4 @@ if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
     algo = DDPG("Mlp", env, seed=0)
     algo.learn()
+    algo.evaluate(algo)

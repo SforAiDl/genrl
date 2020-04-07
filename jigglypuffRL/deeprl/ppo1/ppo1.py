@@ -10,6 +10,7 @@ from jigglypuffRL.common import (
     MlpValue,
     get_policy_from_name,
     get_value_from_name,
+    evaluate,
     save_params,
     load_params,
 )
@@ -75,6 +76,7 @@ class PPO1:
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
+        self.evaluate = evaluate
         self.save_interval = save_interval
         self.pretrained = pretrained
         self.save_name = save_name
@@ -272,3 +274,4 @@ if __name__ == "__main__":
     env = gym.make("LunarLander-v2")
     algo = PPO1("MlpPolicy", "MlpValue", env, render=True)
     algo.learn()
+    algo.evaluate(algo)

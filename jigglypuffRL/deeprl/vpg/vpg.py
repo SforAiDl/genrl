@@ -10,8 +10,9 @@ from jigglypuffRL.common import (
     MlpValue,
     get_policy_from_name,
     get_value_from_name,
+    evaluate,
     save_params,
-    load_params,
+    load_params
 )
 
 
@@ -75,6 +76,7 @@ class VPG:
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
+        self.evaluate = evaluate
         self.save_interval = save_interval
         self.pretrained = pretrained
         self.save_name = save_name
@@ -236,9 +238,30 @@ class VPG:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
+            
+    def evaluate(self, num_timesteps=1000):
+        s = self.env.reset()
+        ep, ep_r, ep_t = 0, 0, 0
 
+        print("\nEvaluating...")
+        for t in range(num_timesteps):
+            a = self.select_action(s)
+            s1, r, done, _ = env.step(a)
+            ep_r += r
+            ep_t += 1
+
+            if done:
+                ep += 1
+                print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, ep_t))
+                s = self.env.reset()
+                ep_r, ep_t = 0, 0
+            else:
+                s = s1
+
+        self.env.close()
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v1")
     algo = VPG("MlpPolicy", "MlpValue", env, epochs=500, render=True)
     algo.learn()
+    algo.evaluate(algo)
