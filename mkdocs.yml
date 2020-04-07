@@ -2,11 +2,3 @@ site_name: JigglypuffRL
 
 plugins:
   - search
-  - mkdocstrings:
-      default_handler: python
-      handlers:
-        python:
-          rendering:
-            show_source: true
-      watch:
-        - JigglypuffRL/jigglypuffRL
