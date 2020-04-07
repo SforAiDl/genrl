@@ -1,7 +1,13 @@
 import gym
 import torch
 
-
+def mlp(sizes):
+    layers = []
+    for j in range(len(sizes) - 1):
+        act = nn.ReLU if j < len(sizes) - 2 else nn.Identity
+        layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
+    return nn.Sequential(*layers)
+    
 def evaluate(algo, num_timesteps=1000):
     s = algo.env.reset()
     ep, ep_r, ep_t = 0, 0, 0
