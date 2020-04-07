@@ -1,12 +1,12 @@
 import numpy as np
 import torch.nn as nn
 
-from base import BaseValue
-from utils import mlp
+from jigglypuffRL.common.base import BaseValue
+from jigglypuffRL.common.utils import mlp
 
 def _get_val_model(arch, val_type, s_dim, hidden, a_dim=None,):
     if val_type is 'V':
-        return model = arch([s_dim]+list(hidden)+[1])
+        return arch([s_dim]+list(hidden)+[1])
     elif val_type is 'Qsa':
         return arch([s_dim+a_dim]+list(hidden)+[1])
     elif val_type is 'Qs':
@@ -14,8 +14,8 @@ def _get_val_model(arch, val_type, s_dim, hidden, a_dim=None,):
 
 
 class MlpValue(BaseValue):
-    def __init__(self, s_dim, a_dim=None, val_type='v', hidden=(32,32)):
-        super(MlpValue, self).__init__():
+    def __init__(self, s_dim, a_dim=None, val_type='V', hidden=(32,32)):
+        super(MlpValue, self).__init__()
 
         self.s_dim = s_dim
         self.a_dim = a_dim

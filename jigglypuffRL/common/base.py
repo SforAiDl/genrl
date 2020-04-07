@@ -43,10 +43,11 @@ class BaseValue(nn.Module):
         self.model = None
 
     def forward(self, x):
-        raise self.model(x)
+        return self.model(x)
 
     def get_value(self, x):
         return self.forward(x)
+
 
 class BaseActorCritic(nn.Module):
     def __init__(self, disc, det):
@@ -56,7 +57,9 @@ class BaseActorCritic(nn.Module):
         self.critic = None 
 
     def get_action(self, s):
+        s = torch.as_tensor(s).float()  
         return self.actor.get_action(s)
 
     def get_value(self, x):
+        x = torch.as_tensor(x).float()
         return self.critic.get_value(x)
