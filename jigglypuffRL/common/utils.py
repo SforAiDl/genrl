@@ -3,6 +3,9 @@ import torch
 import torch.nn as nn
 
 def mlp(sizes):
+    """
+    generate MLP model given sizes of each layer
+    """
     layers = []
     for j in range(len(sizes) - 1):
         act = nn.ReLU if j < len(sizes) - 2 else nn.Identity
