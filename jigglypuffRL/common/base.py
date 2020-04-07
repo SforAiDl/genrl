@@ -43,10 +43,10 @@ class BaseValue(nn.Module):
         self.model = None
 
     def forward(self, x):
-        raise NotImplementedError
+        raise self.model(x)
 
     def get_value(self, x):
-        raise NotImplementedError
+        return self.forward(x)
 
 class BaseActorCritic(nn.Module):
     def __init__(self, disc, det):
