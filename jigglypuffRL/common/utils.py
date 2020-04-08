@@ -69,13 +69,18 @@ def save_params(algo, directory="checkpoints"):
         )
 
 
-def load_params(algo):
+def load_params(algo, directory="checkpoints"):
     try:
         if algo.save_version is None:
-            algo.checkpoint = torch.load("{}.pt").format(algo.save_name)
+            algo.checkpoint = torch.load("{}/{}.pt").format(
+                directory, algo.save_name
+            )
         else:
-            algo.checkpoint = torch.load(
-                "{}-{}.pt".format(algo.save_name, algo.save_version)
+            algo.checkpoint = torch.load("{}/{}-{}.pt".format(
+                    directory, algo.save_name, algo.save_version
+                )
             )
     except FileNotFoundError:
         raise Exception("Check name and version number again")
+    except NotADirectoryError:
+        raise Exception("Invalid directory path")
