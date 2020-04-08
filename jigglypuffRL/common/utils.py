@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import os
 
 
 def get_model(type_, name_):
@@ -55,11 +56,14 @@ def evaluate(algo, num_timesteps=1000):
 
 
 def save_params(algo):
+    if not os.path.exists("checkpoints"):
+        os.makedirs("checkpoints")
+
     if algo.save_version is None:
-        torch.save(algo.checkpoint, "{}.pt".format(algo.save_name))
+        torch.save(algo.checkpoint, "checkpoints/{}.pt".format(algo.save_name))
     else:
         torch.save(
-            algo.checkpoint, "{}-{}.pt".format(
+            algo.checkpoint, "checkpoints/{}-{}.pt".format(
                 algo.save_name, algo.save_version
             )
         )

@@ -39,6 +39,7 @@ class PPO1:
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
+    :param save_model: (boolean) True if user wants to save model
     """
 
     def __init__(
@@ -62,6 +63,7 @@ class PPO1:
         pretrained=False,
         save_name=None,
         save_version=None,
+        save_model=False,
     ):
         self.policy = policy
         self.value = value
@@ -82,6 +84,7 @@ class PPO1:
         self.pretrained = pretrained
         self.save_name = save_name
         self.save_version = save_version
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
         self.checkpoint = self.__dict__
@@ -123,7 +126,7 @@ class PPO1:
 
         # load paramaters if already trained
         if self.pretrained:
-            self.load(self.save_name, self.save_version)
+            self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
@@ -269,13 +272,14 @@ class PPO1:
             if ep % self.policy_copy_interval == 0:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-            if ep % self.save_interval == 0:
-                self.checkpoint["policy_weights"] = self.policy_new.state_dict()
-                self.checkpoint["value_weights"] = self.value_fn.state_dict()
-                if self.save_name is None:
-                    self.save_name = "{}-{}".format(self.policy, self.value)
-                self.save_version = int(ep / self.save_interval)
-                self.save(self)
+            if self.save_model:
+                if ep % self.save_interval == 0:
+                    self.checkpoint["policy_weights"] = self.policy_new.state_dict()
+                    self.checkpoint["value_weights"] = self.value_fn.state_dict()
+                    if self.save_name is None:
+                        self.save_name = "{}-{}".format(self.policy, self.value)
+                    self.save_version = int(ep / self.save_interval)
+                    self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
@@ -284,6 +288,6 @@ class PPO1:
 
 if __name__ == "__main__":
     env = gym.make("LunarLander-v2")
-    algo = PPO1("MlpPolicy", "MlpValue", env, render=True)
+    algo = PPO1("MlpPolicy", "MlpValue", env, render=True, save_name="PPO1")
     algo.learn()
     algo.evaluate(algo)

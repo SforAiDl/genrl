@@ -51,6 +51,7 @@ class DDPG:
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
+    :param save_model: (boolean) True if user wants to save model
     """
 
     def __init__(
@@ -79,6 +80,7 @@ class DDPG:
         pretrained=False,
         save_name=None,
         save_version=None,
+        save_model=False,
     ):
 
         self.network_type = network_type
@@ -105,6 +107,7 @@ class DDPG:
         self.pretrained = pretrained
         self.save_name = save_name
         self.save_version = save_version
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
         self.checkpoint = self.__dict__
@@ -143,7 +146,7 @@ class DDPG:
 
         # load paramaters if already trained
         if self.pretrained:
-            self.checkpoint = self.load(self.save_name, self.save_version)
+            self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
                 if key != "weights":
@@ -262,12 +265,13 @@ class DDPG:
                     )
                     self.update_params(s_b, a_b, r_b, s1_b, d_b)
 
-            if t >= self.start_update and t % self.save_interval == 0:
-                if self.save_name is None:
-                    self.save_name = self.network_type
-                self.save_version = int(t / self.save_interval)
-                self.checkpoint["weights"] = self.ac.state_dict()
-                self.save(self)
+            if self.save_model:
+                if t >= self.start_update and t % self.save_interval == 0:
+                    if self.save_name is None:
+                        self.save_name = self.network_type
+                    self.save_version = int(t / self.save_interval)
+                    self.checkpoint["weights"] = self.ac.state_dict()
+                    self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
@@ -276,6 +280,6 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, seed=0)
+    algo = DDPG("mlp", env, seed=0, save_name="DDPG")
     algo.learn()
     algo.evaluate(algo)

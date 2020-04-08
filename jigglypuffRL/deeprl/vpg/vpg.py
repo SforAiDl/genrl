@@ -40,6 +40,7 @@ class VPG:
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
+    :param save_model: (boolean) True if user wants to save model
     """
 
     def __init__(
@@ -63,6 +64,7 @@ class VPG:
         pretrained=False,
         save_name=None,
         save_version=None,
+        save_model=False,
     ):
         self.policy = policy
         self.value = value
@@ -83,6 +85,7 @@ class VPG:
         self.pretrained = pretrained
         self.save_name = save_name
         self.save_version = save_version
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
         self.checkpoint = self.__dict__
@@ -119,7 +122,7 @@ class VPG:
 
         # load paramaters if already trained
         if self.pretrained:
-            self.load(self.save_name, self.save_version)
+            self.load(self)
             self.policy_fn.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
@@ -235,14 +238,17 @@ class VPG:
                 print("Episode: {}, reward: {}".format(ep, epoch_reward))
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, ep)
-
-            if ep % self.save_interval == 0:
-                self.checkpoint["policy_weights"] = self.policy_fn.state_dict()
-                self.checkpoint["value_weights"] = self.value_fn.state_dict()
-                if self.save_name is None:
-                    self.save_name = "{}-{}".format(self.policy, self.value)
-                self.save_version = int(ep / self.save_interval)
-                self.save(self)
+           
+            if self.save_model:
+                if ep % self.save_interval == 0:
+                    self.checkpoint["policy_weights"] = self.policy_fn.state_dict()
+                    self.checkpoint["value_weights"] = self.value_fn.state_dict()
+                    if self.save_name is None:
+                        self.save_name = "{}-{}".format(
+                            self.policy, self.value
+                        )
+                    self.save_version = int(ep / self.save_interval)
+                    self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
@@ -272,6 +278,6 @@ class VPG:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v1")
-    algo = VPG("MlpPolicy", "MlpValue", env, epochs=500, render=True)
+    algo = VPG("MlpPolicy", "MlpValue", env, epochs=500, save_name="VPG")
     algo.learn()
     algo.evaluate(algo)
