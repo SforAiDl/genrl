@@ -51,7 +51,7 @@ class DDPG:
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
-    :param save_model: (boolean) True if user wants to save model
+    :param save_model: (string) directory the user wants to save models to
     """
 
     def __init__(
@@ -80,7 +80,7 @@ class DDPG:
         pretrained=False,
         save_name=None,
         save_version=None,
-        save_model=False,
+        save_model=None,
     ):
 
         self.network_type = network_type
@@ -265,13 +265,13 @@ class DDPG:
                     )
                     self.update_params(s_b, a_b, r_b, s1_b, d_b)
 
-            if self.save_model:
+            if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:
                     if self.save_name is None:
                         self.save_name = self.network_type
                     self.save_version = int(t / self.save_interval)
                     self.checkpoint["weights"] = self.ac.state_dict()
-                    self.save(self)
+                    self.save(self, self.save_model)
 
         self.env.close()
         if self.tensorboard_log:

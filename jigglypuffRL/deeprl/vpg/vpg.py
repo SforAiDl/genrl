@@ -238,8 +238,8 @@ class VPG:
                 print("Episode: {}, reward: {}".format(ep, epoch_reward))
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, ep)
-           
-            if self.save_model:
+
+            if self.save_model is not None:
                 if ep % self.save_interval == 0:
                     self.checkpoint["policy_weights"] = self.policy_fn.state_dict()
                     self.checkpoint["value_weights"] = self.value_fn.state_dict()
@@ -248,7 +248,7 @@ class VPG:
                             self.policy, self.value
                         )
                     self.save_version = int(ep / self.save_interval)
-                    self.save(self)
+                    self.save(self, self.save_model)
 
         self.env.close()
         if self.tensorboard_log:

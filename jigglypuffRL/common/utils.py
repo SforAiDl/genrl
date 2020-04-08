@@ -55,16 +55,19 @@ def evaluate(algo, num_timesteps=1000):
     print("Average Reward: {}".format(total_r / num_timesteps))
 
 
-def save_params(algo):
-    if not os.path.exists("checkpoints"):
-        os.makedirs("checkpoints")
+def save_params(algo, directory=None):
+    if directory is None:
+        directory = "checkpoints"
+
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
     if algo.save_version is None:
-        torch.save(algo.checkpoint, "checkpoints/{}.pt".format(algo.save_name))
+        torch.save(algo.checkpoint, "{}/{}.pt".format(directory, algo.save_name))
     else:
         torch.save(
-            algo.checkpoint, "checkpoints/{}-{}.pt".format(
-                algo.save_name, algo.save_version
+            algo.checkpoint, "{}/{}-{}.pt".format(
+                directory, algo.save_name, algo.save_version
             )
         )
 

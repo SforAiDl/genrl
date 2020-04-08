@@ -39,7 +39,7 @@ class PPO1:
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
-    :param save_model: (boolean) True if user wants to save model
+    :param save_model: (string) directory the user wants to save models to
     """
 
     def __init__(
@@ -272,14 +272,16 @@ class PPO1:
             if ep % self.policy_copy_interval == 0:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-            if self.save_model:
+            if self.save_model is not None:
                 if ep % self.save_interval == 0:
                     self.checkpoint["policy_weights"] = self.policy_new.state_dict()
                     self.checkpoint["value_weights"] = self.value_fn.state_dict()
                     if self.save_name is None:
-                        self.save_name = "{}-{}".format(self.policy, self.value)
+                        self.save_name = "{}-{}".format(
+                            self.policy, self.value
+                        )
                     self.save_version = int(ep / self.save_interval)
-                    self.save(self)
+                    self.save(self, self.save_model)
 
         self.env.close()
         if self.tensorboard_log:
