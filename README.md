@@ -1,7 +1,7 @@
 # JigglypuffRL
 [![pypi](https://img.shields.io/badge/pypi-jigglypuff--rl-blue)](https://pypi.org/project/jigglypuff-rl/)
 [![GitHub license](https://img.shields.io/github/license/SforAiDl/JigglypuffRL)](https://github.com/SforAiDl/JigglypuffRL/blob/master/LICENSE)
-[![Build Status](https://travis-ci.com/travis-ci/travis-web.svg?branch=master)](https://travis-ci.com/travis-ci/travis-web)
+[![Build Status](https://travis-ci.com/SforAiDl/JigglypuffRL.svg?branch=master)](https://travis-ci.com/SforAiDl/JigglypuffRL)
 
 ## Installation
 
