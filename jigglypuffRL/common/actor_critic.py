@@ -33,9 +33,9 @@ class MlpActorCritic(BaseActorCritic):
         self.actor = MlpPolicy(s_dim, a_dim, hidden, disc, det, **kwargs)
         self.critic = MlpValue(s_dim, a_dim, val_type, hidden)
 
-ac_registry = {
-    'mlp': MlpActorCritic
-}
+
+ac_registry = {"mlp": MlpActorCritic}
+
 
 def get_ac_from_name(name_):
     if name_ in ac_registry:

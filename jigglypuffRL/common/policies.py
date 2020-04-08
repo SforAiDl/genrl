@@ -25,9 +25,9 @@ class MlpPolicy(BasePolicy):
 
         self.model = mlp([s_dim] + list(hidden) + [a_dim])
 
-p_registry = {
-    'mlp': MlpPolicy
-}
+
+p_registry = {"mlp": MlpPolicy}
+
 
 def get_p_from_name(name_):
     if name_ in p_registry:

@@ -1,15 +1,15 @@
 from jigglypuffRL.common import (
-    MlpActorCritic, 
-    MlpPolicy, 
+    MlpActorCritic,
+    MlpPolicy,
     ReplayBuffer,
-    MlpValue, 
+    MlpValue,
     get_p_from_name,
     get_ac_from_name,
     get_v_from_name,
     get_model,
     save_params,
     load_params,
-    evaluate
+    evaluate,
 )
 
 from jigglypuffRL.deeprl import DDPG, PPO1, VPG
@@ -22,5 +22,5 @@ from jigglypuffRL.classicalrl import (
     UCBGaussianBandit,
     BayesianUCBBernoulliBandit,
     ThompsonSampling,
-    SARSA
+    SARSA,
 )

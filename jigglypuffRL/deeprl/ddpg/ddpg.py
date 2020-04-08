@@ -133,9 +133,8 @@ class DDPG:
         s_dim = self.env.observation_space.shape[0]
         a_dim = self.env.action_space.shape[0]
 
-        self.ac = get_model('ac',self.network_type)(
-            s_dim, a_dim, self.layers, 'Qsa',
-            False, True
+        self.ac = get_model("ac", self.network_type)(
+            s_dim, a_dim, self.layers, "Qsa", False, True
         ).to(self.device)
 
         # load paramaters if already trained
@@ -167,21 +166,19 @@ class DDPG:
         return np.clip(a, -self.env.action_space.high[0], self.env.action_space.high[0])
 
     def get_q_loss(self, s, a, r, s1, d):
-        q = self.ac.critic.get_value(torch.cat([s,a],dim=-1))
+        q = self.ac.critic.get_value(torch.cat([s, a], dim=-1))
 
         with torch.no_grad():
             # print(s1.shape, self.ac_targ.get_action(s1).shape)
             q_pi_targ = self.ac_targ.get_value(
-                torch.cat([s1, self.ac_targ.get_action(s1)],dim=-1)
+                torch.cat([s1, self.ac_targ.get_action(s1)], dim=-1)
             )
             target = r + self.gamma * (1 - d) * q_pi_targ
 
         return nn.MSELoss()(q, target)
 
     def get_p_loss(self, s):
-        q_pi = self.ac.get_value(
-            torch.cat([s, self.ac.get_action(s)], dim=-1)
-        )
+        q_pi = self.ac.get_value(torch.cat([s, self.ac.get_action(s)], dim=-1))
         return -torch.mean(q_pi)
 
     def update_params(self, s, a, r, s1, d):

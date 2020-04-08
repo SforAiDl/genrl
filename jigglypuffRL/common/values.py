@@ -33,9 +33,9 @@ class MlpValue(BaseValue):
 
         self.model = _get_val_model(mlp, val_type, s_dim, hidden, a_dim)
 
-v_registry = {
-    'mlp': MlpValue
-}
+
+v_registry = {"mlp": MlpValue}
+
 
 def get_v_from_name(name_):
     if name_ in v_registry:
