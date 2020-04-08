@@ -32,10 +32,10 @@ class MlpValue(BaseValue):
         self.model = _get_val_model(mlp, val_type, s_dim, hidden, a_dim)
 
 
-v_registry = {"mlp": MlpValue}
+value_registry = {"mlp": MlpValue}
 
 
-def get_v_from_name(name_):
-    if name_ in v_registry:
-        return v_registry[name_]
+def get_value_from_name(name_):
+    if name_ in value_registry:
+        return value_registry[name_]
     raise NotImplementedError

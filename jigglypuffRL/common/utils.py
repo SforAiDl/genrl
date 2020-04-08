@@ -4,17 +4,17 @@ import torch.nn as nn
 
 def get_model(type_, name_):
     if type_ == "ac":
-        from jigglypuffRL.common.actor_critic import get_ac_from_name
+        from jigglypuffRL.common.actor_critic import get_actor_critic_from_name
 
-        return get_ac_from_name(name_)
+        return get_actor_critic_from_name(name_)
     elif type_ == "v":
-        from jigglypuffRL.common.values import get_v_from_name
+        from jigglypuffRL.common.values import get_value_from_name
 
-        return get_v_from_name(name_)
+        return get_value_from_name(name_)
     elif type == "p":
-        from jigglypuffRL.common.policies import get_p_from_name
+        from jigglypuffRL.common.policies import get_policy_from_name
 
-        return get_p_from_name(name_)
+        return get_policy_from_name(name_)
     raise ValueError
 
 

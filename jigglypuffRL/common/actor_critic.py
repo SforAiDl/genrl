@@ -32,10 +32,10 @@ class MlpActorCritic(BaseActorCritic):
         self.critic = MlpValue(s_dim, a_dim, val_type, hidden)
 
 
-ac_registry = {"mlp": MlpActorCritic}
+actor_critic_registry = {"mlp": MlpActorCritic}
 
 
-def get_ac_from_name(name_):
-    if name_ in ac_registry:
-        return ac_registry[name_]
+def get_actor_critic_from_name(name_):
+    if name_ in actor_critic_registry:
+        return actor_critic_registry[name_]
     raise NotImplementedError

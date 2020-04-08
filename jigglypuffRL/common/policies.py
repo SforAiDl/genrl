@@ -24,10 +24,10 @@ class MlpPolicy(BasePolicy):
         self.model = mlp([s_dim] + list(hidden) + [a_dim])
 
 
-p_registry = {"mlp": MlpPolicy}
+policy_registry = {"mlp": MlpPolicy}
 
 
-def get_p_from_name(name_):
-    if name_ in p_registry:
-        return p_registry[name_]
+def get_policy_from_name(name_):
+    if name_ in policy_registry:
+        return policy_registry[name_]
     raise NotImplementedError
