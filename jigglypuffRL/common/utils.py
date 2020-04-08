@@ -1,4 +1,3 @@
-import gym
 import torch
 import torch.nn as nn
 
@@ -60,7 +59,9 @@ def save_params(algo):
         torch.save(algo.checkpoint, "{}.pt".format(algo.save_name))
     else:
         torch.save(
-            algo.checkpoint, "{}-{}.pt".format(algo.save_name, algo.save_version)
+            algo.checkpoint, "{}-{}.pt".format(
+                algo.save_name, algo.save_version
+            )
         )
 
 

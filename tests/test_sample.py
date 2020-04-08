@@ -1,4 +1,3 @@
-import jigglypuffRL
 from jigglypuffRL import EpsGreedyGaussianBandit
 
 

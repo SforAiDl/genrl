@@ -6,10 +6,6 @@ from torch.autograd import Variable
 import gym
 
 from jigglypuffRL.common import (
-    ReplayBuffer,
-    MlpPolicy,
-    MlpValue,
-    get_model,
     evaluate,
     save_params,
     load_params,
@@ -30,14 +26,19 @@ class PPO1:
     :param epochs: (int) the optimizer's number of epochs
     :param lr_policy: (float) policy network learning rate
     :param lr_value: (float) value network learning rate
-    :param policy_copy_interval: (int) number of optimizer before copying params from new policy to old policy
+    :param policy_copy_interval: (int) number of optimizer before copying
+        params from new policy to old policy
     :param save_interval: (int) Number of episodes between saves of models
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param tensorboard_log: (str) the log location for tensorboard (if None,
+        no logging)
     :param seed (int): seed for torch and gym
-    :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param device (str): device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
     :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been pretrained)
+    :param save_name: (str) model save name (if None, model hasn't been
+        pretrained)
+    :param save_version: (int) model save version (if None, model hasn't been
+        pretrained)
     """
 
     def __init__(
@@ -116,7 +117,9 @@ class PPO1:
         )
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
-        self.value_fn = get_value_from_name(self.value)(self.env).to(self.device)
+        self.value_fn = get_value_from_name(self.value)(self.env).to(
+            self.device
+        )
 
         # load paramaters if already trained
         if self.pretrained:
@@ -132,7 +135,9 @@ class PPO1:
         self.optimizer_policy = opt.Adam(
             self.policy_new.parameters(), lr=self.lr_policy
         )
-        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
+        self.optimizer_value = opt.Adam(
+            self.value_fn.parameters(), lr=self.lr_value
+        )
 
     def select_action(self, s):
         state = torch.from_numpy(s).float().to(self.device)
@@ -176,7 +181,9 @@ class PPO1:
         A = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
+        ratio = torch.div(
+            self.policy_new.policy_hist, self.policy_old.policy_hist
+        )
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
             .mul(A)
@@ -184,15 +191,20 @@ class PPO1:
         )
 
         loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, A), clipping)).mul(-1).unsqueeze(0)
+            torch.mean(torch.min(torch.mul(ratio, A), clipping)).mul(-1)
+            .unsqueeze(0)
         )
         loss_value = nn.MSELoss()(
             self.value_fn.value_hist, Variable(returns)
         ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
-        self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
-        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
+        self.policy_new.loss_hist = torch.cat([
+            self.policy_new.loss_hist, loss_policy
+        ])
+        self.value_fn.loss_hist = torch.cat([
+            self.value_fn.loss_hist, loss_value
+        ])
 
         # clear traj history
         self.policy_old.traj_reward = []

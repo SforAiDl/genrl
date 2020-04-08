@@ -6,7 +6,6 @@ import torch
 class SARSA:
     """
     State-Action-Reward-State-Action (SARSA)
-    Paper: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2539&rep=rep1&type=pdf
     :param env: (Gym environment) The environment to learn from
     :param max_iterations: (int) Maximum number of iterations per episode
     :param max_epsiodes: (int) Maximum number of episodes
@@ -14,8 +13,10 @@ class SARSA:
     :param alpha: (float) Learning rate
     :param gamma: (float) Discount Factor
     :param lmbda: (float) Lambda for the eligibility traces
-    :param decay_rate_epsilon: (float) Decay rate for the epsilon of epsilon greedy action selection
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param decay_rate_epsilon: (float) Decay rate for the epsilon of epsilon
+        greedy action selection
+    :param tensorboard_log: (str) the log location for tensorboard (if None,
+        no logging)
     :param seed: (int) seed for torch and gym
     :param render: (bool) Need for rending of the environment while training
     """
@@ -62,9 +63,13 @@ class SARSA:
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         # Set up the Q table
-        self.Q_table = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.Q_table = np.zeros((
+            self.env.observation_space.n, self.env.action_space.n
+        ))
         # Set up eligibility traces
-        self.e_table = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.e_table = np.zeros((
+            self.env.observation_space.n, self.env.action_space.n
+        ))
 
     def select_action(self, state):
         # epsilon greedy method to sample actions
@@ -85,9 +90,10 @@ class SARSA:
         for s in range(self.env.observation_space.n):
             for a in range(self.env.action_space.n):
                 self.Q_table[s, a] = (
-                    self.Q_table[s, a] + self.alpha * delta * self.e_table[s, a]
+                    self.Q_table[s, a] + self.alpha * delta
+                    * self.e_table[s, a]
                 )
-                self.e_table[s, a] = self.gamma * self.lmbda * self.e_table[s, a]
+                self.e_table[s, a] = self.gamma*self.lmbda*self.e_table[s, a]
 
     def learn(self):
         for ep in range(self.max_episodes):
@@ -114,13 +120,14 @@ class SARSA:
                     break
 
             if ep % 5000 == 0:
-                # report every 5000 episodes, test 100 games to get avarage point score for statistics
+                # report every 5000 episodes, test 100 games to get average
+                # point score for statistics
                 rew_average = 0.0
 
                 for i in range(100):
                     obs = self.env.reset()
                     done = False
-                    while done != True:
+                    while done is not True:
                         action = np.argmax(self.Q_table[obs])
                         obs, rew, done, info = self.env.step(action)
                         rew_average += rew

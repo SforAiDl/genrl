@@ -1,6 +1,3 @@
-import numpy as np
-import torch.nn as nn
-
 from jigglypuffRL.common.base import BaseActorCritic
 from jigglypuffRL.common.policies import MlpPolicy
 from jigglypuffRL.common.values import MlpValue
@@ -12,7 +9,8 @@ class MlpActorCritic(BaseActorCritic):
     :param s_dim: (int) state dimension of environment
     :param a_dim: (int) action dimension of environment
     :param hidden: (tuple or list) sizes of hidden layers
-    :param val_type: (str) type of value function. 'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
+    :param val_type: (str) type of value function.
+        'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
     :param disc: (bool) discrete action space?
     :param det: (bool) deterministic policy?
     """

@@ -8,7 +8,6 @@ import random
 
 from jigglypuffRL.common import (
     ReplayBuffer,
-    MlpActorCritic,
     get_model,
     evaluate,
     save_params,
@@ -37,16 +36,21 @@ class DDPG:
     :param update_interval: (int) Number of steps between parameter updates
     :param save_interval: (int) Number of steps between saves of models
     :param layers: (tuple or list) Number of neurons in hidden layers
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param tensorboard_log: (str) the log location for tensorboard (if None,
+        no logging)
     :param seed (int): seed for torch and gym
     :param render (boolean): if environment is to be rendered
-    :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param device (str): device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
     :param seed: (int) seed for torch and gym
     :param render: (boolean) if environment is to be rendered
-    :param device: (str) device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param device: (str) device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
     :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been pretrained)
+    :param save_name: (str) model save name (if None, model hasn't been
+        pretrained)
+    :param save_version: (int) model save version (if None, model hasn't been
+        pretrained)
     """
 
     def __init__(
@@ -152,8 +156,12 @@ class DDPG:
             p.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
-        self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
+        self.optimizer_policy = opt.Adam(
+            self.ac.actor.parameters(), lr=self.lr_p
+        )
+        self.optimizer_q = opt.Adam(
+            self.ac.critic.parameters(), lr=self.lr_q
+        )
 
     def select_action(self, s):
         with torch.no_grad():
@@ -163,7 +171,9 @@ class DDPG:
 
         # add noise to output from policy network
         a += self.noise_std * np.random.randn(self.env.action_space.shape[0])
-        return np.clip(a, -self.env.action_space.high[0], self.env.action_space.high[0])
+        return np.clip(
+            a, -self.env.action_space.high[0], self.env.action_space.high[0]
+        )
 
     def get_q_loss(self, s, a, r, s1, d):
         q = self.ac.critic.get_value(torch.cat([s, a], dim=-1))
@@ -202,7 +212,9 @@ class DDPG:
 
         # update target network
         with torch.no_grad():
-            for p, p_targ in zip(self.ac.parameters(), self.ac_targ.parameters()):
+            for p, p_targ in zip(
+                self.ac.parameters(), self.ac_targ.parameters()
+            ):
                 p_targ.data.mul_(self.polyak)
                 p_targ.data.add_((1 - self.polyak) * p.data)
 
