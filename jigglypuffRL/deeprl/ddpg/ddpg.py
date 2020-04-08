@@ -7,8 +7,9 @@ from copy import deepcopy
 import random
 
 from jigglypuffRL.common import (
-    ActorCritic,
     ReplayBuffer,
+    MlpActorCritic,
+    get_model,
     evaluate,
     save_params,
     load_params,
@@ -76,6 +77,7 @@ class DDPG:
         save_version=None,
     ):
 
+        self.network_type = network_type
         self.env = env
         self.gamma = gamma
         self.replay_size = replay_size
@@ -96,7 +98,6 @@ class DDPG:
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
-        self.network_type = network_type
         self.pretrained = pretrained
         self.save_name = save_name
         self.save_version = save_version
@@ -129,8 +130,12 @@ class DDPG:
         self.create_model()
 
     def create_model(self):
-        self.ac = ActorCritic(
-            self.env, self.network_type, self.layers, noise_std=self.noise_std
+        s_dim = self.env.observation_space.shape[0]
+        a_dim = self.env.action_space.shape[0]
+
+        self.ac = get_model('ac',self.network_type)(
+            s_dim, a_dim, self.layers, 'Qsa',
+            False, True
         ).to(self.device)
 
         # load paramaters if already trained
@@ -152,24 +157,31 @@ class DDPG:
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
     def select_action(self, s):
-        a = self.ac.select_action(
-            torch.as_tensor(s, dtype=torch.float32, device=self.device)
-        )
+        with torch.no_grad():
+            a = self.ac.get_action(
+                torch.as_tensor(s, dtype=torch.float32, device=self.device)
+            ).numpy()
+
         # add noise to output from policy network
         a += self.noise_std * np.random.randn(self.env.action_space.shape[0])
         return np.clip(a, -self.env.action_space.high[0], self.env.action_space.high[0])
 
     def get_q_loss(self, s, a, r, s1, d):
-        q = self.ac.value(s, a)
+        q = self.ac.critic.get_value(torch.cat([s,a],dim=-1))
 
         with torch.no_grad():
-            q_pi_targ = self.ac_targ.value(s1, self.ac_targ.actor(s1))
+            # print(s1.shape, self.ac_targ.get_action(s1).shape)
+            q_pi_targ = self.ac_targ.get_value(
+                torch.cat([s1, self.ac_targ.get_action(s1)],dim=-1)
+            )
             target = r + self.gamma * (1 - d) * q_pi_targ
 
         return nn.MSELoss()(q, target)
 
     def get_p_loss(self, s):
-        q_pi = self.ac.value(s, self.ac.actor(s))
+        q_pi = self.ac.get_value(
+            torch.cat([s, self.ac.get_action(s)], dim=-1)
+        )
         return -torch.mean(q_pi)
 
     def update_params(self, s, a, r, s1, d):
@@ -255,6 +267,6 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("Mlp", env, seed=0)
+    algo = DDPG("mlp", env, seed=0)
     algo.learn()
     algo.evaluate(algo)

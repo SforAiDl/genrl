@@ -6,10 +6,10 @@ from torch.autograd import Variable
 import gym
 
 from jigglypuffRL.common import (
+    ReplayBuffer,
     MlpPolicy,
     MlpValue,
-    get_policy_from_name,
-    get_value_from_name,
+    get_model,
     evaluate,
     save_params,
     load_params,
