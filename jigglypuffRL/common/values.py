@@ -1,7 +1,5 @@
-import numpy as np
 import torch
 import torch.nn as nn
-from torch.distributions import Categorical
 from torch.autograd import Variable
 import gym
 

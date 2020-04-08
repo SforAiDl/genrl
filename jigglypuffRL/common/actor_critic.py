@@ -1,10 +1,9 @@
-import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical, Normal
 from torch.autograd import Variable
 import gym
-from jigglypuffRL.common import BasePolicy
+
 
 # base classes
 class BaseActor(nn.Module):

@@ -6,8 +6,6 @@ from torch.autograd import Variable
 import gym
 
 from jigglypuffRL.common import (
-    MlpPolicy,
-    MlpValue,
     get_policy_from_name,
     get_value_from_name,
     save_params,
@@ -114,11 +112,12 @@ class PPO1:
         )
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
-        self.value_fn = get_value_from_name(self.value)(self.env).to(self.device)
+        self.value_fn = get_value_from_name(self.value)(self.env)
+        self.value_fn.to(self.device)
 
         # load paramaters if already trained
         if self.pretrained:
-            self.load(self.save_name, self.save_version)
+            self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
@@ -130,7 +129,9 @@ class PPO1:
         self.optimizer_policy = opt.Adam(
             self.policy_new.parameters(), lr=self.lr_policy
         )
-        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
+        self.optimizer_value = opt.Adam(
+            self.value_fn.parameters(), lr=self.lr_value
+        )
 
     def select_action(self, s):
         state = torch.from_numpy(s).float().to(self.device)
@@ -174,7 +175,9 @@ class PPO1:
         A = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
+        ratio = torch.div(
+            self.policy_new.policy_hist, self.policy_old.policy_hist
+        )
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
             .mul(A)
@@ -182,15 +185,21 @@ class PPO1:
         )
 
         loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, A), clipping)).mul(-1).unsqueeze(0)
+            torch.mean(torch.min(
+                    torch.mul(ratio, A), clipping
+                )).mul(-1).unsqueeze(0)
         )
         loss_value = nn.MSELoss()(
             self.value_fn.value_hist, Variable(returns)
         ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
-        self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
-        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
+        self.policy_new.loss_hist = torch.cat([
+            self.policy_new.loss_hist, loss_policy
+        ])
+        self.value_fn.loss_hist = torch.cat([
+            self.value_fn.loss_hist, loss_value
+        ])
 
         # clear traj history
         self.policy_old.traj_reward = []
@@ -198,15 +207,15 @@ class PPO1:
         self.policy_new.policy_hist = Variable(torch.Tensor())
         self.value_fn.value_hist = Variable(torch.Tensor())
 
-    def update_policy(self, ep):
+    def update_policy(self, episode):
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_new.loss_hist)
         loss_value = torch.mean(self.value_fn.loss_hist)
 
         # tensorboard book-keeping
         if self.tensorboard_log:
-            self.writer.add_scalar("loss/policy", loss_policy, ep)
-            self.writer.add_scalar("loss/value", loss_value, ep)
+            self.writer.add_scalar("loss/policy", loss_policy, episode)
+            self.writer.add_scalar("loss/value", loss_value, episode)
 
         # take gradient step
         self.optimizer_policy.zero_grad()
@@ -223,19 +232,19 @@ class PPO1:
 
     def learn(self):
         # training loop
-        for ep in range(self.epochs):
+        for episode in range(self.epochs):
             epoch_reward = 0
-            for i in range(self.actor_batch_size):
-                s = self.env.reset()
+            for _ in range(self.actor_batch_size):
+                state = self.env.reset()
                 done = False
-                for t in range(self.timesteps_per_actorbatch):
-                    a = self.select_action(s)
-                    s, r, done, _ = self.env.step(np.array(a))
+                for _ in range(self.timesteps_per_actorbatch):
+                    action = self.select_action(state)
+                    state, reward, done, _ = self.env.step(np.array(action))
 
                     if self.render:
                         self.env.render()
 
-                    self.policy_old.traj_reward.append(r)
+                    self.policy_old.traj_reward.append(reward)
 
                     if done:
                         break
@@ -245,22 +254,22 @@ class PPO1:
                 )
                 self.get_traj_loss()
 
-            self.update_policy(ep)
+            self.update_policy(episode)
 
-            if ep % 20 == 0:
-                print("Episode: {}, reward: {}".format(ep, epoch_reward))
+            if episode % 20 == 0:
+                print("Episode: {}, reward: {}".format(episode, epoch_reward))
                 if self.tensorboard_log:
-                    self.writer.add_scalar("reward", epoch_reward, ep)
+                    self.writer.add_scalar("reward", epoch_reward, episode)
 
-            if ep % self.policy_copy_interval == 0:
+            if episode % self.policy_copy_interval == 0:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-            if ep % self.save_interval == 0:
+            if episode % self.save_interval == 0:
                 self.checkpoint["policy_weights"] = self.policy_new.state_dict()
                 self.checkpoint["value_weights"] = self.value_fn.state_dict()
                 if self.save_name is None:
                     self.save_name = "{}-{}".format(self.policy, self.value)
-                self.save_version = int(ep / self.save_interval)
+                self.save_version = int(episode / self.save_interval)
                 self.save(self)
 
         self.env.close()
@@ -270,5 +279,5 @@ class PPO1:
 
 if __name__ == "__main__":
     env = gym.make("LunarLander-v2")
-    algo = PPO1("MlpPolicy", "MlpValue", env, render=True)
+    algo = PPO1("MlpPolicy", "MlpValue", env, save_name="PPO1")
     algo.learn()
