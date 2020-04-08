@@ -62,9 +62,13 @@ class SARSA:
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         # Set up the Q table
-        self.Q_table = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.Q_table = np.zeros(
+            (self.env.observation_space.n, self.env.action_space.n)
+        )
         # Set up eligibility traces
-        self.e_table = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.e_table = np.zeros(
+            (self.env.observation_space.n, self.env.action_space.n)
+        )
 
     def select_action(self, state):
         # epsilon greedy method to sample actions
@@ -75,19 +79,20 @@ class SARSA:
 
         return action
 
-    def update_params(self, r, state1, action1, state2, action2):
+    def update_params(self, reward, state1, action1, state2, action2):
         self.e_table[state1, action1] += 1
         delta = (
-            r
+            reward
             + self.gamma * self.Q_table[state2, action2]
             - self.Q_table[state1, action1]
         )
-        for s in range(self.env.observation_space.n):
-            for a in range(self.env.action_space.n):
-                self.Q_table[s, a] = (
-                    self.Q_table[s, a] + self.alpha * delta * self.e_table[s, a]
+        for state in range(self.env.observation_space.n):
+            for action in range(self.env.action_space.n):
+                self.Q_table[state, action] = (
+                    self.Q_table[state, action]
+                    + self.alpha * delta * self.e_table[state, action]
                 )
-                self.e_table[s, a] = self.gamma * self.lmbda * self.e_table[s, a]
+                self.e_table[state, action] = self.gamma * self.lmbda * self.e_table[state, action]
 
     def learn(self):
         for ep in range(self.max_episodes):
@@ -120,7 +125,7 @@ class SARSA:
                 for i in range(100):
                     obs = self.env.reset()
                     done = False
-                    while done != True:
+                    while done is not True:
                         action = np.argmax(self.Q_table[obs])
                         obs, rew, done, info = self.env.step(action)
                         rew_average += rew
