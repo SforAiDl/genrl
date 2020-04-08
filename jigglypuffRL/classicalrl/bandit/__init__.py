@@ -1,4 +1,4 @@
-from jigglypuffRL.classicalrl.bandit.bandit import (
+from jigglypuffRL.classicalrl.bandit.bandit import ( # noqa
     EpsGreedyBernoulliBandit,
     EpsGreedyGaussianBandit,
     SoftmaxActionSelection,

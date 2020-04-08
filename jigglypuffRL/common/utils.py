@@ -1,6 +1,21 @@
-import gym
 import torch
 import torch.nn as nn
+
+
+def get_model(type_, name_):
+    if type_ == "ac":
+        from jigglypuffRL.common.actor_critic import get_actor_critic_from_name
+
+        return get_actor_critic_from_name(name_)
+    elif type_ == "v":
+        from jigglypuffRL.common.values import get_value_from_name
+
+        return get_value_from_name(name_)
+    elif type == "p":
+        from jigglypuffRL.common.policies import get_policy_from_name
+
+        return get_policy_from_name(name_)
+    raise ValueError
 
 
 def mlp(sizes):
@@ -44,7 +59,9 @@ def save_params(algo):
         torch.save(algo.checkpoint, "{}.pt".format(algo.save_name))
     else:
         torch.save(
-            algo.checkpoint, "{}-{}.pt".format(algo.save_name, algo.save_version)
+            algo.checkpoint, "{}-{}.pt".format(
+                algo.save_name, algo.save_version
+            )
         )
 
 

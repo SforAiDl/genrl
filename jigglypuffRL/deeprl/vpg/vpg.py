@@ -6,10 +6,6 @@ from torch.autograd import Variable
 import gym
 
 from jigglypuffRL.common import (
-    MlpPolicy,
-    MlpValue,
-    get_policy_from_name,
-    get_value_from_name,
     evaluate,
     save_params,
     load_params,
@@ -19,7 +15,8 @@ from jigglypuffRL.common import (
 class VPG:
     """
     Vanilla Policy Gradient algorithm
-    Paper: https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
+    Paper:
+    https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
     :param policy: (str) The policy model to use (MlpPolicy)
     :param value: (str) The value function model to use (MlpValue)
     :param env: (Gym environment) The environment to learn from
@@ -30,14 +27,19 @@ class VPG:
     :param epochs: (int) the optimizer's number of epochs
     :param lr_policy: (float) policy network learning rate
     :param lr_value: (float) value network learning rate
-    :param policy_copy_interval: (int) number of optimizer before copying params from new policy to old policy
+    :param policy_copy_interval: (int) number of optimizer before copying
+        params from new policy to old policy
     :param save_interval: (int) Number of episodes between saves of models
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param tensorboard_log: (str) the log location for tensorboard (if None,
+        no logging)
     :param seed (int): seed for torch and gym
-    :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param device (str): device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
     :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been pretrained)
+    :param save_name: (str) model save name (if None, model hasn't been
+        pretrained)
+    :param save_version: (int) model save version (if None, model hasn't been
+        pretrained)
     """
 
     def __init__(
@@ -110,8 +112,10 @@ class VPG:
 
     def create_model(self):
         # Instantiate networks and optimizers
-        self.policy_fn = get_policy_from_name(self.policy)(self.env).to(self.device)
-        self.value_fn = get_value_from_name(self.value)(self.env).to(self.device)
+        self.policy_fn = get_policy_from_name(self.policy)(self.env).to(
+            self.device)
+        self.value_fn = get_value_from_name(self.value)(self.env).to(
+            self.device)
 
         # load paramaters if already trained
         if self.pretrained:
@@ -122,8 +126,10 @@ class VPG:
                 if key not in ["policy_weights", "value_weights"]:
                     setattr(self, key, item)
 
-        self.optimizer_policy = opt.Adam(self.policy_fn.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(
+            self.policy_fn.parameters(), lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(
+            self.value_fn.parameters(), lr=self.lr_value)
 
     def select_action(self, s):
         state = torch.from_numpy(s).float().to(self.device)
@@ -134,7 +140,7 @@ class VPG:
 
         # store policy probs and value function for current traj
         self.policy_fn.policy_hist = torch.cat(
-            [self.policy_fn.policy_hist, c.log_prob(action).unsqueeze(0),]
+            [self.policy_fn.policy_hist, c.log_prob(action).unsqueeze(0)]
         )
 
         self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val])
@@ -157,7 +163,8 @@ class VPG:
 
         # compute policy and value loss
         loss_policy = (
-            torch.sum(torch.mul(self.policy_fn.policy_hist, A)).mul(-1).unsqueeze(0)
+            torch.sum(torch.mul(self.policy_fn.policy_hist, A)).mul(-1)
+            .unsqueeze(0)
         )
 
         loss_value = nn.MSELoss()(
@@ -165,8 +172,10 @@ class VPG:
         ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
-        self.policy_fn.loss_hist = torch.cat([self.policy_fn.loss_hist, loss_policy])
-        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
+        self.policy_fn.loss_hist = torch.cat([
+            self.policy_fn.loss_hist, loss_policy])
+        self.value_fn.loss_hist = torch.cat([
+            self.value_fn.loss_hist, loss_value])
 
         # clear traj history
         self.policy_fn.traj_reward = []

@@ -1,6 +1,3 @@
-import numpy as np
-import torch.nn as nn
-
 from jigglypuffRL.common.base import BasePolicy
 from jigglypuffRL.common.utils import mlp
 
@@ -16,7 +13,8 @@ class MlpPolicy(BasePolicy):
     """
 
     def __init__(
-        self, s_dim, a_dim, hidden=(32, 32), disc=True, det=True, *args, **kwargs
+        self, s_dim, a_dim, hidden=(32, 32), disc=True, det=True,
+        *args, **kwargs
     ):
         super(MlpPolicy, self).__init__(disc, det, **kwargs)
 
@@ -24,3 +22,12 @@ class MlpPolicy(BasePolicy):
         self.a_dim = a_dim
 
         self.model = mlp([s_dim] + list(hidden) + [a_dim])
+
+
+policy_registry = {"mlp": MlpPolicy}
+
+
+def get_policy_from_name(name_):
+    if name_ in policy_registry:
+        return policy_registry[name_]
+    raise NotImplementedError
