@@ -33,7 +33,6 @@ class BasePolicy(nn.Module):
                 a = _s
             else:
                 a = Normal(_s, self.a_var).sample()
-
         return a
 
 
@@ -47,7 +46,7 @@ class BaseValue(nn.Module):
         return self.model(x)
 
     def get_value(self, x):
-        return self.forward(x)
+        return self.forward(x).squeeze()
 
 
 class BaseActorCritic(nn.Module):

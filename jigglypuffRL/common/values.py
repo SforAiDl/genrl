@@ -32,3 +32,12 @@ class MlpValue(BaseValue):
         self.a_dim = a_dim
 
         self.model = _get_val_model(mlp, val_type, s_dim, hidden, a_dim)
+
+v_registry = {
+    'mlp': MlpValue
+}
+
+def get_v_from_name(name_):
+    if name_ in v_registry:
+        return v_registry[name_]
+    raise NotImplementedError

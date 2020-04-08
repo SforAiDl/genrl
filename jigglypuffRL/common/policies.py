@@ -24,3 +24,12 @@ class MlpPolicy(BasePolicy):
         self.a_dim = a_dim
 
         self.model = mlp([s_dim] + list(hidden) + [a_dim])
+
+p_registry = {
+    'mlp': MlpPolicy
+}
+
+def get_p_from_name(name_):
+    if name_ in p_registry:
+        return p_registry[name_]
+    raise NotImplementedError

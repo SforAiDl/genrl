@@ -2,6 +2,18 @@ import gym
 import torch
 import torch.nn as nn
 
+def get_model(type_, name_):
+    if type_ == 'ac':
+        from jigglypuffRL.common.actor_critic import get_ac_from_name
+        return get_ac_from_name(name_)
+    elif type_ == 'v':
+        from jigglypuffRL.common.values import get_v_from_name
+        return get_v_from_name(name_)
+    elif type == 'p':
+        from jigglypuffRL.common.policies import get_p_from_name
+        return get_p_from_name(name_)
+    raise ValueError
+        
 
 def mlp(sizes):
     """
