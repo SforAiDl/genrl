@@ -25,13 +25,15 @@ class BasePolicy(nn.Module):
             if self.det:
                 a = torch.argmax(_s, dim=-1)
             else:
-                a = Categorical(probs=_s).sample()
+                c = Categorical(probs=_s)
+                a = (c.sample(), c)
         else:
             _s = nn.Tanh()(_s) * self.a_lim
             if self.det:
                 a = _s
             else:
-                a = Normal(_s, self.a_var).sample()
+                c = Normal(_s, self.a_var)
+                a = (c.sample(), c)
         return a
 
 
