@@ -80,25 +80,25 @@ class SARSA:
 
         return action
 
-    def update_params(self, r, state1, action1, state2, action2):
+    def update_params(self, reward, state1, action1, state2, action2):
         self.e_table[state1, action1] += 1
         delta = (
-            r
+            reward
             + self.gamma * self.Q_table[state2, action2]
             - self.Q_table[state1, action1]
         )
-        for s in range(self.env.observation_space.n):
-            for a in range(self.env.action_space.n):
-                self.Q_table[s, a] = (
-                    self.Q_table[s, a] + self.alpha * delta
-                    * self.e_table[s, a]
+        for state in range(self.env.observation_space.n):
+            for action in range(self.env.action_space.n):
+                self.Q_table[state, action] = (
+                    self.Q_table[state, action] + self.alpha * delta
+                    * self.e_table[state, action]
                 )
-                self.e_table[s, a] = self.gamma*self.lmbda*self.e_table[s, a]
+                self.e_table[state, action] = (
+                    self.gamma * self.lmbda * self.e_table[state, action]
+                )
 
     def learn(self):
-        for ep in range(self.max_episodes):
-            t = 0
-
+        for episode in range(self.max_episodes):
             state1 = self.env.reset()
             action1 = self.select_action(state1)
 
@@ -119,7 +119,7 @@ class SARSA:
                     self.epsilon = self.epsilon * self.decay_rate_epsilon
                     break
 
-            if ep % 5000 == 0:
+            if episode % 5000 == 0:
                 # report every 5000 episodes, test 100 games to get average
                 # point score for statistics
                 rew_average = 0.0
@@ -132,10 +132,10 @@ class SARSA:
                         obs, rew, done, info = self.env.step(action)
                         rew_average += rew
                 rew_average = rew_average / 100
-                print("Episode {} Reward: {}".format(ep, rew_average))
+                print("Episode {} Reward: {}".format(episode, rew_average))
 
                 if self.tensorboard_log:
-                    self.writer.add_scalar("Reward", rew_average, ep)
+                    self.writer.add_scalar("Reward", rew_average, episode)
 
             self.env.close()
         if self.tensorboard_log:

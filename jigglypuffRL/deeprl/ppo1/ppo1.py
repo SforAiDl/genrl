@@ -141,8 +141,8 @@ class PPO1:
             self.value_fn.parameters(), lr=self.lr_value
         )
 
-    def select_action(self, s):
-        state = torch.from_numpy(s).float().to(self.device)
+    def select_action(self, state):
+        state = torch.from_numpy(state).float().to(self.device)
 
         # create distribution based on policy_old output
         action, c_old = self.policy_old.sample_action(Variable(state))
@@ -170,17 +170,17 @@ class PPO1:
 
     # get clipped loss for single trajectory (episode)
     def get_traj_loss(self):
-        R = 0
+        discounted_reward = 0
         returns = []
 
         # calculate discounted return
-        for r in self.policy_old.traj_reward[::-1]:
-            R = r + self.gamma * R
-            returns.insert(0, R)
+        for reward in self.policy_old.traj_reward[::-1]:
+            discounted_reward = reward + self.gamma * discounted_reward
+            returns.insert(0, discounted_reward)
 
         # advantage estimation
         returns = torch.FloatTensor(returns).to(self.device)
-        A = Variable(returns) - Variable(self.value_fn.value_hist)
+        advantages = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
         ratio = torch.div(
@@ -188,12 +188,12 @@ class PPO1:
         )
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
-            .mul(A)
+            .mul(advantages)
             .to(self.device)
         )
 
         loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, A), clipping)).mul(-1)
+            torch.mean(torch.min(torch.mul(ratio, advantages), clipping)).mul(-1)
             .unsqueeze(0)
         )
         loss_value = nn.MSELoss()(
@@ -214,15 +214,15 @@ class PPO1:
         self.policy_new.policy_hist = Variable(torch.Tensor())
         self.value_fn.value_hist = Variable(torch.Tensor())
 
-    def update_policy(self, ep):
+    def update_policy(self, episode):
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_new.loss_hist)
         loss_value = torch.mean(self.value_fn.loss_hist)
 
         # tensorboard book-keeping
         if self.tensorboard_log:
-            self.writer.add_scalar("loss/policy", loss_policy, ep)
-            self.writer.add_scalar("loss/value", loss_value, ep)
+            self.writer.add_scalar("loss/policy", loss_policy, episode)
+            self.writer.add_scalar("loss/value", loss_value, episode)
 
         # take gradient step
         self.optimizer_policy.zero_grad()
@@ -239,19 +239,19 @@ class PPO1:
 
     def learn(self):
         # training loop
-        for ep in range(self.epochs):
+        for episode in range(self.epochs):
             epoch_reward = 0
             for i in range(self.actor_batch_size):
-                s = self.env.reset()
+                state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    a = self.select_action(s)
-                    s, r, done, _ = self.env.step(np.array(a))
+                    action = self.select_action(state)
+                    state, reward, done, _ = self.env.step(np.array(action))
 
                     if self.render:
                         self.env.render()
 
-                    self.policy_old.traj_reward.append(r)
+                    self.policy_old.traj_reward.append(reward)
 
                     if done:
                         break
@@ -261,22 +261,22 @@ class PPO1:
                 )
                 self.get_traj_loss()
 
-            self.update_policy(ep)
+            self.update_policy(episode)
 
-            if ep % 20 == 0:
-                print("Episode: {}, reward: {}".format(ep, epoch_reward))
+            if episode % 20 == 0:
+                print("Episode: {}, reward: {}".format(episode, epoch_reward))
                 if self.tensorboard_log:
-                    self.writer.add_scalar("reward", epoch_reward, ep)
+                    self.writer.add_scalar("reward", epoch_reward, episode)
 
-            if ep % self.policy_copy_interval == 0:
+            if episode % self.policy_copy_interval == 0:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-            if ep % self.save_interval == 0:
-                self.checkpoint["policy_weights"] = self.policy_new.state_dict()
+            if episode % self.save_interval == 0:
+                self.checkpoint["policy_weights"] = self.policy_new.state_dict() # noqa
                 self.checkpoint["value_weights"] = self.value_fn.state_dict()
                 if self.save_name is None:
                     self.save_name = "{}-{}".format(self.policy, self.value)
-                self.save_version = int(ep / self.save_interval)
+                self.save_version = int(episode / self.save_interval)
                 self.save(self)
 
         self.env.close()

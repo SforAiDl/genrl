@@ -30,28 +30,30 @@ def mlp(sizes):
 
 
 def evaluate(algo, num_timesteps=1000):
-    s = algo.env.reset()
-    ep, ep_r, ep_t = 0, 0, 0
-    total_r = 0
+    state = algo.env.reset()
+    episode, episode_reward, episode_t = 0, 0, 0
+    total_reward = 0
 
     print("\nEvaluating...")
     for t in range(num_timesteps):
-        a = algo.select_action(s)
-        s1, r, done, _ = algo.env.step(a)
-        ep_r += r
-        total_r += r
-        ep_t += 1
+        action = algo.select_action(state)
+        next_state, reward, done, _ = algo.env.step(action)
+        episode_reward += reward
+        total_reward += reward
+        episode_t += 1
 
         if done:
-            ep += 1
-            print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, ep_t))
-            s = algo.env.reset()
-            ep_r, ep_t = 0, 0
+            episode += 1
+            print("Ep: {}, reward: {}, t: {}".format(
+                episode, episode_reward, episode_t
+            ))
+            state = algo.env.reset()
+            episode_reward, episode_t = 0, 0
         else:
-            s = s1
+            state = next_state
 
     algo.env.close()
-    print("Average Reward: {}".format(total_r / num_timesteps))
+    print("Average Reward: {}".format(total_reward / num_timesteps))
 
 
 def save_params(algo):
