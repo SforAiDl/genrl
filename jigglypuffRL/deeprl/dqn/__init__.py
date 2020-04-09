@@ -1,1 +1,1 @@
-from jigglypuffRL.deeprl.dqn.dqn import DQN
+from from jigglypuffRL.deeprl.dqn.dqn import DQN # noqa

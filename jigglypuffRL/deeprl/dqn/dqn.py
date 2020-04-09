@@ -11,7 +11,7 @@ from copy import deepcopy
 
 import matplotlib.pyplot as plt
 
-from jigglypuffRL.common import ReplayBuffer, MlpValue
+from jigglypuffRL.common import ReplayBuffer, get_model
 
 
 class DQN:
@@ -95,10 +95,8 @@ class DQN:
 
     def create_model(self, network_type):
         if network_type == "MLP":
-            self.model = MlpValue(
-                self.env.observation_space.shape[0],
-                self.env.action_space.n,
-                val_type="Qs",
+            self.model = get_model("v", network_type)(
+                self.env.observation_space.shape[0], self.env.action_space.n, "Qs"
             )
             self.target_model = deepcopy(self.model)
 
