@@ -170,8 +170,8 @@ class DDPG:
             ).numpy()
 
         # add noise to output from policy network
-        action += (
-            self.noise_std * np.random.randn(self.env.action_space.shape[0])
+        action += self.noise_std * np.random.randn(
+            self.env.action_space.shape[0]
         )
         return np.clip(
             action,
@@ -180,25 +180,20 @@ class DDPG:
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
-        q_val = self.ac.critic.get_value(
-            torch.cat([state, action], dim=-1)
-        )
+        q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            # print(s1.shape, self.ac_targ.get_action(s1).shape)
-            q_pi_targ = self.ac_targ.get_value(
-                torch.cat([
-                    next_state, self.ac_targ.get_action(next_state)
-                ], dim=-1)
-            )
+            q_pi_targ = self.ac_targ.get_value(torch.cat([
+                next_state, self.ac_targ.get_action(next_state)
+            ], dim=-1))
             target = reward + self.gamma * (1 - done) * q_pi_targ
 
-        return nn.MSELoss()(q_val, target)
+        return nn.MSELoss()(q, target)
 
     def get_p_loss(self, state):
-        q_pi = self.ac.get_value(
-            torch.cat([state, self.ac.get_action(state)], dim=-1)
-        )
+        q_pi = self.ac.get_value(torch.cat([
+            state, self.ac.get_action(state)
+        ], dim=-1))
         return -torch.mean(q_pi)
 
     def update_params(self, state, action, reward, next_state, done):
@@ -266,12 +261,14 @@ class DDPG:
             # update params
             if t >= self.start_update and t % self.update_interval == 0:
                 for _ in range(self.update_interval):
-                    batch = self.replay_buffer.sample(self.batch_size)
+                    batch = self.replay_buffer.sample(
+                        self.batch_size
+                    )
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
                     self.update_params(
-                        states, actions, rewards, next_states, dones
+                        states, actions, next_states, rewards, dones
                     )
 
             if t >= self.start_update and t % self.save_interval == 0:
