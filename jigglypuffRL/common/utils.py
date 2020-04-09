@@ -55,32 +55,38 @@ def evaluate(algo, num_timesteps=1000):
     print("Average Reward: {}".format(total_r / num_timesteps))
 
 
-def save_params(algo, directory="checkpoints"):
+def save_params(algo, directory, timestep):
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    if algo.save_version is None:
-        torch.save(algo.checkpoint, "{}/{}.pt".format(directory, algo.save_name))
-    else:
-        torch.save(
-            algo.checkpoint, "{}/{}-{}.pt".format(
-                directory, algo.save_name, algo.save_version
+    torch.save(algo.checkpoint, "{}/{}_{}_{}-log-{}.pt".format(
+        directory,
+        algo.__class__.__name__,
+        algo.env.unwrapped.spec.id,
+        algo.run_num,
+        timestep
+    ))
+
+
+def load_params(algo, directory, run_num, timestep):
+    try:
+        print("{}/{}_{}_{}-log-{}.pt".format(
+            directory,
+            algo.__class__.__name__,
+            algo.env.unwrapped.spec.id,
+            algo.run_num,
+            timestep
+        ))
+        algo.checkpoint = torch.load(
+            "{}/{}_{}_{}-log-{}.pt".format(
+                directory,
+                algo.__class__.__name__,
+                algo.env.unwrapped.spec.id,
+                run_num,
+                timestep
             )
         )
-
-
-def load_params(algo, directory="checkpoints"):
-    try:
-        if algo.save_version is None:
-            algo.checkpoint = torch.load("{}/{}.pt").format(
-                directory, algo.save_name
-            )
-        else:
-            algo.checkpoint = torch.load("{}/{}-{}.pt".format(
-                    directory, algo.save_name, algo.save_version
-                )
-            )
     except FileNotFoundError:
-        raise Exception("Check name and version number again")
+        raise Exception("File name seems to be invalid")
     except NotADirectoryError:
         raise Exception("Invalid directory path")

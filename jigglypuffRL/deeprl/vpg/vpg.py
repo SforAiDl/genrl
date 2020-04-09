@@ -36,10 +36,6 @@ class VPG:
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
     :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
     :param save_model: (boolean) True if user wants to save model
     """
 
@@ -62,8 +58,6 @@ class VPG:
         render=False,
         device="cpu",
         pretrained=False,
-        save_name=None,
-        save_version=None,
         save_model=False,
     ):
         self.policy = policy
@@ -83,8 +77,6 @@ class VPG:
         self.evaluate = evaluate
         self.save_interval = save_interval
         self.pretrained = pretrained
-        self.save_name = save_name
-        self.save_version = save_version
         self.save_model = save_model
         self.save = save_params
         self.load = load_params
@@ -241,14 +233,9 @@ class VPG:
 
             if self.save_model is not None:
                 if ep % self.save_interval == 0:
-                    self.checkpoint["policy_weights"] = self.policy_fn.state_dict()
-                    self.checkpoint["value_weights"] = self.value_fn.state_dict()
-                    if self.save_name is None:
-                        self.save_name = "{}-{}".format(
-                            self.policy, self.value
-                        )
-                    self.save_version = int(ep / self.save_interval)
-                    self.save(self, self.save_model)
+                    self.checkpoint["policy_weights"] = self.policy_fn.state_dict()  # noqa
+                    self.checkpoint["value_weights"] = self.value_fn.state_dict()    # noqa
+                    self.save(self, self.save_model, ep)
 
         self.env.close()
         if self.tensorboard_log:
@@ -278,6 +265,6 @@ class VPG:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v1")
-    algo = VPG("MlpPolicy", "MlpValue", env, epochs=500, save_name="VPG")
+    algo = VPG("MlpPolicy", "MlpValue", env, epochs=500, save_model="checkpoints")
     algo.learn()
     algo.evaluate(algo)
