@@ -25,13 +25,15 @@ class BasePolicy(nn.Module):
             if self.deterministic:
                 action = torch.argmax(action_probs, dim=-1)
             else:
-                action = Categorical(probs=action_probs).sample()
+                distribution = Categorical(probs=action_probs)
+                action = (distribution.sample(), distribution)
         else:
             action_probs = nn.Tanh()(action_probs) * self.action_lim
             if self.deterministic:
                 action = action_probs
             else:
-                action = Normal(action_probs, self.action_var).sample()
+                distribution = Normal(action_probs, self.action_var)
+                action = (distribution.sample(), distribution)
         return action
 
 

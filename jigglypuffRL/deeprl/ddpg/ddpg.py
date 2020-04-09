@@ -19,7 +19,7 @@ class DDPG:
     """
     Deep Deterministic Policy Gradient algorithm (DDPG)
     Paper: https://arxiv.org/abs/1509.02971
-    :param network_type: (str) The deep neural network layer types ['Mlp']
+    :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
     :param replay_size: (int) Replay memory size
@@ -173,6 +173,7 @@ class DDPG:
         action += self.noise_std * np.random.randn(
             self.env.action_space.shape[0]
         )
+        
         return np.clip(
             action,
             -self.env.action_space.high[0],
