@@ -134,11 +134,11 @@ class DDPG:
         self.create_model()
 
     def create_model(self):
-        s_dim = self.env.observation_space.shape[0]
-        a_dim = self.env.action_space.shape[0]
+        state_dim = self.env.observation_space.shape[0]
+        action_dim = self.env.action_space.shape[0]
 
         self.ac = get_model("ac", self.network_type)(
-            s_dim, a_dim, self.layers, "Qsa", False, True
+            state_dim, action_dim, self.layers, "Qsa", False, True
         ).to(self.device)
 
         # load paramaters if already trained
@@ -149,11 +149,11 @@ class DDPG:
                 if key != "weights":
                     setattr(self, key, item)
 
-        self.ac_targ = deepcopy(self.ac).to(self.device)
+        self.ac_target = deepcopy(self.ac).to(self.device)
 
         # freeze target network params
-        for p in self.ac_targ.parameters():
-            p.requires_grad = False
+        for param in self.ac_target.parameters():
+            param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer_policy = opt.Adam(
@@ -163,104 +163,114 @@ class DDPG:
             self.ac.critic.parameters(), lr=self.lr_q
         )
 
-    def select_action(self, s):
+    def select_action(self, state):
         with torch.no_grad():
-            a = self.ac.get_action(
-                torch.as_tensor(s, dtype=torch.float32, device=self.device)
+            action = self.ac.get_action(
+                torch.as_tensor(state, dtype=torch.float32, device=self.device)
             ).numpy()
 
         # add noise to output from policy network
-        a += self.noise_std * np.random.randn(self.env.action_space.shape[0])
-
+        action += self.noise_std * np.random.randn(
+            self.env.action_space.shape[0]
+        )
+        
         return np.clip(
-            a, -self.env.action_space.high[0], self.env.action_space.high[0]
+            action,
+            -self.env.action_space.high[0],
+            self.env.action_space.high[0]
         )
 
-    def get_q_loss(self, s, a, r, s1, d):
-        q = self.ac.critic.get_value(torch.cat([s, a], dim=-1))
+    def get_q_loss(self, state, action, reward, next_state, done):
+        q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            q_pi_targ = self.ac_targ.get_value(
-                torch.cat([s1, self.ac_targ.get_action(s1)], dim=-1)
-            )
-            target = r + self.gamma * (1 - d) * q_pi_targ
+            q_pi_target = self.ac_target.get_value(torch.cat([
+                next_state, self.ac_target.get_action(next_state)
+            ], dim=-1))
+            target = reward + self.gamma * (1 - done) * q_pi_target
 
         return nn.MSELoss()(q, target)
 
-    def get_p_loss(self, s):
-        q_pi = self.ac.get_value(torch.cat([s, self.ac.get_action(s)], dim=-1))
+    def get_p_loss(self, state):
+        q_pi = self.ac.get_value(torch.cat([
+            state, self.ac.get_action(state)
+        ], dim=-1))
         return -torch.mean(q_pi)
 
-    def update_params(self, s, a, r, s1, d):
+    def update_params(self, state, action, reward, next_state, done):
         self.optimizer_q.zero_grad()
-        loss_q = self.get_q_loss(s, a, r, s1, d)
+        loss_q = self.get_q_loss(state, action, reward, next_state, done)
         loss_q.backward()
         self.optimizer_q.step()
 
         # freeze critic params for policy update
-        for p in self.ac.critic.parameters():
-            p.requires_grad = False
+        for param in self.ac.critic.parameters():
+            param.requires_grad = False
 
         self.optimizer_policy.zero_grad()
-        loss_p = self.get_p_loss(s)
+        loss_p = self.get_p_loss(state)
         loss_p.backward()
         self.optimizer_policy.step()
 
         # unfreeze critic params
-        for p in self.ac.critic.parameters():
-            p.requires_grad = True
+        for param in self.ac.critic.parameters():
+            param.requires_grad = True
 
         # update target network
         with torch.no_grad():
-            for p, p_targ in zip(
-                self.ac.parameters(), self.ac_targ.parameters()
+            for param, param_target in zip(
+                self.ac.parameters(), self.ac_target.parameters()
             ):
-                p_targ.data.mul_(self.polyak)
-                p_targ.data.add_((1 - self.polyak) * p.data)
+                param_target.data.mul_(self.polyak)
+                param_target.data.add_((1 - self.polyak) * param.data)
 
     def learn(self):
-        s, ep_r, ep_len, ep = self.env.reset(), 0, 0, 0
+        state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
 
         for t in range(total_steps):
             # execute single transition
             if t > self.start_steps:
-                a = self.select_action(s)
+                action = self.select_action(state)
             else:
-                a = self.env.action_space.sample()
+                action = self.env.action_space.sample()
 
-            s1, r, d, _ = self.env.step(a)
+            next_state, reward, done, _ = self.env.step(action)
             if self.render:
                 self.env.render()
-            ep_r += r
-            ep_len += 1
+            episode_reward += reward
+            episode_len += 1
 
             # dont set d to True if max_ep_len reached
-            d = False if ep_len == self.max_ep_len else d
+            done = False if episode_len == self.max_ep_len else done
 
-            self.replay_buffer.push((s, a, r, s1, d))
+            self.replay_buffer.push((state, action, reward, next_state, done))
 
-            s = s1
+            state = next_state
 
-            if d or (ep_len == self.max_ep_len):
-                if ep % 20 == 0:
-                    print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, t))
+            if done or (episode_len == self.max_ep_len):
+                if episode % 20 == 0:
+                    print("Ep: {}, reward: {}, t: {}".format(
+                        episode, episode_reward, t
+                    ))
                 if self.tensorboard_log:
-                    self.writer.add_scalar("episode_reward", ep_r, t)
+                    self.writer.add_scalar("episode_reward", episode_reward, t)
 
-                s, ep_r, ep_len = self.env.reset(), 0, 0
-                ep += 1
+                state, episode_reward, episode_len = self.env.reset(), 0, 0
+                episode += 1
 
             # update params
             if t >= self.start_update and t % self.update_interval == 0:
                 for _ in range(self.update_interval):
-                    s_b, a_b, r_b, s1_b, d_b = self.replay_buffer.sample(
+                    batch = self.replay_buffer.sample(
                         self.batch_size
                     )
-                    s_b, a_b, r_b, s1_b, d_b = (
-                        x.to(self.device) for x in [s_b, a_b, r_b, s1_b, d_b]
+                    states, actions, next_states, rewards, dones = (
+                        x.to(self.device) for x in batch
                     )
-                    self.update_params(s_b, a_b, r_b, s1_b, d_b)
+                    self.update_params(
+                        states, actions, next_states, rewards, dones
+                    )
 
             if t >= self.start_update and t % self.save_interval == 0:
                 if self.save_name is None:
