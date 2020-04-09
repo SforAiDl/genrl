@@ -171,7 +171,7 @@ class DDPG:
 
         # add noise to output from policy network
         a += self.noise_std * np.random.randn(self.env.action_space.shape[0])
-        
+
         return np.clip(
             a, -self.env.action_space.high[0], self.env.action_space.high[0]
         )
