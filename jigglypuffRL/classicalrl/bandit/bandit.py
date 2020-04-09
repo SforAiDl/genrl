@@ -477,7 +477,7 @@ if __name__ == "__main__":
     plt.plot(ucbBandit.regrets, label="ucb")
     plt.plot(softmaxBandit.regrets, label="softmax")
     plt.legend()
-    plt.savefig("GuassianBanditsRegret.png")
+    plt.savefig("GaussianBanditsRegret.png")
     plt.cla()
 
     epsbernoulli = EpsGreedyBernoulliBandit(1, 10, 0.05)
