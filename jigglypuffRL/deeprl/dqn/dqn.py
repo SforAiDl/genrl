@@ -1,4 +1,4 @@
-import math, random
+import random
 
 import gym
 import numpy as np
@@ -7,6 +7,7 @@ import torch
 import torch.optim as opt
 from torch.autograd import Variable
 import torch.nn.functional as F
+from copy import deepcopy
 
 import matplotlib.pyplot as plt
 
@@ -28,7 +29,6 @@ class DQN:
     :param lr: (float) learing rate for the optimizer 
     :param batch_size: (int) Update batch size
     :param replay_size: (int) Replay memory size
-    :param plot_loss_reward_graph: (bool) To print the loss and reward as a graph or text
     :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
     :param seed : (int) seed for torch and gym
     :param render : (boolean) if environment is to be rendered
@@ -47,7 +47,6 @@ class DQN:
         lr=0.001,
         batch_size=32,
         replay_size=100,
-        plot_loss_reward_graph=False,
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -62,7 +61,6 @@ class DQN:
         self.lr = lr
         self.gamma = gamma
         self.batch_size = batch_size
-        self.plot_loss_reward_graph = plot_loss_reward_graph
         self.tensorboard_log = tensorboard_log
         self.render = render
         self.loss_hist = []
@@ -102,18 +100,7 @@ class DQN:
                 self.env.action_space.n,
                 val_type="Qs",
             )
-
-        if self.double_dqn and (network_type == "MLP"):
-            self.model = MlpValue(
-                self.env.observation_space.shape[0],
-                self.env.action_space.n,
-                val_type="Qs",
-            )
-            self.target_model = MlpValue(
-                self.env.observation_space.shape[0],
-                self.env.action_space.n,
-                val_type="Qs",
-            )
+            self.target_model = deepcopy(self.model)
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
@@ -145,16 +132,25 @@ class DQN:
         done = Variable(torch.FloatTensor(done))
 
         q_values = self.model(state)
-        if self.double_dqn:
-            next_q_values = self.target_model(next_state)
-        else:
-            next_q_values = self.model(next_state)
-
         q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
-        next_q_value = next_q_values.max(1)[0]
-        expected_q_value = reward + self.gamma * next_q_value * (1 - done)
 
-        loss = F.smooth_l1_loss(q_value, expected_q_value)
+        if self.double_dqn:
+            q_next_state_values = self.model(next_state)
+            action_next = q_next_state_values.max(1)[1]
+
+            q_target_next_state_values = self.target_model(next_state)
+            q_target_s_a_prime = q_target_next_state_values.gather(
+                1, action_next.unsqueeze(1)
+            ).squeeze(1)
+            expected_q_value = reward + self.gamma * q_target_s_a_prime * (1 - done)
+
+        else:
+            q_next_state_values = self.target_model(next_state)
+            q_s_a_prime = q_next_state_values.max(1)[0]
+            expected_q_value = reward + self.gamma * q_s_a_prime * (1 - done)
+
+        loss = (q_value - expected_q_value.detach()).pow(2).mean()
+        # loss = F.smooth_l1_loss(q_value,expected_q_value)
 
         self.loss_hist.append(loss)
 
@@ -170,18 +166,6 @@ class DQN:
         return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
             -1.0 * frame_idx / self.epsilon_decay
         )
-
-    def plot(self):
-        plt.figure(figsize=(20, 5))
-        plt.subplot(131)
-        plt.title(
-            "Average reward for last 10 frames: %s" % (np.mean(self.reward_hist[-10:]))
-        )
-        plt.plot(self.reward_hist)
-        plt.subplot(132)
-        plt.title("loss")
-        plt.plot(self.loss_hist)
-        plt.show()
 
     def learn(self):
         total_steps = self.max_epochs * self.max_iterations_per_epoch
@@ -220,20 +204,15 @@ class DQN:
             if self.replay_buffer.get_len() > self.batch_size:
                 self.update_params()
 
-            if frame_idx % 100 == 0 and self.double_dqn:
+            if frame_idx % 100 == 0:
                 self.update_target_model()
 
-        if self.plot_loss_reward_graph == True:
-            self.plot()
-
+        self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-
-        if self.render:
-            self.env.close()
 
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = DQN("MLP", env, plot_loss_reward_graph=True)
+    algo = DQN("MLP", env)
     algo.learn()
