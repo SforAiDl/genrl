@@ -14,25 +14,25 @@ class BasePolicy(nn.Module):
 
         self.model = None
 
-    def forward(self, s):
-        return self.model(s)
+    def forward(self, state):
+        return self.model(state)
 
-    def get_action(self, s):
-        _s = self.forward(s)
+    def get_action(self, state):
+        ps = self.forward(state)
 
         if self.disc:
-            _s = nn.Softmax(dim=-1)(_s)
+            ps = nn.Softmax(dim=-1)(ps)
             if self.det:
-                a = torch.argmax(_s, dim=-1)
+                action = torch.argmax(ps, dim=-1)
             else:
-                a = Categorical(probs=_s).sample()
+                action = Categorical(probs=ps).sample()
         else:
-            _s = nn.Tanh()(_s) * self.a_lim
+            ps = nn.Tanh()(ps) * self.a_lim
             if self.det:
-                a = _s
+                action = ps
             else:
-                a = Normal(_s, self.a_var).sample()
-        return a
+                action = Normal(ps, self.a_var).sample()
+        return action
 
 
 class BaseValue(nn.Module):
@@ -55,10 +55,10 @@ class BaseActorCritic(nn.Module):
         self.actor = None
         self.critic = None
 
-    def get_action(self, s):
-        s = torch.as_tensor(s).float()
-        return self.actor.get_action(s)
+    def get_action(self, state):
+        state = torch.as_tensor(state).float()
+        return self.actor.get_action(state)
 
-    def get_value(self, x):
-        x = torch.as_tensor(x).float()
-        return self.critic.get_value(x)
+    def get_value(self, state):
+        state = torch.as_tensor(state).float()
+        return self.critic.get_value(state)

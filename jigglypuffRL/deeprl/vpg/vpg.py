@@ -131,8 +131,8 @@ class VPG:
         self.optimizer_value = opt.Adam(
             self.value_fn.parameters(), lr=self.lr_value)
 
-    def select_action(self, s):
-        state = torch.from_numpy(s).float().to(self.device)
+    def select_action(self, state):
+        state = torch.from_numpy(state).float().to(self.device)
 
         # create distribution based on policy_fn output
         action, c = self.policy_fn.sample_action(Variable(state))
@@ -149,22 +149,23 @@ class VPG:
 
     # get clipped loss for single trajectory (episode)
     def get_traj_loss(self):
-        R = 0
+        disc_R = 0
         returns = []
 
         # calculate discounted return
-        for r in self.policy_fn.traj_reward[::-1]:
-            R = r + self.gamma * R
-            returns.insert(0, R)
+        for reward in self.policy_fn.traj_reward[::-1]:
+            disc_R = reward + self.gamma * disc_R
+            returns.insert(0, disc_R)
 
         # advantage estimation
         returns = torch.FloatTensor(returns).to(self.device)
-        A = Variable(returns) - Variable(self.value_fn.value_hist)
+        advantage = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
         loss_policy = (
-            torch.sum(torch.mul(self.policy_fn.policy_hist, A)).mul(-1)
-            .unsqueeze(0)
+            torch.sum(torch.mul(
+                self.policy_fn.policy_hist, advantage
+            )).mul(-1).unsqueeze(0)
         )
 
         loss_value = nn.MSELoss()(
@@ -182,15 +183,15 @@ class VPG:
         self.policy_fn.policy_hist = Variable(torch.Tensor())
         self.value_fn.value_hist = Variable(torch.Tensor())
 
-    def update_policy(self, ep):
+    def update_policy(self, episode):
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_fn.loss_hist)
         loss_value = torch.mean(self.value_fn.loss_hist)
 
         # tensorboard book-keeping
         if self.tensorboard_log:
-            self.writer.add_scalar("loss/policy", loss_policy, ep)
-            self.writer.add_scalar("loss/value", loss_value, ep)
+            self.writer.add_scalar("loss/policy", loss_policy, episode)
+            self.writer.add_scalar("loss/value", loss_value, episode)
 
         # take gradient step
         self.optimizer_policy.zero_grad()
@@ -207,19 +208,19 @@ class VPG:
 
     def learn(self):
         # training loop
-        for ep in range(self.epochs):
+        for episode in range(self.epochs):
             epoch_reward = 0
             for i in range(self.actor_batch_size):
-                s = self.env.reset()
+                state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    a = self.select_action(s)
-                    s, r, done, _ = self.env.step(np.array(a))
+                    action = self.select_action(state)
+                    state, reward, done, _ = self.env.step(np.array(action))
 
                     if self.render:
                         self.env.render()
 
-                    self.policy_fn.traj_reward.append(r)
+                    self.policy_fn.traj_reward.append(reward)
 
                     if done:
                         break
@@ -229,45 +230,24 @@ class VPG:
                 )
                 self.get_traj_loss()
 
-            self.update_policy(ep)
+            self.update_policy(episode)
 
-            if ep % 20 == 0:
-                print("Episode: {}, reward: {}".format(ep, epoch_reward))
+            if episode % 20 == 0:
+                print("Episode: {}, reward: {}".format(episode, epoch_reward))
                 if self.tensorboard_log:
-                    self.writer.add_scalar("reward", epoch_reward, ep)
+                    self.writer.add_scalar("reward", epoch_reward, episode)
 
-            if ep % self.save_interval == 0:
+            if episode % self.save_interval == 0:
                 self.checkpoint["policy_weights"] = self.policy_fn.state_dict()
                 self.checkpoint["value_weights"] = self.value_fn.state_dict()
                 if self.save_name is None:
                     self.save_name = "{}-{}".format(self.policy, self.value)
-                self.save_version = int(ep / self.save_interval)
+                self.save_version = int(episode / self.save_interval)
                 self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-
-    def evaluate(self, num_timesteps=1000):
-        s = self.env.reset()
-        ep, ep_r, ep_t = 0, 0, 0
-
-        print("\nEvaluating...")
-        for t in range(num_timesteps):
-            a = self.select_action(s)
-            s1, r, done, _ = env.step(a)
-            ep_r += r
-            ep_t += 1
-
-            if done:
-                ep += 1
-                print("Ep: {}, reward: {}, t: {}".format(ep, ep_r, ep_t))
-                s = self.env.reset()
-                ep_r, ep_t = 0, 0
-            else:
-                s = s1
-
-        self.env.close()
 
 
 if __name__ == "__main__":
