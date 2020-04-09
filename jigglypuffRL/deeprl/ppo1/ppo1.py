@@ -168,17 +168,17 @@ class PPO1:
 
     # get clipped loss for single trajectory (episode)
     def get_traj_loss(self):
-        R = 0
+        discounted_reward = 0
         returns = []
 
         # calculate discounted return
         for reward in self.policy_old.traj_reward[::-1]:
-            R = reward + self.gamma * R
-            returns.insert(0, R)
+            discounted_reward = reward + self.gamma * discounted_reward
+            returns.insert(0, discounted_reward)
 
         # advantage estimation
         returns = torch.FloatTensor(returns).to(self.device)
-        A = Variable(returns) - Variable(self.value_fn.value_hist)
+        advantages = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
         ratio = torch.div(
@@ -186,12 +186,12 @@ class PPO1:
         )
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
-            .mul(A)
+            .mul(advantages)
             .to(self.device)
         )
 
         loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, A), clipping)).mul(-1)
+            torch.mean(torch.min(torch.mul(ratio, advantages), clipping)).mul(-1)
             .unsqueeze(0)
         )
         loss_value = nn.MSELoss()(

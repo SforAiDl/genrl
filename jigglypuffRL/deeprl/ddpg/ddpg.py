@@ -149,10 +149,10 @@ class DDPG:
                 if key != "weights":
                     setattr(self, key, item)
 
-        self.ac_targ = deepcopy(self.ac).to(self.device)
+        self.ac_target = deepcopy(self.ac).to(self.device)
 
         # freeze target network params
-        for param in self.ac_targ.parameters():
+        for param in self.ac_target.parameters():
             param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
@@ -183,10 +183,10 @@ class DDPG:
         q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            q_pi_targ = self.ac_targ.get_value(torch.cat([
-                next_state, self.ac_targ.get_action(next_state)
+            q_pi_target = self.ac_target.get_value(torch.cat([
+                next_state, self.ac_target.get_action(next_state)
             ], dim=-1))
-            target = reward + self.gamma * (1 - done) * q_pi_targ
+            target = reward + self.gamma * (1 - done) * q_pi_target
 
         return nn.MSELoss()(q, target)
 
@@ -217,11 +217,11 @@ class DDPG:
 
         # update target network
         with torch.no_grad():
-            for param, param_targ in zip(
-                self.ac.parameters(), self.ac_targ.parameters()
+            for param, param_target in zip(
+                self.ac.parameters(), self.ac_target.parameters()
             ):
-                param_targ.data.mul_(self.polyak)
-                param_targ.data.add_((1 - self.polyak) * param.data)
+                param_target.data.mul_(self.polyak)
+                param_target.data.add_((1 - self.polyak) * param.data)
 
     def learn(self):
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0

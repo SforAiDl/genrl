@@ -4,13 +4,13 @@ from torch.distributions import Categorical, Normal
 
 
 class BasePolicy(nn.Module):
-    def __init__(self, disc, det, **kwargs):
+    def __init__(self, discrete, deterministic, **kwargs):
         super(BasePolicy, self).__init__()
 
-        self.disc = disc
-        self.det = det
-        self.a_lim = kwargs["a_lim"] if "a_lim" in kwargs else 1.0
-        self.a_var = kwargs["a_var"] if "a_var" in kwargs else 0.1
+        self.discrete = discrete
+        self.deterministic = deterministic
+        self.action_lim = kwargs["action_lim"] if "action_lim" in kwargs else 1.0
+        self.action_var = kwargs["action_var"] if "action_var" in kwargs else 0.1
 
         self.model = None
 
@@ -18,20 +18,20 @@ class BasePolicy(nn.Module):
         return self.model(state)
 
     def get_action(self, state):
-        ps = self.forward(state)
+        action_probs = self.forward(state)
 
-        if self.disc:
-            ps = nn.Softmax(dim=-1)(ps)
-            if self.det:
-                action = torch.argmax(ps, dim=-1)
+        if self.discrete:
+            action_probs = nn.Softmax(dim=-1)(action_probs)
+            if self.deterministic:
+                action = torch.argmax(action_probs, dim=-1)
             else:
-                action = Categorical(probs=ps).sample()
+                action = Categorical(probs=action_probs).sample()
         else:
-            ps = nn.Tanh()(ps) * self.a_lim
-            if self.det:
-                action = ps
+            action_probs = nn.Tanh()(action_probs) * self.action_lim
+            if self.deterministic:
+                action = action_probs
             else:
-                action = Normal(ps, self.a_var).sample()
+                action = Normal(action_probs, self.action_var).sample()
         return action
 
 
