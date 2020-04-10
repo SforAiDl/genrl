@@ -15,7 +15,7 @@ class BasePolicy(nn.Module):
         self.model = None
 
     def forward(self, state):
-        return self.model(state)
+        return self.model.forward(state)
 
     def get_action(self, state):
         action_probs = self.forward(state)
@@ -23,14 +23,14 @@ class BasePolicy(nn.Module):
         if self.discrete:
             action_probs = nn.Softmax(dim=-1)(action_probs)
             if self.deterministic:
-                action = torch.argmax(action_probs, dim=-1)
+                action = (torch.argmax(action_probs, dim=-1), None)
             else:
                 distribution = Categorical(probs=action_probs)
                 action = (distribution.sample(), distribution)
         else:
             action_probs = nn.Tanh()(action_probs) * self.action_lim
             if self.deterministic:
-                action = action_probs
+                action = (action_probs, None)
             else:
                 distribution = Normal(action_probs, self.action_var)
                 action = (distribution.sample(), distribution)
