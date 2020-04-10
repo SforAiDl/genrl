@@ -260,8 +260,6 @@ class VPG:
 
             if episode % self.save_interval == 0:
                 self.checkpoint = self.get_hyperparams()
-                self.checkpoint["policy_weights"] = self.ac.actor.state_dict()
-                self.checkpoint["value_weights"] = self.ac.critic.state_dict()
                 if self.save_name is None:
                     self.save_name = "{}".format(self.env)
                 self.save_version = int(episode / self.save_interval)
@@ -279,7 +277,9 @@ class VPG:
             "clip_param" : self.clip_param,
             "actor_batch_size" : self.actor_batch_size,
             "lr_policy" : self.lr_policy,
-            "lr_value" : self.lr_value
+            "lr_value" : self.lr_value,
+            "policy_weights" : self.ac.actor.state_dict(),
+            "value_weights" : self.ac.critic.state_dict()
         }
 
         return hyperparams
