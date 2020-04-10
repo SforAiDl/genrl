@@ -295,7 +295,7 @@ class PPO1:
             action_dim = self.env.action_space.n
             disc = True
         elif isinstance(self.env.action_space, gym.spaces.Box):
-            a_dim = self.env.action_space.shape[0]
+            action_dim = self.env.action_space.shape[0]
             disc = False
         else:
             raise NotImplementedError
