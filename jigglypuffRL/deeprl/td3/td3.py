@@ -17,6 +17,40 @@ from jigglypuffRL.common import (
 class TD3:
     """
     Twin Delayed DDPG
+    Paper: https://arxiv.org/abs/1509.02971
+    :param network_type: (str) The deep neural network layer types ['mlp']
+    :param env: (Gym environment) The environment to learn from
+    :param gamma: (float) discount factor
+    :param replay_size: (int) Replay memory size
+    :param batch_size: (int) Update batch size
+    :param lr_p: (float) Policy network learning rate
+    :param lr_q: (float) Q network learning rate
+    :param polyak: (float) Polyak averaging weight to update target network
+    :param policy_frequency: (int) Update actor and target networks every policy_frequency steps
+    :param epochs: (int) Number of epochs
+    :param start_steps: (int) Number of exploratory steps at start
+    :param steps_per_epoch: (int) Number of steps per epoch
+    :param noise_std: (float) Standard deviation for action noise
+    :param max_ep_len: (int) Maximum steps per episode
+    :param start_update: (int) Number of steps before first parameter update
+    :param update_interval: (int) Number of steps between parameter updates
+    :param save_interval: (int) Number of steps between saves of models
+    :param layers: (tuple or list) Number of neurons in hidden layers
+    :param tensorboard_log: (str) the log location for tensorboard (if None,
+        no logging)
+    :param seed (int): seed for torch and gym
+    :param render (boolean): if environment is to be rendered
+    :param device (str): device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
+    :param seed: (int) seed for torch and gym
+    :param render: (boolean) if environment is to be rendered
+    :param device: (str) device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
+    :param pretrained: (boolean) if model has already been trained
+    :param save_name: (str) model save name (if None, model hasn't been
+        pretrained)
+    :param save_version: (int) model save version (if None, model hasn't been
+        pretrained)
     """
     def __init__(
         self,
