@@ -85,7 +85,6 @@ class VPG:
         self.save_version = save_version
         self.save = save_params
         self.load = load_params
-        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -260,6 +259,7 @@ class VPG:
                     self.writer.add_scalar("reward", epoch_reward, episode)
 
             if episode % self.save_interval == 0:
+                self.checkpoint = self.get_hyperparams()
                 self.checkpoint["policy_weights"] = self.ac.actor.state_dict()
                 self.checkpoint["value_weights"] = self.ac.critic.state_dict()
                 if self.save_name is None:
@@ -270,6 +270,19 @@ class VPG:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
+
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type" : self.network_type,
+            "timesteps_per_actorbatch" : self.timesteps_per_actorbatch,
+            "gamma" : self.gamma,
+            "clip_param" : self.clip_param,
+            "actor_batch_size" : self.actor_batch_size,
+            "lr_policy" : self.lr_policy,
+            "lr_value" : self.lr_value
+        }
+
+        return hyperparams
 
 
 if __name__ == "__main__":
