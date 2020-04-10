@@ -147,11 +147,11 @@ class VPG:
         self.value_loss_hist = Variable(torch.Tensor())
 
 
-    def select_action(self, state):
+    def select_action(self, state, deterministic=False):
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
-        a, c = self.ac.get_action(state)
+        a, c = self.ac.get_action(state, deterministic=False)[0]
         val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current traj
@@ -234,7 +234,7 @@ class VPG:
                 state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    action = Variable(self.select_action(state))
+                    action = Variable(self.select_action(state, deterministic=False))
                     # print(type(action))
                     state, reward, done, _ = self.env.step(action)
 
