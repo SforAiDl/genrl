@@ -12,7 +12,7 @@ from jigglypuffRL.common import ( # noqa
     evaluate,
 )
 
-from jigglypuffRL.deeprl import DDPG, PPO1, VPG # noqa
+from jigglypuffRL.deeprl import DDPG, PPO1, VPG, TD3 # noqa
 
 from jigglypuffRL.classicalrl import ( # noqa
     EpsGreedyBernoulliBandit,
