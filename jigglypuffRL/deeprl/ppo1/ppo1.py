@@ -278,8 +278,6 @@ class PPO1:
 
             if episode % self.save_interval == 0:
                 self.checkpoint = self.get_hyperparams()
-                self.checkpoint["policy_weights"] = self.policy_new.state_dict() # noqa
-                self.checkpoint["value_weights"] = self.value_fn.state_dict()
                 if self.save_name is None:
                     self.save_name = "{}".format(self.network_type)
                 self.save_version = int(episode / self.save_interval)
@@ -312,7 +310,9 @@ class PPO1:
         "clip_param" : self.clip_param,
         "actor_batch_size" : self.actor_batch_size,
         "lr_policy" : self.lr_policy,
-        "lr_value" : self.lr_value
+        "lr_value" : self.lr_value,
+        "policy_weights" : self.policy_new.state_dict(),
+        "value_weights" : self.value_fn.state_dict()
         }
 
         return hyperparams
