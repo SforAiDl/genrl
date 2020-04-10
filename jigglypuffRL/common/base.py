@@ -4,11 +4,10 @@ from torch.distributions import Categorical, Normal
 
 
 class BasePolicy(nn.Module):
-    def __init__(self, discrete, deterministic, **kwargs):
+    def __init__(self, discrete, **kwargs):
         super(BasePolicy, self).__init__()
 
         self.discrete = discrete
-        self.deterministic = deterministic
         self.action_lim = kwargs["action_lim"] if "action_lim" in kwargs else 1.0
         self.action_var = kwargs["action_var"] if "action_var" in kwargs else 0.1
 
@@ -17,19 +16,19 @@ class BasePolicy(nn.Module):
     def forward(self, state):
         return self.model.forward(state)
 
-    def get_action(self, state):
+    def get_action(self, state, deterministic=False):
         action_probs = self.forward(state)
 
         if self.discrete:
             action_probs = nn.Softmax(dim=-1)(action_probs)
-            if self.deterministic:
+            if deterministic:
                 action = (torch.argmax(action_probs, dim=-1), None)
             else:
                 distribution = Categorical(probs=action_probs)
                 action = (distribution.sample(), distribution)
         else:
             action_probs = nn.Tanh()(action_probs) * self.action_lim
-            if self.deterministic:
+            if deterministic:
                 action = (action_probs, None)
             else:
                 distribution = Normal(action_probs, self.action_var)
