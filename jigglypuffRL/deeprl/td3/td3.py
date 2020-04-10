@@ -1,8 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as opt
-from torch.autograd import Variable
 import gym
 from copy import deepcopy
 import random
@@ -157,7 +155,7 @@ class TD3:
         "policy_frequency" : self.policy_frequency,
         "noise_std" : self.noise_std,
         "critic_q1_weights" : self.ac.qf1.state_dict(),
-        "critic_q1_weights" : self.ac.qf2.state_dict(),
+        "critic_q2_weights" : self.ac.qf2.state_dict(),
         "actor_weights" : self.ac.actor.state_dict
         }
 
