@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as opt
 from torch.autograd import Variable
 import gym
@@ -153,7 +152,7 @@ class VPG:
 
         # create distribution based on policy_fn output
         a, c = self.ac.get_action(state)
-        val = self.ac.get_value(state).unsqueeze_(0)
+        val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current traj
         self.policy_hist = torch.cat(

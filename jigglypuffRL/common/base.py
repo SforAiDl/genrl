@@ -43,8 +43,8 @@ class BaseValue(nn.Module):
         self.model = None
 
     def forward(self, x):
-        return self.model(x)
-
+        return self.model.forward(x)
+        
     def get_value(self, x):
         return self.forward(x).squeeze()
 
