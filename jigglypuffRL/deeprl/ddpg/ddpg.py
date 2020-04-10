@@ -143,7 +143,7 @@ class DDPG:
 
         # load paramaters if already trained
         if self.pretrained:
-            self.checkpoint = self.load(self.save_name, self.save_version)
+            self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
                 if key != "weights":
