@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
+from torch.autograd import Variable
 import gym
 from copy import deepcopy
 import random
@@ -138,7 +139,7 @@ class DDPG:
         action_dim = self.env.action_space.shape[0]
 
         self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "Qsa", False, True
+            state_dim, action_dim, self.layers, "Qsa", False
         ).to(self.device)
 
         # load paramaters if already trained
@@ -163,11 +164,11 @@ class DDPG:
             self.ac.critic.parameters(), lr=self.lr_q
         )
 
-    def select_action(self, state):
+    def select_action(self, state, deterministic=False):
         with torch.no_grad():
             action = self.ac.get_action(
-                torch.as_tensor(state, dtype=torch.float32, device=self.device)
-            ).numpy()
+                torch.as_tensor(state, dtype=torch.float32, device=self.device),
+            deterministic=deterministic)[0].numpy()
 
         # add noise to output from policy network
         action += self.noise_std * np.random.randn(
@@ -185,16 +186,16 @@ class DDPG:
 
         with torch.no_grad():
             q_pi_target = self.ac_target.get_value(torch.cat([
-                next_state, self.ac_target.get_action(next_state)
+                next_state, self.ac_target.get_action(next_state)[0]
             ], dim=-1))
             target = reward + self.gamma * (1 - done) * q_pi_target
 
         return nn.MSELoss()(q, target)
 
     def get_p_loss(self, state):
-        q_pi = self.ac.get_value(torch.cat([
-            state, self.ac.get_action(state)
-        ], dim=-1))
+        q_pi = self.ac.get_value(Variable(torch.cat([
+            state, self.ac.get_action(state)[0]
+        ], dim=-1), requires_grad=True))
         return -torch.mean(q_pi)
 
     def update_params(self, state, action, reward, next_state, done):
@@ -231,7 +232,7 @@ class DDPG:
         for t in range(total_steps):
             # execute single transition
             if t > self.start_steps:
-                action = self.select_action(state)
+                action = self.select_action(state, deterministic=False)
             else:
                 action = self.env.action_space.sample()
 
