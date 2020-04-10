@@ -6,8 +6,7 @@ from torch.autograd import Variable
 import gym
 
 from jigglypuffRL.common import (
-    get_policy_from_name,
-    get_value_from_name,
+    get_model,
     evaluate,
     save_params,
     load_params,
@@ -45,8 +44,7 @@ class PPO1:
 
     def __init__(
         self,
-        policy,
-        value,
+        network_type,
         env,
         timesteps_per_actorbatch=200,
         gamma=0.99,
@@ -65,8 +63,7 @@ class PPO1:
         save_name=None,
         save_version=None,
     ):
-        self.policy = policy
-        self.value = value
+        self.network_type = network_type
         self.env = env
         self.timesteps_per_actorbatch = timesteps_per_actorbatch
         self.gamma = gamma
@@ -86,7 +83,6 @@ class PPO1:
         self.save_version = save_version
         self.save = save_params
         self.load = load_params
-        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -113,13 +109,14 @@ class PPO1:
 
     def create_model(self):
         # Instantiate networks and optimizers
+        state_dim, action_dim, disc = self.get_env_properties(self.env)
         self.policy_new, self.policy_old = (
-            get_policy_from_name(self.policy)(self.env),
-            get_policy_from_name(self.policy)(self.env),
+            get_model("p", self.network_type)(state_dim, action_dim, disc=disc),
+            get_model("p", self.network_type)(state_dim, action_dim, disc=disc),
         )
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
-        self.value_fn = get_value_from_name(self.value)(self.env).to(
+        self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
             self.device
         )
 
@@ -141,13 +138,21 @@ class PPO1:
             self.value_fn.parameters(), lr=self.lr_value
         )
 
+        self.policy_old.traj_reward = []
+        self.policy_old.policy_hist = Variable(torch.Tensor())
+        self.policy_new.policy_hist = Variable(torch.Tensor())
+        self.value_fn.value_hist = Variable(torch.Tensor())
+
+        self.policy_new.loss_hist = Variable(torch.Tensor())
+        self.value_fn.loss_hist = Variable(torch.Tensor())
+
     def select_action(self, state):
-        state = torch.from_numpy(state).float().to(self.device)
+        state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on policy_old output
-        action, c_old = self.policy_old.sample_action(Variable(state))
-        _, c_new = self.policy_new.sample_action(Variable(state))
-        val = self.value_fn(Variable(state))
+        action, c_old = self.policy_old.get_action(Variable(state), deterministic=False)
+        _, c_new = self.policy_new.get_action(Variable(state), deterministic=False)
+        val = self.value_fn.get_value(Variable(state))
 
         # store policy probs and value function for current traj
         self.policy_old.policy_hist = torch.cat(
@@ -164,7 +169,7 @@ class PPO1:
             ]
         )
 
-        self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val])
+        self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val.unsqueeze(0)])
 
         return action
 
@@ -272,10 +277,9 @@ class PPO1:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
             if episode % self.save_interval == 0:
-                self.checkpoint["policy_weights"] = self.policy_new.state_dict() # noqa
-                self.checkpoint["value_weights"] = self.value_fn.state_dict()
+                self.checkpoint = self.get_hyperparams()
                 if self.save_name is None:
-                    self.save_name = "{}-{}".format(self.policy, self.value)
+                    self.save_name = "{}".format(self.network_type)
                 self.save_version = int(episode / self.save_interval)
                 self.save(self)
 
@@ -283,9 +287,39 @@ class PPO1:
         if self.tensorboard_log:
             self.writer.close()
 
+        
+    def get_env_properties(self, env):
+        state_dim = self.env.observation_space.shape[0]
+
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            action_dim = self.env.action_space.n
+            disc = True
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            action_dim = self.env.action_space.shape[0]
+            disc = False
+        else:
+            raise NotImplementedError
+
+        return state_dim, action_dim, disc
+
+    def get_hyperparams(self):
+        hyperparams = {
+        "network_type" : self.network_type,
+        "timesteps_per_actorbatch" : self.timesteps_per_actorbatch,
+        "gamma" : self.gamma,
+        "clip_param" : self.clip_param,
+        "actor_batch_size" : self.actor_batch_size,
+        "lr_policy" : self.lr_policy,
+        "lr_value" : self.lr_value,
+        "policy_weights" : self.policy_new.state_dict(),
+        "value_weights" : self.value_fn.state_dict()
+        }
+
+        return hyperparams
+
 
 if __name__ == "__main__":
-    env = gym.make("LunarLander-v2")
-    algo = PPO1("MlpPolicy", "MlpValue", env, render=True)
+    env = gym.make("CartPole-v1")
+    algo = PPO1("mlp", env, render=True)
     algo.learn()
     algo.evaluate(algo)

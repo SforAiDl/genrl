@@ -137,7 +137,7 @@ class TD3:
         state_dim, action_dim, disc = self.get_env_properties()
 
         self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "Qsa", False, True
+            state_dim, action_dim, self.layers, "Qsa", False
         ).to(self.device)
 
         self.ac.qf1 = self.ac.critic
@@ -195,11 +195,11 @@ class TD3:
 
         return hyperparams
 
-    def select_action(self, state):
+    def select_action(self, state, deterministic=True):
         with torch.no_grad():
             action = self.ac_target.get_action(
-                torch.as_tensor(state, dtype=torch.float32, device=self.device)
-            ).numpy()
+                torch.as_tensor(state, dtype=torch.float32, device=self.device),
+            deterministic=deterministic)[0].numpy()
 
         # add noise to output from policy network
         action += self.noise_std * np.random.randn(
@@ -217,8 +217,8 @@ class TD3:
         q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            target_q1 = self.ac_target.qf1.get_value(torch.cat([next_state, self.ac_target.get_action(next_state)], dim=-1))
-            target_q2 = self.ac_target.qf2.get_value(torch.cat([next_state, self.ac_target.get_action(next_state)], dim=-1))
+            target_q1 = self.ac_target.qf1.get_value(torch.cat([next_state, self.ac_target.get_action(next_state, deterministic=True)[0]], dim=-1))
+            target_q2 = self.ac_target.qf2.get_value(torch.cat([next_state, self.ac_target.get_action(next_state, deterministic=True)[0]], dim=-1))
             target_q = torch.min(target_q1, target_q2)
 
             target = reward + self.gamma * (1 - done) * target_q
@@ -230,7 +230,7 @@ class TD3:
 
     def get_p_loss(self, state):
         q_pi = self.ac.get_value(torch.cat([
-            state, self.ac.get_action(state)
+            state, self.ac.get_action(state, deterministic=True)[0]
         ], dim=-1))
         return -torch.mean(q_pi)
 
@@ -270,7 +270,7 @@ class TD3:
         for t in range(total_steps):
             # execute single transition
             if t > self.start_steps:
-                action = self.select_action(state)
+                action = self.select_action(state, deterministic=True)
             else:
                 action = self.env.action_space.sample()
 
