@@ -50,15 +50,15 @@ class BaseValue(nn.Module):
 
 
 class BaseActorCritic(nn.Module):
-    def __init__(self, disc, det):
+    def __init__(self, disc):
         super(BaseActorCritic, self).__init__()
 
         self.actor = None
         self.critic = None
 
-    def get_action(self, state):
+    def get_action(self, state, deterministic=False):
         state = torch.as_tensor(state).float()
-        return self.actor.get_action(state)
+        return self.actor.get_action(state, deterministic=deterministic)
 
     def get_value(self, state):
         state = torch.as_tensor(state).float()
