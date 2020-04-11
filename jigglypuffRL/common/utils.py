@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import os
+import pickle
 
 
 def get_model(type_, name_):
@@ -57,36 +58,65 @@ def evaluate(algo, num_timesteps=1000):
     print("Average Reward: {}".format(total_reward / num_timesteps))
 
 
-def save_params(algo, directory, timestep):
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+def save_params(algo, timestep):
+    algo_name = algo.__class__.__name__
+    env_name = algo.env.unwrapped.spec.id
+    directory = algo.save_model
+    path = "{}/{}_{}".format(
+        directory, algo_name, env_name
+    )
 
-    torch.save(algo.checkpoint, "{}/{}_{}_{}-log-{}.pt".format(
-        directory,
-        algo.__class__.__name__,
-        algo.env.unwrapped.spec.id,
-        algo.run_num,
-        timestep
+    if timestep == algo.save_interval:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            log = {}
+            run_num = 0
+        else:
+            f = open("{}/log.pkl".format(directory), "rb")
+            log = pickle.load(f)
+            f.close()
+            run_num = log[path] + 1
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+    else:
+        f = open("{}/log.pkl".format(directory), "rb")
+        log = pickle.load(f)
+        f.close()
+        run_num = log[path]
+
+    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(
+        path, run_num, timestep
     ))
 
+    log[path] = run_num
+    log[path+str(run_num)] = timestep
 
-def load_params(algo, directory, run_num, timestep):
+    f = open("{}/log.pkl".format(directory), "wb")
+    pickle.dump(log, f)
+    f.close()
+
+
+def load_params(algo):
+    algo_name = algo.__class__.__name__
+    env_name = algo.env.unwrapped.spec.id
+    directory = algo.save_model
+    run_num = algo.pretrained
+    path = "{}/{}_{}".format(
+        directory, algo_name, env_name
+    )
+
+    f = open("log.pkl", "rb")
+    log = pickle.load(f)
+    f.close()
+
+    if run_num is None:
+        run_num = log[path]
+    timestep = log[path+str(run_num)]
+
     try:
-        print("{}/{}_{}_{}-log-{}.pt".format(
-            directory,
-            algo.__class__.__name__,
-            algo.env.unwrapped.spec.id,
-            algo.run_num,
-            timestep
-        ))
         algo.checkpoint = torch.load(
-            "{}/{}_{}_{}-log-{}.pt".format(
-                directory,
-                algo.__class__.__name__,
-                algo.env.unwrapped.spec.id,
-                run_num,
-                timestep
-            )
+            "{}/{}-log-{}.pt".format(path, run_num, timestep)
         )
     except FileNotFoundError:
         raise Exception("File name seems to be invalid")

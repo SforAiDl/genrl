@@ -46,7 +46,8 @@ class DDPG:
     :param render: (boolean) if environment is to be rendered
     :param device: (str) device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
+    :param pretrained: (int) model run number if it has already been pretrained,
+        (if None, don't load from past model)
     :param save_model: (string) directory the user wants to save models to
     """
 
@@ -73,7 +74,7 @@ class DDPG:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
+        pretrained=None,
         save_model=None,
     ):
 
@@ -103,7 +104,6 @@ class DDPG:
         self.save = save_params
         self.load = load_params
         self.checkpoint = self.__dict__
-        self.run_num = 0
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -138,8 +138,8 @@ class DDPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained:
-            self.load(self, self.save_model, 0, 15000)
+        if self.pretrainedis not None:
+            self.load(self, self.save_model)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
                 if key != "weights":
@@ -273,8 +273,6 @@ class DDPG:
                     self.checkpoint["weights"] = self.ac.state_dict()
                     self.save(self, self.save_model, t)
 
-        self.run_num += 1
-
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
@@ -282,6 +280,6 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, seed=0, save_model="checkpoints", pretrained=True)
+    algo = DDPG("mlp", env, seed=0, save_model="checkpoints", pretrained=None)
     algo.learn()
     algo.evaluate(algo)
