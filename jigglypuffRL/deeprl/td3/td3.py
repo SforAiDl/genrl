@@ -1,8 +1,6 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.optim as opt
-from torch.autograd import Variable
 import gym
 from copy import deepcopy
 import random
@@ -16,9 +14,9 @@ from jigglypuffRL.common import (
 )
 
 
-class DDPG:
+class TD3:
     """
-    Deep Deterministic Policy Gradient algorithm (DDPG)
+    Twin Delayed DDPG
     Paper: https://arxiv.org/abs/1509.02971
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
@@ -28,6 +26,7 @@ class DDPG:
     :param lr_p: (float) Policy network learning rate
     :param lr_q: (float) Q network learning rate
     :param polyak: (float) Polyak averaging weight to update target network
+    :param policy_frequency: (int) Update actor and target networks every policy_frequency steps
     :param epochs: (int) Number of epochs
     :param start_steps: (int) Number of exploratory steps at start
     :param steps_per_epoch: (int) Number of steps per epoch
@@ -47,11 +46,12 @@ class DDPG:
     :param render: (boolean) if environment is to be rendered
     :param device: (str) device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (int) model run number if it has already been pretrained,
-        (if None, don't load from past model)
-    :param save_model: (string) directory the user wants to save models to
+    :param pretrained: (boolean) if model has already been trained
+    :param save_name: (str) model save name (if None, model hasn't been
+        pretrained)
+    :param save_version: (int) model save version (if None, model hasn't been
+        pretrained)
     """
-
     def __init__(
         self,
         network_type,
@@ -62,6 +62,7 @@ class DDPG:
         lr_p=0.001,
         lr_q=0.001,
         polyak=0.995,
+        policy_frequency=2,
         epochs=100,
         start_steps=10000,
         steps_per_epoch=4000,
@@ -70,13 +71,14 @@ class DDPG:
         start_update=1000,
         update_interval=50,
         save_interval=5000,
-        layers=(32, 32),
+        layers=(256, 256),
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
-        pretrained=None,
-        save_model=None,
+        pretrained=False,
+        save_name=None,
+        save_version=None,
     ):
 
         self.network_type = network_type
@@ -87,6 +89,7 @@ class DDPG:
         self.lr_p = lr_p
         self.lr_q = lr_q
         self.polyak = polyak
+        self.policy_frequency = policy_frequency
         self.epochs = epochs
         self.start_steps = start_steps
         self.steps_per_epoch = steps_per_epoch
@@ -101,10 +104,10 @@ class DDPG:
         self.render = render
         self.evaluate = evaluate
         self.pretrained = pretrained
-        self.save_model = save_model
+        self.save_name = save_name
+        self.save_version = save_version
         self.save = save_params
         self.load = load_params
-        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -131,20 +134,23 @@ class DDPG:
         self.create_model()
 
     def create_model(self):
-        state_dim = self.env.observation_space.shape[0]
-        action_dim = self.env.action_space.shape[0]
+        state_dim, action_dim, disc = self.get_env_properties()
 
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "Qsa", False
         ).to(self.device)
 
-        # load paramaters if already trained
+        self.ac.qf1 = self.ac.critic
+        self.ac.qf2 = get_model("v", self.network_type)(
+            state_dim, action_dim, hidden=self.layers, val_type="Qsa")
 
-        if self.pretrained is not None:
-            self.load(self)
-            self.ac.load_state_dict(self.checkpoint["weights"])
+        if self.pretrained:
+            self.checkpoint = self.load(self.save_name, self.save_version)
+            self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
+            self.ac.qf1.load_state_dict(self.checkpoint["critic_q1_weights"])
+            self.ac.qf2.load_state_dict(self.checkpoint["critic_q2_weights"])
             for key, item in self.checkpoint.items():
-                if key != "weights":
+                if "weights" not in key:
                     setattr(self, key, item)
 
         self.ac_target = deepcopy(self.ac).to(self.device)
@@ -152,18 +158,46 @@ class DDPG:
         # freeze target network params
         for param in self.ac_target.parameters():
             param.requires_grad = False
-
+                
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.optimizer_policy = opt.Adam(
-            self.ac.actor.parameters(), lr=self.lr_p
-        )
-        self.optimizer_q = opt.Adam(
-            self.ac.critic.parameters(), lr=self.lr_q
-        )
+        self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
+        self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
-    def select_action(self, state, deterministic=False):
+        self.optimizer_policy = torch.optim.Adam(self.ac.actor.parameters(), lr=self.lr_p)
+
+    def get_env_properties(self):
+        state_dim = self.env.observation_space.shape[0]
+
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            action_dim = self.env.action_space.n
+            disc = True
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            action_dim = self.env.action_space.shape[0]
+            disc = False
+        else:
+            raise NotImplementedError
+
+        return state_dim, action_dim, disc
+
+    def get_hyperparams(self):
+        hyperparams = {
+        "network_type" : self.network_type,
+        "gamma" : self.gamma,
+        "lr_p" : self.lr_p,
+        "lr_q" : self.lr_q,
+        "polyak" : self.polyak,
+        "policy_frequency" : self.policy_frequency,
+        "noise_std" : self.noise_std,
+        "critic_q1_weights" : self.ac.qf1.state_dict(),
+        "critic_q2_weights" : self.ac.qf2.state_dict(),
+        "actor_weights" : self.ac.actor.state_dict
+        }
+
+        return hyperparams
+
+    def select_action(self, state, deterministic=True):
         with torch.no_grad():
-            action = self.ac.get_action(
+            action = self.ac_target.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
             deterministic=deterministic)[0].numpy()
 
@@ -179,48 +213,55 @@ class DDPG:
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
-        q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
+        q1 = self.ac.qf1.get_value(torch.cat([state, action], dim=-1))
+        q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            q_pi_target = self.ac_target.get_value(torch.cat([
-                next_state, self.ac_target.get_action(next_state)[0]
-            ], dim=-1))
-            target = reward + self.gamma * (1 - done) * q_pi_target
+            target_q1 = self.ac_target.qf1.get_value(torch.cat([next_state, self.ac_target.get_action(next_state, deterministic=True)[0]], dim=-1))
+            target_q2 = self.ac_target.qf2.get_value(torch.cat([next_state, self.ac_target.get_action(next_state, deterministic=True)[0]], dim=-1))
+            target_q = torch.min(target_q1, target_q2)
 
-        return nn.MSELoss()(q, target)
+            target = reward + self.gamma * (1 - done) * target_q
+
+        l1 = nn.MSELoss()(q1, target)
+        l2 = nn.MSELoss()(q2, target)
+
+        return l1 + l2
 
     def get_p_loss(self, state):
-        q_pi = self.ac.get_value(Variable(torch.cat([
-            state, self.ac.get_action(state)[0]
-        ], dim=-1), requires_grad=True))
+        q_pi = self.ac.get_value(torch.cat([
+            state, self.ac.get_action(state, deterministic=True)[0]
+        ], dim=-1))
         return -torch.mean(q_pi)
 
-    def update_params(self, state, action, reward, next_state, done):
+    def update_params(self, state, action, reward, next_state, done, timestep):
         self.optimizer_q.zero_grad()
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
         loss_q.backward()
         self.optimizer_q.step()
 
-        # freeze critic params for policy update
-        for param in self.ac.critic.parameters():
-            param.requires_grad = False
+        # Delayed Update
+        if timestep % self.policy_frequency == 0:
+            # freeze critic params for policy update
+            for param in self.q_params:
+                param.requires_grad = False
 
-        self.optimizer_policy.zero_grad()
-        loss_p = self.get_p_loss(state)
-        loss_p.backward()
-        self.optimizer_policy.step()
+            self.optimizer_policy.zero_grad()
+            loss_p = self.get_p_loss(state)
+            loss_p.backward()
+            self.optimizer_policy.step()
 
-        # unfreeze critic params
-        for param in self.ac.critic.parameters():
-            param.requires_grad = True
+            # unfreeze critic params
+            for param in self.ac.critic.parameters():
+                param.requires_grad = True
 
-        # update target network
-        with torch.no_grad():
-            for param, param_target in zip(
-                self.ac.parameters(), self.ac_target.parameters()
-            ):
-                param_target.data.mul_(self.polyak)
-                param_target.data.add_((1 - self.polyak) * param.data)
+            # update target network
+            with torch.no_grad():
+                for param, param_target in zip(
+                    self.ac.parameters(), self.ac_target.parameters()
+                ):
+                    param_target.data.mul_(self.polyak)
+                    param_target.data.add_((1 - self.polyak) * param.data)
 
     def learn(self):
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
@@ -229,7 +270,7 @@ class DDPG:
         for t in range(total_steps):
             # execute single transition
             if t > self.start_steps:
-                action = self.select_action(state, deterministic=False)
+                action = self.select_action(state, deterministic=True)
             else:
                 action = self.env.action_space.sample()
 
@@ -267,13 +308,15 @@ class DDPG:
                         x.to(self.device) for x in batch
                     )
                     self.update_params(
-                        states, actions, next_states, rewards, dones
+                        states, actions, next_states, rewards, dones, t
                     )
 
-            if self.save_model is not None:
-                if t >= self.start_update and t % self.save_interval == 0:
-                    self.checkpoint["weights"] = self.ac.state_dict()
-                    self.save(self, t)
+            if t >= self.start_update and t % self.save_interval == 0:
+                self.checkpoint = self.get_hyperparams()
+                if self.save_name is None:
+                    self.save_name = self.network_type
+                self.save_version = int(t / self.save_interval)
+                self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
@@ -282,6 +325,5 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, seed=0, save_model="checkpoints", pretrained=None)
+    algo = TD3("mlp", env, render=True)
     algo.learn()
-    algo.evaluate(algo)

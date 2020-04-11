@@ -11,6 +11,8 @@ def _get_val_model(
         return arch([state_dim + action_dim] + list(hidden) + [1])
     elif val_type == "Qs":
         return arch([state_dim] + list(hidden) + [action_dim])
+    else:
+        raise ValueError
 
 
 class MlpValue(BaseValue):

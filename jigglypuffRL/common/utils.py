@@ -13,7 +13,7 @@ def get_model(type_, name_):
         from jigglypuffRL.common.values import get_value_from_name
 
         return get_value_from_name(name_)
-    elif type == "p":
+    elif type_ == "p":
         from jigglypuffRL.common.policies import get_policy_from_name
 
         return get_policy_from_name(name_)
