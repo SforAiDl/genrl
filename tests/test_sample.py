@@ -1,5 +1,5 @@
-import jigglypuffRL
 from jigglypuffRL import EpsGreedyGaussianBandit
+
 
 def test():
     bandit = EpsGreedyGaussianBandit(1, 10, 0.01)

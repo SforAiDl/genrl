@@ -1,40 +1,39 @@
-import numpy as np
 import torch
 import torch.nn as nn
 from torch.distributions import Categorical, Normal
 
 
 class BasePolicy(nn.Module):
-    def __init__(self, disc, det, **kwargs):
+    def __init__(self, discrete, **kwargs):
         super(BasePolicy, self).__init__()
 
-        self.disc = disc
-        self.det = det
-        self.a_lim = kwargs["a_lim"] if "a_lim" in kwargs else 1.0
-        self.a_var = kwargs["a_var"] if "a_var" in kwargs else 0.1
+        self.discrete = discrete
+        self.action_lim = kwargs["action_lim"] if "action_lim" in kwargs else 1.0
+        self.action_var = kwargs["action_var"] if "action_var" in kwargs else 0.1
 
         self.model = None
 
-    def forward(self, s):
-        return self.model(s)
+    def forward(self, state):
+        return self.model.forward(state)
 
-    def get_action(self, s):
-        _s = self.forward(s)
+    def get_action(self, state, deterministic=False):
+        action_probs = self.forward(state)
 
-        if self.disc:
-            _s = nn.Softmax(dim=-1)(_s)
-            if self.det:
-                a = torch.argmax(_s, dim=-1)
+        if self.discrete:
+            action_probs = nn.Softmax(dim=-1)(action_probs)
+            if deterministic:
+                action = (torch.argmax(action_probs, dim=-1), None)
             else:
-                a = Categorical(probs=_s).sample()
+                distribution = Categorical(probs=action_probs)
+                action = (distribution.sample(), distribution)
         else:
-            _s = nn.Tanh()(_s) * self.a_lim
-            if self.det:
-                a = _s
+            action_probs = nn.Tanh()(action_probs) * self.action_lim
+            if deterministic:
+                action = (action_probs, None)
             else:
-                a = Normal(_s, self.a_var).sample()
-
-        return a
+                distribution = Normal(action_probs, self.action_var)
+                action = (distribution.sample(), distribution)
+        return action
 
 
 class BaseValue(nn.Module):
@@ -44,23 +43,23 @@ class BaseValue(nn.Module):
         self.model = None
 
     def forward(self, x):
-        return self.model(x)
-
+        return self.model.forward(x)
+        
     def get_value(self, x):
-        return self.forward(x)
+        return self.forward(x).squeeze()
 
 
 class BaseActorCritic(nn.Module):
-    def __init__(self, disc, det):
+    def __init__(self, disc):
         super(BaseActorCritic, self).__init__()
 
         self.actor = None
         self.critic = None
 
-    def get_action(self, s):
-        s = torch.as_tensor(s).float()
-        return self.actor.get_action(s)
+    def get_action(self, state, deterministic=False):
+        state = torch.as_tensor(state).float()
+        return self.actor.get_action(state, deterministic=deterministic)
 
-    def get_value(self, x):
-        x = torch.as_tensor(x).float()
-        return self.critic.get_value(x)
+    def get_value(self, state):
+        state = torch.as_tensor(state).float()
+        return self.critic.get_value(state)

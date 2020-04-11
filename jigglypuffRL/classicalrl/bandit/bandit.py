@@ -65,7 +65,8 @@ class Bandit(object):
 
 class GaussianBandits(Bandit):
     """
-    Multi-Armed Bandits with Stationary Rewards following a Gaussian distribution.
+    Multi-Armed Bandits with Stationary Rewards following a Gaussian
+    distribution.
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     """
@@ -111,10 +112,13 @@ class GaussianBandits(Bandit):
 
 class EpsGreedyGaussianBandit(GaussianBandits):
     """
-    Multi-Armed Bandit Solver with EpsGreedy Action Selection Strategy. Refer 2.3 of Reinforcement Learning: An Introduction. Each arm is modeled as a Gaussian distribution.
+    Multi-Armed Bandit Solver with EpsGreedy Action Selection Strategy. Refer
+    2.3 of Reinforcement Learning: An Introduction. Each arm is modeled as a
+    Gaussian distribution.
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
-    :param eps: (float) Probability with which a random action is to be selected.
+    :param eps: (float) Probability with which a random action is to be
+    selected.
     """
 
     def __init__(self, bandits=1, arms=10, eps=0.05):
@@ -144,7 +148,8 @@ class EpsGreedyGaussianBandit(GaussianBandits):
 
 class UCBGaussianBandit(GaussianBandits):
     """
-    Multi-Armed Bandit Solver with Upper Confidence Bound Based Action Selection. Refer 2.7 of Reinforcement Learning: An Introduction
+    Multi-Armed Bandit Solver with Upper Confidence Bound Based Action
+    Selection. Refer 2.7 of Reinforcement Learning: An Introduction
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     """
@@ -181,7 +186,8 @@ class UCBGaussianBandit(GaussianBandits):
 
 class SoftmaxActionSelection(GaussianBandits):
     """
-    Multi-Armed Bandit Softmax based Action Selection. Refer 2.8 of Reinforcement Learning: An Introduction
+    Multi-Armed Bandit Softmax based Action Selection. Refer 2.8 of
+    Reinforcement Learning: An Introduction
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     :param temp: (float) Temperature value for Softmax.
@@ -259,7 +265,9 @@ class BernoulliBandits(Bandit):
         self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self.regrets.append(self.regret)
         self.Q[bandit, action] += (
-            1.0 / (self.counts[bandit, action] + 1) * (reward - self.Q[bandit, action])
+            1.0 / (self.counts[bandit, action] + 1) * (
+                reward - self.Q[bandit, action]
+            )
         )
         self.counts[bandit, action] += 1
 
@@ -286,10 +294,13 @@ class BernoulliBandits(Bandit):
 
 class EpsGreedyBernoulliBandit(BernoulliBandits):
     """
-    Multi-Armed Bandit Solver with EpsGreedy Action Selection Strategy. Refer 2.3 of Reinforcement Learning: An Introduction. Each arm is modeled as a Bernoulli RV.
+    Multi-Armed Bandit Solver with EpsGreedy Action Selection Strategy. Refer
+    2.3 of Reinforcement Learning: An Introduction. Each arm is modeled as a
+    Bernoulli RV.
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
-    :param eps: (float) Probability with which a random action is to be selected.
+    :param eps: (float) Probability with which a random action is to be
+    selected.
     """
 
     def __init__(self, bandits=1, arms=10, eps=0.01):
@@ -315,7 +326,9 @@ class EpsGreedyBernoulliBandit(BernoulliBandits):
 
 class UCBBernoulliBandit(BernoulliBandits):
     """
-    Multi-Armed Bandit Solver with Upper Confidence Bound Based Action Selection. Refer 2.7 of Reinforcement Learning: An Introduction. Each Arm modeled as a Bernoulli RV.
+    Multi-Armed Bandit Solver with Upper Confidence Bound Based Action
+    Selection. Refer 2.7 of Reinforcement Learning: An Introduction. Each Arm
+    modeled as a Bernoulli RV.
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     """
@@ -347,7 +360,9 @@ class UCBBernoulliBandit(BernoulliBandits):
 
 class BayesianUCBBernoulliBandit(BernoulliBandits):
     """
-    Multi-Armed Bandit Solver with Bayesian UCB action selection. Refer 2.7 of Reinforcement Learning: An Introduction. Each arm modeled as a Bernoulli RV.
+    Multi-Armed Bandit Solver with Bayesian UCB action selection. Refer 2.7 of
+    Reinforcement Learning: An Introduction. Each arm modeled as a Bernoulli
+    RV.
     :param bandits: (int) Number of Bandits
     :param arms: (int) Number of arms in each bandit
     :param alpha: (int) alpha value of Beta distribution
@@ -462,7 +477,7 @@ if __name__ == "__main__":
     plt.plot(ucbBandit.regrets, label="ucb")
     plt.plot(softmaxBandit.regrets, label="softmax")
     plt.legend()
-    plt.savefig("GuassianBanditsRegret.png")
+    plt.savefig("GaussianBanditsRegret.png")
     plt.cla()
 
     epsbernoulli = EpsGreedyBernoulliBandit(1, 10, 0.05)

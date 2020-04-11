@@ -3,7 +3,7 @@ import os
 import codecs
 from setuptools import setup, find_packages
 
-## Basic information
+# Basic information
 NAME = "jigglypuff-rl"
 DESCRIPTION = "PyTorch implementations of reinforcement learning algorithms."
 VERSION = "0.0.2.dev2"
@@ -15,11 +15,16 @@ PACKAGE = "JigglypuffRL"
 with open("README.md", "r") as f:
     LONG_DESCRIPTION = f.read()
 
-## Define the keywords
-KEYWORDS = ("reinforcement learning", "pytorch", "neuroscience", "machine learning")
+# Define the keywords
+KEYWORDS = (
+    "reinforcement learning",
+    "pytorch",
+    "neuroscience",
+    "machine learning"
+)
 
-## Define the classifiers
-## See https://pypi.python.org/pypi?%3Aaction=list_classifiers
+# Define the classifiers
+# See https://pypi.python.org/pypi?%3Aaction=list_classifiers
 CLASSIFIERS = (
     "Development Status :: 2 - Pre-Alpha",
     "Intended Audience :: Developers",
@@ -36,16 +41,17 @@ CLASSIFIERS = (
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 )
 
-## Important Paths
+# Important Paths
 PROJECT = os.path.abspath(os.path.dirname(__file__))
 REQUIRE_PATH = "requirements.txt"
 VERSION_PATH = os.path.join(PACKAGE, "version.py")
 PKG_DESCRIBE = "README.md"
 
-## Directories to ignore in find_packages
+# Directories to ignore in find_packages
 EXCLUDES = ()
 
-## helper functions
+
+# helper functions
 def read(*parts):
     """
     returns contents of file
@@ -64,7 +70,7 @@ def get_requires(path=REQUIRE_PATH):
             yield line
 
 
-## Define the configuration
+# Define the configuration
 CONFIG = {
     "name": NAME,
     "version": VERSION,
@@ -77,7 +83,7 @@ CONFIG = {
     "author": AUTHOR,
     "author_email": EMAIL,
     "url": REPOSITORY,
-    "project_urls": {"Source": REPOSITORY,},
+    "project_urls": {"Source": REPOSITORY},
     "packages": find_packages(where=PROJECT, exclude=EXCLUDES),
     "python_requires": ">=3.6",
 }

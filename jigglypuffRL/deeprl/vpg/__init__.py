@@ -1,1 +1,1 @@
-from jigglypuffRL.deeprl.vpg.vpg import VPG
+from jigglypuffRL.deeprl.vpg.vpg import VPG # noqa

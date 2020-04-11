@@ -6,10 +6,7 @@ from torch.autograd import Variable
 import gym
 
 from jigglypuffRL.common import (
-    MlpPolicy,
-    MlpValue,
-    get_policy_from_name,
-    get_value_from_name,
+    get_model,
     evaluate,
     save_params,
     load_params,
@@ -30,20 +27,24 @@ class PPO1:
     :param epochs: (int) the optimizer's number of epochs
     :param lr_policy: (float) policy network learning rate
     :param lr_value: (float) value network learning rate
-    :param policy_copy_interval: (int) number of optimizer before copying params from new policy to old policy
+    :param policy_copy_interval: (int) number of optimizer before copying
+        params from new policy to old policy
     :param save_interval: (int) Number of episodes between saves of models
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param tensorboard_log: (str) the log location for tensorboard (if None,
+        no logging)
     :param seed (int): seed for torch and gym
-    :param device (str): device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param device (str): device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
     :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been pretrained)
+    :param save_name: (str) model save name (if None, model hasn't been
+        pretrained)
+    :param save_version: (int) model save version (if None, model hasn't been
+        pretrained)
     """
 
     def __init__(
         self,
-        policy,
-        value,
+        network_type,
         env,
         timesteps_per_actorbatch=200,
         gamma=0.99,
@@ -62,8 +63,7 @@ class PPO1:
         save_name=None,
         save_version=None,
     ):
-        self.policy = policy
-        self.value = value
+        self.network_type = network_type
         self.env = env
         self.timesteps_per_actorbatch = timesteps_per_actorbatch
         self.gamma = gamma
@@ -83,7 +83,6 @@ class PPO1:
         self.save_version = save_version
         self.save = save_params
         self.load = load_params
-        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -110,13 +109,16 @@ class PPO1:
 
     def create_model(self):
         # Instantiate networks and optimizers
+        state_dim, action_dim, disc = self.get_env_properties(self.env)
         self.policy_new, self.policy_old = (
-            get_policy_from_name(self.policy)(self.env),
-            get_policy_from_name(self.policy)(self.env),
+            get_model("p", self.network_type)(state_dim, action_dim, disc=disc),
+            get_model("p", self.network_type)(state_dim, action_dim, disc=disc),
         )
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
-        self.value_fn = get_value_from_name(self.value)(self.env).to(self.device)
+        self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
+            self.device
+        )
 
         # load paramaters if already trained
         if self.pretrained:
@@ -132,15 +134,25 @@ class PPO1:
         self.optimizer_policy = opt.Adam(
             self.policy_new.parameters(), lr=self.lr_policy
         )
-        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
+        self.optimizer_value = opt.Adam(
+            self.value_fn.parameters(), lr=self.lr_value
+        )
 
-    def select_action(self, s):
-        state = torch.from_numpy(s).float().to(self.device)
+        self.policy_old.traj_reward = []
+        self.policy_old.policy_hist = Variable(torch.Tensor())
+        self.policy_new.policy_hist = Variable(torch.Tensor())
+        self.value_fn.value_hist = Variable(torch.Tensor())
+
+        self.policy_new.loss_hist = Variable(torch.Tensor())
+        self.value_fn.loss_hist = Variable(torch.Tensor())
+
+    def select_action(self, state):
+        state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on policy_old output
-        action, c_old = self.policy_old.sample_action(Variable(state))
-        _, c_new = self.policy_new.sample_action(Variable(state))
-        val = self.value_fn(Variable(state))
+        action, c_old = self.policy_old.get_action(Variable(state), deterministic=False)
+        _, c_new = self.policy_new.get_action(Variable(state), deterministic=False)
+        val = self.value_fn.get_value(Variable(state))
 
         # store policy probs and value function for current traj
         self.policy_old.policy_hist = torch.cat(
@@ -157,42 +169,49 @@ class PPO1:
             ]
         )
 
-        self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val])
+        self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val.unsqueeze(0)])
 
         return action
 
     # get clipped loss for single trajectory (episode)
     def get_traj_loss(self):
-        R = 0
+        discounted_reward = 0
         returns = []
 
         # calculate discounted return
-        for r in self.policy_old.traj_reward[::-1]:
-            R = r + self.gamma * R
-            returns.insert(0, R)
+        for reward in self.policy_old.traj_reward[::-1]:
+            discounted_reward = reward + self.gamma * discounted_reward
+            returns.insert(0, discounted_reward)
 
         # advantage estimation
         returns = torch.FloatTensor(returns).to(self.device)
-        A = Variable(returns) - Variable(self.value_fn.value_hist)
+        advantages = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
+        ratio = torch.div(
+            self.policy_new.policy_hist, self.policy_old.policy_hist
+        )
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
-            .mul(A)
+            .mul(advantages)
             .to(self.device)
         )
 
         loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, A), clipping)).mul(-1).unsqueeze(0)
+            torch.mean(torch.min(torch.mul(ratio, advantages), clipping)).mul(-1)
+            .unsqueeze(0)
         )
         loss_value = nn.MSELoss()(
             self.value_fn.value_hist, Variable(returns)
         ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
-        self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
-        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
+        self.policy_new.loss_hist = torch.cat([
+            self.policy_new.loss_hist, loss_policy
+        ])
+        self.value_fn.loss_hist = torch.cat([
+            self.value_fn.loss_hist, loss_value
+        ])
 
         # clear traj history
         self.policy_old.traj_reward = []
@@ -200,15 +219,15 @@ class PPO1:
         self.policy_new.policy_hist = Variable(torch.Tensor())
         self.value_fn.value_hist = Variable(torch.Tensor())
 
-    def update_policy(self, ep):
+    def update_policy(self, episode):
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_new.loss_hist)
         loss_value = torch.mean(self.value_fn.loss_hist)
 
         # tensorboard book-keeping
         if self.tensorboard_log:
-            self.writer.add_scalar("loss/policy", loss_policy, ep)
-            self.writer.add_scalar("loss/value", loss_value, ep)
+            self.writer.add_scalar("loss/policy", loss_policy, episode)
+            self.writer.add_scalar("loss/value", loss_value, episode)
 
         # take gradient step
         self.optimizer_policy.zero_grad()
@@ -225,19 +244,19 @@ class PPO1:
 
     def learn(self):
         # training loop
-        for ep in range(self.epochs):
+        for episode in range(self.epochs):
             epoch_reward = 0
             for i in range(self.actor_batch_size):
-                s = self.env.reset()
+                state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    a = self.select_action(s)
-                    s, r, done, _ = self.env.step(np.array(a))
+                    action = self.select_action(state)
+                    state, reward, done, _ = self.env.step(np.array(action))
 
                     if self.render:
                         self.env.render()
 
-                    self.policy_old.traj_reward.append(r)
+                    self.policy_old.traj_reward.append(reward)
 
                     if done:
                         break
@@ -247,31 +266,60 @@ class PPO1:
                 )
                 self.get_traj_loss()
 
-            self.update_policy(ep)
+            self.update_policy(episode)
 
-            if ep % 20 == 0:
-                print("Episode: {}, reward: {}".format(ep, epoch_reward))
+            if episode % 20 == 0:
+                print("Episode: {}, reward: {}".format(episode, epoch_reward))
                 if self.tensorboard_log:
-                    self.writer.add_scalar("reward", epoch_reward, ep)
+                    self.writer.add_scalar("reward", epoch_reward, episode)
 
-            if ep % self.policy_copy_interval == 0:
+            if episode % self.policy_copy_interval == 0:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-            if ep % self.save_interval == 0:
-                self.checkpoint["policy_weights"] = self.policy_new.state_dict()
-                self.checkpoint["value_weights"] = self.value_fn.state_dict()
+            if episode % self.save_interval == 0:
+                self.checkpoint = self.get_hyperparams()
                 if self.save_name is None:
-                    self.save_name = "{}-{}".format(self.policy, self.value)
-                self.save_version = int(ep / self.save_interval)
+                    self.save_name = "{}".format(self.network_type)
+                self.save_version = int(episode / self.save_interval)
                 self.save(self)
 
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
 
+        
+    def get_env_properties(self, env):
+        state_dim = self.env.observation_space.shape[0]
+
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            action_dim = self.env.action_space.n
+            disc = True
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            action_dim = self.env.action_space.shape[0]
+            disc = False
+        else:
+            raise NotImplementedError
+
+        return state_dim, action_dim, disc
+
+    def get_hyperparams(self):
+        hyperparams = {
+        "network_type" : self.network_type,
+        "timesteps_per_actorbatch" : self.timesteps_per_actorbatch,
+        "gamma" : self.gamma,
+        "clip_param" : self.clip_param,
+        "actor_batch_size" : self.actor_batch_size,
+        "lr_policy" : self.lr_policy,
+        "lr_value" : self.lr_value,
+        "policy_weights" : self.policy_new.state_dict(),
+        "value_weights" : self.value_fn.state_dict()
+        }
+
+        return hyperparams
+
 
 if __name__ == "__main__":
-    env = gym.make("LunarLander-v2")
-    algo = PPO1("MlpPolicy", "MlpValue", env, render=True)
+    env = gym.make("CartPole-v1")
+    algo = PPO1("mlp", env, render=True)
     algo.learn()
     algo.evaluate(algo)
