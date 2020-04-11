@@ -12,6 +12,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 
 from jigglypuffRL.common import ReplayBuffer, get_model
+from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp
 
 
 class DQN:
@@ -22,6 +23,7 @@ class DQN:
     :param network_type: (str) The deep neural network layer types ['MLP']
     :param env: (Gym environment) The environment to learn from
     :param double_dqn: (boolean) For training Double DQN
+    :param dueling_dqn: (boolean) For trianing Dueling DQN
     :param epochs: (int) Number of epochs
     :param max_iterations_per_epoch: (int) Number of iterations per epoch
     :param max_ep_len: (int) Maximum steps per episode
@@ -40,6 +42,7 @@ class DQN:
         network_type,
         env,
         double_dqn=False,
+        dueling_dqn=False,
         epochs=100,
         max_iterations_per_epoch=100,
         max_ep_len=1000,
@@ -54,6 +57,7 @@ class DQN:
     ):
         self.env = env
         self.double_dqn = double_dqn
+        self.dueling_dqn = dueling_dqn
         self.max_epochs = epochs
         self.max_iterations_per_epoch = max_iterations_per_epoch
         self.max_ep_len = max_ep_len
@@ -99,6 +103,11 @@ class DQN:
                 self.env.observation_space.shape[0], self.env.action_space.n, "Qs"
             )
             self.target_model = deepcopy(self.model)
+            
+            if self.dueling_dqn:
+                self.model = DuelingDQNValueMlp(self.env.observation_space.shape[0], self.env.action_space.n)
+                self.target_model = deepcopy(self.model)
+            
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
