@@ -139,7 +139,7 @@ class DDPG:
 
         # load paramaters if already trained
         if self.pretrainedis not None:
-            self.load(self, self.save_model)
+            self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
                 if key != "weights":
@@ -271,7 +271,7 @@ class DDPG:
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:
                     self.checkpoint["weights"] = self.ac.state_dict()
-                    self.save(self, self.save_model, t)
+                    self.save(self, t)
 
         self.env.close()
         if self.tensorboard_log:
