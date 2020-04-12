@@ -26,7 +26,8 @@ class TD3:
     :param lr_p: (float) Policy network learning rate
     :param lr_q: (float) Q network learning rate
     :param polyak: (float) Polyak averaging weight to update target network
-    :param policy_frequency: (int) Update actor and target networks every policy_frequency steps
+    :param policy_frequency: (int) Update actor and target networks every 
+        policy_frequency steps
     :param epochs: (int) Number of epochs
     :param start_steps: (int) Number of exploratory steps at start
     :param steps_per_epoch: (int) Number of steps per epoch
@@ -158,7 +159,7 @@ class TD3:
         # freeze target network params
         for param in self.ac_target.parameters():
             param.requires_grad = False
-                
+
         self.replay_buffer = ReplayBuffer(self.replay_size)
         self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
@@ -181,16 +182,16 @@ class TD3:
 
     def get_hyperparams(self):
         hyperparams = {
-        "network_type" : self.network_type,
-        "gamma" : self.gamma,
-        "lr_p" : self.lr_p,
-        "lr_q" : self.lr_q,
-        "polyak" : self.polyak,
-        "policy_frequency" : self.policy_frequency,
-        "noise_std" : self.noise_std,
-        "critic_q1_weights" : self.ac.qf1.state_dict(),
-        "critic_q2_weights" : self.ac.qf2.state_dict(),
-        "actor_weights" : self.ac.actor.state_dict
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "lr_p": self.lr_p,
+            "lr_q": self.lr_q,
+            "polyak": self.polyak,
+            "policy_frequency": self.policy_frequency,
+            "noise_std": self.noise_std,
+            "critic_q1_weights": self.ac.qf1.state_dict(),
+            "critic_q2_weights": self.ac.qf2.state_dict(),
+            "actor_weights": self.ac.actor.state_dict
         }
 
         return hyperparams
@@ -199,13 +200,13 @@ class TD3:
         with torch.no_grad():
             action = self.ac_target.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
-            deterministic=deterministic)[0].numpy()
+                deterministic=deterministic)[0].numpy()
 
         # add noise to output from policy network
         action += self.noise_std * np.random.randn(
             self.env.action_space.shape[0]
         )
-        
+
         return np.clip(
             action,
             -self.env.action_space.high[0],

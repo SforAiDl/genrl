@@ -18,7 +18,6 @@ class MlpPolicy(BasePolicy):
         action_dim,
         hidden=(32, 32),
         disc=True,
-        det=True,
         *args,
         **kwargs
     ):

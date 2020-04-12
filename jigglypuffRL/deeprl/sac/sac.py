@@ -43,7 +43,6 @@ class SAC:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-        and 'cuda' for gpu
     :param pretrained: (boolean) if model has already been trained
     :param save_name: (str) model save name (if None, model hasn't been
         pretrained)
@@ -200,6 +199,20 @@ class SAC:
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             )
 
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "lr": self.lr,
+            "alpha": self.alpha,
+            "polyak": self.polyak,
+            "q1_weights": self.q1.state_dict(),
+            "q2_weights": self.q2.state_dict(),
+            "policy_weights": self.policy.state_dict(),
+        }
+
+        return hyperparams
+
     def sample_action(self, state):
         mean, log_std = self.policy.forward(state)
         std = log_std.exp()
@@ -213,7 +226,7 @@ class SAC:
 
         # enforcing action bound (appendix of paper)
         log_pi -= torch.log(
-            self.action_scale * (1 - yi.pow(2)) + np.finf(np.float32).eps)
+            self.action_scale * (1 - yi.pow(2)) + np.finfo(np.float32).eps)
         log_pi = log_pi.sum(1, keepdim=True)
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
         return action, log_pi, mean
@@ -343,9 +356,7 @@ class SAC:
                     if self.save_name is None:
                         self.save_name = self.network_type
                     self.save_version = int(i / self.save_interval)
-                    self.checkpoint["policy_weights"] = self.policy.state_dict()
-                    self.checkpoint["q1_weights"] = self.q1.state_dict()
-                    self.checkpoint["q2_weights"] = self.q2.state_dict()
+                    self.checkpoint = self.get_hyperparams()
                     self.save(self)
 
                 # prepare transition for replay memory push
