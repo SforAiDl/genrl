@@ -12,7 +12,6 @@ class MlpActorCritic(BaseActorCritic):
     :param val_type: (str) type of value function.
         'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
     :param disc: (bool) discrete action space?
-    :param det: (bool) deterministic policy?
     """
 
     def __init__(
@@ -22,11 +21,10 @@ class MlpActorCritic(BaseActorCritic):
         hidden=(32, 32),
         val_type="V",
         disc=True,
-        det=True,
         *args,
         **kwargs
     ):
-        super(MlpActorCritic, self).__init__(disc, det)
+        super(MlpActorCritic, self).__init__(disc)
 
         self.actor = MlpPolicy(
             state_dim, action_dim, hidden, disc, det, **kwargs)

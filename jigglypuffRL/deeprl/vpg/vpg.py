@@ -145,26 +145,66 @@ class VPG:
         self.traj_reward = []
         self.policy_loss_hist = Variable(torch.Tensor())
         self.value_loss_hist = Variable(torch.Tensor())
+        
 
-    def select_action(self, state):
-        state = torch.as_tensor(state).float().to(self.device)
+    def select_action(self, state, deterministic=False):
+        state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
-        a, c = self.ac.get_action(state)
+        a, c = self.ac.get_action(state, deterministic=False)[0]
+        val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current traj
         self.policy_hist = torch.cat(
             [self.policy_hist, c.log_prob(a).unsqueeze(0)])
 
+        self.value_hist = torch.cat([self.value_hist, val])
+
         # clear traj history
         self.traj_reward = []
         self.policy_hist = Variable(torch.Tensor())
         self.value_hist = Variable(torch.Tensor())
+        return a
+
+    def get_traj_loss(self):	
+        disc_R = 0	
+        returns = []	
+
+        # calculate discounted return	
+        for reward in self.traj_reward[::-1]:	
+            disc_R = reward + self.gamma * disc_R	
+            returns.insert(0, disc_R)	
+
+        # advantage estimation	
+        returns = torch.FloatTensor(returns).to(self.device)	
+        advantage = Variable(returns) - Variable(self.value_hist)	
+
+        # compute policy and value loss	
+        loss_policy = (	
+            torch.sum(torch.mul(	
+                self.policy_hist, advantage	
+            )).mul(-1).unsqueeze(0)	
+        )	
+
+        loss_value = nn.MSELoss()(	
+            self.value_hist, Variable(returns)	
+        ).unsqueeze(0)	
+
+        # store traj loss values in epoch loss tensors	
+        self.policy_loss_hist = torch.cat([	
+            self.policy_loss_hist, loss_policy])	
+        self.value_loss_hist = torch.cat([	
+            self.value_loss_hist, loss_value])	
+
+        # clear traj history
+        self.traj_reward = []
+        self.policy_hist = Variable(torch.Tensor(), requires_grad=True)
+        self.value_hist = Variable(torch.Tensor(), requires_grad=True)
 
     def update_policy(self, episode):
         # mean of all traj losses in single epoch
-        loss_policy = torch.mean(self.policy_loss_hist)
-        loss_value = torch.mean(self.value_loss_hist)
+        loss_policy = Variable(torch.mean(self.policy_loss_hist), requires_grad=True)
+        loss_value = Variable(torch.mean(self.value_loss_hist), requires_grad=True)
 
         # tensorboard book-keeping
         if self.tensorboard_log:
@@ -173,7 +213,8 @@ class VPG:
 
         # take gradient step
         self.optimizer_policy.zero_grad()
-        loss_policy.backward()
+        # print(loss_policy, loss_value)
+        loss_policy.backward() #B
         self.optimizer_policy.step()
 
         self.optimizer_value.zero_grad()
@@ -192,8 +233,9 @@ class VPG:
                 state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    action = self.select_action(state)
-                    state, reward, done, _ = self.env.step(np.array(action))
+                    action = Variable(self.select_action(state, deterministic=False))
+                    # print(type(action))
+                    state, reward, done, _ = self.env.step(action)
 
                     if self.render:
                         self.env.render()
