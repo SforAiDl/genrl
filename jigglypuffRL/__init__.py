@@ -1,4 +1,4 @@
-from jigglypuffRL.common import ( # noqa
+from jigglypuffRL.common import (  # noqa
     MlpActorCritic,
     MlpPolicy,
     ReplayBuffer,
@@ -12,9 +12,9 @@ from jigglypuffRL.common import ( # noqa
     evaluate,
 )
 
-from jigglypuffRL.deeprl import DDPG, PPO1, VPG # noqa
+from jigglypuffRL.deeprl import DDPG, PPO1, VPG  # noqa
 
-from jigglypuffRL.classicalrl import ( # noqa
+from jigglypuffRL.classicalrl import (  # noqa
     EpsGreedyBernoulliBandit,
     EpsGreedyGaussianBandit,
     SoftmaxActionSelection,

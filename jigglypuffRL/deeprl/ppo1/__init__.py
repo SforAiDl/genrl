@@ -1,1 +1,1 @@
-from jigglypuffRL.deeprl.ppo1.ppo1 import PPO1 # noqa
+from jigglypuffRL.deeprl.ppo1.ppo1 import PPO1  # noqa

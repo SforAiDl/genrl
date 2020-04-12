@@ -13,6 +13,7 @@ def get_model(type_, name_):
         return get_value_from_name(name_)
     elif type_ == "p":
         from jigglypuffRL.common.policies import get_policy_from_name
+
         return get_policy_from_name(name_)
     raise ValueError
 
@@ -22,7 +23,7 @@ def mlp(sizes, sac=False):
     generate MLP model given sizes of each layer
     """
     layers = []
-    limit = len(sizes) if sac==False else len(sizes)-1
+    limit = len(sizes) if sac == False else len(sizes) - 1
     for j in range(limit - 1):
         act = nn.ReLU if j < limit - 2 else nn.Identity
         layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
@@ -44,9 +45,9 @@ def evaluate(algo, num_timesteps=1000):
 
         if done:
             episode += 1
-            print("Ep: {}, reward: {}, t: {}".format(
-                episode, episode_reward, episode_t
-            ))
+            print(
+                "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, episode_t)
+            )
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
         else:
@@ -61,9 +62,7 @@ def save_params(algo):
         torch.save(algo.checkpoint, "{}.pt".format(algo.save_name))
     else:
         torch.save(
-            algo.checkpoint, "{}-{}.pt".format(
-                algo.save_name, algo.save_version
-            )
+            algo.checkpoint, "{}-{}.pt".format(algo.save_name, algo.save_version)
         )
 
 

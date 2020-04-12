@@ -119,9 +119,7 @@ class PPO1:
         )
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
-        self.value_fn = get_value_from_name(self.value)(self.env).to(
-            self.device
-        )
+        self.value_fn = get_value_from_name(self.value)(self.env).to(self.device)
 
         # load paramaters if already trained
         if self.pretrained:
@@ -137,9 +135,7 @@ class PPO1:
         self.optimizer_policy = opt.Adam(
             self.policy_new.parameters(), lr=self.lr_policy
         )
-        self.optimizer_value = opt.Adam(
-            self.value_fn.parameters(), lr=self.lr_value
-        )
+        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
     def select_action(self, state):
         state = torch.from_numpy(state).float().to(self.device)
@@ -183,9 +179,7 @@ class PPO1:
         advantages = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        ratio = torch.div(
-            self.policy_new.policy_hist, self.policy_old.policy_hist
-        )
+        ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
             .mul(advantages)
@@ -193,7 +187,8 @@ class PPO1:
         )
 
         loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, advantages), clipping)).mul(-1)
+            torch.mean(torch.min(torch.mul(ratio, advantages), clipping))
+            .mul(-1)
             .unsqueeze(0)
         )
         loss_value = nn.MSELoss()(
@@ -201,12 +196,8 @@ class PPO1:
         ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
-        self.policy_new.loss_hist = torch.cat([
-            self.policy_new.loss_hist, loss_policy
-        ])
-        self.value_fn.loss_hist = torch.cat([
-            self.value_fn.loss_hist, loss_value
-        ])
+        self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
+        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
 
         # clear traj history
         self.policy_old.traj_reward = []
@@ -272,7 +263,7 @@ class PPO1:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
             if episode % self.save_interval == 0:
-                self.checkpoint["policy_weights"] = self.policy_new.state_dict() # noqa
+                self.checkpoint["policy_weights"] = self.policy_new.state_dict()  # noqa
                 self.checkpoint["value_weights"] = self.value_fn.state_dict()
                 if self.save_name is None:
                     self.save_name = "{}-{}".format(self.policy, self.value)

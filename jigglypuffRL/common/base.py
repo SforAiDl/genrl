@@ -16,7 +16,7 @@ class BasePolicy(nn.Module):
         self.sac = kwargs["sac"] if "sac" in kwargs else False
 
         if self.sac:
-            self.fc_mean = nn.Linear(self.hidden[-1],self.action_dim)
+            self.fc_mean = nn.Linear(self.hidden[-1], self.action_dim)
             self.fc_std = nn.Linear(self.hidden[-1], self.action_dim)
 
         self.model = None
@@ -31,7 +31,6 @@ class BasePolicy(nn.Module):
             return mean, log_std
 
         return state
-
 
     def get_action(self, state):
         action_probs = self.forward(state)

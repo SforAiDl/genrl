@@ -16,12 +16,7 @@ with open("README.md", "r") as f:
     LONG_DESCRIPTION = f.read()
 
 # Define the keywords
-KEYWORDS = (
-    "reinforcement learning",
-    "pytorch",
-    "neuroscience",
-    "machine learning"
-)
+KEYWORDS = ("reinforcement learning", "pytorch", "neuroscience", "machine learning")
 
 # Define the classifiers
 # See https://pypi.python.org/pypi?%3Aaction=list_classifiers

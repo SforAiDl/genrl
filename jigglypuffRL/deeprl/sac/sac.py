@@ -16,6 +16,7 @@ from jigglypuffRL.common import (
     evaluate,
 )
 
+
 class SAC:
     """
     Soft Actor Critic algorithm (SAC)
@@ -49,7 +50,7 @@ class SAC:
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
     """
-    
+
     def __init__(
         self,
         network_type,
@@ -68,11 +69,11 @@ class SAC:
         start_update=256,
         update_interval=1,
         save_interval=5000,
-        layers=(256,256),
+        layers=(256, 256),
         tensorboard_log=None,
         seed=None,
         render=False,
-        device='cpu',
+        device="cpu",
         pretrained=False,
         save_name=None,
         save_version=None,
@@ -86,7 +87,7 @@ class SAC:
         self.lr = lr
         self.alpha = alpha
         self.polyak = polyak
-        self.entropy_tuning=entropy_tuning
+        self.entropy_tuning = entropy_tuning
         self.epochs = epochs
         self.start_steps = start_steps
         self.steps_per_epoch = steps_per_epoch
@@ -132,7 +133,7 @@ class SAC:
 
     def create_model(self):
         state_dim = self.env.observation_space.shape[0]
-        
+
         # initialize models
         if isinstance(self.env.action_space, gym.spaces.Discrete):
             action_dim = self.env.action_space.n
@@ -143,13 +144,13 @@ class SAC:
         else:
             raise NotImplementedError
 
-        self.q1 = get_model('v', self.network_type)(
+        self.q1 = get_model("v", self.network_type)(
             state_dim, action_dim, "Qsa", self.layers
         ).to(self.device)
-        self.q2 = get_model('v', self.network_type)(
+        self.q2 = get_model("v", self.network_type)(
             state_dim, action_dim, "Qsa", self.layers
         ).to(self.device)
-        self.policy = get_model('p', self.network_type)(
+        self.policy = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, disc, False, sac=True
         )
 
@@ -178,7 +179,9 @@ class SAC:
         self.policy_optimizer = opt.Adam(self.policy.parameters(), self.lr)
 
         if self.entropy_tuning:
-            self.target_entropy = -torch.prod(torch.Tensor(self.env.action_space.shape).to(self.device)).item()
+            self.target_entropy = -torch.prod(
+                torch.Tensor(self.env.action_space.shape).to(self.device)
+            ).item()
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
 
@@ -186,14 +189,15 @@ class SAC:
 
         # set action scales
         if self.env.action_space is None:
-            self.action_scale = torch.tensor(1.)
-            self.action_bias = torch.tensor(0.)
+            self.action_scale = torch.tensor(1.0)
+            self.action_bias = torch.tensor(0.0)
         else:
             self.action_scale = torch.FloatTensor(
-                (self.env.action_space.high - self.env.action_space.low) / 2.)
+                (self.env.action_space.high - self.env.action_space.low) / 2.0
+            )
             self.action_bias = torch.FloatTensor(
-                (self.env.action_space.high + self.env.action_space.low) / 2.)
-
+                (self.env.action_space.high + self.env.action_space.low) / 2.0
+            )
 
     def sample_action(self, state):
         mean, log_std = self.policy.forward(state)
@@ -205,11 +209,11 @@ class SAC:
         yi = torch.tanh(xi)
         action = yi * self.action_scale + self.action_bias
         log_pi = distribution.log_prob(xi)
-        
+
         # enforcing action bound (appendix of paper)
         log_pi -= torch.log(self.action_scale * (1 - yi.pow(2)) + np.finf(float32).eps)
-        log_pi = log_pi.sum(1,keepdim=True)
-        mean = torch.tanh(mean)*self.action_scale + self.action_bias
+        log_pi = log_pi.sum(1, keepdim=True)
+        mean = torch.tanh(mean) * self.action_scale + self.action_bias
         return action, log_pi, mean
 
     def select_action(self, state):
@@ -217,28 +221,29 @@ class SAC:
         action, _, _ = self.sample_action(state)
         return action.detach().cpu().numpy()[0]
 
-
     def update_params(self, state, action, reward, next_state, done):
         reward = reward.unsqueeze(1)
         done = done.unsqueeze(1)
         # compute targets
         with torch.no_grad():
             next_action, next_log_pi, _ = self.sample_action(next_state)
-            next_q1_targ = self.q1_targ(torch.cat([next_state, next_action],dim=-1))
-            next_q2_targ = self.q2_targ(torch.cat([next_state, next_action],dim=-1))
-            next_q_targ = torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
+            next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
+            next_q2_targ = self.q2_targ(torch.cat([next_state, next_action], dim=-1))
+            next_q_targ = (
+                torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
+            )
             next_q = reward + self.gamma * (1 - done) * next_q_targ
 
         # compute losses
-        q1 = self.q1(torch.cat([state, action],dim=-1))
-        q2 = self.q2(torch.cat([state, action],dim=-1))
+        q1 = self.q1(torch.cat([state, action], dim=-1))
+        q2 = self.q2(torch.cat([state, action], dim=-1))
 
         q1_loss = nn.MSELoss()(q1, next_q)
         q2_loss = nn.MSELoss()(q2, next_q)
 
         pi, log_pi, _ = self.sample_action(state)
-        q1_pi = self.q1(torch.cat([state, pi],dim=-1))
-        q2_pi = self.q2(torch.cat([state, pi],dim=-1))
+        q1_pi = self.q1(torch.cat([state, pi], dim=-1))
+        q2_pi = self.q2(torch.cat([state, pi], dim=-1))
         min_q_pi = torch.min(q1_pi, q2_pi)
         policy_loss = ((self.alpha * log_pi) - min_q_pi).mean()
 
@@ -257,39 +262,44 @@ class SAC:
 
         # alpha loss
         if self.entropy_tuning:
-            alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
-            
+            alpha_loss = -(
+                self.log_alpha * (log_pi + self.target_entropy).detach()
+            ).mean()
+
             self.alpha_optim.zero_grad()
             alpha_loss.backward()
             self.alpha_optim.step()
 
             self.alpha = self.log_alpha.exp()
         else:
-            alpha_loss = torch.tensor(0.).to(self.device)
+            alpha_loss = torch.tensor(0.0).to(self.device)
 
         # soft update target params
         for target_param, param in zip(self.q1_targ.parameters(), self.q1.parameters()):
-            target_param.data.copy_(target_param.data * self.polyak + param.data * (1-self.polyak))
+            target_param.data.copy_(
+                target_param.data * self.polyak + param.data * (1 - self.polyak)
+            )
         for target_param, param in zip(self.q2_targ.parameters(), self.q2.parameters()):
-            target_param.data.copy_(target_param.data * self.polyak + param.data * (1-self.polyak))
+            target_param.data.copy_(
+                target_param.data * self.polyak + param.data * (1 - self.polyak)
+            )
 
         return q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item()
 
-    
     def learn(self):
         if self.tensorboard_log:
-            writer = SummaryWriter(self.tensorboard_log) # for tensorboard logs
+            writer = SummaryWriter(self.tensorboard_log)  # for tensorboard logs
 
         i = 0
         ep = 1
         total_steps = self.steps_per_epoch * self.epochs
-        
+
         while ep >= 1:
             episode_reward = 0
             state = env.reset()
             done = False
             j = 0
-            
+
             while not done:
                 # sample action
                 if i > self.start_steps:
@@ -297,23 +307,26 @@ class SAC:
                 else:
                     action = self.env.action_space.sample()
 
-                
-                if i >= self.start_update and i % self.update_interval == 0 and self.replay_buffer.get_len() > self.batch_size: 
+                if (
+                    i >= self.start_update
+                    and i % self.update_interval == 0
+                    and self.replay_buffer.get_len() > self.batch_size
+                ):
                     # get losses
-                    batch = self.replay_buffer.sample(
-                        self.batch_size
-                    )
+                    batch = self.replay_buffer.sample(self.batch_size)
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(states, actions, next_states, rewards, dones)
-                        
+                    q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
+                        states, actions, next_states, rewards, dones
+                    )
+
                     # write loss logs to tensorboard
                     if self.tensorboard_log:
-                        writer.add_scalar('loss/q1_loss', q1_loss, i)
-                        writer.add_scalar('loss/q2_loss', q2_loss, i)
-                        writer.add_scalar('loss/policy_loss', policy_loss, i)
-                        writer.add_scalar('loss/alpha_loss',alpha_loss,i)
+                        writer.add_scalar("loss/q1_loss", q1_loss, i)
+                        writer.add_scalar("loss/q2_loss", q2_loss, i)
+                        writer.add_scalar("loss/policy_loss", policy_loss, i)
+                        writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
                 if i >= self.start_update and i % self.save_interval == 0:
                     if self.save_name is None:
@@ -333,25 +346,30 @@ class SAC:
                 episode_reward += reward
 
                 ndone = 1 if j == self.max_ep_len else float(not done)
-                self.replay_buffer.push((state,action,reward,next_state,1-ndone))
+                self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
                 state = next_state
-            
+
             if i > total_steps:
                 break
 
             # write episode reward to tensorboard logs
             if self.tensorboard_log:
-                writer.add_scalar('reward/episode_reward', episode_reward, i)
+                writer.add_scalar("reward/episode_reward", episode_reward, i)
 
             if ep % 5 == 0:
-                print("Episode: {}, total numsteps: {}, reward: {}".format(ep, i, episode_reward))
+                print(
+                    "Episode: {}, total numsteps: {}, reward: {}".format(
+                        ep, i, episode_reward
+                    )
+                )
             ep += 1
 
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
     algo = SAC("mlp", env, seed=0, render=False)
     algo.learn()
