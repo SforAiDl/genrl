@@ -63,9 +63,11 @@ class SARSA:
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         # Set up the Q table
-        self.Q_table = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.Q_table = np.zeros((
+            self.env.observation_space.n, self.env.action_space.n))
         # Set up eligibility traces
-        self.e_table = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.e_table = np.zeros((
+            self.env.observation_space.n, self.env.action_space.n))
 
     def select_action(self, state):
         # epsilon greedy method to sample actions

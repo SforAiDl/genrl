@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as opt
 from torch.autograd import Variable
 import gym
@@ -136,8 +135,10 @@ class VPG:
                 if key not in ["policy_weights", "value_weights"]:
                     setattr(self, key, item)
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(
+            self.ac.actor.parameters(), lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(
+            self.ac.critic.parameters(), lr=self.lr_value)
 
         self.policy_hist = Variable(torch.Tensor())
         self.value_hist = Variable(torch.Tensor())
@@ -150,10 +151,10 @@ class VPG:
 
         # create distribution based on policy_fn output
         a, c = self.ac.get_action(state)
-        val = self.ac.get_value(state)
 
         # store policy probs and value function for current traj
-        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
+        self.policy_hist = torch.cat(
+            [self.policy_hist, c.log_prob(a).unsqueeze(0)])
 
         # clear traj history
         self.traj_reward = []

@@ -1,6 +1,6 @@
 from jigglypuffRL.common.policies import MlpPolicy, get_policy_from_name  # noqa
 from jigglypuffRL.common.values import MlpValue, get_value_from_name  # noqa
-from jigglypuffRL.common.actor_critic import (
+from jigglypuffRL.common.actor_critic import ( # noqa
     MlpActorCritic,
     get_actor_critic_from_name,
 )  # noqa

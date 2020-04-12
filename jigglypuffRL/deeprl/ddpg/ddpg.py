@@ -156,7 +156,8 @@ class DDPG:
             param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
+        self.optimizer_policy = opt.Adam(
+            self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
     def select_action(self, state):
@@ -166,10 +167,12 @@ class DDPG:
             ).numpy()
 
         # add noise to output from policy network
-        action += self.noise_std * np.random.randn(self.env.action_space.shape[0])
+        action += self.noise_std * np.random.randn(
+            self.env.action_space.shape[0])
 
         return np.clip(
-            action, -self.env.action_space.high[0], self.env.action_space.high[0]
+            action, -self.env.action_space.high[0],
+            self.env.action_space.high[0]
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
@@ -177,14 +180,17 @@ class DDPG:
 
         with torch.no_grad():
             q_pi_target = self.ac_target.get_value(
-                torch.cat([next_state, self.ac_target.get_action(next_state)], dim=-1)
+                torch.cat(
+                    [next_state, self.ac_target.get_action(next_state)],
+                    dim=-1)
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
 
         return nn.MSELoss()(q, target)
 
     def get_p_loss(self, state):
-        q_pi = self.ac.get_value(torch.cat([state, self.ac.get_action(state)], dim=-1))
+        q_pi = self.ac.get_value(
+            torch.cat([state, self.ac.get_action(state)], dim=-1))
         return -torch.mean(q_pi)
 
     def update_params(self, state, action, reward, next_state, done):
@@ -241,7 +247,8 @@ class DDPG:
             if done or (episode_len == self.max_ep_len):
                 if episode % 20 == 0:
                     print(
-                        "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, t)
+                        "Ep: {}, reward: {}, t: {}".format(
+                            episode, episode_reward, t)
                     )
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, t)
@@ -256,7 +263,8 @@ class DDPG:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(states, actions, next_states, rewards, dones)
+                    self.update_params(
+                        states, actions, next_states, rewards, dones)
 
             if t >= self.start_update and t % self.save_interval == 0:
                 if self.save_name is None:

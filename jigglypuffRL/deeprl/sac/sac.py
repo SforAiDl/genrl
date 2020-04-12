@@ -182,7 +182,8 @@ class SAC:
             self.target_entropy = -torch.prod(
                 torch.Tensor(self.env.action_space.shape).to(self.device)
             ).item()
-            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+            self.log_alpha = torch.zeros(
+                1, requires_grad=True, device=self.device)
             self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
@@ -211,7 +212,8 @@ class SAC:
         log_pi = distribution.log_prob(xi)
 
         # enforcing action bound (appendix of paper)
-        log_pi -= torch.log(self.action_scale * (1 - yi.pow(2)) + np.finf(float32).eps)
+        log_pi -= torch.log(
+            self.action_scale * (1 - yi.pow(2)) + np.finf(np.float32).eps)
         log_pi = log_pi.sum(1, keepdim=True)
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
         return action, log_pi, mean
@@ -227,10 +229,13 @@ class SAC:
         # compute targets
         with torch.no_grad():
             next_action, next_log_pi, _ = self.sample_action(next_state)
-            next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
-            next_q2_targ = self.q2_targ(torch.cat([next_state, next_action], dim=-1))
+            next_q1_targ = self.q1_targ(
+                torch.cat([next_state, next_action], dim=-1))
+            next_q2_targ = self.q2_targ(
+                torch.cat([next_state, next_action], dim=-1))
             next_q_targ = (
-                torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
+                torch.min(
+                    next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
             )
             next_q = reward + self.gamma * (1 - done) * next_q_targ
 
@@ -275,20 +280,26 @@ class SAC:
             alpha_loss = torch.tensor(0.0).to(self.device)
 
         # soft update target params
-        for target_param, param in zip(self.q1_targ.parameters(), self.q1.parameters()):
+        for target_param, param in zip(
+            self.q1_targ.parameters(), self.q1.parameters()
+        ):
             target_param.data.copy_(
-                target_param.data * self.polyak + param.data * (1 - self.polyak)
+                target_param.data * self.polyak + param.data * (
+                    1 - self.polyak)
             )
-        for target_param, param in zip(self.q2_targ.parameters(), self.q2.parameters()):
+        for target_param, param in zip(
+            self.q2_targ.parameters(), self.q2.parameters()
+        ):
             target_param.data.copy_(
-                target_param.data * self.polyak + param.data * (1 - self.polyak)
+                target_param.data * self.polyak + param.data * (
+                    1 - self.polyak)
             )
 
         return q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item()
 
     def learn(self):
         if self.tensorboard_log:
-            writer = SummaryWriter(self.tensorboard_log)  # for tensorboard logs
+            writer = SummaryWriter(self.tensorboard_log)
 
         i = 0
         ep = 1
@@ -346,7 +357,8 @@ class SAC:
                 episode_reward += reward
 
                 ndone = 1 if j == self.max_ep_len else float(not done)
-                self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
+                self.replay_buffer.push((
+                    state, action, reward, next_state, 1 - ndone))
                 state = next_state
 
             if i > total_steps:
