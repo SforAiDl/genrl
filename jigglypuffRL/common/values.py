@@ -25,16 +25,13 @@ class MlpValue(BaseValue):
     :param hidden: (tuple or list) sizes of hidden layers
     """
 
-    def __init__(
-        self, state_dim, action_dim=None, val_type="V", hidden=(32, 32)
-    ):
+    def __init__(self, state_dim, action_dim=None, val_type="V", hidden=(32, 32)):
         super(MlpValue, self).__init__()
 
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = _get_val_model(
-            mlp, val_type, state_dim, hidden, action_dim)
+        self.model = _get_val_model(mlp, val_type, state_dim, hidden, action_dim)
 
 
 value_registry = {"mlp": MlpValue}

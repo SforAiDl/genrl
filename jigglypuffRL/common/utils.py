@@ -46,8 +46,7 @@ def evaluate(algo, num_timesteps=1000):
         if done:
             episode += 1
             print(
-                "Ep: {}, reward: {}, t: {}".format(
-                    episode, episode_reward, episode_t)
+                "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, episode_t)
             )
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
@@ -63,8 +62,7 @@ def save_params(algo):
         torch.save(algo.checkpoint, "{}.pt".format(algo.save_name))
     else:
         torch.save(
-            algo.checkpoint, "{}-{}.pt".format(
-                algo.save_name, algo.save_version)
+            algo.checkpoint, "{}-{}.pt".format(algo.save_name, algo.save_version)
         )
 
 

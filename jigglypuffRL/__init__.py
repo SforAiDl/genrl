@@ -13,7 +13,7 @@ from jigglypuffRL.common import (  # noqa
 )
 
 
-from jigglypuffRL.deeprl import SAC, DDPG, PPO1, VPG, TD3 # noqa
+from jigglypuffRL.deeprl import SAC, DDPG, PPO1, VPG, TD3  # noqa
 
 from jigglypuffRL.classicalrl import (  # noqa
     EpsGreedyBernoulliBandit,
