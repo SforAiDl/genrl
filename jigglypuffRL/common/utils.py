@@ -11,20 +11,20 @@ def get_model(type_, name_):
         from jigglypuffRL.common.values import get_value_from_name
 
         return get_value_from_name(name_)
-    elif type == "p":
+    elif type_ == "p":
         from jigglypuffRL.common.policies import get_policy_from_name
-
         return get_policy_from_name(name_)
     raise ValueError
 
 
-def mlp(sizes):
+def mlp(sizes, sac=False):
     """
     generate MLP model given sizes of each layer
     """
     layers = []
-    for j in range(len(sizes) - 1):
-        act = nn.ReLU if j < len(sizes) - 2 else nn.Identity
+    limit = len(sizes) if sac==False else len(sizes)-1
+    for j in range(limit - 1):
+        act = nn.ReLU if j < limit - 2 else nn.Identity
         layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
     return nn.Sequential(*layers)
 
