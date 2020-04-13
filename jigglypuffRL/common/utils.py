@@ -20,13 +20,14 @@ def get_model(type_, name_):
     raise ValueError
 
 
-def mlp(sizes):
+def mlp(sizes, sac=False):
     """
     generate MLP model given sizes of each layer
     """
     layers = []
-    for j in range(len(sizes) - 1):
-        act = nn.ReLU if j < len(sizes) - 2 else nn.Identity
+    limit = len(sizes) if sac is False else len(sizes) - 1
+    for j in range(limit - 1):
+        act = nn.ReLU if j < limit - 2 else nn.Identity
         layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
     return nn.Sequential(*layers)
 
@@ -46,9 +47,9 @@ def evaluate(algo, num_timesteps=1000):
 
         if done:
             episode += 1
-            print("Ep: {}, reward: {}, t: {}".format(
-                episode, episode_reward, episode_t
-            ))
+            print(
+                "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, episode_t)
+            )
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
         else:

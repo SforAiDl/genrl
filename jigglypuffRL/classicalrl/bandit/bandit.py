@@ -44,13 +44,13 @@ class Bandit(object):
     def counts(self):
         return self._counts
 
-    def get_action(self):
+    def get_action(self, t, bandit):
         raise NotImplementedError
 
-    def get_reward(self):
+    def get_reward(self, bandit, action):
         raise NotImplementedError
 
-    def update(self):
+    def update(self, bandit, action, reward):
         raise NotImplementedError
 
     def step(self, t):
@@ -265,9 +265,7 @@ class BernoulliBandits(Bandit):
         self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self.regrets.append(self.regret)
         self.Q[bandit, action] += (
-            1.0 / (self.counts[bandit, action] + 1) * (
-                reward - self.Q[bandit, action]
-            )
+            1.0 / (self.counts[bandit, action] + 1) * (reward - self.Q[bandit, action])
         )
         self.counts[bandit, action] += 1
 
@@ -279,7 +277,7 @@ class BernoulliBandits(Bandit):
     def Q(self):
         return self._Q
 
-    def get_action(self):
+    def get_action(self, t, bandit):
         pass
 
     def step(self, t):

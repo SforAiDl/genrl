@@ -26,7 +26,8 @@ class TD3:
     :param lr_p: (float) Policy network learning rate
     :param lr_q: (float) Q network learning rate
     :param polyak: (float) Polyak averaging weight to update target network
-    :param policy_frequency: (int) Update actor and target networks every policy_frequency steps
+    :param policy_frequency: (int) Update actor and target networks every 
+        policy_frequency steps
     :param epochs: (int) Number of epochs
     :param start_steps: (int) Number of exploratory steps at start
     :param steps_per_epoch: (int) Number of steps per epoch
@@ -52,6 +53,7 @@ class TD3:
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
     """
+
     def __init__(
         self,
         network_type,
@@ -142,10 +144,11 @@ class TD3:
 
         self.ac.qf1 = self.ac.critic
         self.ac.qf2 = get_model("v", self.network_type)(
-            state_dim, action_dim, hidden=self.layers, val_type="Qsa")
+            state_dim, action_dim, hidden=self.layers, val_type="Qsa"
+        )
 
         if self.pretrained:
-            self.checkpoint = self.load(self.save_name, self.save_version)
+            self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
             self.ac.qf1.load_state_dict(self.checkpoint["critic_q1_weights"])
             self.ac.qf2.load_state_dict(self.checkpoint["critic_q2_weights"])
@@ -158,12 +161,14 @@ class TD3:
         # freeze target network params
         for param in self.ac_target.parameters():
             param.requires_grad = False
-                
+
         self.replay_buffer = ReplayBuffer(self.replay_size)
         self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
-        self.optimizer_policy = torch.optim.Adam(self.ac.actor.parameters(), lr=self.lr_p)
+        self.optimizer_policy = torch.optim.Adam(
+            self.ac.actor.parameters(), lr=self.lr_p
+        )
 
     def get_env_properties(self):
         state_dim = self.env.observation_space.shape[0]
@@ -181,16 +186,16 @@ class TD3:
 
     def get_hyperparams(self):
         hyperparams = {
-        "network_type" : self.network_type,
-        "gamma" : self.gamma,
-        "lr_p" : self.lr_p,
-        "lr_q" : self.lr_q,
-        "polyak" : self.polyak,
-        "policy_frequency" : self.policy_frequency,
-        "noise_std" : self.noise_std,
-        "critic_q1_weights" : self.ac.qf1.state_dict(),
-        "critic_q2_weights" : self.ac.qf2.state_dict(),
-        "actor_weights" : self.ac.actor.state_dict
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "lr_p": self.lr_p,
+            "lr_q": self.lr_q,
+            "polyak": self.polyak,
+            "policy_frequency": self.policy_frequency,
+            "noise_std": self.noise_std,
+            "critic_q1_weights": self.ac.qf1.state_dict(),
+            "critic_q2_weights": self.ac.qf2.state_dict(),
+            "actor_weights": self.ac.actor.state_dict,
         }
 
         return hyperparams
@@ -199,17 +204,14 @@ class TD3:
         with torch.no_grad():
             action = self.ac_target.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
-            deterministic=deterministic)[0].numpy()
+                deterministic=deterministic,
+            )[0].numpy()
 
         # add noise to output from policy network
-        action += self.noise_std * np.random.randn(
-            self.env.action_space.shape[0]
-        )
-        
+        action += self.noise_std * np.random.randn(self.env.action_space.shape[0])
+
         return np.clip(
-            action,
-            -self.env.action_space.high[0],
-            self.env.action_space.high[0]
+            action, -self.env.action_space.high[0], self.env.action_space.high[0]
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
@@ -217,8 +219,24 @@ class TD3:
         q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            target_q1 = self.ac_target.qf1.get_value(torch.cat([next_state, self.ac_target.get_action(next_state, deterministic=True)[0]], dim=-1))
-            target_q2 = self.ac_target.qf2.get_value(torch.cat([next_state, self.ac_target.get_action(next_state, deterministic=True)[0]], dim=-1))
+            target_q1 = self.ac_target.qf1.get_value(
+                torch.cat(
+                    [
+                        next_state,
+                        self.ac_target.get_action(next_state, deterministic=True)[0],
+                    ],
+                    dim=-1,
+                )
+            )
+            target_q2 = self.ac_target.qf2.get_value(
+                torch.cat(
+                    [
+                        next_state,
+                        self.ac_target.get_action(next_state, deterministic=True)[0],
+                    ],
+                    dim=-1,
+                )
+            )
             target_q = torch.min(target_q1, target_q2)
 
             target = reward + self.gamma * (1 - done) * target_q
@@ -229,9 +247,9 @@ class TD3:
         return l1 + l2
 
     def get_p_loss(self, state):
-        q_pi = self.ac.get_value(torch.cat([
-            state, self.ac.get_action(state, deterministic=True)[0]
-        ], dim=-1))
+        q_pi = self.ac.get_value(
+            torch.cat([state, self.ac.get_action(state, deterministic=True)[0]], dim=-1)
+        )
         return -torch.mean(q_pi)
 
     def update_params(self, state, action, reward, next_state, done, timestep):
@@ -289,9 +307,9 @@ class TD3:
 
             if done or (episode_len == self.max_ep_len):
                 if episode % 20 == 0:
-                    print("Ep: {}, reward: {}, t: {}".format(
-                        episode, episode_reward, t
-                    ))
+                    print(
+                        "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, t)
+                    )
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, t)
 
@@ -301,15 +319,11 @@ class TD3:
             # update params
             if t >= self.start_update and t % self.update_interval == 0:
                 for _ in range(self.update_interval):
-                    batch = self.replay_buffer.sample(
-                        self.batch_size
-                    )
+                    batch = self.replay_buffer.sample(self.batch_size)
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(
-                        states, actions, next_states, rewards, dones, t
-                    )
+                    self.update_params(states, actions, next_states, rewards, dones, t)
 
             if t >= self.start_update and t % self.save_interval == 0:
                 self.checkpoint = self.get_hyperparams()

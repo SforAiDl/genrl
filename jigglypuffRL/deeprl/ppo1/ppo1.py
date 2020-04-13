@@ -35,7 +35,7 @@ class PPO1:
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
+    :param run_num: (boolean) if model has already been trained
     :param save_model: (string) directory the user wants to save models to
     """
 
@@ -56,7 +56,7 @@ class PPO1:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
+        run_num=False,
         save_model=False,
     ):
         self.network_type = network_type
@@ -74,7 +74,7 @@ class PPO1:
         self.policy_copy_interval = policy_copy_interval
         self.evaluate = evaluate
         self.save_interval = save_interval
-        self.pretrained = pretrained
+        self.run_num = run_num
         self.save_model = save_model
         self.save = save_params
         self.load = load_params
@@ -111,13 +111,14 @@ class PPO1:
         )
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
+
         self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
             self.device
         )
 
         # load paramaters if already trained
-        if self.pretrained:
-            self.load(self, self.save_model, 10000)
+        if self.run_num is not None:
+            self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
@@ -129,9 +130,7 @@ class PPO1:
         self.optimizer_policy = opt.Adam(
             self.policy_new.parameters(), lr=self.lr_policy
         )
-        self.optimizer_value = opt.Adam(
-            self.value_fn.parameters(), lr=self.lr_value
-        )
+        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
         self.policy_old.traj_reward = []
         self.policy_old.policy_hist = Variable(torch.Tensor())
@@ -164,7 +163,9 @@ class PPO1:
             ]
         )
 
-        self.value_fn.value_hist = torch.cat([self.value_fn.value_hist, val.unsqueeze(0)])
+        self.value_fn.value_hist = torch.cat(
+            [self.value_fn.value_hist, val.unsqueeze(0)]
+        )
 
         return action
 
@@ -183,9 +184,7 @@ class PPO1:
         advantages = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        ratio = torch.div(
-            self.policy_new.policy_hist, self.policy_old.policy_hist
-        )
+        ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
             .mul(advantages)
@@ -193,7 +192,8 @@ class PPO1:
         )
 
         loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, advantages), clipping)).mul(-1)
+            torch.mean(torch.min(torch.mul(ratio, advantages), clipping))
+            .mul(-1)
             .unsqueeze(0)
         )
         loss_value = nn.MSELoss()(
@@ -201,12 +201,8 @@ class PPO1:
         ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
-        self.policy_new.loss_hist = torch.cat([
-            self.policy_new.loss_hist, loss_policy
-        ])
-        self.value_fn.loss_hist = torch.cat([
-            self.value_fn.loss_hist, loss_value
-        ])
+        self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
+        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
 
         # clear traj history
         self.policy_old.traj_reward = []
@@ -271,7 +267,6 @@ class PPO1:
             if episode % self.policy_copy_interval == 0:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
                     self.checkpoint["policy_weights"] = self.policy_new.state_dict() # noqa
@@ -282,7 +277,6 @@ class PPO1:
         if self.tensorboard_log:
             self.writer.close()
 
-        
     def get_env_properties(self, env):
         state_dim = self.env.observation_space.shape[0]
 
@@ -299,15 +293,15 @@ class PPO1:
 
     def get_hyperparams(self):
         hyperparams = {
-        "network_type" : self.network_type,
-        "timesteps_per_actorbatch" : self.timesteps_per_actorbatch,
-        "gamma" : self.gamma,
-        "clip_param" : self.clip_param,
-        "actor_batch_size" : self.actor_batch_size,
-        "lr_policy" : self.lr_policy,
-        "lr_value" : self.lr_value,
-        "policy_weights" : self.policy_new.state_dict(),
-        "value_weights" : self.value_fn.state_dict()
+            "network_type": self.network_type,
+            "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
+            "gamma": self.gamma,
+            "clip_param": self.clip_param,
+            "actor_batch_size": self.actor_batch_size,
+            "lr_policy": self.lr_policy,
+            "lr_value": self.lr_value,
+            "policy_weights": self.policy_new.state_dict(),
+            "value_weights": self.value_fn.state_dict(),
         }
 
         return hyperparams
@@ -317,4 +311,4 @@ if __name__ == "__main__":
 
     env = gym.make("Pendulum-v0")
     algo = PPO1("MlpPolicy", "MlpValue", env, save_model="checkpoints")
-    algo.learn() 
+    algo.learn()

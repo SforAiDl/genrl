@@ -1,1 +1,1 @@
-from jigglypuffRL.classicalrl.sarsa.sarsa import SARSA # noqa
+from jigglypuffRL.classicalrl.sarsa.sarsa import SARSA  # noqa
