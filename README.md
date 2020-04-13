@@ -2,6 +2,8 @@
 [![pypi](https://img.shields.io/badge/pypi-jigglypuff--rl-blue)](https://pypi.org/project/jigglypuff-rl/)
 [![GitHub license](https://img.shields.io/github/license/SforAiDl/JigglypuffRL)](https://github.com/SforAiDl/JigglypuffRL/blob/master/LICENSE)
 [![Build Status](https://travis-ci.com/SforAiDl/JigglypuffRL.svg?branch=master)](https://travis-ci.com/SforAiDl/JigglypuffRL)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/SforAiDl/JigglypuffRL.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SforAiDl/JigglypuffRL/alerts/)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/SforAiDl/JigglypuffRL.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SforAiDl/JigglypuffRL/context:python)
 
 ## Installation
 
