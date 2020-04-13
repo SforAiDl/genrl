@@ -128,7 +128,7 @@ class VPG:
 
         # load paramaters if already trained
         if self.pretrained:
-            self.load(self.save_name, self.save_version)
+            self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
