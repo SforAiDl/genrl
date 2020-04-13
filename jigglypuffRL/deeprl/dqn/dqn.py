@@ -8,7 +8,13 @@ import torch.optim as opt
 from torch.autograd import Variable
 from copy import deepcopy
 
-from jigglypuffRL.common import ReplayBuffer, PrioritizedBuffer, get_model
+from jigglypuffRL.common import (
+    ReplayBuffer, 
+    PrioritizedBuffer, 
+    get_model,
+    evaluate,
+    save_params,
+    load_params)
 from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp
 
 
@@ -54,6 +60,9 @@ class DQN:
         seed=None,
         render=False,
         device="cpu",
+        save_interval=5000,
+        run_num=None,
+        save_model=None,
     ):
         self.env = env
         self.double_dqn = double_dqn
@@ -74,6 +83,12 @@ class DQN:
         self.max_epsilon = 1.0
         self.min_epsilon = 0.01
         self.epsilon_decay = 500
+        self.evaluate = evaluate
+        self.run_num = run_num
+        self.save_model = save_model
+        self.save = save_params
+        self.load = load_params
+        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -101,14 +116,23 @@ class DQN:
 
     def create_model(self, network_type):
         if network_type == "MLP":
-            self.model = get_model("v", network_type)(
-                self.env.observation_space.shape[0], self.env.action_space.n, "Qs"
-            )
-            self.target_model = deepcopy(self.model)
-            
             if self.dueling_dqn:
-                self.model = DuelingDQNValueMlp(self.env.observation_space.shape[0], self.env.action_space.n)
-                self.target_model = deepcopy(self.model)
+                self.model = DuelingDQNValueMlp(
+                    self.env.observation_space.shape[0], self.env.action_space.n
+                )
+            else:
+                self.model = get_model("v", network_type)(
+                    self.env.observation_space.shape[0], self.env.action_space.n, "Qs"
+                )
+            # load paramaters if already trained
+            if self.run_num is not None:
+                self.load(self)
+                self.model.load_state_dict(self.checkpoint["weights"])
+                for key, item in self.checkpoint.items():
+                    if key != "weights":
+                        setattr(self, key, item)
+                        
+            self.target_model = deepcopy(self.model)
             
         if self.prioritized_replay:
             self.replay_buffer = PrioritizedBuffer(self.replay_size, self.prioritized_replay_alpha)
@@ -228,6 +252,11 @@ class DQN:
 
             if self.replay_buffer.get_len() > self.batch_size:
                 self.update_params()
+
+            if self.save_model is not None:
+                if frame_idx % self.save_interval == 0:
+                    self.checkpoint["weights"] = self.model.state_dict()
+                    self.save(self, frame_idx)
 
             if frame_idx % 100 == 0:
                 self.update_target_model()

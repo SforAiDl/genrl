@@ -47,7 +47,7 @@ class TD3:
     :param render: (boolean) if environment is to be rendered
     :param device: (str) device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
+    :param run_num: (boolean) if model has already been trained
     :param save_name: (str) model save name (if None, model hasn't been
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
@@ -78,7 +78,7 @@ class TD3:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
+        run_num=None,
         save_name=None,
         save_version=None,
     ):
@@ -105,7 +105,8 @@ class TD3:
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
-        self.pretrained = pretrained
+        self.checkpoint = self.get_hyperparams()
+        self.run_num = run_num
         self.save_name = save_name
         self.save_version = save_version
         self.save = save_params
@@ -147,7 +148,7 @@ class TD3:
             state_dim, action_dim, hidden=self.layers, val_type="Qsa"
         )
 
-        if self.pretrained:
+        if self.run_num is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
             self.ac.qf1.load_state_dict(self.checkpoint["critic_q1_weights"])
@@ -327,9 +328,6 @@ class TD3:
 
             if t >= self.start_update and t % self.save_interval == 0:
                 self.checkpoint = self.get_hyperparams()
-                if self.save_name is None:
-                    self.save_name = self.network_type
-                self.save_version = int(t / self.save_interval)
                 self.save(self)
 
         self.env.close()

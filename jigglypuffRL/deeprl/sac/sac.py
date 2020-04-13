@@ -43,7 +43,7 @@ class SAC:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
+    :param run_num: (boolean) if model has already been trained
     :param save_name: (str) model save name (if None, model hasn't been
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
@@ -73,7 +73,7 @@ class SAC:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
+        run_num=None,
         save_name=None,
         save_version=None,
     ):
@@ -103,8 +103,8 @@ class SAC:
         self.save = save_params
         self.load = load_params
         self.evaluate = evaluate
-        self.checkpoint = self.__dict__
-        self.pretrained = pretrained
+        self.checkpoint = self.get_hyperparams()
+        self.run_num = run_num
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -153,7 +153,7 @@ class SAC:
             state_dim, action_dim, self.layers, disc, False, sac=True
         )
 
-        if self.pretrained:
+        if self.run_num is not None:
             self.load(self)
             self.q1.load_state_dict(self.checkpoint["q1_weights"])
             self.q2.load_state_dict(self.checkpoint["q2_weights"])
@@ -344,11 +344,8 @@ class SAC:
                         writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
                 if i >= self.start_update and i % self.save_interval == 0:
-                    if self.save_name is None:
-                        self.save_name = self.network_type
-                    self.save_version = int(i / self.save_interval)
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self)
+                    self.save(self, i)
 
                 # prepare transition for replay memory push
                 next_state, reward, done, _ = self.env.step(action)

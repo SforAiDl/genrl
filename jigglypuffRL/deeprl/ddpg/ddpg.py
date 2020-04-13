@@ -139,7 +139,6 @@ class DDPG:
         ).to(self.device)
 
         # load paramaters if already trained
-
         if self.run_num is not None:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
