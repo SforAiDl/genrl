@@ -2,6 +2,7 @@ from jigglypuffRL.common import (  # noqa
     MlpActorCritic,
     MlpPolicy,
     ReplayBuffer,
+    PrioritizedBuffer,
     MlpValue,
     get_model,
     save_params,

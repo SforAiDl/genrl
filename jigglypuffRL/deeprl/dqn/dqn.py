@@ -11,7 +11,7 @@ from copy import deepcopy
 
 import matplotlib.pyplot as plt
 
-from jigglypuffRL.common import ReplayBuffer, get_model
+from jigglypuffRL.common import ReplayBuffer, PrioritizedBuffer, get_model
 from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp
 
 
@@ -23,7 +23,8 @@ class DQN:
     :param network_type: (str) The deep neural network layer types ['MLP']
     :param env: (Gym environment) The environment to learn from
     :param double_dqn: (boolean) For training Double DQN
-    :param dueling_dqn: (boolean) For trianing Dueling DQN
+    :param dueling_dqn: (boolean) For training Dueling DQN
+    :param parameterized_replay: (boolean) For using a prioritized buffer
     :param epochs: (int) Number of epochs
     :param max_iterations_per_epoch: (int) Number of iterations per epoch
     :param max_ep_len: (int) Maximum steps per episode
@@ -43,6 +44,7 @@ class DQN:
         env,
         double_dqn=False,
         dueling_dqn=False,
+        prioritized_replay=False,
         epochs=100,
         max_iterations_per_epoch=100,
         max_ep_len=1000,
@@ -50,6 +52,7 @@ class DQN:
         lr=0.001,
         batch_size=32,
         replay_size=100,
+        prioritized_replay_alpha=0.6,
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -58,10 +61,12 @@ class DQN:
         self.env = env
         self.double_dqn = double_dqn
         self.dueling_dqn = dueling_dqn
+        self.prioritized_replay = prioritized_replay
         self.max_epochs = epochs
         self.max_iterations_per_epoch = max_iterations_per_epoch
         self.max_ep_len = max_ep_len
         self.replay_size = replay_size
+        self.prioritized_replay_alpha = prioritized_replay_alpha
         self.lr = lr
         self.gamma = gamma
         self.batch_size = batch_size
@@ -108,8 +113,11 @@ class DQN:
                 self.model = DuelingDQNValueMlp(self.env.observation_space.shape[0], self.env.action_space.n)
                 self.target_model = deepcopy(self.model)
             
-
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        if self.prioritized_replay:
+            self.replay_buffer = PrioritizedBuffer(self.replay_size, self.prioritized_replay_alpha)
+        
+        else:
+            self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def update_target_model(self):
@@ -128,6 +136,12 @@ class DQN:
         return action
 
     def get_td_loss(self):
+        if self.prioritized_replay:
+            state, action, reward, next_state, done, indices, weight = self.replay_buffer.sample(
+                self.batch_size
+            )
+            weights = Variable(torch.FloatTensor(weights))
+
         state, action, reward, next_state, done = self.replay_buffer.sample(
             self.batch_size
         )
@@ -156,7 +170,14 @@ class DQN:
             q_s_a_prime = q_next_state_values.max(1)[0]
             expected_q_value = reward + self.gamma * q_s_a_prime * (1 - done)
 
-        loss = (q_value - expected_q_value.detach()).pow(2).mean()
+        if self.prioritized_replay:
+            loss = (q_value - expected_q_value.detach()).pow(2) * weights
+            priorities = loss + 1e-5
+            loss = loss.mean()
+            self.replay_buffer.update_priorities(indices, priorities.data.cpu().numpy())
+
+        else:
+            loss = (q_value - expected_q_value.detach()).pow(2).mean()
         # loss = F.smooth_l1_loss(q_value,expected_q_value)
 
         self.loss_hist.append(loss)
