@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.optim as opt
 from torch.autograd import Variable
 import gym
@@ -135,8 +136,12 @@ class VPG:
                 if key not in ["policy_weights", "value_weights"]:
                     setattr(self, key, item)
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(
+            self.ac.actor.parameters(), lr=self.lr_policy
+        )
+        self.optimizer_value = opt.Adam(
+            self.ac.critic.parameters(), lr=self.lr_value
+        )
 
         self.policy_hist = Variable(torch.Tensor())
         self.value_hist = Variable(torch.Tensor())
@@ -152,7 +157,9 @@ class VPG:
         val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current traj
-        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
+        self.policy_hist = torch.cat([
+            self.policy_hist, c.log_prob(a).unsqueeze(0)
+        ])
 
         self.value_hist = torch.cat([self.value_hist, val])
 
@@ -176,11 +183,13 @@ class VPG:
         advantage = Variable(returns) - Variable(self.value_hist)
 
         # compute policy and value loss
-        loss_policy = (
-            torch.sum(torch.mul(self.policy_hist, advantage)).mul(-1).unsqueeze(0)
-        )
+        loss_policy = torch.sum(torch.mul(
+            self.policy_hist, advantage)
+        ).mul(-1).unsqueeze(0)
 
-        loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
+        loss_value = nn.MSELoss()(
+            self.value_hist, Variable(returns)
+        ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
         self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
@@ -193,8 +202,12 @@ class VPG:
 
     def update_policy(self, episode):
         # mean of all traj losses in single epoch
-        loss_policy = Variable(torch.mean(self.policy_loss_hist), requires_grad=True)
-        loss_value = Variable(torch.mean(self.value_loss_hist), requires_grad=True)
+        loss_policy = Variable(
+            torch.mean(self.policy_loss_hist), requires_grad=True
+        )
+        loss_value = Variable(
+            torch.mean(self.value_loss_hist), requires_grad=True
+        )
 
         # tensorboard book-keeping
         if self.tensorboard_log:
@@ -223,8 +236,9 @@ class VPG:
                 state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    action = Variable(self.select_action(state, deterministic=False))
-                    # print(type(action))
+                    action = Variable(self.select_action(
+                        state, deterministic=False
+                    ))
                     state, reward, done, _ = self.env.step(action)
 
                     if self.render:
@@ -235,7 +249,9 @@ class VPG:
                     if done:
                         break
 
-                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
+                epoch_reward += (
+                    np.sum(self.traj_reward) / self.actor_batch_size
+                )
                 self.get_traj_loss()
 
             self.update_policy(episode)
