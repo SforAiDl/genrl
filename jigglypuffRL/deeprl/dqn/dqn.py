@@ -6,10 +6,7 @@ import numpy as np
 import torch
 import torch.optim as opt
 from torch.autograd import Variable
-import torch.nn.functional as F
 from copy import deepcopy
-
-import matplotlib.pyplot as plt
 
 from jigglypuffRL.common import ReplayBuffer, PrioritizedBuffer, get_model
 from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp
