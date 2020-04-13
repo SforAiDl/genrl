@@ -4,17 +4,34 @@ from torch.distributions import Categorical, Normal
 
 
 class BasePolicy(nn.Module):
-    def __init__(self, discrete, **kwargs):
+    def __init__(self, discrete, state_dim, action_dim, hidden, **kwargs):
         super(BasePolicy, self).__init__()
 
         self.discrete = discrete
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.hidden = hidden
+
         self.action_lim = kwargs["action_lim"] if "action_lim" in kwargs else 1.0
         self.action_var = kwargs["action_var"] if "action_var" in kwargs else 0.1
+        self.sac = kwargs["sac"] if "sac" in kwargs else False
+
+        if self.sac:
+            self.fc_mean = nn.Linear(self.hidden[-1], self.action_dim)
+            self.fc_std = nn.Linear(self.hidden[-1], self.action_dim)
 
         self.model = None
 
     def forward(self, state):
-        return self.model.forward(state)
+        state = self.model.forward(state)
+        if self.sac:
+            state = nn.ReLU()(state)
+            mean = self.fc_mean(state)
+            log_std = self.fc_std(state)
+            log_std = torch.clamp(log_std, min=-20.0, max=2.0)
+            return mean, log_std
+
+        return state
 
     def get_action(self, state, deterministic=False):
         action_probs = self.forward(state)
@@ -44,9 +61,9 @@ class BaseValue(nn.Module):
 
     def forward(self, x):
         return self.model.forward(x)
-        
+
     def get_value(self, x):
-        return self.forward(x).squeeze()
+        return self.forward(x).squeeze(-1)
 
 
 class BaseActorCritic(nn.Module):

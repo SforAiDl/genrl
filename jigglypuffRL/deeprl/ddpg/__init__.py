@@ -1,1 +1,1 @@
-from jigglypuffRL.deeprl.ddpg.ddpg import DDPG # noqa
+from jigglypuffRL.deeprl.ddpg.ddpg import DDPG  # noqa

@@ -122,30 +122,27 @@ class VPG:
             raise NotImplementedError
 
         # Instantiate networks and optimizers
-        self.ac = get_model('ac', self.network_type)(
+        self.ac = get_model("ac", self.network_type)(
             s_dim, a_dim, self.layers, "V", disc, False
         ).to(self.device)
 
         # load paramaters if already trained
         if self.pretrained:
-            self.load(self.save_name, self.save_version)
+            self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
                 if key not in ["policy_weights", "value_weights"]:
                     setattr(self, key, item)
 
-        self.optimizer_policy = opt.Adam(
-            self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(
-            self.ac.critic.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
         self.policy_hist = Variable(torch.Tensor())
         self.value_hist = Variable(torch.Tensor())
         self.traj_reward = []
         self.policy_loss_hist = Variable(torch.Tensor())
         self.value_loss_hist = Variable(torch.Tensor())
-
 
     def select_action(self, state, deterministic=False):
         state = Variable(torch.as_tensor(state).float().to(self.device))
@@ -155,9 +152,7 @@ class VPG:
         val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current traj
-        self.policy_hist = torch.cat(
-            [self.policy_hist, c.log_prob(a).unsqueeze(0)]
-        )
+        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
 
         self.value_hist = torch.cat([self.value_hist, val])
 
@@ -167,35 +162,29 @@ class VPG:
         self.value_hist = Variable(torch.Tensor())
         return a
 
-    def get_traj_loss(self):	
-        disc_R = 0	
-        returns = []	
+    def get_traj_loss(self):
+        disc_R = 0
+        returns = []
 
-        # calculate discounted return	
-        for reward in self.traj_reward[::-1]:	
-            disc_R = reward + self.gamma * disc_R	
-            returns.insert(0, disc_R)	
+        # calculate discounted return
+        for reward in self.traj_reward[::-1]:
+            disc_R = reward + self.gamma * disc_R
+            returns.insert(0, disc_R)
 
-        # advantage estimation	
-        returns = torch.FloatTensor(returns).to(self.device)	
-        advantage = Variable(returns) - Variable(self.value_hist)	
+        # advantage estimation
+        returns = torch.FloatTensor(returns).to(self.device)
+        advantage = Variable(returns) - Variable(self.value_hist)
 
-        # compute policy and value loss	
-        loss_policy = (	
-            torch.sum(torch.mul(	
-                self.policy_hist, advantage	
-            )).mul(-1).unsqueeze(0)	
-        )	
+        # compute policy and value loss
+        loss_policy = (
+            torch.sum(torch.mul(self.policy_hist, advantage)).mul(-1).unsqueeze(0)
+        )
 
-        loss_value = nn.MSELoss()(	
-            self.value_hist, Variable(returns)	
-        ).unsqueeze(0)	
+        loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
 
-        # store traj loss values in epoch loss tensors	
-        self.policy_loss_hist = torch.cat([	
-            self.policy_loss_hist, loss_policy])	
-        self.value_loss_hist = torch.cat([	
-            self.value_loss_hist, loss_value])	
+        # store traj loss values in epoch loss tensors
+        self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
+        self.value_loss_hist = torch.cat([self.value_loss_hist, loss_value])
 
         # clear traj history
         self.traj_reward = []
@@ -215,7 +204,7 @@ class VPG:
         # take gradient step
         self.optimizer_policy.zero_grad()
         # print(loss_policy, loss_value)
-        loss_policy.backward() #B
+        loss_policy.backward()  # B
         self.optimizer_policy.step()
 
         self.optimizer_value.zero_grad()
@@ -246,9 +235,7 @@ class VPG:
                     if done:
                         break
 
-                epoch_reward += (
-                    np.sum(self.traj_reward) / self.actor_batch_size
-                )
+                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
                 self.get_traj_loss()
 
             self.update_policy(episode)
