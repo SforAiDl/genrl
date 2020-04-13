@@ -33,7 +33,7 @@ from jigglypuffRL import PPO1
 import gym
 
 env = gym.make('CartPole-v0')
-agent = PPO1('MlpPolicy', 'MlpValue', env, epochs=500, tensorboard_log='./runs/')
+agent = PPO1(network_type='mlp', env=env, epochs=500, render = True, tensorboard_log='./runs/')
 
 agent.learn()
 ```
