@@ -34,11 +34,8 @@ class VPG:
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
+    :param run_num: (boolean) if model has already been trained
+    :param save_model: (boolean) True if user wants to save model
     """
 
     def __init__(
@@ -59,9 +56,8 @@ class VPG:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
-        save_name=None,
-        save_version=None,
+        run_num=False,
+        save_model=False,
     ):
         self.network_type = network_type
         self.env = env
@@ -79,9 +75,8 @@ class VPG:
         self.evaluate = evaluate
         self.save_interval = save_interval
         self.layers = layers
-        self.pretrained = pretrained
-        self.save_name = save_name
-        self.save_version = save_version
+        self.run_num = run_num
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
         self.checkpoint = self.__dict__
@@ -127,10 +122,11 @@ class VPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained:
+        if self.run_num is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
+
             for key, item in self.checkpoint.items():
                 if key not in ["policy_weights", "value_weights"]:
                     setattr(self, key, item)
@@ -245,13 +241,11 @@ class VPG:
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, episode)
 
-            if episode % self.save_interval == 0:
-                self.checkpoint["policy_weights"] = self.ac.actor.state_dict()
-                self.checkpoint["value_weights"] = self.ac.critic.state_dict()
-                if self.save_name is None:
-                    self.save_name = "{}".format(self.env)
-                self.save_version = int(episode / self.save_interval)
-                self.save(self)
+            if self.save_model is not None:
+                if episode % self.save_interval == 0:
+                    self.checkpoint["policy_weights"] = self.policy_fn.state_dict()  # noqa
+                    self.checkpoint["value_weights"] = self.value_fn.state_dict()    # noqa
+                    self.save(self, self.save_model, episode)
 
         self.env.close()
         if self.tensorboard_log:
@@ -260,6 +254,6 @@ class VPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = VPG("mlp", env, epochs=500, seed=0)
+    algo = VPG("mlp", env, epochs=500, seed=0, save_model="checkpoints")
     algo.learn()
     algo.evaluate(algo)
