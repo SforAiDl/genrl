@@ -86,25 +86,9 @@ def save_params(algo, timestep):
 def load_params(algo):
     algo_name = algo.__class__.__name__
     env_name = algo.env.unwrapped.spec.id
-    directory = algo.save_model
-    run_num = algo.pretrained
-    path = "{}/{}_{}".format(
-        directory, algo_name, env_name
-    )
-
-    f = open("log.pkl", "rb")
-    log = pickle.load(f)
-    f.close()
-
-    if run_num is None:
-        run_num = log[path]
-    timestep = log[path+str(run_num)]
+    path = algo.pretrained
 
     try:
-        algo.checkpoint = torch.load(
-            "{}/{}-log-{}.pt".format(path, run_num, timestep)
-        )
+        algo.checkpoint = torch.load(path)
     except FileNotFoundError:
-        raise Exception("File name seems to be invalid")
-    except NotADirectoryError:
-        raise Exception("Invalid directory path")
+        raise Exception("Invalid file name")
