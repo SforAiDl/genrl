@@ -43,10 +43,6 @@ class DDPG:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param seed: (int) seed for torch and gym
-    :param render: (boolean) if environment is to be rendered
-    :param device: (str) device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
     :param run_num: (int) model run number if it has already been trained,
         (if None, don't load from past model)
     :param save_model: (string) directory the user wants to save models to
