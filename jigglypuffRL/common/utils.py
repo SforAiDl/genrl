@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import os
-import pickle
 
 
 def get_model(type_, name_):
@@ -82,8 +81,6 @@ def save_params(algo, timestep):
 
 
 def load_params(algo):
-    algo_name = algo.__class__.__name__
-    env_name = algo.env.unwrapped.spec.id
     path = algo.pretrained
 
     try:
