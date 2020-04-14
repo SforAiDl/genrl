@@ -67,35 +67,20 @@ def save_params(algo, timestep):
         directory, algo_name, env_name
     )
 
-    if timestep == algo.save_interval:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-            log = {}
-            run_num = 0
-        else:
-            f = open("{}/log.pkl".format(directory), "rb")
-            log = pickle.load(f)
-            f.close()
-            run_num = log[path] + 1
-
+    if algo.run_num != None:
+        run_num = algo.run_num
+    else:
         if not os.path.exists(path):
             os.makedirs(path)
-    else:
-        f = open("{}/log.pkl".format(directory), "rb")
-        log = pickle.load(f)
-        f.close()
-        run_num = log[path]
-
+            run_num = 0
+        else:
+            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[-1].path
+            run_num = int(last_path[len(path)+1:].split('-')[0]) + 1
+        algo.run_num = run_num
+    
     torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(
         path, run_num, timestep
     ))
-
-    log[path] = run_num
-    log[path+str(run_num)] = timestep
-
-    f = open("{}/log.pkl".format(directory), "wb")
-    pickle.dump(log, f)
-    f.close()
 
 
 def load_params(algo):
