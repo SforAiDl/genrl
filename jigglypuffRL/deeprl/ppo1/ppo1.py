@@ -35,11 +35,8 @@ class PPO1:
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
+    :param run_num: (boolean) if model has already been trained
+    :param save_model: (string) directory the user wants to save models to
     """
 
     def __init__(
@@ -59,9 +56,8 @@ class PPO1:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
-        save_name=None,
-        save_version=None,
+        run_num=False,
+        save_model=False,
     ):
         self.network_type = network_type
         self.env = env
@@ -78,9 +74,8 @@ class PPO1:
         self.policy_copy_interval = policy_copy_interval
         self.evaluate = evaluate
         self.save_interval = save_interval
-        self.pretrained = pretrained
-        self.save_name = save_name
-        self.save_version = save_version
+        self.run_num = run_num
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
 
@@ -126,8 +121,8 @@ class PPO1:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained:
-            self.load(self.save_name, self.save_version)
+        if self.run_num is not None:
+            self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
@@ -288,13 +283,11 @@ class PPO1:
             if episode % self.policy_copy_interval == 0:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-            if episode % self.save_interval == 0:
-                self.checkpoint = self.get_hyperparams()
-
-                if self.save_name is None:
-                    self.save_name = "{}".format(self.network_type)
-                self.save_version = int(episode / self.save_interval)
-                self.save(self)
+            if self.save_model is not None:
+                if episode % self.save_interval == 0:
+                    self.checkpoint["policy_weights"] = self.policy_new.state_dict() # noqa
+                    self.checkpoint["value_weights"] = self.value_fn.state_dict()    # noqa
+                    self.save(self, episode)
 
         self.env.close()
         if self.tensorboard_log:
@@ -331,7 +324,7 @@ class PPO1:
 
 
 if __name__ == "__main__":
-    env = gym.make("CartPole-v1")
-    algo = PPO1("mlp", env, render=True)
+
+    env = gym.make("Pendulum-v0")
+    algo = PPO1("MlpPolicy", "MlpValue", env, save_model="checkpoints")
     algo.learn()
-    algo.evaluate(algo)

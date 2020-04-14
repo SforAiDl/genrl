@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import os
+import pickle
 
 
 def get_model(type_, name_):
@@ -57,24 +59,67 @@ def evaluate(algo, num_timesteps=1000):
     print("Average Reward: {}".format(total_reward / num_timesteps))
 
 
-def save_params(algo):
-    if algo.save_version is None:
-        torch.save(algo.checkpoint, "{}.pt".format(algo.save_name))
+def save_params(algo, timestep):
+    algo_name = algo.__class__.__name__
+    env_name = algo.env.unwrapped.spec.id
+    directory = algo.save_model
+    path = "{}/{}_{}".format(
+        directory, algo_name, env_name
+    )
+
+    if timestep == algo.save_interval:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+            log = {}
+            run_num = 0
+        else:
+            f = open("{}/log.pkl".format(directory), "rb")
+            log = pickle.load(f)
+            f.close()
+            run_num = log[path] + 1
+
+        if not os.path.exists(path):
+            os.makedirs(path)
     else:
-        torch.save(
-            algo.checkpoint, "{}-{}.pt".format(
-                algo.save_name, algo.save_version
-            )
-        )
+        f = open("{}/log.pkl".format(directory), "rb")
+        log = pickle.load(f)
+        f.close()
+        run_num = log[path]
+
+    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(
+        path, run_num, timestep
+    ))
+
+    log[path] = run_num
+    log[path+str(run_num)] = timestep
+
+    f = open("{}/log.pkl".format(directory), "wb")
+    pickle.dump(log, f)
+    f.close()
 
 
 def load_params(algo):
+    algo_name = algo.__class__.__name__
+    env_name = algo.env.unwrapped.spec.id
+    directory = algo.save_model
+    run_num = algo.pretrained
+    path = "{}/{}_{}".format(
+        directory, algo_name, env_name
+    )
+
+    f = open("log.pkl", "rb")
+    log = pickle.load(f)
+    f.close()
+
+    if run_num is None:
+        run_num = log[path]
+    timestep = log[path+str(run_num)]
+
     try:
-        if algo.save_version is None:
-            algo.checkpoint = torch.load("{}.pt").format(algo.save_name)
-        else:
-            algo.checkpoint = torch.load(
-                "{}-{}.pt".format(algo.save_name, algo.save_version)
-            )
+        algo.checkpoint = torch.load(
+            "{}/{}-log-{}.pt".format(path, run_num, timestep)
+        )
     except FileNotFoundError:
-        raise Exception("Check name and version number again")
+        raise Exception("File name seems to be invalid")
+    except NotADirectoryError:
+        raise Exception("Invalid directory path")

@@ -47,11 +47,9 @@ class DDPG:
     :param render: (boolean) if environment is to be rendered
     :param device: (str) device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
+    :param run_num: (int) model run number if it has already been trained,
+        (if None, don't load from past model)
+    :param save_model: (string) directory the user wants to save models to
     """
 
     def __init__(
@@ -77,9 +75,8 @@ class DDPG:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
-        save_name=None,
-        save_version=None,
+        run_num=None,
+        save_model=None,
     ):
 
         self.network_type = network_type
@@ -103,9 +100,8 @@ class DDPG:
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
-        self.pretrained = pretrained
-        self.save_name = save_name
-        self.save_version = save_version
+        self.run_num = run_num
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
         self.checkpoint = self.__dict__
@@ -143,7 +139,7 @@ class DDPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained:
+        if self.run_num is not None:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
@@ -275,12 +271,10 @@ class DDPG:
                         states, actions, next_states, rewards, dones
                     )
 
-            if t >= self.start_update and t % self.save_interval == 0:
-                if self.save_name is None:
-                    self.save_name = self.network_type
-                self.save_version = int(t / self.save_interval)
-                self.checkpoint["weights"] = self.ac.state_dict()
-                self.save(self)
+            if self.save_model is not None:
+                if t >= self.start_update and t % self.save_interval == 0:
+                    self.checkpoint["weights"] = self.ac.state_dict()
+                    self.save(self, t)
 
         self.env.close()
         if self.tensorboard_log:
@@ -289,6 +283,6 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, seed=0)
+    algo = DDPG("mlp", env, seed=0, save_model="checkpoints", run_num=None)
     algo.learn()
     algo.evaluate(algo)
