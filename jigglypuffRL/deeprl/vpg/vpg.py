@@ -243,8 +243,12 @@ class VPG:
 
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
-                    self.checkpoint["policy_weights"] = self.policy_fn.state_dict()  # noqa
-                    self.checkpoint["value_weights"] = self.value_fn.state_dict()    # noqa
+                    self.checkpoint[
+                        "policy_weights"
+                    ] = self.policy_fn.state_dict()  # noqa
+                    self.checkpoint[
+                        "value_weights"
+                    ] = self.value_fn.state_dict()  # noqa
                     self.save(self, self.save_model, episode)
 
         self.env.close()

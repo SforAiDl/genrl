@@ -103,7 +103,6 @@ class PPO1:
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
         self.create_model()
 
-
     def create_model(self):
         # Instantiate networks and optimizers
         state_dim, action_dim, disc = self.get_env_properties(self.env)
@@ -273,8 +272,12 @@ class PPO1:
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
                     print("Saving")
-                    self.checkpoint["policy_weights"] = self.policy_new.state_dict() # noqa
-                    self.checkpoint["value_weights"] = self.value_fn.state_dict()    # noqa
+                    self.checkpoint[
+                        "policy_weights"
+                    ] = self.policy_new.state_dict()  # noqa
+                    self.checkpoint[
+                        "value_weights"
+                    ] = self.value_fn.state_dict()  # noqa
                     self.save(self, episode)
 
         self.env.close()
@@ -314,5 +317,5 @@ class PPO1:
 if __name__ == "__main__":
 
     env = gym.make("Pendulum-v0")
-    algo = PPO1("mlp", env, save_model='checkpoints')
+    algo = PPO1("mlp", env, save_model="checkpoints")
     algo.learn()
