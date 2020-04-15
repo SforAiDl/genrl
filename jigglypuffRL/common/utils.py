@@ -34,12 +34,12 @@ def evaluate(algo, num_timesteps=1000):
     episode, episode_reward, episode_t = 0, 0, 0
     total_reward = 0
 
-    print("\nEvaluating...")
     for t in range(num_timesteps):
+        if algo.render:
+            algo.env.render()
         action = algo.select_action(state)
         next_state, reward, done, _ = algo.env.step(action)
         episode_reward += reward
-        total_reward += reward
         episode_t += 1
 
         if done:
@@ -48,12 +48,13 @@ def evaluate(algo, num_timesteps=1000):
                 episode, episode_reward, episode_t
             ))
             state = algo.env.reset()
+            total_reward += episode_reward
             episode_reward, episode_t = 0, 0
         else:
             state = next_state
 
     algo.env.close()
-    print("Average Reward: {}".format(total_reward / num_timesteps))
+    print("Average Reward: {}".format(total_reward / episode))
 
 
 def save_params(algo):

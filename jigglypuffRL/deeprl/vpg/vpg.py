@@ -162,9 +162,9 @@ class VPG:
         self.value_hist = torch.cat([self.value_hist, val])
 
         # clear traj history
-        self.traj_reward = []
-        self.policy_hist = Variable(torch.Tensor())
-        self.value_hist = Variable(torch.Tensor())
+        # self.traj_reward = []
+        # self.policy_hist = Variable(torch.Tensor())
+        # self.value_hist = Variable(torch.Tensor())
         return a
 
     def get_traj_loss(self):	
@@ -289,4 +289,5 @@ if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
     algo = VPG("mlp", env, epochs=500, seed=0)
     algo.learn()
+    algo.render = True
     algo.evaluate(algo)
