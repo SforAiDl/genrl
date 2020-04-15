@@ -22,7 +22,6 @@ class VPG:
     :param env: (Gym environment) The environment to learn from
     :param timesteps_per_actorbatch: (int) timesteps per actor per update
     :param gamma: (float) discount factor
-    :param clip_param: (float) clipping parameter epsilon
     :param actor_batchsize: (int) trajectories per optimizer epoch
     :param epochs: (int) the optimizer's number of epochs
     :param lr_policy: (float) policy network learning rate
@@ -43,29 +42,27 @@ class VPG:
         self,
         network_type,
         env,
-        timesteps_per_actorbatch=200,
+        timesteps_per_actorbatch=1000,
         gamma=0.99,
-        clip_param=0.2,
-        actor_batch_size=8,
+        actor_batch_size=4,
         epochs=1000,
-        lr_policy=0.001,
-        lr_value=0.005,
+        lr_policy=0.01,
+        lr_value=0.0005,
         policy_copy_interval=20,
         pretrained=None,
-        layers=(32, 32),
+        layers=(32,32),
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
-        run_num=False,
-        save_model=False,
-        save_interval=200,
+        run_num=None,
+        save_model=None,
+        save_interval=50,
     ):
         self.network_type = network_type
         self.env = env
         self.timesteps_per_actorbatch = timesteps_per_actorbatch
         self.gamma = gamma
-        self.clip_param = clip_param
         self.actor_batch_size = actor_batch_size
         self.epochs = epochs
         self.lr_policy = lr_policy
@@ -110,18 +107,20 @@ class VPG:
     def create_model(self):
         s_dim = self.env.observation_space.shape[0]
 
+        a_lim = None
         if isinstance(self.env.action_space, gym.spaces.Discrete):
             a_dim = self.env.action_space.n
             disc = True
         elif isinstance(self.env.action_space, gym.spaces.Box):
             a_dim = self.env.action_space.shape[0]
+            a_lim = self.env.action_space.high[0]
             disc = False
         else:
             raise NotImplementedError
 
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
-            s_dim, a_dim, self.layers, "V", disc, False
+            s_dim, a_dim, self.layers, "V", disc, action_lim=a_lim
         ).to(self.device)
 
         # load paramaters if already trained
@@ -179,8 +178,8 @@ class VPG:
 
         # compute policy and value loss
         loss_policy = torch.sum(torch.mul(
-            self.policy_hist, advantage)
-        ).mul(-1).unsqueeze(0)
+            self.policy_hist, advantage).mul(-1), -1
+        ).unsqueeze(0)
 
         loss_value = nn.MSELoss()(
             self.value_hist, Variable(returns)
@@ -192,17 +191,13 @@ class VPG:
 
         # clear traj history
         self.traj_reward = []
-        self.policy_hist = Variable(torch.Tensor(), requires_grad=True)
-        self.value_hist = Variable(torch.Tensor(), requires_grad=True)
+        self.policy_hist = Variable(torch.Tensor())
+        self.value_hist = Variable(torch.Tensor())
 
     def update_policy(self, episode):
         # mean of all traj losses in single epoch
-        loss_policy = Variable(
-            torch.mean(self.policy_loss_hist), requires_grad=True
-        )
-        loss_value = Variable(
-            torch.mean(self.value_loss_hist), requires_grad=True
-        )
+        loss_policy = torch.mean(self.policy_loss_hist)
+        loss_value = torch.mean(self.value_loss_hist)
 
         # tensorboard book-keeping
         if self.tensorboard_log:
@@ -211,7 +206,6 @@ class VPG:
 
         # take gradient step
         self.optimizer_policy.zero_grad()
-        # print(loss_policy, loss_value)
         loss_policy.backward()  # B
         self.optimizer_policy.step()
 
@@ -234,7 +228,7 @@ class VPG:
                     action = Variable(self.select_action(
                         state, deterministic=False
                     ))
-                    state, reward, done, _ = self.env.step(action)
+                    state, reward, done, _ = self.env.step(action.item())
 
                     if self.render:
                         self.env.render()
@@ -273,7 +267,7 @@ class VPG:
 
 
 if __name__ == "__main__":
-    env = gym.make("Pendulum-v0")
-    algo = VPG("mlp", env, epochs=500, seed=0)
+    env = gym.make("LunarLander-v2")
+    algo = VPG("mlp", env, epochs=500, tensorboard_log='runs/lunar/')
     algo.learn()
     algo.evaluate(algo)
