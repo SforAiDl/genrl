@@ -43,15 +43,9 @@ class DDPG:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param seed: (int) seed for torch and gym
-    :param render: (boolean) if environment is to be rendered
-    :param device: (str) device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
+    :param run_num: (int) model run number if it has already been trained,
+        (if None, don't load from past model)
+    :param save_model: (string) directory the user wants to save models to
     """
 
     def __init__(
@@ -77,9 +71,8 @@ class DDPG:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
-        save_name=None,
-        save_version=None,
+        run_num=None,
+        save_model=None,
     ):
 
         self.network_type = network_type
@@ -103,9 +96,8 @@ class DDPG:
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
-        self.pretrained = pretrained
-        self.save_name = save_name
-        self.save_version = save_version
+        self.run_num = run_num
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
         self.checkpoint = self.__dict__
@@ -143,7 +135,7 @@ class DDPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained:
+        if self.run_num is not None:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
@@ -157,21 +149,26 @@ class DDPG:
             param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
+        self.optimizer_policy = opt.Adam(
+            self.ac.actor.parameters(), lr=self.lr_p
+        )
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
     def select_action(self, state, deterministic=False):
         with torch.no_grad():
-            action = self.ac.get_action(
-                torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=deterministic,
-            )[0].numpy()
+            action = self.ac.get_action(torch.as_tensor(
+                state, dtype=torch.float32, device=self.device
+                ), deterministic=deterministic)[0].numpy()
 
         # add noise to output from policy network
-        action += self.noise_std * np.random.randn(self.env.action_space.shape[0])
+        action += self.noise_std * np.random.randn(
+            self.env.action_space.shape[0]
+        )
 
         return np.clip(
-            action, -self.env.action_space.high[0], self.env.action_space.high[0]
+            action,
+            -self.env.action_space.high[0],
+            self.env.action_space.high[0]
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
@@ -180,7 +177,8 @@ class DDPG:
         with torch.no_grad():
             q_pi_target = self.ac_target.get_value(
                 torch.cat(
-                    [next_state, self.ac_target.get_action(next_state)[0]], dim=-1
+                    [next_state, self.ac_target.get_action(next_state)[0]],
+                    dim=-1
                 )
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
@@ -249,9 +247,9 @@ class DDPG:
 
             if done or (episode_len == self.max_ep_len):
                 if episode % 20 == 0:
-                    print(
-                        "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, t)
-                    )
+                    print("Ep: {}, reward: {}, t: {}".format(
+                        episode, episode_reward, t
+                    ))
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, t)
 
@@ -265,14 +263,14 @@ class DDPG:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(states, actions, next_states, rewards, dones)
+                    self.update_params(
+                        states, actions, next_states, rewards, dones
+                    )
 
-            if t >= self.start_update and t % self.save_interval == 0:
-                if self.save_name is None:
-                    self.save_name = self.network_type
-                self.save_version = int(t / self.save_interval)
-                self.checkpoint["weights"] = self.ac.state_dict()
-                self.save(self)
+            if self.save_model is not None:
+                if t >= self.start_update and t % self.save_interval == 0:
+                    self.checkpoint["weights"] = self.ac.state_dict()
+                    self.save(self, t)
 
         self.env.close()
         if self.tensorboard_log:
@@ -281,6 +279,6 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, seed=0)
+    algo = DDPG("mlp", env, seed=0, save_model="checkpoints", run_num=None)
     algo.learn()
     algo.evaluate(algo)

@@ -8,13 +8,20 @@ import torch.optim as opt
 from torch.autograd import Variable
 from copy import deepcopy
 
-from jigglypuffRL.common import ReplayBuffer, PrioritizedBuffer, get_model
+from jigglypuffRL.common import (
+    ReplayBuffer,
+    PrioritizedBuffer,
+    get_model,
+    evaluate,
+    save_params,
+    load_params,
+)
 from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp, NoisyDQNValue
 
 
 class DQN:
     """
-    Deep Q Networks 
+    Deep Q Networks
     Paper: (DQN) https://arxiv.org/pdf/1312.5602.pdf
     Paper: (Double DQN) https://arxiv.org/abs/1509.06461
     :param network_type: (str) The deep neural network layer types ['MLP']
@@ -27,13 +34,15 @@ class DQN:
     :param max_iterations_per_epoch: (int) Number of iterations per epoch
     :param max_ep_len: (int) Maximum steps per episode
     :param gamma: (float) discount factor
-    :param lr: (float) learing rate for the optimizer 
+    :param lr: (float) learing rate for the optimizer
     :param batch_size: (int) Update batch size
     :param replay_size: (int) Replay memory size
-    :param tensorboard_log: (str) the log location for tensorboard (if None, no logging)
+    :param tensorboard_log: (str) the log location for tensorboard
+        (if None, no logging)
     :param seed : (int) seed for torch and gym
     :param render : (boolean) if environment is to be rendered
-    :param device : (str) device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param device : (str) device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
     """
 
     def __init__(
@@ -58,6 +67,9 @@ class DQN:
         seed=None,
         render=False,
         device="cpu",
+        save_interval=5000,
+        run_num=None,
+        save_model=None,
     ):
         self.env = env
         self.double_dqn = double_dqn
@@ -79,6 +91,12 @@ class DQN:
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
+        self.evaluate = evaluate
+        self.run_num = run_num
+        self.save_model = save_model
+        self.save = save_params
+        self.load = load_params
+        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -106,22 +124,38 @@ class DQN:
 
     def create_model(self, network_type):
         if network_type == "MLP":
-            self.model = get_model("v", network_type)(
-                self.env.observation_space.shape[0], self.env.action_space.n, "Qs"
-            )
-            self.target_model = deepcopy(self.model)
-            
             if self.dueling_dqn:
-                self.model = DuelingDQNValueMlp(self.env.observation_space.shape[0], self.env.action_space.n)
-                self.target_model = deepcopy(self.model)
+                self.model = DuelingDQNValueMlp(
+                    self.env.observation_space.shape[0],
+                    self.env.action_space.n
+                )
 
-            if self.noisy_dqn:
-                self.model = NoisyDQNValue(self.env.observation_space.shape[0],self.env.action_space.n)
-                self.target_model = deepcopy(self.model)
+            elif self.noisy_dqn:
+                self.model = NoisyDQNValue(
+                    self.env.observation_space.shape[0],
+                    self.env.action_space.n
+                )
+            else:
+                self.model = get_model("v", network_type)(
+                    self.env.observation_space.shape[0],
+                    self.env.action_space.n,
+                    "Qs"
+                )
+            # load paramaters if already trained
+            if self.run_num is not None:
+                self.load(self)
+                self.model.load_state_dict(self.checkpoint["weights"])
+                for key, item in self.checkpoint.items():
+                    if key != "weights":
+                        setattr(self, key, item)
+
+            self.target_model = deepcopy(self.model)
 
         if self.prioritized_replay:
-            self.replay_buffer = PrioritizedBuffer(self.replay_size, self.prioritized_replay_alpha)
-        
+            self.replay_buffer = PrioritizedBuffer(
+                self.replay_size, self.prioritized_replay_alpha
+            )
+
         else:
             self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
@@ -143,17 +177,18 @@ class DQN:
 
     def get_td_loss(self):
         if self.prioritized_replay:
-            state, action, reward, next_state, done, indices, weight = self.replay_buffer.sample(
-                self.batch_size
-            )
-            weights = Variable(torch.FloatTensor(weights))
+            state, action, reward, next_state, done, indices, weight = \
+                self.replay_buffer.sample(self.batch_size)
+            weights = Variable(torch.FloatTensor(weight))
 
         state, action, reward, next_state, done = self.replay_buffer.sample(
             self.batch_size
         )
 
         state = Variable(torch.FloatTensor(np.float32(state)))
-        next_state = Variable(torch.FloatTensor(np.float32(next_state)), volatile=True)
+        next_state = Variable(
+            torch.FloatTensor(np.float32(next_state)), volatile=True
+        )
         action = Variable(torch.LongTensor(action.long()))
         reward = Variable(torch.FloatTensor(reward))
         done = Variable(torch.FloatTensor(done))
@@ -169,7 +204,9 @@ class DQN:
             q_target_s_a_prime = q_target_next_state_values.gather(
                 1, action_next.unsqueeze(1)
             ).squeeze(1)
-            expected_q_value = reward + self.gamma * q_target_s_a_prime * (1 - done)
+            expected_q_value = (
+                reward + self.gamma * q_target_s_a_prime * (1 - done)
+            )
 
         else:
             q_next_state_values = self.target_model(next_state)
@@ -180,7 +217,9 @@ class DQN:
             loss = (q_value - expected_q_value.detach()).pow(2) * weights
             priorities = loss + 1e-5
             loss = loss.mean()
-            self.replay_buffer.update_priorities(indices, priorities.data.cpu().numpy())
+            self.replay_buffer.update_priorities(
+                indices, priorities.data.cpu().numpy()
+            )
 
         else:
             loss = (q_value - expected_q_value.detach()).pow(2).mean()
@@ -197,13 +236,15 @@ class DQN:
         self.optimizer.step()
 
     def calculate_epsilon_by_frame(self, frame_idx):
-        return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
-            -1.0 * frame_idx / self.epsilon_decay
+        return (
+            self.min_epsilon
+            + (self.max_epsilon - self.min_epsilon)
+            * np.exp(-1.0 * frame_idx / self.epsilon_decay)
         )
 
     def learn(self):
         total_steps = self.max_epochs * self.max_iterations_per_epoch
-        state, ep_r, ep, ep_len = self.env.reset(), 0, 0, 0
+        state, episode_reward, episode, episode_len = self.env.reset(), 0, 0, 0
 
         if self.double_dqn:
             self.update_target_model()
@@ -218,25 +259,32 @@ class DQN:
             self.replay_buffer.push((state, action, reward, next_state, done))
 
             state = next_state
-            ep_r += reward
-            ep_len += 1
+            episode_reward += reward
+            episode_len += 1
 
-            done = False if ep_len == self.max_ep_len else done
+            done = False if episode_len == self.max_ep_len else done
 
-            if done or (ep_len == self.max_ep_len):
-                if ep % 20 == 0:
-                    print(
-                        "Ep: {}, reward: {}, frame_idx: {}".format(ep, ep_r, frame_idx)
-                    )
+            if done or (episode_len == self.max_ep_len):
+                if episode % 20 == 0:
+                    print("Ep: {}, reward: {}, frame_idx: {}".format(
+                        episode, episode_reward, frame_idx
+                    ))
                 if self.tensorboard_log:
-                    self.writer.add_scalar("episode_reward", ep_r, frame_idx)
+                    self.writer.add_scalar(
+                        "episode_reward", episode_reward, frame_idx
+                    )
 
-                self.reward_hist.append(ep_r)
-                state, ep_r, ep_len = self.env.reset(), 0, 0
-                ep += 1
+                self.reward_hist.append(episode_reward)
+                state, episode_reward, episode_len = self.env.reset(), 0, 0
+                episode += 1
 
             if self.replay_buffer.get_len() > self.batch_size:
                 self.update_params()
+
+            if self.save_model is not None:
+                if frame_idx % self.save_interval == 0:
+                    self.checkpoint["weights"] = self.model.state_dict()
+                    self.save(self, frame_idx)
 
             if frame_idx % 100 == 0:
                 self.update_target_model()

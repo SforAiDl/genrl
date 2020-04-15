@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import os
 
 
 def get_model(type_, name_):
@@ -36,7 +37,7 @@ def evaluate(algo, num_timesteps=1000):
     total_reward = 0
 
     print("\nEvaluating...")
-    for t in range(num_timesteps):
+    for _ in range(num_timesteps):
         action = algo.select_action(state)
         next_state, reward, done, _ = algo.env.step(action)
         episode_reward += reward
@@ -45,9 +46,9 @@ def evaluate(algo, num_timesteps=1000):
 
         if done:
             episode += 1
-            print(
-                "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, episode_t)
-            )
+            print("Ep: {}, reward: {}, t: {}".format(
+                episode, episode_reward, episode_t
+            ))
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
         else:
@@ -57,22 +58,32 @@ def evaluate(algo, num_timesteps=1000):
     print("Average Reward: {}".format(total_reward / num_timesteps))
 
 
-def save_params(algo):
-    if algo.save_version is None:
-        torch.save(algo.checkpoint, "{}.pt".format(algo.save_name))
+def save_params(algo, timestep):
+    algo_name = algo.__class__.__name__
+    env_name = algo.env.unwrapped.spec.id
+    directory = algo.save_model
+    path = "{}/{}_{}".format(directory, algo_name, env_name)
+
+    if algo.run_num != None:
+        run_num = algo.run_num
     else:
-        torch.save(
-            algo.checkpoint, "{}-{}.pt".format(algo.save_name, algo.save_version)
-        )
+        if not os.path.exists(path):
+            os.makedirs(path)
+            run_num = 0
+        else:
+            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
+                -1
+            ].path
+            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
+        algo.run_num = run_num
+
+    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(path, run_num, timestep))
 
 
 def load_params(algo):
+    path = algo.pretrained
+
     try:
-        if algo.save_version is None:
-            algo.checkpoint = torch.load("{}.pt").format(algo.save_name)
-        else:
-            algo.checkpoint = torch.load(
-                "{}-{}.pt".format(algo.save_name, algo.save_version)
-            )
+        algo.checkpoint = torch.load(path)
     except FileNotFoundError:
-        raise Exception("Check name and version number again")
+        raise Exception("Invalid file name")

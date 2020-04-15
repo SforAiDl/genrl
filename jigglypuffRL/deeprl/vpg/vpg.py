@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.optim as opt
 from torch.autograd import Variable
 import gym
@@ -34,11 +35,8 @@ class VPG:
     :param seed (int): seed for torch and gym
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param pretrained: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
+    :param run_num: (boolean) if model has already been trained
+    :param save_model: (boolean) True if user wants to save model
     """
 
     def __init__(
@@ -59,9 +57,8 @@ class VPG:
         seed=None,
         render=False,
         device="cpu",
-        pretrained=False,
-        save_name=None,
-        save_version=None,
+        run_num=False,
+        save_model=False,
     ):
         self.network_type = network_type
         self.env = env
@@ -79,9 +76,8 @@ class VPG:
         self.evaluate = evaluate
         self.save_interval = save_interval
         self.layers = layers
-        self.pretrained = pretrained
-        self.save_name = save_name
-        self.save_version = save_version
+        self.run_num = run_num
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
         self.checkpoint = self.__dict__
@@ -127,16 +123,21 @@ class VPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained:
+        if self.run_num is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
+
             for key, item in self.checkpoint.items():
                 if key not in ["policy_weights", "value_weights"]:
                     setattr(self, key, item)
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(
+            self.ac.actor.parameters(), lr=self.lr_policy
+        )
+        self.optimizer_value = opt.Adam(
+            self.ac.critic.parameters(), lr=self.lr_value
+        )
 
         self.policy_hist = Variable(torch.Tensor())
         self.value_hist = Variable(torch.Tensor())
@@ -152,7 +153,9 @@ class VPG:
         val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current traj
-        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
+        self.policy_hist = torch.cat([
+            self.policy_hist, c.log_prob(a).unsqueeze(0)
+        ])
 
         self.value_hist = torch.cat([self.value_hist, val])
 
@@ -176,11 +179,13 @@ class VPG:
         advantage = Variable(returns) - Variable(self.value_hist)
 
         # compute policy and value loss
-        loss_policy = (
-            torch.sum(torch.mul(self.policy_hist, advantage)).mul(-1).unsqueeze(0)
-        )
+        loss_policy = torch.sum(torch.mul(
+            self.policy_hist, advantage)
+        ).mul(-1).unsqueeze(0)
 
-        loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
+        loss_value = nn.MSELoss()(
+            self.value_hist, Variable(returns)
+        ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
         self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
@@ -193,8 +198,12 @@ class VPG:
 
     def update_policy(self, episode):
         # mean of all traj losses in single epoch
-        loss_policy = Variable(torch.mean(self.policy_loss_hist), requires_grad=True)
-        loss_value = Variable(torch.mean(self.value_loss_hist), requires_grad=True)
+        loss_policy = Variable(
+            torch.mean(self.policy_loss_hist), requires_grad=True
+        )
+        loss_value = Variable(
+            torch.mean(self.value_loss_hist), requires_grad=True
+        )
 
         # tensorboard book-keeping
         if self.tensorboard_log:
@@ -223,8 +232,9 @@ class VPG:
                 state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    action = Variable(self.select_action(state, deterministic=False))
-                    # print(type(action))
+                    action = Variable(self.select_action(
+                        state, deterministic=False
+                    ))
                     state, reward, done, _ = self.env.step(action)
 
                     if self.render:
@@ -235,7 +245,9 @@ class VPG:
                     if done:
                         break
 
-                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
+                epoch_reward += (
+                    np.sum(self.traj_reward) / self.actor_batch_size
+                )
                 self.get_traj_loss()
 
             self.update_policy(episode)
@@ -245,13 +257,15 @@ class VPG:
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, episode)
 
-            if episode % self.save_interval == 0:
-                self.checkpoint["policy_weights"] = self.ac.actor.state_dict()
-                self.checkpoint["value_weights"] = self.ac.critic.state_dict()
-                if self.save_name is None:
-                    self.save_name = "{}".format(self.env)
-                self.save_version = int(episode / self.save_interval)
-                self.save(self)
+            if self.save_model is not None:
+                if episode % self.save_interval == 0:
+                    self.checkpoint[
+                        "policy_weights"
+                    ] = self.policy_fn.state_dict()  # noqa
+                    self.checkpoint[
+                        "value_weights"
+                    ] = self.value_fn.state_dict()  # noqa
+                    self.save(self, self.save_model, episode)
 
         self.env.close()
         if self.tensorboard_log:
@@ -260,6 +274,6 @@ class VPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = VPG("mlp", env, epochs=500, seed=0)
+    algo = VPG("mlp", env, epochs=500, seed=0, save_model="checkpoints")
     algo.learn()
     algo.evaluate(algo)
