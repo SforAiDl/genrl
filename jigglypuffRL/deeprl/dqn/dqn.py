@@ -9,12 +9,13 @@ from torch.autograd import Variable
 from copy import deepcopy
 
 from jigglypuffRL.common import (
-    ReplayBuffer, 
-    PrioritizedBuffer, 
+    ReplayBuffer,
+    PrioritizedBuffer,
     get_model,
     evaluate,
     save_params,
-    load_params)
+    load_params,
+)
 from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp
 
 
@@ -131,12 +132,14 @@ class DQN:
                 for key, item in self.checkpoint.items():
                     if key != "weights":
                         setattr(self, key, item)
-                        
+
             self.target_model = deepcopy(self.model)
-            
+
         if self.prioritized_replay:
-            self.replay_buffer = PrioritizedBuffer(self.replay_size, self.prioritized_replay_alpha)
-        
+            self.replay_buffer = PrioritizedBuffer(
+                self.replay_size, self.prioritized_replay_alpha
+            )
+
         else:
             self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
@@ -158,9 +161,15 @@ class DQN:
 
     def get_td_loss(self):
         if self.prioritized_replay:
-            state, action, reward, next_state, done, indices, weight = self.replay_buffer.sample(
-                self.batch_size
-            )
+            (
+                state,
+                action,
+                reward,
+                next_state,
+                done,
+                indices,
+                weight,
+            ) = self.replay_buffer.sample(self.batch_size)
             weights = Variable(torch.FloatTensor(weights))
 
         state, action, reward, next_state, done = self.replay_buffer.sample(
