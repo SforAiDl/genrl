@@ -14,7 +14,8 @@ from jigglypuffRL.common import (
     get_model,
     evaluate,
     save_params,
-    load_params)
+    load_params,
+)
 from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp
 
 

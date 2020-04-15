@@ -17,8 +17,7 @@ class PPO1:
     """
     Proximal Policy Optimization algorithm (Clipped policy).
     Paper: https://arxiv.org/abs/1707.06347
-    :param policy: (str) The policy model to use (MlpPolicy)
-    :param value: (str) The value function model to use (MlpValue)
+    :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param timesteps_per_actorbatch: (int) timesteps per actor per update
     :param gamma: (float) discount factor
@@ -51,13 +50,14 @@ class PPO1:
         lr_policy=0.001,
         lr_value=0.005,
         policy_copy_interval=20,
-        save_interval=200,
+        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
-        run_num=False,
-        save_model=False,
+        run_num=None,
+        save_model=None,
+        save_interval=50,
     ):
         self.network_type = network_type
         self.env = env
@@ -74,10 +74,12 @@ class PPO1:
         self.policy_copy_interval = policy_copy_interval
         self.evaluate = evaluate
         self.save_interval = save_interval
+        self.pretrained = pretrained
         self.run_num = run_num
         self.save_model = save_model
         self.save = save_params
         self.load = load_params
+        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -99,7 +101,6 @@ class PPO1:
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
-
         self.create_model()
 
     def create_model(self):
@@ -121,12 +122,13 @@ class PPO1:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.run_num is not None:
+        if self.pretrained is not None:
+            print("Loading")
             self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights"]:
+                if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
 
         self.policy_old.load_state_dict(self.policy_new.state_dict())
@@ -285,8 +287,13 @@ class PPO1:
 
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
-                    self.checkpoint["policy_weights"] = self.policy_new.state_dict() # noqa
-                    self.checkpoint["value_weights"] = self.value_fn.state_dict()    # noqa
+                    print("Saving")
+                    self.checkpoint[
+                        "policy_weights"
+                    ] = self.policy_new.state_dict()  # noqa
+                    self.checkpoint[
+                        "value_weights"
+                    ] = self.value_fn.state_dict()  # noqa
                     self.save(self, episode)
 
         self.env.close()
@@ -326,5 +333,5 @@ class PPO1:
 if __name__ == "__main__":
 
     env = gym.make("Pendulum-v0")
-    algo = PPO1("MlpPolicy", "MlpValue", env, save_model="checkpoints")
+    algo = PPO1("mlp", env, save_model="checkpoints")
     algo.learn()

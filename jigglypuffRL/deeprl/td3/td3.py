@@ -43,10 +43,6 @@ class TD3:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param seed: (int) seed for torch and gym
-    :param render: (boolean) if environment is to be rendered
-    :param device: (str) device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
     :param run_num: (boolean) if model has already been trained
     :param save_name: (str) model save name (if None, model hasn't been
         pretrained)

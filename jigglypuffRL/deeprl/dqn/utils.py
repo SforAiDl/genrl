@@ -14,9 +14,7 @@ class DuelingDQNValueMlp(nn.Module):
         )
 
         self.advantage = nn.Sequential(
-            nn.Linear(128, 128),
-            nn.ReLU(),
-            nn.Linear(128, self.action_dim)
+            nn.Linear(128, 128), nn.ReLU(), nn.Linear(128, self.action_dim)
         )
 
         self.value = nn.Sequential(

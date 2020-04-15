@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import os
-import pickle
 
 
 def get_model(type_, name_):
@@ -63,63 +62,28 @@ def save_params(algo, timestep):
     algo_name = algo.__class__.__name__
     env_name = algo.env.unwrapped.spec.id
     directory = algo.save_model
-    path = "{}/{}_{}".format(
-        directory, algo_name, env_name
-    )
+    path = "{}/{}_{}".format(directory, algo_name, env_name)
 
-    if timestep == algo.save_interval:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-            log = {}
-            run_num = 0
-        else:
-            f = open("{}/log.pkl".format(directory), "rb")
-            log = pickle.load(f)
-            f.close()
-            run_num = log[path] + 1
-
+    if algo.run_num != None:
+        run_num = algo.run_num
+    else:
         if not os.path.exists(path):
             os.makedirs(path)
-    else:
-        f = open("{}/log.pkl".format(directory), "rb")
-        log = pickle.load(f)
-        f.close()
-        run_num = log[path]
+            run_num = 0
+        else:
+            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
+                -1
+            ].path
+            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
+        algo.run_num = run_num
 
-    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(
-        path, run_num, timestep
-    ))
-
-    log[path] = run_num
-    log[path+str(run_num)] = timestep
-
-    f = open("{}/log.pkl".format(directory), "wb")
-    pickle.dump(log, f)
-    f.close()
+    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(path, run_num, timestep))
 
 
 def load_params(algo):
-    algo_name = algo.__class__.__name__
-    env_name = algo.env.unwrapped.spec.id
-    directory = algo.save_model
-    run_num = algo.pretrained
-    path = "{}/{}_{}".format(
-        directory, algo_name, env_name
-    )
-
-    f = open("log.pkl", "rb")
-    log = pickle.load(f)
-    f.close()
-
-    if run_num is None:
-        run_num = log[path]
-    timestep = log[path+str(run_num)]
+    path = algo.pretrained
 
     try:
-        algo.checkpoint = torch.load(
-            "{}/{}-log-{}.pt".format(path, run_num, timestep)
-        )
+        algo.checkpoint = torch.load(path)
     except FileNotFoundError:
-        raise Exception("File name seems to be invalid")
-    except NotADirectoryError:
-        raise Exception("Invalid directory path")
+        raise Exception("Invalid file name")
