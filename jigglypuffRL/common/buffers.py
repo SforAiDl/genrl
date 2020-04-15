@@ -51,7 +51,7 @@ class PrioritizedBuffer:
         if len(self.buffer) == self.capacity:
             prios = self.priorities
         else:
-            prios = self.priorities[: self.pos]
+            prios = self.priorities[:self.pos]
 
         probs = prios ** self.prob_alpha
         probs /= probs.sum()
@@ -66,10 +66,9 @@ class PrioritizedBuffer:
 
         states, actions, rewards, next_states, dones = zip(*samples)
 
-        return (
-            torch.as_tensor(v, dtype=torch.float32)
-            for v in [states, actions, rewards, next_states, dones, indices, weights]
-        )
+        return (torch.as_tensor(v, dtype=torch.float32) for v in [
+            states, actions, rewards, next_states, dones, indices, weights
+        ])
 
     def update_priorities(self, batch_indices, batch_priorities):
         for idx, prio in zip(batch_indices, batch_priorities):
