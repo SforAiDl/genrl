@@ -9,7 +9,7 @@ from torch.autograd import Variable
 from copy import deepcopy
 
 from jigglypuffRL.common import ReplayBuffer, PrioritizedBuffer, get_model
-from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp
+from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp, NoisyDQNValue
 
 
 class DQN:
@@ -21,6 +21,7 @@ class DQN:
     :param env: (Gym environment) The environment to learn from
     :param double_dqn: (boolean) For training Double DQN
     :param dueling_dqn: (boolean) For training Dueling DQN
+    :param noisy_dqn: (boolean) For using Noisy Q
     :param parameterized_replay: (boolean) For using a prioritized buffer
     :param epochs: (int) Number of epochs
     :param max_iterations_per_epoch: (int) Number of iterations per epoch
@@ -50,6 +51,9 @@ class DQN:
         batch_size=32,
         replay_size=100,
         prioritized_replay_alpha=0.6,
+        max_epsilon=1.0,
+        min_epsilon=0.01,
+        epsilon_decay=1000,
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -58,6 +62,7 @@ class DQN:
         self.env = env
         self.double_dqn = double_dqn
         self.dueling_dqn = dueling_dqn
+        self.noisy_dqn = noisy_dqn
         self.prioritized_replay = prioritized_replay
         self.max_epochs = epochs
         self.max_iterations_per_epoch = max_iterations_per_epoch
@@ -71,9 +76,9 @@ class DQN:
         self.render = render
         self.loss_hist = []
         self.reward_hist = []
-        self.max_epsilon = 1.0
-        self.min_epsilon = 0.01
-        self.epsilon_decay = 500
+        self.max_epsilon = max_epsilon
+        self.min_epsilon = min_epsilon
+        self.epsilon_decay = epsilon_decay
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -109,7 +114,11 @@ class DQN:
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(self.env.observation_space.shape[0], self.env.action_space.n)
                 self.target_model = deepcopy(self.model)
-            
+
+            if self.noisy_dqn:
+                self.model = NoisyDQNValue(self.env.observation_space.shape[0],self.env.action_space.n)
+                self.target_model = deepcopy(self.model)
+
         if self.prioritized_replay:
             self.replay_buffer = PrioritizedBuffer(self.replay_size, self.prioritized_replay_alpha)
         
