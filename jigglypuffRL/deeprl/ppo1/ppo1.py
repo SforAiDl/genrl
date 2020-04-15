@@ -123,13 +123,13 @@ class PPO1:
 
         # load paramaters if already trained
         if self.pretrained is not None:
-            print("Loading")
             self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
                 if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.policy_old.load_state_dict(self.policy_new.state_dict())
 
@@ -287,7 +287,6 @@ class PPO1:
 
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
-                    print("Saving")
                     self.checkpoint[
                         "policy_weights"
                     ] = self.policy_new.state_dict()  # noqa
@@ -295,6 +294,7 @@ class PPO1:
                         "value_weights"
                     ] = self.value_fn.state_dict()  # noqa
                     self.save(self, episode)
+                    print("Saved current model")
 
         self.env.close()
         if self.tensorboard_log:

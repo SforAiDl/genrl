@@ -51,7 +51,7 @@ class VPG:
         lr_policy=0.001,
         lr_value=0.005,
         policy_copy_interval=20,
-        save_interval=200,
+        pretrained=None,
         layers=(32, 32),
         tensorboard_log=None,
         seed=None,
@@ -59,6 +59,7 @@ class VPG:
         device="cpu",
         run_num=False,
         save_model=False,
+        save_interval=200,
     ):
         self.network_type = network_type
         self.env = env
@@ -75,6 +76,7 @@ class VPG:
         self.policy_copy_interval = policy_copy_interval
         self.evaluate = evaluate
         self.save_interval = save_interval
+        self.pretrained = pretrained
         self.layers = layers
         self.run_num = run_num
         self.save_model = save_model
@@ -123,14 +125,15 @@ class VPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.run_num is not None:
+        if self.pretrained is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
 
             for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights"]:
+                if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.optimizer_policy = opt.Adam(
             self.ac.actor.parameters(), lr=self.lr_policy
@@ -149,7 +152,7 @@ class VPG:
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
-        a, c = self.ac.get_action(state, deterministic=False)[0]
+        a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current traj
@@ -159,10 +162,6 @@ class VPG:
 
         self.value_hist = torch.cat([self.value_hist, val])
 
-        # clear traj history
-        self.traj_reward = []
-        self.policy_hist = Variable(torch.Tensor())
-        self.value_hist = Variable(torch.Tensor())
         return a
 
     def get_traj_loss(self):
@@ -265,7 +264,8 @@ class VPG:
                     self.checkpoint[
                         "value_weights"
                     ] = self.value_fn.state_dict()  # noqa
-                    self.save(self, self.save_model, episode)
+                    self.save(self, episode)
+                    print("Saved current model")
 
         self.env.close()
         if self.tensorboard_log:
@@ -274,6 +274,6 @@ class VPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = VPG("mlp", env, epochs=500, seed=0, save_model="checkpoints")
+    algo = VPG("mlp", env, epochs=500, seed=0)
     algo.learn()
     algo.evaluate(algo)
