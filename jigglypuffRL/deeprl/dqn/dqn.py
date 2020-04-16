@@ -51,6 +51,7 @@ class DQN:
         env,
         double_dqn=False,
         dueling_dqn=False,
+        noisy_dqn=False,
         prioritized_replay=False,
         epochs=100,
         max_iterations_per_epoch=100,
@@ -123,7 +124,7 @@ class DQN:
         self.create_model(network_type)
 
     def create_model(self, network_type):
-        if network_type == "MLP":
+        if network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(
                     self.env.observation_space.shape[0],
@@ -163,10 +164,8 @@ class DQN:
     def update_target_model(self):
         self.target_model.load_state_dict(self.model.state_dict())
 
-    def select_action(self, state, frame_idx):
-        epsilon = self.calculate_epsilon_by_frame(frame_idx)
-
-        if np.random.rand() > epsilon:
+    def select_action(self, state):
+        if np.random.rand() > self.epsilon:
             state = Variable(torch.FloatTensor(state))
             q_value = self.model(state)
             action = np.argmax(q_value.detach().numpy())
@@ -250,7 +249,8 @@ class DQN:
             self.update_target_model()
 
         for frame_idx in range(1, total_steps + 1):
-            action = self.select_action(state, frame_idx)
+            self.epsilon = self.calculate_epsilon_by_frame(frame_idx)
+            action = self.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
 
             if self.render:
