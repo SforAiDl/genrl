@@ -13,7 +13,6 @@ from jigglypuffRL.common import (
     evaluate,
     save_params,
     load_params,
-    NormalActionNoise,
     OrnsteinUhlenbeckActionNoise
 )
 

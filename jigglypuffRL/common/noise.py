@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-class ActionNoise():
+class ActionNoise(ABC):
     def __init__(self, mean, std):
         # super().__init__(mean, std)
         self._mean = mean
