@@ -348,10 +348,11 @@ class SAC:
                         writer.add_scalar("loss/policy_loss", policy_loss, i)
                         writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
-                if i >= self.start_update and i % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, i)
-                    print("Saved current model")
+                if self.save_model is not None:
+                    if i >= self.start_update and i % self.save_interval == 0:
+                        self.checkpoint = self.get_hyperparams()
+                        self.save(self, i)
+                        print("Saved current model")
 
                 # prepare transition for replay memory push
                 next_state, reward, done, _ = self.env.step(action)

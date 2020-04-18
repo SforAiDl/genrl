@@ -65,6 +65,7 @@ class TD3:
         start_steps=10000,
         steps_per_epoch=4000,
         noise_std=0.1,
+        pretrained = None,
         max_ep_len=1000,
         start_update=1000,
         update_interval=50,
@@ -75,8 +76,7 @@ class TD3:
         render=False,
         device="cpu",
         run_num=None,
-        save_name=None,
-        save_version=None,
+        save_model=None,
     ):
 
         self.network_type = network_type
@@ -98,13 +98,13 @@ class TD3:
         self.save_interval = save_interval
         self.layers = layers
         self.tensorboard_log = tensorboard_log
+        self.pretrained = pretrained
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
-        self.checkpoint = self.get_hyperparams()
+        self.checkpoint = self.__dict__
         self.run_num = run_num
-        self.save_name = save_name
-        self.save_version = save_version
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
 
@@ -144,14 +144,16 @@ class TD3:
             state_dim, action_dim, hidden=self.layers, val_type="Qsa"
         )
 
-        if self.run_num is not None:
+        if self.pretrained is not None:
             self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
-            self.ac.qf1.load_state_dict(self.checkpoint["critic_q1_weights"])
-            self.ac.qf2.load_state_dict(self.checkpoint["critic_q2_weights"])
+            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
+            self.ac.qf1.load_state_dict(self.checkpoint["q1_weights"])
+            self.ac.qf2.load_state_dict(self.checkpoint["q2_weights"])
+            
             for key, item in self.checkpoint.items():
-                if "weights" not in key:
+                if key not in ["weights", "save_model"]:
                     setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -184,21 +186,6 @@ class TD3:
 
         return state_dim, action_dim, disc
 
-    def get_hyperparams(self):
-        hyperparams = {
-            "network_type": self.network_type,
-            "gamma": self.gamma,
-            "lr_p": self.lr_p,
-            "lr_q": self.lr_q,
-            "polyak": self.polyak,
-            "policy_frequency": self.policy_frequency,
-            "noise_std": self.noise_std,
-            "critic_q1_weights": self.ac.qf1.state_dict(),
-            "critic_q2_weights": self.ac.qf2.state_dict(),
-            "actor_weights": self.ac.actor.state_dict,
-        }
-
-        return hyperparams
 
     def select_action(self, state, deterministic=True):
         with torch.no_grad():
@@ -337,17 +324,36 @@ class TD3:
                     self.update_params(
                         states, actions, next_states, rewards, dones, t
                     )
-
-            if t >= self.start_update and t % self.save_interval == 0:
-                self.checkpoint = self.get_hyperparams()
-                self.save(self)
+            
+            if self.save_model is not None:
+                if t >= self.start_update and t % self.save_interval == 0:
+                    self.checkpoint = self.get_hyperparams()
+                    self.save(self, t)
+                    print("Saved current model")
 
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
 
 
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "lr_p": self.lr_p,
+            "lr_q": self.lr_q,
+            "polyak": self.polyak,
+            "policy_frequency": self.policy_frequency,
+            "noise_std": self.noise_std,
+            "q1_weights": self.ac.qf1.state_dict(),
+            "q2_weights": self.ac.qf2.state_dict(),
+            "policy_weights": self.ac.actor.state_dict(),
+        }
+
+        return hyperparams
+
+
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = TD3("mlp", env, render=True)
+    algo = TD3("mlp", env)
     algo.learn()
