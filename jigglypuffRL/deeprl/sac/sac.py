@@ -67,15 +67,16 @@ class SAC:
         max_ep_len=1000,
         start_update=256,
         update_interval=1,
-        save_interval=5000,
         layers=(256, 256),
+        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
         run_num=None,
-        save_name=None,
-        save_version=None,
+        save_model=None,
+        save_interval=5000,
+
     ):
 
         self.network_type = network_type
@@ -95,16 +96,15 @@ class SAC:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
+        self.pretrained = pretrained
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
-        self.save_name = save_name
-        self.save_version = save_version
+        self.run_num = run_num
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
-        self.evaluate = evaluate
-        self.checkpoint = self.get_hyperparams()
-        self.run_num = run_num
+        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -153,15 +153,16 @@ class SAC:
             state_dim, action_dim, self.layers, disc, False, sac=True
         )
 
-        if self.run_num is not None:
+        if self.pretrained is not None:
             self.load(self)
             self.q1.load_state_dict(self.checkpoint["q1_weights"])
             self.q2.load_state_dict(self.checkpoint["q2_weights"])
             self.policy.load_state_dict(self.checkpoint["policy_weights"])
 
             for key, item in self.checkpoint.items():
-                if key != "weights":
+                if key not in ["weights","save_model"]:
                     setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.q1_targ = deepcopy(self.q1).to(self.device)
         self.q2_targ = deepcopy(self.q2).to(self.device)
@@ -200,19 +201,6 @@ class SAC:
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             )
 
-    def get_hyperparams(self):
-        hyperparams = {
-            "network_type": self.network_type,
-            "gamma": self.gamma,
-            "lr": self.lr,
-            "alpha": self.alpha,
-            "polyak": self.polyak,
-            "q1_weights": self.q1.state_dict(),
-            "q2_weights": self.q2.state_dict(),
-            "policy_weights": self.policy.state_dict(),
-        }
-
-        return hyperparams
 
     def sample_action(self, state):
         mean, log_std = self.policy.forward(state)
@@ -363,6 +351,7 @@ class SAC:
                 if i >= self.start_update and i % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
                     self.save(self, i)
+                    print("Saved current model")
 
                 # prepare transition for replay memory push
                 next_state, reward, done, _ = self.env.step(action)
@@ -398,8 +387,25 @@ class SAC:
             self.writer.close()
 
 
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "lr": self.lr,
+            "replay_size": self.replay_size,
+            "entropy_tuning": self.entropy_tuning,
+            "alpha": self.alpha,
+            "polyak": self.polyak,
+            "q1_weights": self.q1.state_dict(),
+            "q2_weights": self.q2.state_dict(),
+            "policy_weights": self.policy.state_dict(),
+        }
+
+        return hyperparams
+
+
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env, seed=0, render=False)
+    algo = SAC("mlp", env, seed=0)
     algo.learn()
     algo.evaluate(algo)
