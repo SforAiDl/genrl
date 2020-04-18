@@ -13,3 +13,7 @@ from jigglypuffRL.common.utils import (  # noqa
     save_params,
     load_params,
 )
+from jigglypuffRL.common.noise import ( #noqa
+    NormalActionNoise, 
+    OrnsteinUhlenbeckActionNoise
+)
