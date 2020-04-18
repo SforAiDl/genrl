@@ -13,6 +13,7 @@ from jigglypuffRL.common import (
     evaluate,
     save_params,
     load_params,
+    OrnsteinUhlenbeckActionNoise
 )
 
 
@@ -55,12 +56,13 @@ class DDPG:
         gamma=0.99,
         replay_size=1000000,
         batch_size=100,
-        lr_p=0.001,
+        lr_p=0.0001,
         lr_q=0.001,
         polyak=0.995,
         epochs=100,
         start_steps=10000,
         steps_per_epoch=4000,
+        noise=None,
         noise_std=0.1,
         max_ep_len=1000,
         start_update=1000,
@@ -87,6 +89,7 @@ class DDPG:
         self.epochs = epochs
         self.start_steps = start_steps
         self.steps_per_epoch = steps_per_epoch
+        self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
         self.start_update = start_update
@@ -131,6 +134,9 @@ class DDPG:
     def create_model(self):
         state_dim = self.env.observation_space.shape[0]
         action_dim = self.env.action_space.shape[0]
+        if self.noise is not None:
+            self.noise = self.noise(np.zeros_like(action_dim), 
+                                    self.noise_std*np.ones_like(action_dim))
 
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "Qsa", False
@@ -164,9 +170,8 @@ class DDPG:
                 ), deterministic=deterministic)[0].numpy()
 
         # add noise to output from policy network
-        action += self.noise_std * np.random.randn(
-            self.env.action_space.shape[0]
-        )
+        if self.noise is not None:
+            action += self.noise()
 
         return np.clip(
             action,
@@ -225,6 +230,9 @@ class DDPG:
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
 
+        if self.noise is not None:
+            self.noise.reset()
+
         for t in range(total_steps):
             # execute single transition
             if t > self.start_steps:
@@ -246,6 +254,10 @@ class DDPG:
             state = next_state
 
             if done or (episode_len == self.max_ep_len):
+
+                if self.noise is not None:
+                    self.noise.reset()
+
                 if episode % 20 == 0:
                     print("Ep: {}, reward: {}, t: {}".format(
                         episode, episode_reward, t
@@ -296,6 +308,6 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, seed=0)
+    algo = DDPG("mlp", env, seed=0, save_model="checkpoints", noise=OrnsteinUhlenbeckActionNoise)
     algo.learn()
     algo.evaluate(algo)

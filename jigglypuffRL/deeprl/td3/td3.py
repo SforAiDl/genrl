@@ -11,6 +11,7 @@ from jigglypuffRL.common import (
     evaluate,
     save_params,
     load_params,
+    OrnsteinUhlenbeckActionNoise
 )
 
 
@@ -64,12 +65,12 @@ class TD3:
         epochs=100,
         start_steps=10000,
         steps_per_epoch=4000,
+        noise=None,
         noise_std=0.1,
         pretrained = None,
         max_ep_len=1000,
         start_update=1000,
         update_interval=50,
-        save_interval=5000,
         layers=(256, 256),
         tensorboard_log=None,
         seed=None,
@@ -77,6 +78,7 @@ class TD3:
         device="cpu",
         run_num=None,
         save_model=None,
+        save_interval=5000
     ):
 
         self.network_type = network_type
@@ -91,6 +93,7 @@ class TD3:
         self.epochs = epochs
         self.start_steps = start_steps
         self.steps_per_epoch = steps_per_epoch
+        self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
         self.start_update = start_update
@@ -131,9 +134,13 @@ class TD3:
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
+        self.checkpoint = self.get_hyperparams()
 
     def create_model(self):
         state_dim, action_dim, disc = self.get_env_properties()
+        if self.noise is not None:
+            self.noise = self.noise(np.zeros_like(action_dim), 
+                                    self.noise_std*np.ones_like(action_dim))
 
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "Qsa", False
@@ -194,9 +201,11 @@ class TD3:
             ), deterministic=deterministic)[0].numpy()
 
         # add noise to output from policy network
-        action += self.noise_std * np.random.randn(
-            self.env.action_space.shape[0]
-        )
+        if self.noise is not None:
+            # action += self.noise_std * np.random.randn(
+            #     self.env.action_space.shape[0]
+            # )
+            action += self.noise()
 
         return np.clip(
             action,
@@ -281,6 +290,9 @@ class TD3:
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
 
+        if self.noise is not None:
+            self.noise.reset()
+
         for t in range(total_steps):
             # execute single transition
             if t > self.start_steps:
@@ -302,6 +314,10 @@ class TD3:
             state = next_state
 
             if done or (episode_len == self.max_ep_len):
+
+                if self.noise is not None:
+                    self.noise.reset()
+
                 if episode % 20 == 0:
                     print(
                         "Ep: {}, reward: {}, t: {}".format(
@@ -324,7 +340,7 @@ class TD3:
                     self.update_params(
                         states, actions, next_states, rewards, dones, t
                     )
-            
+                    
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
@@ -355,5 +371,5 @@ class TD3:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = TD3("mlp", env)
+    algo = TD3("mlp", env, render=False, noise=OrnsteinUhlenbeckActionNoise)
     algo.learn()
