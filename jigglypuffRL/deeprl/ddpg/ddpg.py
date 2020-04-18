@@ -65,14 +65,15 @@ class DDPG:
         max_ep_len=1000,
         start_update=1000,
         update_interval=50,
-        save_interval=5000,
         layers=(32, 32),
+        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
         run_num=None,
         save_model=None,
+        save_interval=5000,
     ):
 
         self.network_type = network_type
@@ -91,6 +92,7 @@ class DDPG:
         self.start_update = start_update
         self.update_interval = update_interval
         self.save_interval = save_interval
+        self.pretrained = pretrained
         self.layers = layers
         self.tensorboard_log = tensorboard_log
         self.seed = seed
@@ -135,12 +137,13 @@ class DDPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.run_num is not None:
+        if self.pretrained is not None:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
-                if key != "weights":
+                if key not in ["weights", "save_model"]:
                     setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -269,16 +272,33 @@ class DDPG:
 
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:
-                    self.checkpoint["weights"] = self.ac.state_dict()
+                    self.checkpoint = self.get_hyperparams()
                     self.save(self, t)
+                    print("Saved current model")
 
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
 
+    
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "batch_size": self.batch_size,
+            "replay_size": self.replay_size,
+            "polyak": self.polyak,
+            "noise_std": self.noise_std,
+            "lr_policy": self.lr_p,
+            "lr_value": self.lr_q,
+            "weights": self.ac.state_dict(),
+        }
+
+        return hyperparams
+
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, seed=0, save_model="checkpoints", run_num=None)
+    algo = DDPG("mlp", env, seed=0)
     algo.learn()
     algo.evaluate(algo)
