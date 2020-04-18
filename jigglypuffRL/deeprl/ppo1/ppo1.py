@@ -42,13 +42,14 @@ class PPO1:
         self,
         network_type,
         env,
-        timesteps_per_actorbatch=200,
+        timesteps_per_actorbatch=256,
         gamma=0.99,
         clip_param=0.2,
-        actor_batch_size=8,
+        actor_batch_size=64,
         epochs=1000,
         lr_policy=0.001,
-        lr_value=0.005,
+        lr_value=0.001,
+        layers = (64,64),
         policy_copy_interval=20,
         pretrained=None,
         tensorboard_log=None,
@@ -68,6 +69,7 @@ class PPO1:
         self.epochs = epochs
         self.lr_policy = lr_policy
         self.lr_value = lr_value
+        self.layers = layers
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
@@ -105,13 +107,13 @@ class PPO1:
 
     def create_model(self):
         # Instantiate networks and optimizers
-        state_dim, action_dim, disc = self.get_env_properties(self.env)
+        state_dim, action_dim, disc, action_lim = self.get_env_properties(self.env)
         self.policy_new, self.policy_old = (
             get_model("p", self.network_type)(
-                state_dim, action_dim, disc=disc
+                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
             ),
             get_model("p", self.network_type)(
-                state_dim, action_dim, disc=disc
+                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
             ),
         )
         self.policy_new = self.policy_new.to(self.device)
@@ -277,7 +279,7 @@ class PPO1:
 
             self.update_policy(episode)
 
-            if episode % 20 == 0:
+            if episode % 5 == 0:
                 print("Episode: {}, reward: {}".format(episode, epoch_reward))
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, episode)
@@ -306,13 +308,15 @@ class PPO1:
         if isinstance(self.env.action_space, gym.spaces.Discrete):
             action_dim = self.env.action_space.n
             disc = True
+            action_lim = None
         elif isinstance(self.env.action_space, gym.spaces.Box):
             action_dim = self.env.action_space.shape[0]
+            action_lim = self.env.action_space.high[0]
             disc = False
         else:
             raise NotImplementedError
 
-        return state_dim, action_dim, disc
+        return state_dim, action_dim, disc, action_lim
 
     def get_hyperparams(self):
         hyperparams = {
@@ -332,6 +336,6 @@ class PPO1:
 
 if __name__ == "__main__":
 
-    env = gym.make("Pendulum-v0")
-    algo = PPO1("mlp", env, save_model="checkpoints")
+    env = gym.make("CartPole-v0")
+    algo = PPO1("mlp", env)
     algo.learn()
