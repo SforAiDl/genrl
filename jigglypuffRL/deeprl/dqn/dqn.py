@@ -64,6 +64,7 @@ class DQN:
         render=False,
         device="cpu",
         save_interval=5000,
+        pretrained=None,
         run_num=None,
         save_model=None,
     ):
@@ -91,6 +92,7 @@ class DQN:
         self.save_model = save_model
         self.save = save_params
         self.load = load_params
+        self.pretrained = pretrained
         self.checkpoint = self.__dict__
 
         # Assign device
@@ -118,7 +120,7 @@ class DQN:
         self.create_model(network_type)
 
     def create_model(self, network_type):
-        if network_type == "MLP":
+        if network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(
                     self.env.observation_space.shape[0],
@@ -131,12 +133,13 @@ class DQN:
                     "Qs"
                 )
             # load paramaters if already trained
-            if self.run_num is not None:
+            if self.pretrained is not None:
                 self.load(self)
                 self.model.load_state_dict(self.checkpoint["weights"])
                 for key, item in self.checkpoint.items():
-                    if key != "weights":
+                    if key not in ["weights","save_model"]:
                         setattr(self, key, item)
+                print("Loaded pretrained model")
 
             self.target_model = deepcopy(self.model)
 
@@ -272,7 +275,7 @@ class DQN:
 
             if self.save_model is not None:
                 if frame_idx % self.save_interval == 0:
-                    self.checkpoint["weights"] = self.model.state_dict()
+                    self.checkpoint = self.get_hyperparams()
                     self.save(self, frame_idx)
 
             if frame_idx % 100 == 0:
@@ -282,8 +285,25 @@ class DQN:
         if self.tensorboard_log:
             self.writer.close()
 
+    
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "batch_size": self.batch_size,
+            "lr": self.lr,
+            "replay_size": self.replay_size,
+            "double_dqn": self.double_dqn,
+            "dueling_dqn": self.dueling_dqn,
+            "prioritized_replay": self.prioritized_replay,
+            "prioritized_replay_alpha": self.prioritized_replay_alpha,
+            "weights": self.model.state_dict(),
+        }
+
+        return hyperparams
+
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = DQN("MLP", env)
+    algo = DQN("mlp", env)
     algo.learn()
