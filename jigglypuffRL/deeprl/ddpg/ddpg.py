@@ -157,7 +157,7 @@ class DDPG:
         )
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
-    def select_action(self, state, deterministic=False):
+    def select_action(self, state, deterministic=True):
         with torch.no_grad():
             action = self.ac.get_action(torch.as_tensor(
                 state, dtype=torch.float32, device=self.device
@@ -170,7 +170,7 @@ class DDPG:
 
         return np.clip(
             action,
-            -self.env.action_space.high[0],
+            self.env.action_space.low[0],
             self.env.action_space.high[0]
         )
 
@@ -180,7 +180,7 @@ class DDPG:
         with torch.no_grad():
             q_pi_target = self.ac_target.get_value(
                 torch.cat(
-                    [next_state, self.ac_target.get_action(next_state)[0]],
+                    [next_state, self.ac_target.get_action(next_state,True)[0]],
                     dim=-1
                 )
             )
@@ -190,10 +190,7 @@ class DDPG:
 
     def get_p_loss(self, state):
         q_pi = self.ac.get_value(
-            Variable(
-                torch.cat([state, self.ac.get_action(state)[0]], dim=-1),
-                requires_grad=True,
-            )
+            torch.cat([state, self.ac.get_action(state,True)[0]], dim=-1)
         )
         return -torch.mean(q_pi)
 
@@ -231,7 +228,7 @@ class DDPG:
         for t in range(total_steps):
             # execute single transition
             if t > self.start_steps:
-                action = self.select_action(state, deterministic=False)
+                action = self.select_action(state, deterministic=True)
             else:
                 action = self.env.action_space.sample()
 
