@@ -289,12 +289,7 @@ class PPO1:
 
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
-                    self.checkpoint[
-                        "policy_weights"
-                    ] = self.policy_new.state_dict()  # noqa
-                    self.checkpoint[
-                        "value_weights"
-                    ] = self.value_fn.state_dict()  # noqa
+                    self.checkpoint = self.get_hyperparams()
                     self.save(self, episode)
                     print("Saved current model")
 
@@ -337,5 +332,5 @@ class PPO1:
 if __name__ == "__main__":
 
     env = gym.make("CartPole-v0")
-    algo = PPO1("mlp", env)
+    algo = PPO1("mlp", env, save_model='checkpoints')
     algo.learn()

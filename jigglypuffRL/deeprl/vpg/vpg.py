@@ -252,12 +252,7 @@ class VPG:
 
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
-                    self.checkpoint[
-                        "policy_weights"
-                    ] = self.policy_fn.state_dict()  # noqa
-                    self.checkpoint[
-                        "value_weights"
-                    ] = self.value_fn.state_dict()  # noqa
+                    self.checkpoint = self.get_hyperparams()
                     self.save(self, episode)
                     print("Saved current model")
 
@@ -265,9 +260,23 @@ class VPG:
         if self.tensorboard_log:
             self.writer.close()
 
+    
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
+            "gamma": self.gamma,
+            "actor_batch_size": self.actor_batch_size,
+            "lr_policy": self.lr_policy,
+            "lr_value": self.lr_value,
+            "weights": self.ac.state_dict(),
+        }
+
+        return hyperparams
+
 
 if __name__ == "__main__":
-    env = gym.make("LunarLander-v2")
-    algo = VPG("mlp", env, epochs=500, tensorboard_log='runs/lunar/')
+    env = gym.make("CartPole-v0")
+    algo = VPG("mlp", env, save_model='checkpoints')
     algo.learn()
     algo.evaluate(algo)
