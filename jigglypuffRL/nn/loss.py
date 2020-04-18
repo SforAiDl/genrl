@@ -3,15 +3,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class TDLoss(nn.MSELoss):
-    def __init__(self, actor, critic, target_critic, stochastic=False, 
-                 prioritized_replay_buffer_weight=None, alpha=None,
-                 *args, **kwargs):
+    def __init__(self, actor, critic, target_critic, huber_loss=False,
+                 stochastic=False, prioritized_replay_buffer_weight=None, 
+                 alpha=None, *args, **kwargs):
         super(TDLoss, self).__init__(args, kwargs)
         self.actor = actor
         self.critic = critic
         self.target_critic = target_critic
+        self.huber_loss = huber_loss
         self.stochastic = stochastic
-        self.prioritized_replay_buffer_weight # Only used in DQN
+        self.prioritized_replay_buffer_weight = prioritized_replay_buffer_weight # Only used in DQN
         self.alpha = alpha
 
         if self.stochastic:
@@ -33,21 +34,27 @@ class TDLoss(nn.MSELoss):
         next_q = reward + self.gamma * (1 - done) * target_q
 
         Q = self.critic.get_value(torch.cat([state, action], dim=-1))
-        loss = F.mse_loss(Q, next_q)
+
+        if self.huber_loss:
+            loss = F.smooth_l1_loss(Q, next_q)
+        else:
+            loss = F.mse_loss(Q, next_q)
+        
         return loss
 
 
 class TDLosswithMultipleCritics(nn.MSELoss):
-    def __init__(self, actor, critics, target_critics, stochastic=False, 
-                 prioritized_replay_buffer_weight=None, alpha=None,
-                 *args, **kwargs):
+    def __init__(self, actor, critics, target_critics, huber_loss=False, 
+                 stochastic=False,  prioritized_replay_buffer_weight=None, 
+                 alpha=None, *args, **kwargs):
         super(TDLoss, self).__init__(actor, critics, target_critics, stochastic, 
                                      prioritized_replay_buffer_weight, alpha, args, kwargs)
         self.actor = actor
         self.critics = critics
         self.target_critics = target_critics
+        self.huber_loss = huber_loss
         self.stochastic = stochastic
-        self.prioritized_replay_buffer_weight # Only used in DQN
+        self.prioritized_replay_buffer_weight = prioritized_replay_buffer_weight # Only used in DQN
         self.alpha = alpha
 
         if self.stochastic:
@@ -80,6 +87,10 @@ class TDLosswithMultipleCritics(nn.MSELoss):
         losses = []
         for critic in self.critics:
             Q = self.critic.get_value(torch.cat([state, action], dim=-1))
-            losses.append(F.mse_loss(Q, next_q))
+            if self.huber_loss:
+                loss = F.smooth_l1_loss(Q, next_q)
+            else:
+                loss = F.mse_loss(Q, next_q)
+            losses.append(loss)
         return *losses
         
