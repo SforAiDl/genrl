@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class TDLoss(nn.MSELoss):
+class TDLoss(nn.SmoothL1Loss):
     def __init__(self, actor, critic, target_critic, huber_loss=False,
                  stochastic=False, prioritized_replay_buffer_weight=None, 
                  alpha=None, *args, **kwargs):
@@ -43,7 +43,7 @@ class TDLoss(nn.MSELoss):
         return loss
 
 
-class TDLosswithMultipleCritics(nn.MSELoss):
+class TDLosswithMultipleCritics(nn.SmoothL1Loss):
     def __init__(self, actor, critics, target_critics, huber_loss=False, 
                  stochastic=False,  prioritized_replay_buffer_weight=None, 
                  alpha=None, *args, **kwargs):
