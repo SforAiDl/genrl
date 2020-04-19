@@ -19,8 +19,7 @@ from jigglypuffRL.common import (
 from jigglypuffRL.deeprl.dqn.utils import (
     DuelingDQNValueMlp, 
     NoisyDQNValue,
-    CategoricalDQNValue,
-    projection_distribution
+    CategoricalDQNValue
 )
 
 class DQN:
@@ -191,7 +190,7 @@ class DQN:
             if self.categorical_dqn:
                 state = Variable(torch.FloatTensor(state).unsqueeze(0), volatile=True)
                 dist = self.model(state).data.cpu()
-                dist = dist * torch.linspace(Vmin, Vmax, num_atoms)
+                dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
                 action = dist.sum(2).max(1)[1].numpy()[0]
             else:
                 state = Variable(torch.FloatTensor(state))
@@ -225,18 +224,18 @@ class DQN:
         reward = Variable(torch.FloatTensor(reward))
         done = Variable(torch.FloatTensor(done))
 
-        q_values = self.model(state)
-        q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
-
         if self.categorical_dqn:
-            proj_dist = projection_distribution(next_state, reward, done)
-            dist = current_model(state)
-            action = action.unsqueeze(1).unsqueeze(1).expand(batch_size, 1, self.num_atoms)
+            proj_dist = self.projection_distribution(next_state, reward, done)
+            dist = self.model(state)
+            action = action.unsqueeze(1).unsqueeze(1).expand(self.batch_size, 1, self.num_atoms)
             dist = dist.gather(1, action).squeeze(1)
             dist.data.clamp_(0.01, 0.99)
             loss = - (Variable(proj_dist) * dist.log()).sum(1).mean()
 
         elif self.double_dqn:
+            q_values = self.model(state)
+            q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+
             q_next_state_values = self.model(next_state)
             action_next = q_next_state_values.max(1)[1]
 
@@ -247,6 +246,9 @@ class DQN:
             expected_q_value = reward + self.gamma * q_target_s_a_prime * (1 - done)
 
         else:
+            q_values = self.model(state)
+            q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+
             q_next_state_values = self.target_model(next_state)
             q_s_a_prime = q_next_state_values.max(1)[0]
             expected_q_value = reward + self.gamma * q_s_a_prime * (1 - done)
@@ -282,6 +284,36 @@ class DQN:
         return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
             -1.0 * frame_idx / self.epsilon_decay
         )
+
+    def projection_distribution(self, next_state, rewards, dones):
+      batch_size  = next_state.size(0)
+      
+      delta_z = float(self.Vmax - self.Vmin) / (self.num_atoms - 1)
+      support = torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
+      
+      next_dist   = self.target_model(next_state).data.cpu() * support
+      next_action = next_dist.sum(2).max(1)[1]
+      next_action = next_action.unsqueeze(1).unsqueeze(1).expand(next_dist.size(0), 1, next_dist.size(2))
+      next_dist   = next_dist.gather(1, next_action).squeeze(1)
+          
+      rewards = rewards.unsqueeze(1).expand_as(next_dist)
+      dones   = dones.unsqueeze(1).expand_as(next_dist)
+      support = support.unsqueeze(0).expand_as(next_dist)
+      
+      Tz = rewards + (1 - dones) * 0.99 * support
+      Tz = Tz.clamp(min=self.Vmin, max=self.Vmax)
+      b  = (Tz - self.Vmin) / delta_z
+      l  = b.floor().long()
+      u  = b.ceil().long()
+          
+      offset = torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size).long()\
+                      .unsqueeze(1).expand(self.batch_size, self.num_atoms)
+
+      proj_dist = torch.zeros(next_dist.size())    
+      proj_dist.view(-1).index_add_(0, (l + offset).view(-1), (next_dist * (u.float() - b)).view(-1))
+      proj_dist.view(-1).index_add_(0, (u + offset).view(-1), (next_dist * (b - l.float())).view(-1))
+          
+      return proj_dist
 
     def learn(self):
         total_steps = self.max_epochs * self.max_iterations_per_epoch
