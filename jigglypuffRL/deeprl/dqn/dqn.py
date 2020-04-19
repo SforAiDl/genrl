@@ -376,6 +376,8 @@ class DQN:
             "replay_size": self.replay_size,
             "double_dqn": self.double_dqn,
             "dueling_dqn": self.dueling_dqn,
+            "noisy_dqn": self.noisy_dqn,
+            "categorical_dqn": self.categorical_dqn,
             "prioritized_replay": self.prioritized_replay,
             "prioritized_replay_alpha": self.prioritized_replay_alpha,
             "weights": self.model.state_dict(),
