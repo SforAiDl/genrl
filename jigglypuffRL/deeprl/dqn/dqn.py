@@ -256,7 +256,7 @@ class DQN:
                 indices, priorities.data.cpu().numpy()
             )
 
-        elif (not self.categorical_dqn) and (not self.categorical_dqn):
+        elif (not self.prioritized_replay) and (not self.categorical_dqn):
             loss = (q_value - expected_q_value.detach()).pow(2).mean()
         # loss = F.smooth_l1_loss(q_value,expected_q_value)
 
