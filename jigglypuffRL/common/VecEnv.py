@@ -57,6 +57,9 @@ class VecEnv(ABC):
     def __getitem__(self, index):
         return self.envs[index]
 
+    def seed(self, seed):
+        [env.seed(seed) for env in self.envs]
+
     @abstractmethod
     def step(self, actions):
         raise NotImplementedError
@@ -214,6 +217,7 @@ def venv(env, n_envs, parallel=False):
 
 if __name__ == "__main__":
     env = venv('CartPole-v1', 32, parallel=False)
-    env.reset()
+    env.seed(0)
+    print(env.reset())
     env.step(env.sample())
     print(env.action_spaces())
