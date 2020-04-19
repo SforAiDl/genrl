@@ -1,4 +1,8 @@
+import torch
+import math
 import torch.nn as nn
+import torch.nn.functional as F
+from torch.autograd import Variable
 
 
 class DuelingDQNValueMlp(nn.Module):
@@ -87,12 +91,63 @@ class NoisyDQNValue(nn.Module):
         x = self.noisy_layer_2(x)
         return x
     
-    def act(self, state):
-        state   = Variable(torch.FloatTensor(state).unsqueeze(0), volatile=True)
-        q_value = self.forward(state)
-        action  = q_value.max(1)[1].data[0]
-        return action
-    
     def reset_noise(self):
         self.noisy_layer_1.reset_noise()
         self.noisy_layer_2.reset_noise()
+
+class CategoricalDQNValue(nn.Module):
+    def __init__(self, num_inputs, num_actions, num_atoms, Vmin, Vmax):
+        super(CategoricalDQNValue, self).__init__()
+        
+        self.num_inputs = num_inputs
+        self.num_actions  = num_actions
+        self.num_atoms    = num_atoms
+        self.Vmin         = Vmin
+        self.Vmax         = Vmax
+        
+        self.linear1 = nn.Linear(num_inputs, 128)
+        self.linear2 = nn.Linear(128, 128)
+        self.noisy1 = NoisyLinear(128, 512)
+        self.noisy2 = NoisyLinear(512, self.num_actions * self.num_atoms)
+        
+    def forward(self, x):
+        x = F.relu(self.linear1(x))
+        x = F.relu(self.linear2(x))
+        x = F.relu(self.noisy1(x))
+        x = self.noisy2(x)
+        x = F.softmax(x.view(-1, self.num_atoms)).view(-1, self.num_actions, self.num_atoms)
+        return x
+        
+    def reset_noise(self):
+        self.noisy1.reset_noise()
+        self.noisy2.reset_noise()
+
+def projection_distribution(next_state, rewards, dones):
+    batch_size  = next_state.size(0)
+    
+    delta_z = float(Vmax - Vmin) / (num_atoms - 1)
+    support = torch.linspace(Vmin, Vmax, num_atoms)
+    
+    next_dist   = target_model(next_state).data.cpu() * support
+    next_action = next_dist.sum(2).max(1)[1]
+    next_action = next_action.unsqueeze(1).unsqueeze(1).expand(next_dist.size(0), 1, next_dist.size(2))
+    next_dist   = next_dist.gather(1, next_action).squeeze(1)
+        
+    rewards = rewards.unsqueeze(1).expand_as(next_dist)
+    dones   = dones.unsqueeze(1).expand_as(next_dist)
+    support = support.unsqueeze(0).expand_as(next_dist)
+    
+    Tz = rewards + (1 - dones) * 0.99 * support
+    Tz = Tz.clamp(min=Vmin, max=Vmax)
+    b  = (Tz - Vmin) / delta_z
+    l  = b.floor().long()
+    u  = b.ceil().long()
+        
+    offset = torch.linspace(0, (batch_size - 1) * num_atoms, batch_size).long()\
+                    .unsqueeze(1).expand(batch_size, num_atoms)
+
+    proj_dist = torch.zeros(next_dist.size())    
+    proj_dist.view(-1).index_add_(0, (l + offset).view(-1), (next_dist * (u.float() - b)).view(-1))
+    proj_dist.view(-1).index_add_(0, (u + offset).view(-1), (next_dist * (b - l.float())).view(-1))
+        
+    return proj_dist
