@@ -79,7 +79,6 @@ class VPG:
         self.save_model = save_model
         self.save = save_params
         self.load = load_params
-        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():

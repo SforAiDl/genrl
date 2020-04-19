@@ -90,10 +90,10 @@ class DQN:
         self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
+        self.save_interval = save_interval
         self.save = save_params
         self.load = load_params
         self.pretrained = pretrained
-        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -179,7 +179,7 @@ class DQN:
 
         state = Variable(torch.FloatTensor(np.float32(state)))
         next_state = Variable(
-            torch.FloatTensor(np.float32(next_state)), volatile=True
+            torch.FloatTensor(np.float32(next_state))
         )
         action = Variable(torch.LongTensor(action.long()))
         reward = Variable(torch.FloatTensor(reward))
@@ -277,6 +277,7 @@ class DQN:
                 if frame_idx % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
                     self.save(self, frame_idx)
+                    print("Saved current model")
 
             if frame_idx % 100 == 0:
                 self.update_target_model()
@@ -288,7 +289,6 @@ class DQN:
     
     def get_hyperparams(self):
         hyperparams = {
-            "network_type": self.network_type,
             "gamma": self.gamma,
             "batch_size": self.batch_size,
             "lr": self.lr,
@@ -298,12 +298,12 @@ class DQN:
             "prioritized_replay": self.prioritized_replay,
             "prioritized_replay_alpha": self.prioritized_replay_alpha,
             "weights": self.model.state_dict(),
-        }
+        } 
 
         return hyperparams
 
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env)
+    algo = DQN("mlp", env, save_model='checkpoints')
     algo.learn()

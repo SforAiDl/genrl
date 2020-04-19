@@ -105,7 +105,6 @@ class TD3:
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
-        self.checkpoint = self.__dict__
         self.run_num = run_num
         self.save_model = save_model
         self.save = save_params
