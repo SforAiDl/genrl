@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-from torch.autograd import Variable
 import gym
 from copy import deepcopy
 import random
@@ -13,7 +12,7 @@ from jigglypuffRL.common import (
     evaluate,
     save_params,
     load_params,
-    OrnsteinUhlenbeckActionNoise
+    OrnsteinUhlenbeckActionNoise,
 )
 
 
@@ -67,14 +66,15 @@ class DDPG:
         max_ep_len=1000,
         start_update=1000,
         update_interval=50,
-        save_interval=5000,
-        layers=(256, 256),
+        layers=(32, 32),
+        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
         run_num=None,
         save_model=None,
+        save_interval=5000,
     ):
 
         self.network_type = network_type
@@ -94,6 +94,7 @@ class DDPG:
         self.start_update = start_update
         self.update_interval = update_interval
         self.save_interval = save_interval
+        self.pretrained = pretrained
         self.layers = layers
         self.tensorboard_log = tensorboard_log
         self.seed = seed
@@ -103,7 +104,6 @@ class DDPG:
         self.save_model = save_model
         self.save = save_params
         self.load = load_params
-        self.checkpoint = self.__dict__
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -133,20 +133,22 @@ class DDPG:
         state_dim = self.env.observation_space.shape[0]
         action_dim = self.env.action_space.shape[0]
         if self.noise is not None:
-            self.noise = self.noise(np.zeros_like(action_dim), 
-                                    self.noise_std*np.ones_like(action_dim))
+            self.noise = self.noise(
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+            )
 
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "Qsa", False
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.run_num is not None:
+        if self.pretrained is not None:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
-                if key != "weights":
+                if key not in ["weights", "save_model"]:
                     setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -155,25 +157,22 @@ class DDPG:
             param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.optimizer_policy = opt.Adam(
-            self.ac.actor.parameters(), lr=self.lr_p
-        )
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
-    def select_action(self, state, deterministic=False):
+    def select_action(self, state, deterministic=True):
         with torch.no_grad():
-            action = self.ac.get_action(torch.as_tensor(
-                state, dtype=torch.float32, device=self.device
-                ), deterministic=deterministic)[0].numpy()
+            action = self.ac.get_action(
+                torch.as_tensor(state, dtype=torch.float32, device=self.device),
+                deterministic=deterministic,
+            )[0].numpy()
 
         # add noise to output from policy network
         if self.noise is not None:
             action += self.noise()
 
         return np.clip(
-            action,
-            -self.env.action_space.high[0],
-            self.env.action_space.high[0]
+            action, self.env.action_space.low[0], self.env.action_space.high[0]
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
@@ -182,8 +181,7 @@ class DDPG:
         with torch.no_grad():
             q_pi_target = self.ac_target.get_value(
                 torch.cat(
-                    [next_state, self.ac_target.get_action(next_state, deterministic=True)[0]],
-                    dim=-1
+                    [next_state, self.ac_target.get_action(next_state, True)[0]], dim=-1
                 )
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
@@ -192,10 +190,7 @@ class DDPG:
 
     def get_p_loss(self, state):
         q_pi = self.ac.get_value(
-            Variable(
-                torch.cat([state, self.ac.get_action(state, deterministic=True)[0]], dim=-1),
-                requires_grad=True,
-            )
+            torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
         )
         return -torch.mean(q_pi)
 
@@ -236,7 +231,7 @@ class DDPG:
         for t in range(total_steps):
             # execute single transition
             if t > self.start_steps:
-                action = self.select_action(state, deterministic=False)
+                action = self.select_action(state, deterministic=True)
             else:
                 action = self.env.action_space.sample()
 
@@ -259,9 +254,9 @@ class DDPG:
                     self.noise.reset()
 
                 if episode % 20 == 0:
-                    print("Ep: {}, reward: {}, t: {}".format(
-                        episode, episode_reward, t
-                    ))
+                    print(
+                        "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, t)
+                    )
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, t)
 
@@ -275,22 +270,38 @@ class DDPG:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(
-                        states, actions, next_states, rewards, dones
-                    )
+                    self.update_params(states, actions, next_states, rewards, dones)
 
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:
-                    self.checkpoint["weights"] = self.ac.state_dict()
+                    self.checkpoint = self.get_hyperparams()
                     self.save(self, t)
+                    print("Saved current model")
 
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
 
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "batch_size": self.batch_size,
+            "replay_size": self.replay_size,
+            "polyak": self.polyak,
+            "noise_std": self.noise_std,
+            "lr_policy": self.lr_p,
+            "lr_value": self.lr_q,
+            "weights": self.ac.state_dict(),
+        }
+
+        return hyperparams
+
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, seed=0, save_model="checkpoints", noise=OrnsteinUhlenbeckActionNoise)
+    algo = DDPG(
+        "mlp", env, seed=0, save_model="checkpoints", noise=OrnsteinUhlenbeckActionNoise
+    )
     algo.learn()
     algo.evaluate(algo)

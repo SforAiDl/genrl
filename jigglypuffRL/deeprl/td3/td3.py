@@ -11,7 +11,7 @@ from jigglypuffRL.common import (
     evaluate,
     save_params,
     load_params,
-    OrnsteinUhlenbeckActionNoise
+    OrnsteinUhlenbeckActionNoise,
 )
 
 
@@ -67,6 +67,7 @@ class TD3:
         steps_per_epoch=4000,
         noise=None,
         noise_std=0.1,
+        pretrained=None,
         max_ep_len=1000,
         start_update=1000,
         update_interval=50,
@@ -77,7 +78,7 @@ class TD3:
         device="cpu",
         run_num=None,
         save_model=None,
-        save_interval=5000
+        save_interval=5000,
     ):
 
         self.network_type = network_type
@@ -100,6 +101,7 @@ class TD3:
         self.save_interval = save_interval
         self.layers = layers
         self.tensorboard_log = tensorboard_log
+        self.pretrained = pretrained
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
@@ -136,8 +138,9 @@ class TD3:
     def create_model(self):
         state_dim, action_dim, disc = self.get_env_properties()
         if self.noise is not None:
-            self.noise = self.noise(np.zeros_like(action_dim), 
-                                    self.noise_std*np.ones_like(action_dim))
+            self.noise = self.noise(
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+            )
 
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "Qsa", False
@@ -148,14 +151,16 @@ class TD3:
             state_dim, action_dim, hidden=self.layers, val_type="Qsa"
         )
 
-        if self.run_num is not None:
+        if self.pretrained is not None:
             self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
-            self.ac.qf1.load_state_dict(self.checkpoint["critic_q1_weights"])
-            self.ac.qf2.load_state_dict(self.checkpoint["critic_q2_weights"])
+            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
+            self.ac.qf1.load_state_dict(self.checkpoint["q1_weights"])
+            self.ac.qf2.load_state_dict(self.checkpoint["q2_weights"])
+
             for key, item in self.checkpoint.items():
-                if "weights" not in key:
+                if key not in ["weights", "save_model"]:
                     setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -164,10 +169,7 @@ class TD3:
             param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.q_params = (
-            list(self.ac.qf1.parameters())
-            + list(self.ac.qf2.parameters())
-        )
+        self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
         self.optimizer_policy = torch.optim.Adam(
@@ -188,27 +190,12 @@ class TD3:
 
         return state_dim, action_dim, disc
 
-    def get_hyperparams(self):
-        hyperparams = {
-            "network_type": self.network_type,
-            "gamma": self.gamma,
-            "lr_p": self.lr_p,
-            "lr_q": self.lr_q,
-            "polyak": self.polyak,
-            "policy_frequency": self.policy_frequency,
-            "noise_std": self.noise_std,
-            "critic_q1_weights": self.ac.qf1.state_dict(),
-            "critic_q2_weights": self.ac.qf2.state_dict(),
-            "actor_weights": self.ac.actor.state_dict,
-        }
-
-        return hyperparams
-
     def select_action(self, state, deterministic=True):
         with torch.no_grad():
-            action = self.ac_target.get_action(torch.as_tensor(
-                state, dtype=torch.float32, device=self.device
-            ), deterministic=deterministic)[0].numpy()
+            action = self.ac_target.get_action(
+                torch.as_tensor(state, dtype=torch.float32, device=self.device),
+                deterministic=deterministic,
+            )[0].numpy()
 
         # add noise to output from policy network
         if self.noise is not None:
@@ -218,9 +205,7 @@ class TD3:
             action += self.noise()
 
         return np.clip(
-            action,
-            -self.env.action_space.high[0],
-            self.env.action_space.high[0]
+            action, -self.env.action_space.high[0], self.env.action_space.high[0]
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
@@ -232,9 +217,7 @@ class TD3:
                 torch.cat(
                     [
                         next_state,
-                        self.ac_target.get_action(
-                            next_state, deterministic=True
-                        )[0],
+                        self.ac_target.get_action(next_state, deterministic=True)[0],
                     ],
                     dim=-1,
                 )
@@ -243,9 +226,7 @@ class TD3:
                 torch.cat(
                     [
                         next_state,
-                        self.ac_target.get_action(
-                            next_state, deterministic=True
-                        )[0],
+                        self.ac_target.get_action(next_state, deterministic=True)[0],
                     ],
                     dim=-1,
                 )
@@ -261,9 +242,7 @@ class TD3:
 
     def get_p_loss(self, state):
         q_pi = self.ac.get_value(
-            torch.cat([state, self.ac.get_action(
-                state, deterministic=True
-            )[0]], dim=-1)
+            torch.cat([state, self.ac.get_action(state, deterministic=True)[0]], dim=-1)
         )
         return -torch.mean(q_pi)
 
@@ -330,9 +309,7 @@ class TD3:
 
                 if episode % 20 == 0:
                     print(
-                        "Ep: {}, reward: {}, t: {}".format(
-                            episode, episode_reward, t
-                        )
+                        "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, t)
                     )
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, t)
@@ -347,20 +324,36 @@ class TD3:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(
-                        states, actions, next_states, rewards, dones, t
-                    )
+                    self.update_params(states, actions, next_states, rewards, dones, t)
 
-            if t >= self.start_update and t % self.save_interval == 0:
-                self.checkpoint = self.get_hyperparams()
-                self.save(self, episode)
+            if self.save_model is not None:
+                if t >= self.start_update and t % self.save_interval == 0:
+                    self.checkpoint = self.get_hyperparams()
+                    self.save(self, t)
+                    print("Saved current model")
 
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
 
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "lr_p": self.lr_p,
+            "lr_q": self.lr_q,
+            "polyak": self.polyak,
+            "policy_frequency": self.policy_frequency,
+            "noise_std": self.noise_std,
+            "q1_weights": self.ac.qf1.state_dict(),
+            "q2_weights": self.ac.qf2.state_dict(),
+            "policy_weights": self.ac.actor.state_dict(),
+        }
+
+        return hyperparams
+
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = TD3("mlp", env, render=True, noise=OrnsteinUhlenbeckActionNoise)
+    algo = TD3("mlp", env, render=False, noise=OrnsteinUhlenbeckActionNoise)
     algo.learn()

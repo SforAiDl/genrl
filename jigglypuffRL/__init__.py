@@ -9,7 +9,7 @@ from jigglypuffRL.common import (  # noqa
     load_params,
     evaluate,
     NormalActionNoise,
-    OrnsteinUhlenbeckActionNoise
+    OrnsteinUhlenbeckActionNoise,
 )
 
 from jigglypuffRL.deeprl import SAC, DDPG, PPO1, VPG, TD3, DQN  # noqa
