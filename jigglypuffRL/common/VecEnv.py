@@ -25,27 +25,112 @@ def worker(parent_conn, child_conn, env):
             child_conn.send((env.observation_space, env.action_space))
         else:
             raise NotImplementedError
-          
-class VectoredEnv:
-    '''
-    :param env_fns: (list of Gym environments) List of environments you want to run in parallel  
-    '''
-    def __init__(self, env_fns):
-        self.env_fns = env_fns
-        self.n_envs = len(env_fns)
+
+
+def create_envs(env_name, n_envs):
+    envs = []
+    for i in range(n_envs):
+        envs.append(gym.make(env_name))
+    return envs
+
+class SerialVecEnv:
+    """
+    Constructs a wrapper for serial execution through envs.
+    :param envs: (str)
+    :param n_envs: (int) Number of envs. 
+    """
+    def __init__(self, envs, n_envs=2):
+        self.envs = create_envs(envs, n_envs)
+        self._n_envs = len(self.envs)
+
+    def step(self, actions):
+        """
+        Steps through all envs serially
+        :param actions: (iterable of ints/floats) Actions from the model
+        """
+        states, rewards, dones, infos = [], [], [], []
+        for i, env in enumerate(self.envs):
+            obs, reward, done, info = env.step(actions[i])
+            states.append(obs)
+            rewards.append(reward)
+            dones.append(done)
+            infos.append(info)
+
+        return states, rewards, dones, infos
+
+    def reset(self):
+        """
+        Resets all envs
+        """
+        states = []
+        for env in self.envs:
+            states.append(env.reset())
+
+        return states
+
+    def close(self):
+        """
+        Closes all envs
+        """
+        for env in self.envs:
+            env.close()
+
+    def images(self):
+        """
+        Returns an array of images from each env render
+        """
+        return [env.render(mode='rgb_array') for env in self.envs]
+
+    def render(self, mode='human'):
+        """
+        Renders all envs in a tiles format similar to baselines.
+        :param mode: (str) Can either be 'human' or 'rgb_array'. \
+        Displays tiled images in 'human' and returns tiled images in 'rgb_array'
+        """
+        images = np.asarray(self.images())
+        N, H, W, C = images.shape
+        newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
+        images = np.array(list(images) + [images[0] * 0 for _ in range(N, newH * newW)])
+        out_image = images.reshape(newH, newW, H, W, C)
+        out_image = out_image.transpose(0, 2, 1, 3, 4)
+        out_image = out_image.reshape(newH * H, newW * W, C)
+        if mode == 'human':
+            import cv2  # noqa
+            cv2.imshow('vecenv', out_image[:, :, ::-1])
+            cv2.waitKey(1)
+        elif mode == 'rgb_array':
+            return out_image
+        else:
+            raise NotImplementedError
+
+    @property
+    def n_envs(self):
+        return self._n_envs
+
+class SubProcessVecEnv:
+    """
+    Constructs a wrapper for serial execution through envs.
+    :param envs: (str) Environment Name. Should be registered with OpenAI Gym.
+    :param n_envs: (int) Number of envs. 
+    """
+    def __init__(self, env, n_envs=2):
+
+        self.envs = create_envs(envs, n_envs)
+        self._n_envs = len(self.envs)
 
         self.procs = []
-        self.parent_conns, self.child_conns = zip(*[mp.Pipe() for i in range(self.n_envs)])
+        self.parent_conns, self.child_conns = zip(*[mp.Pipe() for i in range(self._n_envs)])
 
-        for parent_conn, child_conn, env_fn in zip(self.parent_conns, self.child_conns, self.env_fns):
+        for parent_conn, child_conn, env_fn in zip(self.parent_conns, self.child_conns, self.envs):
             args = (parent_conn, child_conn, env_fn)
             process = mp.Process(target=worker, args=args, daemon=True)
             process.start()
             self.procs.append(process)
             child_conn.close()
 
-    def get_n_envs(self):
-        return self.n_envs
+    @property
+    def n_envs(self):
+        return self._n_envs
 
     def get_spaces(self):
         self.parent_conns[0].send(('get_spaces', None))
@@ -89,12 +174,17 @@ class VectoredEnv:
         for proc in self.procs:
             proc.join()
 
+class VecEnv(SerialVecEnv, SubProcessVecEnv):
+    """
+    Wraps Serial and Parallel Env classes to provide a single API
+    """
+    def __init__(self, env, n_envs, parallel=False):
+        if parallel:
+            SubProcessVecEnv.__init__(self, env, n_envs)
+        else:
+            SerialVecEnv.__init__(self, env, n_envs)
     
 if __name__ == "__main__":
-    env = gym.make("CartPole-v1")
-    v = VectoredEnv([env,env])
-    v.seed(143)
-    v.reset()
-    v.step([0,1])
-    v.step([1,0])
-    v.close()
+    venv = VecEnv('CartPole-v1', 32, parallel=False)
+    venv.reset()
+    venv.step([env.action_space.sample() for env in venv.envs])
