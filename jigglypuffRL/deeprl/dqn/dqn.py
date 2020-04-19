@@ -16,7 +16,7 @@ from jigglypuffRL.common import (
     save_params,
     load_params,
 )
-from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp
+from jigglypuffRL.deeprl.dqn.utils import DuelingDQNValueMlp, NoisyDQNValue
 
 
 class DQN:
@@ -28,6 +28,7 @@ class DQN:
     :param env: (Gym environment) The environment to learn from
     :param double_dqn: (boolean) For training Double DQN
     :param dueling_dqn: (boolean) For training Dueling DQN
+    :param noisy_dqn: (boolean) For using Noisy Q
     :param parameterized_replay: (boolean) For using a prioritized buffer
     :param epochs: (int) Number of epochs
     :param max_iterations_per_epoch: (int) Number of iterations per epoch
@@ -50,6 +51,7 @@ class DQN:
         env,
         double_dqn=False,
         dueling_dqn=False,
+        noisy_dqn=False,
         prioritized_replay=False,
         epochs=100,
         max_iterations_per_epoch=100,
@@ -59,6 +61,9 @@ class DQN:
         batch_size=32,
         replay_size=100,
         prioritized_replay_alpha=0.6,
+        max_epsilon=1.0,
+        min_epsilon=0.01,
+        epsilon_decay=1000,
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -70,6 +75,7 @@ class DQN:
         self.env = env
         self.double_dqn = double_dqn
         self.dueling_dqn = dueling_dqn
+        self.noisy_dqn = noisy_dqn
         self.prioritized_replay = prioritized_replay
         self.max_epochs = epochs
         self.max_iterations_per_epoch = max_iterations_per_epoch
@@ -83,9 +89,9 @@ class DQN:
         self.render = render
         self.loss_hist = []
         self.reward_hist = []
-        self.max_epsilon = 1.0
-        self.min_epsilon = 0.01
-        self.epsilon_decay = 500
+        self.max_epsilon = max_epsilon
+        self.min_epsilon = min_epsilon
+        self.epsilon_decay = epsilon_decay
         self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
@@ -118,9 +124,15 @@ class DQN:
         self.create_model(network_type)
 
     def create_model(self, network_type):
-        if network_type == "MLP":
+        if network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(
+                    self.env.observation_space.shape[0],
+                    self.env.action_space.n
+                )
+
+            elif self.noisy_dqn:
+                self.model = NoisyDQNValue(
                     self.env.observation_space.shape[0],
                     self.env.action_space.n
                 )
@@ -152,10 +164,8 @@ class DQN:
     def update_target_model(self):
         self.target_model.load_state_dict(self.model.state_dict())
 
-    def select_action(self, state, frame_idx):
-        epsilon = self.calculate_epsilon_by_frame(frame_idx)
-
-        if np.random.rand() > epsilon:
+    def select_action(self, state):
+        if np.random.rand() > self.epsilon:
             state = Variable(torch.FloatTensor(state))
             q_value = self.model(state)
             action = np.argmax(q_value.detach().numpy())
@@ -239,7 +249,8 @@ class DQN:
             self.update_target_model()
 
         for frame_idx in range(1, total_steps + 1):
-            action = self.select_action(state, frame_idx)
+            self.epsilon = self.calculate_epsilon_by_frame(frame_idx)
+            action = self.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
 
             if self.render:
