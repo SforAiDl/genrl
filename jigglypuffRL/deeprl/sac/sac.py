@@ -104,6 +104,7 @@ class SAC:
         self.save_model = save_model
         self.save = save_params
         self.load = load_params
+        self.evaluate = evaluate
         self.checkpoint = self.__dict__
 
         # Assign device

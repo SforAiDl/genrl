@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-from torch.autograd import Variable
 import gym
 from copy import deepcopy
 import random
