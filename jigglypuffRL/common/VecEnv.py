@@ -186,8 +186,18 @@ class VecEnv(SerialVecEnv, SubProcessVecEnv):
 
     def __iter__(self):
         return (env for env in self.envs)
+
+    def sample(self):
+        return [env.action_space.sample() for env in self.envs]
+
+    def action_spaces(self):
+        return [env.action_space for env in self.envs]
+
+    def __getitem__(self, index):
+        return self.envs[index]
     
 if __name__ == "__main__":
     venv = VecEnv('CartPole-v1', 32, parallel=False)
     venv.reset()
-    venv.step([env.action_space.sample() for env in venv])
+    venv.step(venv.sample())
+    print(venv.action_space())
