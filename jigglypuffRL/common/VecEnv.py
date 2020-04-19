@@ -1,7 +1,8 @@
-import math
 import gym
 import numpy as np
 import multiprocessing as mp
+
+from abc import ABC, abstractmethod
 
 def worker(parent_conn, child_conn, env):
     parent_conn.close()
@@ -33,15 +34,54 @@ def create_envs(env_name, n_envs):
         envs.append(gym.make(env_name))
     return envs
 
-class SerialVecEnv:
+
+class VecEnv(ABC):
+    """
+    Constructs a wrapper for serial execution through envs.
+    :param env: (str)
+    :param n_envs: (int) Number of envs. 
+    """
+    def __init__(self, env, n_envs=2):
+        self.envs = create_envs(env, n_envs)
+        self._n_envs = len(self.envs)
+
+    def __iter__(self):
+        return (env for env in self.envs)
+
+    def sample(self):
+        return [env.action_space.sample() for env in self.envs]
+
+    def action_spaces(self):
+        return [env.action_space for env in self.envs]
+
+    def __getitem__(self, index):
+        return self.envs[index]
+
+    @abstractmethod
+    def step(self, actions):
+        raise NotImplementedError
+
+    @abstractmethod
+    def close(self):
+        raise NotImplementedError
+
+    @abstractmethod
+    def reset(self):
+        raise NotImplementedError
+
+    @property
+    def n_envs(self):
+        return self._n_envs
+
+
+class SerialVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
     :param envs: (str)
     :param n_envs: (int) Number of envs. 
     """
     def __init__(self, envs, n_envs=2):
-        self.envs = create_envs(envs, n_envs)
-        self._n_envs = len(self.envs)
+        super(SerialVecEnv, self).__init__(envs, n_envs)
 
     def step(self, actions):
         """
@@ -103,20 +143,15 @@ class SerialVecEnv:
         else:
             raise NotImplementedError
 
-    @property
-    def n_envs(self):
-        return self._n_envs
 
-class SubProcessVecEnv:
+class SubProcessVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
-    :param envs: (str) Environment Name. Should be registered with OpenAI Gym.
+    :param env: (str) Environment Name. Should be registered with OpenAI Gym.
     :param n_envs: (int) Number of envs. 
     """
     def __init__(self, env, n_envs=2):
-
-        self.envs = create_envs(envs, n_envs)
-        self._n_envs = len(self.envs)
+        super(SubProcessVecEnv, self).__init__(env, n_envs)
 
         self.procs = []
         self.parent_conns, self.child_conns = zip(*[mp.Pipe() for i in range(self._n_envs)])
@@ -127,10 +162,6 @@ class SubProcessVecEnv:
             process.start()
             self.procs.append(process)
             child_conn.close()
-
-    @property
-    def n_envs(self):
-        return self._n_envs
 
     def get_spaces(self):
         self.parent_conns[0].send(('get_spaces', None))
@@ -174,30 +205,15 @@ class SubProcessVecEnv:
         for proc in self.procs:
             proc.join()
 
-class VecEnv(SerialVecEnv, SubProcessVecEnv):
-    """
-    Wraps Serial and Parallel Env classes to provide a single API
-    """
-    def __init__(self, env, n_envs, parallel=False):
-        if parallel:
-            SubProcessVecEnv.__init__(self, env, n_envs)
-        else:
-            SerialVecEnv.__init__(self, env, n_envs)
 
-    def __iter__(self):
-        return (env for env in self.envs)
+def venv(env, n_envs, parallel=False):
+    if parallel:
+        return SubProcessVecEnv(env, n_envs)
+    else:
+        return SerialVecEnv(env, n_envs)
 
-    def sample(self):
-        return [env.action_space.sample() for env in self.envs]
-
-    def action_spaces(self):
-        return [env.action_space for env in self.envs]
-
-    def __getitem__(self, index):
-        return self.envs[index]
-    
 if __name__ == "__main__":
-    venv = VecEnv('CartPole-v1', 32, parallel=False)
-    venv.reset()
-    venv.step(venv.sample())
-    print(venv.action_space())
+    env = venv('CartPole-v1', 32, parallel=False)
+    env.reset()
+    env.step(env.sample())
+    print(env.action_spaces())
