@@ -46,9 +46,9 @@ def evaluate(algo, num_timesteps=1000):
 
         if done:
             episode += 1
-            print("Ep: {}, reward: {}, t: {}".format(
-                episode, episode_reward, episode_t
-            ))
+            print(
+                "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, episode_t)
+            )
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
         else:

@@ -76,7 +76,6 @@ class SAC:
         run_num=None,
         save_model=None,
         save_interval=5000,
-
     ):
 
         self.network_type = network_type
@@ -160,7 +159,7 @@ class SAC:
             self.policy.load_state_dict(self.checkpoint["policy_weights"])
 
             for key, item in self.checkpoint.items():
-                if key not in ["weights","save_model"]:
+                if key not in ["weights", "save_model"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
@@ -182,9 +181,7 @@ class SAC:
             self.target_entropy = -torch.prod(
                 torch.Tensor(self.env.action_space.shape).to(self.device)
             ).item()
-            self.log_alpha = torch.zeros(
-                1, requires_grad=True, device=self.device
-            )
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
@@ -200,7 +197,6 @@ class SAC:
             self.action_bias = torch.FloatTensor(
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             )
-
 
     def sample_action(self, state):
         mean, log_std = self.policy.forward(state)
@@ -232,15 +228,10 @@ class SAC:
         # compute targets
         with torch.no_grad():
             next_action, next_log_pi, _ = self.sample_action(next_state)
-            next_q1_targ = self.q1_targ(torch.cat(
-                [next_state, next_action], dim=-1
-            ))
-            next_q2_targ = self.q2_targ(torch.cat(
-                [next_state, next_action], dim=-1
-            ))
+            next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
+            next_q2_targ = self.q2_targ(torch.cat([next_state, next_action], dim=-1))
             next_q_targ = (
-                torch.min(next_q1_targ, next_q2_targ)
-                - self.alpha * next_log_pi
+                torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
             )
             next_q = reward + self.gamma * (1 - done) * next_q_targ
 
@@ -285,25 +276,16 @@ class SAC:
             alpha_loss = torch.tensor(0.0).to(self.device)
 
         # soft update target params
-        for target_param, param in zip(
-            self.q1_targ.parameters(), self.q1.parameters()
-        ):
+        for target_param, param in zip(self.q1_targ.parameters(), self.q1.parameters()):
             target_param.data.copy_(
-                target_param.data * self.polyak
-                + param.data * (1 - self.polyak)
+                target_param.data * self.polyak + param.data * (1 - self.polyak)
             )
-        for target_param, param in zip(
-            self.q2_targ.parameters(), self.q2.parameters()
-        ):
+        for target_param, param in zip(self.q2_targ.parameters(), self.q2.parameters()):
             target_param.data.copy_(
-                target_param.data * self.polyak
-                + param.data * (1 - self.polyak)
+                target_param.data * self.polyak + param.data * (1 - self.polyak)
             )
 
-        return (
-            q1_loss.item(), q2_loss.item(),
-            policy_loss.item(), alpha_loss.item()
-        )
+        return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
     def learn(self):
         if self.tensorboard_log:
@@ -336,10 +318,9 @@ class SAC:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    q1_loss, q2_loss, policy_loss, alpha_loss = \
-                        self.update_params(
-                            states, actions, next_states, rewards, dones
-                        )
+                    q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
+                        states, actions, next_states, rewards, dones
+                    )
 
                     # write loss logs to tensorboard
                     if self.tensorboard_log:
@@ -363,9 +344,7 @@ class SAC:
                 episode_reward += reward
 
                 ndone = 1 if j == self.max_ep_len else float(not done)
-                self.replay_buffer.push((
-                    state, action, reward, next_state, 1 - ndone
-                ))
+                self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
                 state = next_state
 
             if i > total_steps:
@@ -386,7 +365,6 @@ class SAC:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-
 
     def get_hyperparams(self):
         hyperparams = {
