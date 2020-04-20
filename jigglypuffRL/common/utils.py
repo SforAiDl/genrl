@@ -31,6 +31,20 @@ def mlp(sizes, sac=False):
     return nn.Sequential(*layers)
 
 
+def cnn(features=(4, 16, 32), params=((8, 4), (4, 2))):
+    """
+    generate CNN model given feature sizes, kernel_sizes and strides
+    """
+    cnn = []
+    for i in range(len(features) - 2):
+        in_channels, out_channels = features[i], features[i+1]
+        kernel_size, stride = params[i]
+        conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
+        activation = nn.ReLU
+        cnn += [conv, activation]
+    return nn.Sequential(*cnn), out_channels
+
+
 def evaluate(algo, num_timesteps=1000):
     state = algo.env.reset()
     episode, episode_reward, episode_t = 0, 0, 0

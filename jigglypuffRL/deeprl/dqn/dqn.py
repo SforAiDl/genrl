@@ -1,4 +1,5 @@
 import random
+from collections import deque
 
 import gym
 import numpy as np
@@ -113,6 +114,8 @@ class DQN:
         self.save = save_params
         self.load = load_params
         self.pretrained = pretrained
+        self.network_type = network_type
+        self.history_length = None
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -136,10 +139,10 @@ class DQN:
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
-        self.create_model(network_type)
+        self.create_model()
 
-    def create_model(self, network_type):
-        if network_type == "mlp":
+    def create_model(self):
+        if self.network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(
                     self.env.observation_space.shape[0], self.env.action_space.n
@@ -160,7 +163,7 @@ class DQN:
                     self.env.action_space.n
                 )
             else:
-                self.model = get_model("v", network_type)(
+                self.model = get_model("v", self.network_type)(
                     self.env.observation_space.shape[0], self.env.action_space.n, "Qs"
                 )
             # load paramaters if already trained
@@ -172,7 +175,25 @@ class DQN:
                         setattr(self, key, item)
                 print("Loaded pretrained model")
 
-            self.target_model = deepcopy(self.model)
+        elif self.network_type == "cnn":
+            if self.history_length is None:
+                self.history_length = 4
+
+            self.state_history = deque(
+                [
+                    env.observation_space.sample()
+                    for _ in range(self.history_length)
+                ], maxlen=self.history_length
+            )
+
+            self.model = get_model("v", self.network_type)(
+                self.env.observation_space.shape[0],
+                self.env.action_space.n,
+                self.history_length,
+                "Qs"
+            )
+
+        self.target_model = deepcopy(self.model)
 
         if self.prioritized_replay:
             self.replay_buffer = PrioritizedBuffer(
@@ -287,6 +308,11 @@ class DQN:
         total_steps = self.max_epochs * self.max_iterations_per_epoch
         state, episode_reward, episode, episode_len = self.env.reset(), 0, 0, 0
 
+        if self.network_type == "cnn":
+            phi_state = self.state_history
+            phi_next_state = phi_state
+            phi_next_state.append(state)
+
         if self.double_dqn:
             self.update_target_model()
 
@@ -298,7 +324,16 @@ class DQN:
             if self.render:
                 self.env.render()
 
-            self.replay_buffer.push((state, action, reward, next_state, done))
+            if self.network_type == "cnn":
+                phi_state.append(state)
+                phi_next_state.append(next_state)
+                self.replay_buffer.push((
+                    phi_state, action, reward, phi_next_state, done
+                ))
+            else:
+                self.replay_buffer.push((
+                    state, action, reward, next_state, done
+                ))
 
             state = next_state
             episode_reward += reward
@@ -353,6 +388,6 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env, save_model="checkpoints")
+    env = gym.make("Breakout-v0")
+    algo = DQN("cnn", env)
     algo.learn()
