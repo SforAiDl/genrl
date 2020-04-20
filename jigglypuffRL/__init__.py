@@ -10,7 +10,7 @@ from jigglypuffRL.common import (  # noqa
     evaluate,
     venv,
     SerialVecEnv,
-    SubProcessVecEnv
+    SubProcessVecEnv,
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise,
 )
