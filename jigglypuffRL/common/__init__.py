@@ -18,3 +18,7 @@ from jigglypuffRL.common.VecEnv import ( #noqa
     SubProcessVecEnv,
     venv
 )
+from jigglypuffRL.common.noise import (  # noqa
+    NormalActionNoise,
+    OrnsteinUhlenbeckActionNoise,
+)
