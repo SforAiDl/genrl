@@ -34,7 +34,7 @@ class MlpValue(BaseValue):
         self.model = _get_val_model(mlp, val_type, state_dim, hidden, action_dim)
 
 
-def CNNValue(BaseValue):
+class CNNValue(BaseValue):
     """
     CNN Value
     :param state_dim: (int) state dimension of environment
@@ -46,22 +46,22 @@ def CNNValue(BaseValue):
     :param disc: (bool) discrete action space?
     """
     def __init__(
-        self, state_dim, action_dim, history_length=4, val_type="Qs",
-        hidden=(256, 256), disc=True
+        self, action_dim, history_length=4, val_type="Qs",
+        fc_layers=(256,), disc=True
     ):
-        super(CNNValue, self).__init__(disc, state_dim, action_dim, hidden)
+        super(CNNValue, self).__init__()
 
         self.action_dim = action_dim
 
         self.conv, output_size = cnn((history_length, 16, 32))
 
         self.fc = _get_val_model(
-            mlp, val_type, output_size, hidden, action_dim
+            mlp, val_type, output_size, fc_layers, action_dim
         )
 
     def forward(self, state):
         state = self.conv(state)
-        state = state.view(state.size[0], -1)
+        state = state.view(state.size(0), -1)
         state = self.fc(state)
         return state
 

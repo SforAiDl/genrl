@@ -6,6 +6,7 @@ import numpy as np
 
 import torch
 import torch.optim as opt
+import torchvision.transforms as transforms
 from torch.autograd import Variable
 from copy import deepcopy
 
@@ -82,6 +83,7 @@ class DQN:
         pretrained=None,
         run_num=None,
         save_model=None,
+        transform=None,
     ):
         self.env = env
         self.double_dqn = double_dqn
@@ -116,12 +118,16 @@ class DQN:
         self.pretrained = pretrained
         self.network_type = network_type
         self.history_length = None
+        self.transform = transform
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
         else:
             self.device = torch.device("cpu")
+
+        self.device = torch.device("cuda")
+        print(self.device)
 
         # Assign seed
         if seed is not None:
@@ -179,15 +185,24 @@ class DQN:
             if self.history_length is None:
                 self.history_length = 4
 
+            if self.transform is None:
+                self.transform = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.Grayscale(),
+                    transforms.Resize((110, 84)),
+                    transforms.CenterCrop(84),
+                    transforms.ToTensor()
+                ])
+
             self.state_history = deque(
                 [
-                    env.observation_space.sample()
-                    for _ in range(self.history_length)
+                    self.transform(
+                        env.observation_space.sample()
+                    ).reshape(-1, 84, 84) for _ in range(self.history_length)
                 ], maxlen=self.history_length
             )
 
             self.model = get_model("v", self.network_type)(
-                self.env.observation_space.shape[0],
                 self.env.action_space.n,
                 self.history_length,
                 "Qs"
@@ -245,6 +260,10 @@ class DQN:
         action = Variable(torch.LongTensor(action.long()))
         reward = Variable(torch.FloatTensor(reward))
         done = Variable(torch.FloatTensor(done))
+
+        if self.network_type == "cnn":
+            state = state.view(-1, 4, 84, 84)
+            next_state = next_state.view(-1, 4, 84, 84)
 
         q_values = self.model(state)
         q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
@@ -309,24 +328,30 @@ class DQN:
         state, episode_reward, episode, episode_len = self.env.reset(), 0, 0, 0
 
         if self.network_type == "cnn":
-            phi_state = self.state_history
-            phi_next_state = phi_state
-            phi_next_state.append(state)
+            self.state_history.append(self.transform(state))
+            phi_state = torch.stack(list(self.state_history), dim=1)
 
         if self.double_dqn:
             self.update_target_model()
 
         for frame_idx in range(1, total_steps + 1):
             self.epsilon = self.calculate_epsilon_by_frame(frame_idx)
-            action = self.select_action(state)
+
+            if self.network_type == "mlp":
+                action = self.select_action(state)
+            elif self.network_type == "cnn":
+                action = self.select_action(phi_state)
+
             next_state, reward, done, _ = self.env.step(action)
 
             if self.render:
                 self.env.render()
 
             if self.network_type == "cnn":
-                phi_state.append(state)
-                phi_next_state.append(next_state)
+                self.state_history.append(self.transform(next_state))
+                phi_next_state = torch.stack(
+                    list(self.state_history), dim=1
+                )
                 self.replay_buffer.push((
                     phi_state, action, reward, phi_next_state, done
                 ))
@@ -342,7 +367,7 @@ class DQN:
             done = False if episode_len == self.max_ep_len else done
 
             if done or (episode_len == self.max_ep_len):
-                if episode % 20 == 0:
+                if episode % 1 == 0:
                     print(
                         "Ep: {}, reward: {}, frame_idx: {}".format(
                             episode, episode_reward, frame_idx
