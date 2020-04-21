@@ -264,9 +264,6 @@ class DQN:
             state = state.view(-1, 4, 84, 84)
             next_state = next_state.view(-1, 4, 84, 84)
 
-        q_values = self.model(state)
-        q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
-
         if self.categorical_dqn:
             proj_dist = self.projection_distribution(next_state, reward, done)
             dist = self.model(state)
