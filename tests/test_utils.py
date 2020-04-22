@@ -1,5 +1,6 @@
 import pytest
-import torch.nn 
+import torch
+import torch.nn as nn
 
 from jigglypuffRL import MlpActorCritic, MlpPolicy, MlpValue
 from jigglypuffRL.common.utils import *
@@ -10,6 +11,20 @@ class TestUtils:
         p = get_model('p', 'mlp')
         v = get_model('v', 'mlp')
         
-        assert isinstance(ac(2,2), MlpActorCritic)
-        assert isinstance(p(2,2), MlpPolicy)
-        assert isinstance(v(2,2), MlpValue)
+        assert ac == MlpActorCritic
+        assert p == MlpPolicy
+        assert v == MlpValue
+
+    def test_mlp(self):
+        sizes = [2,3,3,2]
+        mlp_nn = mlp(sizes)
+        mlp_nn_sac = mlp(sizes, sac=True)
+
+        assert len(mlp_nn) == 2 * (len(sizes)- 1)
+        assert all(isinstance(mlp_nn[i], nn.Linear) for i in range(0,5,2))
+        assert len(mlp_nn_sac) == 2 * (len(sizes)- 2)
+        assert all(isinstance(mlp_nn_sac[i], nn.Linear) for i in range(0,4,2))
+
+        inp = torch.randn((2,))
+        assert mlp_nn(inp).shape == (2,)
+        assert mlp_nn_sac(inp).shape == (3,)
