@@ -1,8 +1,14 @@
 import pytest
 import torch
 import torch.nn as nn
+import gym
 
-from jigglypuffRL import MlpActorCritic, MlpPolicy, MlpValue
+from jigglypuffRL import (
+    MlpActorCritic, 
+    MlpPolicy, 
+    MlpValue,
+    VPG,
+)
 from jigglypuffRL.common.utils import *
 
 class TestUtils:
@@ -28,3 +34,8 @@ class TestUtils:
         inp = torch.randn((2,))
         assert mlp_nn(inp).shape == (2,)
         assert mlp_nn_sac(inp).shape == (3,)
+
+    def test_evaluate(self):
+        env = gym.make('Pendulum-v0')
+        algo = VPG('mlp', env)
+        evaluate(algo, num_timesteps=50)
