@@ -7,9 +7,10 @@ install:
   - pip install -r requirements.txt
   - python setup.py install
   - pip install codecov
+  - pip install pytest-cov
 # command to run tests
 script:
-  - coverage run -m pytest tests/
-#command after tests are run
+  - pytest --cov=./
+  
 after_success:
-  - codecov
+  - codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db

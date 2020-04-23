@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.com/SforAiDl/JigglypuffRL.svg?branch=master)](https://travis-ci.com/SforAiDl/JigglypuffRL)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/SforAiDl/JigglypuffRL.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SforAiDl/JigglypuffRL/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/SforAiDl/JigglypuffRL.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SforAiDl/JigglypuffRL/context:python)
+[![codecov](https://codecov.io/gh/SforAiDl/JigglypuffRL/branch/master/graph/badge.svg)](https://codecov.io/gh/SforAiDl/JigglypuffRL)
 
 ## Installation
 
