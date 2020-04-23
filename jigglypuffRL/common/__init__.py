@@ -22,3 +22,4 @@ from jigglypuffRL.common.noise import (  # noqa
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise,
 )
+from jigglypuffRL.common.logger import Logger
