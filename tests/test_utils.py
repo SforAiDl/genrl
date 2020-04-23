@@ -50,4 +50,8 @@ class TestUtils:
 
         assert len(os.listdir('test_ckpt/PPO1_CartPole-v0')) != 0
 
+    def test_load_params(self):
+        env = gym.make('CartPole-v0')
+        algo = PPO1('mlp', env, epochs=1, pretrained='test_ckpt/PPO1_CartPole-v0/0-log-0.pt')
+        
         rmtree('test_ckpt')
