@@ -10,7 +10,7 @@ install:
   - pip install pytest-cov
 # command to run tests
 script:
-  - py.test --cov-report xml --cov='./jigglypuffRL/'
+  - pytest --cov-report xml --cov='./jigglypuffRL/'
   
 after_success:
-  - codecov
+  - codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
