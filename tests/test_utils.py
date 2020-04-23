@@ -2,12 +2,14 @@ import pytest
 import torch
 import torch.nn as nn
 import gym
+import os
+from shutil import rmtree
 
 from jigglypuffRL import (
     MlpActorCritic, 
     MlpPolicy, 
     MlpValue,
-    VPG,
+    PPO1,
 )
 from jigglypuffRL.common.utils import *
 
@@ -36,6 +38,16 @@ class TestUtils:
         assert mlp_nn_sac(inp).shape == (3,)
 
     def test_evaluate(self):
-        env = gym.make('Pendulum-v0')
-        algo = VPG('mlp', env)
-        evaluate(algo, num_timesteps=50)
+        env = gym.make('CartPole-v0')
+        algo = PPO1('mlp', env, epochs=1)
+        algo.learn()
+        evaluate(algo, num_timesteps=10)
+
+    def test_save_params(self):
+        env = gym.make('CartPole-v0')
+        algo = PPO1('mlp', env, epochs=1, save_model='test_ckpt')
+        algo.learn()
+
+        assert len(os.listdir('test_ckpt/PPO1_CartPole-v0')) != 0
+
+        rmtree('test_ckpt')
