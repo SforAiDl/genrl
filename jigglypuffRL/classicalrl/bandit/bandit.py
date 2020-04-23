@@ -265,8 +265,7 @@ class BernoulliBandits(Bandit):
         self._regret += max(self.Q[bandit]) - self.Q[bandit][action]
         self.regrets.append(self.regret)
         self.Q[bandit, action] += (
-            1.0 / (self.counts[bandit, action] + 1)
-            * (reward - self.Q[bandit, action])
+            1.0 / (self.counts[bandit, action] + 1) * (reward - self.Q[bandit, action])
         )
         self.counts[bandit, action] += 1
 

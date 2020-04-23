@@ -67,15 +67,15 @@ class SAC:
         max_ep_len=1000,
         start_update=256,
         update_interval=1,
-        save_interval=5000,
         layers=(256, 256),
+        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
         run_num=None,
-        save_name=None,
-        save_version=None,
+        save_model=None,
+        save_interval=5000,
     ):
 
         self.network_type = network_type
@@ -95,16 +95,15 @@ class SAC:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
+        self.pretrained = pretrained
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
-        self.save_name = save_name
-        self.save_version = save_version
+        self.run_num = run_num
+        self.save_model = save_model
         self.save = save_params
         self.load = load_params
         self.evaluate = evaluate
-        self.checkpoint = self.get_hyperparams()
-        self.run_num = run_num
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -153,15 +152,16 @@ class SAC:
             state_dim, action_dim, self.layers, disc, False, sac=True
         )
 
-        if self.run_num is not None:
+        if self.pretrained is not None:
             self.load(self)
             self.q1.load_state_dict(self.checkpoint["q1_weights"])
             self.q2.load_state_dict(self.checkpoint["q2_weights"])
             self.policy.load_state_dict(self.checkpoint["policy_weights"])
 
             for key, item in self.checkpoint.items():
-                if key != "weights":
+                if key not in ["weights", "save_model"]:
                     setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.q1_targ = deepcopy(self.q1).to(self.device)
         self.q2_targ = deepcopy(self.q2).to(self.device)
@@ -181,9 +181,7 @@ class SAC:
             self.target_entropy = -torch.prod(
                 torch.Tensor(self.env.action_space.shape).to(self.device)
             ).item()
-            self.log_alpha = torch.zeros(
-                1, requires_grad=True, device=self.device
-            )
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
@@ -199,20 +197,6 @@ class SAC:
             self.action_bias = torch.FloatTensor(
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             )
-
-    def get_hyperparams(self):
-        hyperparams = {
-            "network_type": self.network_type,
-            "gamma": self.gamma,
-            "lr": self.lr,
-            "alpha": self.alpha,
-            "polyak": self.polyak,
-            "q1_weights": self.q1.state_dict(),
-            "q2_weights": self.q2.state_dict(),
-            "policy_weights": self.policy.state_dict(),
-        }
-
-        return hyperparams
 
     def sample_action(self, state):
         mean, log_std = self.policy.forward(state)
@@ -244,15 +228,10 @@ class SAC:
         # compute targets
         with torch.no_grad():
             next_action, next_log_pi, _ = self.sample_action(next_state)
-            next_q1_targ = self.q1_targ(torch.cat(
-                [next_state, next_action], dim=-1
-            ))
-            next_q2_targ = self.q2_targ(torch.cat(
-                [next_state, next_action], dim=-1
-            ))
+            next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
+            next_q2_targ = self.q2_targ(torch.cat([next_state, next_action], dim=-1))
             next_q_targ = (
-                torch.min(next_q1_targ, next_q2_targ)
-                - self.alpha * next_log_pi
+                torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
             )
             next_q = reward + self.gamma * (1 - done) * next_q_targ
 
@@ -297,25 +276,16 @@ class SAC:
             alpha_loss = torch.tensor(0.0).to(self.device)
 
         # soft update target params
-        for target_param, param in zip(
-            self.q1_targ.parameters(), self.q1.parameters()
-        ):
+        for target_param, param in zip(self.q1_targ.parameters(), self.q1.parameters()):
             target_param.data.copy_(
-                target_param.data * self.polyak
-                + param.data * (1 - self.polyak)
+                target_param.data * self.polyak + param.data * (1 - self.polyak)
             )
-        for target_param, param in zip(
-            self.q2_targ.parameters(), self.q2.parameters()
-        ):
+        for target_param, param in zip(self.q2_targ.parameters(), self.q2.parameters()):
             target_param.data.copy_(
-                target_param.data * self.polyak
-                + param.data * (1 - self.polyak)
+                target_param.data * self.polyak + param.data * (1 - self.polyak)
             )
 
-        return (
-            q1_loss.item(), q2_loss.item(),
-            policy_loss.item(), alpha_loss.item()
-        )
+        return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
     def learn(self):
         if self.tensorboard_log:
@@ -348,10 +318,9 @@ class SAC:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    q1_loss, q2_loss, policy_loss, alpha_loss = \
-                        self.update_params(
-                            states, actions, next_states, rewards, dones
-                        )
+                    q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
+                        states, actions, next_states, rewards, dones
+                    )
 
                     # write loss logs to tensorboard
                     if self.tensorboard_log:
@@ -360,9 +329,11 @@ class SAC:
                         writer.add_scalar("loss/policy_loss", policy_loss, i)
                         writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
-                if i >= self.start_update and i % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, i)
+                if self.save_model is not None:
+                    if i >= self.start_update and i % self.save_interval == 0:
+                        self.checkpoint = self.get_hyperparams()
+                        self.save(self, i)
+                        print("Saved current model")
 
                 # prepare transition for replay memory push
                 next_state, reward, done, _ = self.env.step(action)
@@ -373,9 +344,7 @@ class SAC:
                 episode_reward += reward
 
                 ndone = 1 if j == self.max_ep_len else float(not done)
-                self.replay_buffer.push((
-                    state, action, reward, next_state, 1 - ndone
-                ))
+                self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
                 state = next_state
 
             if i > total_steps:
@@ -397,9 +366,25 @@ class SAC:
         if self.tensorboard_log:
             self.writer.close()
 
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "gamma": self.gamma,
+            "lr": self.lr,
+            "replay_size": self.replay_size,
+            "entropy_tuning": self.entropy_tuning,
+            "alpha": self.alpha,
+            "polyak": self.polyak,
+            "q1_weights": self.q1.state_dict(),
+            "q2_weights": self.q2.state_dict(),
+            "policy_weights": self.policy.state_dict(),
+        }
+
+        return hyperparams
+
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env, seed=0, render=False)
+    algo = SAC("mlp", env, seed=0)
     algo.learn()
     algo.evaluate(algo)

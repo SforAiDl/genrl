@@ -39,16 +39,16 @@ def evaluate(algo, num_timesteps=1000):
     print("\nEvaluating...")
     for _ in range(num_timesteps):
         action = algo.select_action(state)
-        next_state, reward, done, _ = algo.env.step(action)
+        next_state, reward, done, _ = algo.env.step(action.item())
         episode_reward += reward
         total_reward += reward
         episode_t += 1
 
         if done:
             episode += 1
-            print("Ep: {}, reward: {}, t: {}".format(
-                episode, episode_reward, episode_t
-            ))
+            print(
+                "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, episode_t)
+            )
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
         else:

@@ -8,6 +8,11 @@ from jigglypuffRL.common import (  # noqa
     save_params,
     load_params,
     evaluate,
+    venv,
+    SerialVecEnv,
+    SubProcessVecEnv,
+    NormalActionNoise,
+    OrnsteinUhlenbeckActionNoise,
 )
 
 from jigglypuffRL.deeprl import SAC, DDPG, PPO1, VPG, TD3, DQN  # noqa
