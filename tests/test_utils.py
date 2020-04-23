@@ -15,6 +15,9 @@ from jigglypuffRL.common.utils import *
 
 class TestUtils:
     def test_get_model(self):
+        """
+        test getting policy, value and AC models
+        """
         ac = get_model('ac', 'mlp')
         p = get_model('p', 'mlp')
         v = get_model('v', 'mlp')
@@ -24,6 +27,9 @@ class TestUtils:
         assert v == MlpValue
 
     def test_mlp(self):
+        """
+        test getting sequential MLP
+        """
         sizes = [2,3,3,2]
         mlp_nn = mlp(sizes)
         mlp_nn_sac = mlp(sizes, sac=True)
@@ -38,12 +44,18 @@ class TestUtils:
         assert mlp_nn_sac(inp).shape == (3,)
 
     def test_evaluate(self):
+        """
+        test evaluating trained algorithm
+        """
         env = gym.make('CartPole-v0')
         algo = PPO1('mlp', env, epochs=1)
         algo.learn()
         evaluate(algo, num_timesteps=10)
 
     def test_save_params(self):
+        """
+        test saving algorithm state dict
+        """
         env = gym.make('CartPole-v0')
         algo = PPO1('mlp', env, epochs=1, save_model='test_ckpt')
         algo.learn()
@@ -51,6 +63,9 @@ class TestUtils:
         assert len(os.listdir('test_ckpt/PPO1_CartPole-v0')) != 0
 
     def test_load_params(self):
+        """
+        test loading algorithm parameters
+        """
         env = gym.make('CartPole-v0')
         algo = PPO1('mlp', env, epochs=1, pretrained='test_ckpt/PPO1_CartPole-v0/0-log-0.pt')
         
