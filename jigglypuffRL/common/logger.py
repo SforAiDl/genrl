@@ -1,10 +1,14 @@
+import os
 import sys
 
 from torch.utils.tensorboard import SummaryWriter
 
 class Logger:
     def __init__(self, logdir=None, formats=['csv']):
-        self._logdir = logdir
+        if logdir is None:
+            self._logdir = os.getcwd()
+        else:
+            self._logdir = logdir
         self._formats = formats
         self.writers = []
         for format in self.formats:
@@ -28,18 +32,19 @@ class Logger:
 
 
 class HumanOutputFormat:
-    def __init__(self, logdir=None):
-        self.file = sys.stdout
+    def __init__(self, logdir):
+        self.file = os.path.join(logdir, 'train.log')
 
     def write(self, kvs):
-        self.file.write('\n')
-        for key,value in kvs.items():
-            self.file.write('{}:{}\n'.format(key, value))
-        self.file.write('\n')
-        self.file.flush()
+        with open(self.file, 'a') as file:
+            sys.stdout = file
+            print('\n',file=file)
+            for key,value in kvs.items():
+                print('{}:{}\n'.format(key, value), file=file)
+            print('\n',file=file)
 
     def close(self):
-        self.file.close()
+        pass
 
 
 class TensorboardLogger:
