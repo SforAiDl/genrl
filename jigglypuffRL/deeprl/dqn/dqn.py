@@ -15,6 +15,7 @@ from jigglypuffRL.common import (
     evaluate,
     save_params,
     load_params,
+    set_seeds,
 )
 from jigglypuffRL.deeprl.dqn.utils import (
     DuelingDQNValueMlp, 
@@ -121,12 +122,7 @@ class DQN:
 
         # Assign seed
         if seed is not None:
-            torch.manual_seed(seed)
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
-            np.random.seed(seed)
-            self.env.seed(seed)
-            random.seed(seed)
+            set_seeds(seed, self.env)
 
         # Setup tensorboard writer
         self.writer = None
