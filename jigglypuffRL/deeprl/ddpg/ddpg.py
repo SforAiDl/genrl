@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.optim as opt
 import gym
 from copy import deepcopy
-import random
 
 from jigglypuffRL.common import (
     ReplayBuffer,

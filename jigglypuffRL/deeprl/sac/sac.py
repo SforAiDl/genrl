@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.optim as opt
 import gym
 from copy import deepcopy
-import random
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 

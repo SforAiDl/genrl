@@ -1,7 +1,4 @@
-import os
 import sys
-
-import torch
 
 from torch.utils.tensorboard import SummaryWriter
 
@@ -32,14 +29,11 @@ class Logger:
 
 class HumanOutputFormat:
     def __init__(self, logdir=None):
-        if logdir==None:
-            logdir = sys.stdout
-        self.logdir = logdir
-        self.file = open(file, 'w')
+        self.file = sys.stdout
 
     def write(self, kvs):
         self.file.write('\n')
-        for key in kvs.items():
+        for key,value in kvs.items():
             self.file.write('{}:{}\n'.format(key, value))
         self.file.write('\n')
         self.file.flush()
@@ -51,6 +45,7 @@ class HumanOutputFormat:
 class TensorboardLogger:
     def __init__(self, logdir):
         self.logdir = logdir
+        os.makedirs(self.logdir, exist_ok=True)
         self.writer = SummaryWriter(logdir)
 
     def write(self, kvs):
@@ -64,24 +59,26 @@ class TensorboardLogger:
 class CSVLogger:
     def __init__(self, logdir):
         self.logdir = logdir
+        os.makedirs(self.logdir, exist_ok=True)
         self.file = open('{}/train.csv'.format(logdir), 'w')
         self.first = True
         self.keynames = {}
 
     def write(self, kvs):
         if self.first:
-            for i, key in enumerate(self.kvs.keys()):
+            for i, key in enumerate(kvs.keys()):
                 self.keynames[key] = i
                 self.file.write(key)
                 self.file.write(',')
             self.file.write('\n')
+            self.first = False
 
         for i, (key,value) in enumerate(kvs.items()):
-            if key not in self.keynames.values():
-                raise Exception("A new value cannot be added to CSVLogger")
+            if key not in self.keynames.keys():
+                raise Exception("A new value '{}' cannot be added to CSVLogger".format(key))
             if i!=self.keynames[key]:
                 raise Exception("Value not at the same index as when initialized")
-            self.file.write(value)
+            self.file.write(str(value))
             self.file.write(',')
 
         self.file.write('\n')

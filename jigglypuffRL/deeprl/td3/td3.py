@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import gym
 from copy import deepcopy
-import random
 
 from jigglypuffRL.common import (
     ReplayBuffer,
@@ -12,6 +11,7 @@ from jigglypuffRL.common import (
     save_params,
     load_params,
     OrnsteinUhlenbeckActionNoise,
+    set_seeds,
 )
 
 
