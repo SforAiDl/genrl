@@ -12,6 +12,7 @@ from jigglypuffRL.common.utils import (  # noqa
     evaluate,
     save_params,
     load_params,
+    set_seeds,
 )
 from jigglypuffRL.common.VecEnv import ( #noqa
     SerialVecEnv, 

@@ -13,7 +13,8 @@ from jigglypuffRL.common import (  # noqa
     SubProcessVecEnv,
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise,
-    Logger
+    Logger,
+    set_seeds,
 )
 
 from jigglypuffRL.deeprl import SAC, DDPG, PPO1, VPG, TD3, DQN  # noqa
