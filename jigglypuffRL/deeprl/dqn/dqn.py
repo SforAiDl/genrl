@@ -388,5 +388,5 @@ class DQN:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env, save_model="checkpoints")
+    algo = DQN("mlp", env, prioritized_replay=True)
     algo.learn()

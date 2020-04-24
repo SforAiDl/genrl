@@ -5,9 +5,9 @@ import numpy as np
 
 
 class ReplayBuffer:
-    def __init__(self, size):
-        self.size = size
-        self.memory = deque([], maxlen=size)
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.memory = deque([], maxlen=capacity)
 
     def push(self, x):
         self.memory.append(x)
