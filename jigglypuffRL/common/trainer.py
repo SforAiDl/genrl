@@ -8,6 +8,7 @@ import numpy as np
 from jigglypuffRL import (
     TD3, 
     PPO1,
+    VPG,
     Logger, 
     OrnsteinUhlenbeckActionNoise, 
     DDPG,
@@ -163,23 +164,20 @@ class OnPolicyTrainer(Trainer):
                     if self.render:
                         self.env.render()
 
-                    self.agent.policy_old.traj_reward.append(reward)
+                    self.agent.traj_reward.append(reward)
 
                     if done:
                         break
 
                 epoch_reward += (
-                    np.sum(self.agent.policy_old.traj_reward) / self.agent.actor_batch_size
+                    np.sum(self.agent.traj_reward) / self.agent.actor_batch_size
                 )
                 self.agent.get_traj_loss()
 
-            self.agent.update_policy(episode)
+            self.agent.update_policy(episode, episode % self.agent.policy_copy_interval == 0)
 
             if episode % self.log_interval == 0:
                 logger.write({'Episode':episode, 'Reward':epoch_reward, 'Timestep':i*episode*self.agent.timesteps_per_actorbatch})
-
-            if episode % self.agent.policy_copy_interval == 0:
-                self.agent.policy_old.load_state_dict(self.agent.policy_new.state_dict())
 
             if self.save_interval!=0 and episode % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
@@ -197,7 +195,7 @@ if __name__ == "__main__":
 
     # trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0)
     # trainer.train()
-    algo = PPO1("mlp", env, seed=0)
+    algo = VPG("mlp", env, seed=0)
     trainer = OnPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=100, log_interval=1)
     trainer.train()
                 

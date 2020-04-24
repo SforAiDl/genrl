@@ -136,7 +136,7 @@ class PPO1:
         )
         self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
-        self.policy_old.traj_reward = []
+        self.traj_reward = []
         self.policy_old.policy_hist = Variable(torch.Tensor())
         self.policy_new.policy_hist = Variable(torch.Tensor())
         self.value_fn.value_hist = Variable(torch.Tensor())
@@ -179,7 +179,7 @@ class PPO1:
         returns = []
 
         # calculate discounted return
-        for reward in self.policy_old.traj_reward[::-1]:
+        for reward in self.traj_reward[::-1]:
             discounted_reward = reward + self.gamma * discounted_reward
             returns.insert(0, discounted_reward)
 
@@ -209,12 +209,12 @@ class PPO1:
         self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
 
         # clear traj history
-        self.policy_old.traj_reward = []
+        self.traj_reward = []
         self.policy_old.policy_hist = Variable(torch.Tensor())
         self.policy_new.policy_hist = Variable(torch.Tensor())
         self.value_fn.value_hist = Variable(torch.Tensor())
 
-    def update_policy(self, episode):
+    def update_policy(self, episode, copy_policy=True):
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_new.loss_hist)
         loss_value = torch.mean(self.value_fn.loss_hist)
@@ -237,6 +237,9 @@ class PPO1:
         self.policy_new.loss_hist = Variable(torch.Tensor())
         self.value_fn.loss_hist = Variable(torch.Tensor())
 
+        if copy_policy:
+            self.policy_old.load_state_dict(self.policy_new.state_dict())
+
     def learn(self):
         # training loop
         for episode in range(self.epochs):
@@ -251,13 +254,13 @@ class PPO1:
                     if self.render:
                         self.env.render()
 
-                    self.policy_old.traj_reward.append(reward)
+                    self.traj_reward.append(reward)
 
                     if done:
                         break
 
                 epoch_reward += (
-                    np.sum(self.policy_old.traj_reward) / self.actor_batch_size
+                    np.sum(self.traj_reward) / self.actor_batch_size
                 )
                 self.get_traj_loss()
 
@@ -316,5 +319,5 @@ class PPO1:
 if __name__ == "__main__":
 
     env = gym.make("CartPole-v0")
-    algo = PPO1("mlp", env, save_model="checkpoints")
+    algo = PPO1("mlp", env, save_model="checkpoints", render=True)
     algo.learn()

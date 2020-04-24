@@ -182,7 +182,7 @@ class VPG:
         self.policy_hist = Variable(torch.Tensor())
         self.value_hist = Variable(torch.Tensor())
 
-    def update_policy(self, episode):
+    def update_policy(self, episode, copy_policy=False):
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_loss_hist)
         loss_value = torch.mean(self.value_loss_hist)
@@ -204,6 +204,9 @@ class VPG:
         # clear loss history for epoch
         self.policy_loss_hist = Variable(torch.Tensor())
         self.value_loss_hist = Variable(torch.Tensor())
+
+        if copy_policy:
+            pass
 
     def learn(self):
         # training loop
