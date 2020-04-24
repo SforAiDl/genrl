@@ -37,11 +37,13 @@ class HumanOutputFormat:
 
     def write(self, kvs):
         with open(self.file, 'a') as file:
-            sys.stdout = file
             print('\n',file=file)
+            print('\n',file=sys.stdout)
             for key,value in kvs.items():
-                print('{}:{}\n'.format(key, value), file=file)
+                print('{}:{}'.format(key, value), file=file)
+                print('{}:{}'.format(key, value), file=sys.stdout)
             print('\n',file=file)
+            print('\n',file=sys.stdout)
 
     def close(self):
         pass

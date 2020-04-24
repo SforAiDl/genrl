@@ -9,9 +9,11 @@ from jigglypuffRL import (
     TD3, 
     PPO1,
     VPG,
+    SAC,
     Logger, 
     OrnsteinUhlenbeckActionNoise, 
     DDPG,
+    DQN,
     set_seeds,
 )
 
@@ -77,7 +79,7 @@ class OffPolicyTrainer(Trainer):
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
 
-        if self.agent.noise is not None:
+        if 'noise' in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
 
         for t in range(total_steps):
@@ -85,7 +87,7 @@ class OffPolicyTrainer(Trainer):
             if t < self.warmup_steps:
                 action = self.env.action_space.sample()
             else:
-                action = self.agent.select_action(state, deterministic=True)
+                action = self.agent.select_action(state)
 
             next_state, reward, done, info = self.env.step(action)
             if self.render:
@@ -101,7 +103,7 @@ class OffPolicyTrainer(Trainer):
             states = next_state
 
             if done or (episode_len == self.max_ep_len):
-                if self.agent.noise is not None:
+                if 'noise' in self.agent.__dict__ and self.agent.noise is not None:
                     self.agent.noise.reset()
 
                 if episode % self.log_interval == 0:
@@ -190,12 +192,12 @@ class OnPolicyTrainer(Trainer):
 if __name__ == "__main__":
     log_dir = os.getcwd()
     logger = Logger(log_dir, ['stdout'])
-    env = gym.make("CartPole-v0")
-    # algo = TD3("mlp", env, noise=OrnsteinUhlenbeckActionNoise, seed=0)
+    env = gym.make("Pendulum-v0")
+    algo = SAC("mlp", env, seed=0)
 
-    # trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0)
-    # trainer.train()
-    algo = VPG("mlp", env, seed=0)
-    trainer = OnPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=100, log_interval=1)
+    trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0)
     trainer.train()
+    # algo = VPG("mlp", env, seed=0)
+    # trainer = OnPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=100, log_interval=1)
+    # trainer.train()
                 

@@ -189,7 +189,7 @@ class TD3:
         with torch.no_grad():
             action = self.ac_target.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=deterministic,
+                deterministic=True,
             )[0].numpy()
 
         # add noise to output from policy network
