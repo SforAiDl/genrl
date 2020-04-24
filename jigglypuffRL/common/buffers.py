@@ -25,55 +25,46 @@ class ReplayBuffer:
 
 
 class PrioritizedBuffer:
-    def __init__(self, capacity, prob_alpha=0.6):
-        self.prob_alpha = prob_alpha
+    def __init__(self, capacity, alpha=0.6):
+        self.alpha = alpha
         self.capacity = capacity
-        self.buffer = []
-        self.pos = 0
-        self.priorities = np.zeros((capacity,), dtype=np.float32)
+        self.buffer = deque([], maxlen=capacity)
+        self.priorities = deque([], maxlen=capacity)
 
     def push(self, x):
-        state, action, reward, next_state, done = x
-
-        assert state.ndim == next_state.ndim
-
-        max_prio = self.priorities.max() if self.buffer else 1.0
-
-        if len(self.buffer) < self.capacity:
-            self.buffer.append(x)
-        else:
-            self.buffer[self.pos] = x
-
-        self.priorities[self.pos] = max_prio
-        self.pos = (self.pos + 1) % self.capacity
+        max_priority = max(self.priorities) if self.buffer else 1.0
+        self.buffer.append(x)
+        self.priorities.append(max_priority)
 
     def sample(self, batch_size, beta=0.4):
-        if len(self.buffer) == self.capacity:
-            prios = self.priorities
-        else:
-            prios = self.priorities[: self.pos]
-
-        probs = prios ** self.prob_alpha
-        probs /= probs.sum()
-
-        indices = np.random.choice(len(self.buffer), batch_size, p=probs)
-        samples = [self.buffer[idx] for idx in indices]
-
         total = len(self.buffer)
-        weights = (total * probs[indices]) ** (-beta)
+
+        priorities = np.asarray(self.priorities)
+
+        probabilities = priorities ** self.alpha
+        probabilities /= probabilities.sum()
+
+        indices = np.random.choice(
+            total, batch_size, p=probabilities
+        )
+
+        weights = (total * probabilities[indices]) ** (-beta)
         weights /= weights.max()
         weights = np.array(weights, dtype=np.float32)
 
+        samples = np.asarray(self.buffer)[indices]
         states, actions, rewards, next_states, dones = zip(*samples)
 
         return (
             torch.as_tensor(v, dtype=torch.float32)
-            for v in [states, actions, rewards, next_states, dones, indices, weights]
+            for v in [
+                states, actions, rewards, next_states, dones, indices, weights
+            ]
         )
 
     def update_priorities(self, batch_indices, batch_priorities):
-        for idx, prio in zip(batch_indices, batch_priorities):
-            self.priorities[int(idx)] = prio
+        for idx, priority in zip(batch_indices, batch_priorities):
+            self.priorities[int(idx)] = priority
 
     def get_len(self):
         return len(self.buffer)

@@ -4,6 +4,7 @@ import multiprocessing as mp
 
 from abc import ABC, abstractmethod
 
+
 def worker(parent_conn, child_conn, env):
     parent_conn.close()
     while True:
@@ -39,7 +40,7 @@ class VecEnv(ABC):
     """
     Constructs a wrapper for serial execution through envs.
     :param env: (str)
-    :param n_envs: (int) Number of envs. 
+    :param n_envs: (int) Number of envs.
     """
     def __init__(self, env, n_envs=2):
         self.envs = create_envs(env, n_envs)
@@ -81,7 +82,7 @@ class SerialVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
     :param envs: (str)
-    :param n_envs: (int) Number of envs. 
+    :param n_envs: (int) Number of envs.
     """
     def __init__(self, envs, n_envs=2):
         super(SerialVecEnv, self).__init__(envs, n_envs)
@@ -127,13 +128,16 @@ class SerialVecEnv(VecEnv):
     def render(self, mode='human'):
         """
         Renders all envs in a tiles format similar to baselines.
-        :param mode: (str) Can either be 'human' or 'rgb_array'. \
-        Displays tiled images in 'human' and returns tiled images in 'rgb_array'
+        :param mode: (str) Can either be 'human' or 'rgb_array'.
+            Displays tiled images in 'human'
+            and returns tiled images in 'rgb_array'
         """
         images = np.asarray(self.images())
         N, H, W, C = images.shape
         newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
-        images = np.array(list(images) + [images[0] * 0 for _ in range(N, newH * newW)])
+        images = np.array(
+            list(images) + [images[0] * 0 for _ in range(N, newH * newW)]
+        )
         out_image = images.reshape(newH, newW, H, W, C)
         out_image = out_image.transpose(0, 2, 1, 3, 4)
         out_image = out_image.reshape(newH * H, newW * W, C)
@@ -151,15 +155,19 @@ class SubProcessVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
     :param env: (str) Environment Name. Should be registered with OpenAI Gym.
-    :param n_envs: (int) Number of envs. 
+    :param n_envs: (int) Number of envs.
     """
     def __init__(self, env, n_envs=2):
         super(SubProcessVecEnv, self).__init__(env, n_envs)
 
         self.procs = []
-        self.parent_conns, self.child_conns = zip(*[mp.Pipe() for i in range(self._n_envs)])
+        self.parent_conns, self.child_conns = zip(*[
+            mp.Pipe() for i in range(self._n_envs)
+        ])
 
-        for parent_conn, child_conn, env_fn in zip(self.parent_conns, self.child_conns, self.envs):
+        for parent_conn, child_conn, env_fn in zip(
+            self.parent_conns, self.child_conns, self.envs
+        ):
             args = (parent_conn, child_conn, env_fn)
             process = mp.Process(target=worker, args=args, daemon=True)
             process.start()
@@ -179,17 +187,16 @@ class SubProcessVecEnv(VecEnv):
 
     def reset(self):
         for parent_conn in self.parent_conns:
-            parent_conn.send(('reset',None))
+            parent_conn.send(('reset', None))
 
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
         return obs
-
 
     def step(self, actions):
         for parent_conn, action in zip(self.parent_conns, actions):
             parent_conn.send(('step', action))
         self.waiting = True
-        
+
         result = []
         for parent_conn in self.parent_conns:
             result.append(parent_conn.recv())
@@ -198,7 +205,7 @@ class SubProcessVecEnv(VecEnv):
         observations, rewards, dones, infos = zip(*result)
         print(observations, rewards, dones)
         return observations, rewards, dones, infos
-        
+
     def close(self):
         if self.waiting:
             for parent_conn in self.parent_conns:
@@ -214,6 +221,7 @@ def venv(env, n_envs, parallel=False):
         return SubProcessVecEnv(env, n_envs)
     else:
         return SerialVecEnv(env, n_envs)
+
 
 if __name__ == "__main__":
     env = venv('CartPole-v1', 32, parallel=False)

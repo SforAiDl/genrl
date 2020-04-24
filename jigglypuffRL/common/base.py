@@ -4,7 +4,14 @@ from torch.distributions import Categorical, Normal
 
 
 class BasePolicy(nn.Module):
-    def __init__(self, state_dim, action_dim, hidden, discrete, **kwargs):
+    def __init__(
+        self,
+        state_dim,
+        action_dim,
+        hidden,
+        discrete,
+        **kwargs
+    ):
         super(BasePolicy, self).__init__()
 
         self.state_dim = state_dim
