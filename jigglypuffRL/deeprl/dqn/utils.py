@@ -4,6 +4,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+from jigglypuffRL.common.base import BaseValue
+from jigglypuffRL.common.utils import mlp, cnn
+
 
 class DuelingDQNValueMlp(nn.Module):
     def __init__(self, state_dim, action_dim):
@@ -25,6 +28,26 @@ class DuelingDQNValueMlp(nn.Module):
         advantage = self.advantage(x)
         value     = self.value(x)
         return value + advantage  - advantage.mean()
+
+
+class DuelingDQNValueCNN(nn.Module):
+    def __init__(self, action_dim, history_length=4, fc_layers=(256,)):
+        super(DuelingDQNValueCNN, self).__init__()
+
+        self.action_dim = action_dim
+
+        self.conv, output_size = cnn((history_length, 16, 32))
+
+        self.advantage = mlp([output_size] + list(fc_layers) + [action_dim])
+        self.value = mlp([output_size] + list(fc_layers) + [1])
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.view(x.size(0), -1)
+        advantage = self.advantage(x)
+        value = self.value(x)
+        return value + advantage - advantage.mean()
+
 
 class NoisyLinear(nn.Module):
     def __init__(self, in_features, out_features, std_init=0.4):
@@ -95,6 +118,30 @@ class NoisyDQNValue(nn.Module):
         self.noisy_layer_1.reset_noise()
         self.noisy_layer_2.reset_noise()
 
+
+class NoisyDQNValueCNN(nn.Module):
+    def __init__(self, action_dim, history_length=4, fc_layers=(256,)):
+        super(NoisyDQNValueCNN, self).__init__()
+
+        self.conv, output_size = cnn((history_length, 16, 32))
+
+        self.fc = nn.Linear(output_size, 128)
+        self.noisy_layer_1 = NoisyLinear(128, 128)
+        self.noisy_layer_2 = NoisyLinear(128, action_dim)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc(x))
+        x = F.relu(self.noisy_layer_1(x))
+        x = self.noisy_layer_2(x)
+        return x
+
+    def reset_noise(self):
+        self.noisy_layer_1.reset_noise()
+        self.noisy_layer_2.reset_noise()
+
+
 class CategoricalDQNValue(nn.Module):
     def __init__(self, num_inputs, num_actions, num_atoms, Vmin, Vmax):
         super(CategoricalDQNValue, self).__init__()
@@ -118,6 +165,34 @@ class CategoricalDQNValue(nn.Module):
         x = F.softmax(x.view(-1, self.num_atoms)).view(-1, self.num_actions, self.num_atoms)
         return x
         
+    def reset_noise(self):
+        self.noisy1.reset_noise()
+        self.noisy2.reset_noise()
+
+
+class CategoricalDQNValueCNN(nn.Module):
+    def __init__(self, num_inputs, num_actions, num_atoms, Vmin, Vmax, history_length=4, fc_layers=(128, 128)):
+        super(CategoricalDQNValueCNN, self).__init__()
+
+        self.num_inputs = num_inputs
+        self.num_actions = num_actions
+        self.num_atoms = num_atoms
+        self.Vmin = Vmin
+        self.Vmax = Vmax
+
+        self.conv, output_size = cnn((history_length, 16, 32))
+        self.fc = mlp([output_size] + list(fc_layers))
+        self.noisy1 = NoisyLinear(fc_layers[-1], 512)
+        self.noisy2 = NoisyLinear(512, self.num_actions*self.num_atoms)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc(x))
+        x = F.relu(self.noisy1(x))
+        x = self.noisy2(x)
+        return x
+
     def reset_noise(self):
         self.noisy1.reset_noise()
         self.noisy2.reset_noise()

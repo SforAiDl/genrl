@@ -43,11 +43,10 @@ class CNNValue(BaseValue):
     :param val_type: (str) type of value function.
         'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
     :param hidden: (tuple or list) sizes of hidden layers
-    :param disc: (bool) discrete action space?
     """
     def __init__(
         self, action_dim, history_length=4, val_type="Qs",
-        fc_layers=(256,), disc=True
+        fc_layers=(256,)
     ):
         super(CNNValue, self).__init__()
 

@@ -18,10 +18,14 @@ from jigglypuffRL.common import (
     save_params,
     load_params,
 )
+
 from jigglypuffRL.deeprl.dqn.utils import (
-    DuelingDQNValueMlp, 
+    DuelingDQNValueMlp,
+    DuelingDQNValueCNN,
     NoisyDQNValue,
-    CategoricalDQNValue
+    NoisyDQNValueCNN,
+    CategoricalDQNValue,
+    CategoricalDQNValueCNN,
 )
 
 class DQN:
@@ -29,7 +33,7 @@ class DQN:
     Deep Q Networks
     Paper: (DQN) https://arxiv.org/pdf/1312.5602.pdf
     Paper: (Double DQN) https://arxiv.org/abs/1509.06461
-    :param network_type: (str) The deep neural network layer types ['MLP']
+    :param network_type: (str) The deep neural network layer types ['MLP', 'CNN']
     :param env: (Gym environment) The environment to learn from
     :param double_dqn: (boolean) For training Double DQN
     :param dueling_dqn: (boolean) For training Dueling DQN
@@ -126,7 +130,6 @@ class DQN:
             self.device = torch.device("cpu")
 
         self.device = torch.device("cuda")
-        print(self.device)
 
         # Assign seed
         if seed is not None:
@@ -201,11 +204,31 @@ class DQN:
                 ], maxlen=self.history_length
             )
 
-            self.model = get_model("v", self.network_type)(
-                self.env.action_space.n,
-                self.history_length,
-                "Qs"
-            )
+            if self.dueling_dqn:
+                self.model = DuelingDQNValueCNN(
+                    self.env.action_space.n,
+                    self.history_length
+                )
+            elif self.noisy_dqn:
+                self.model = NoisyDQNValueCNN(
+                    self.env.action_space.n,
+                    self.history_length
+                )
+            elif self.categorical_dqn:
+                self.model = CategoricalDQNValueCNN(
+                    self.env.observation_space.shape[0],
+                    self.env.action_space.n,
+                    self.num_atoms,
+                    self.Vmin,
+                    self.Vmax,
+                    self.history_length
+                )
+            else:
+                self.model = get_model("v", self.network_type)(
+                    self.env.action_space.n,
+                    self.history_length,
+                    "Qs"
+                )
 
         self.target_model = deepcopy(self.model)
 
@@ -301,7 +324,6 @@ class DQN:
 
         elif (not self.prioritized_replay) and (not self.categorical_dqn):
             loss = (q_value - expected_q_value.detach()).pow(2).mean()
-        # loss = F.smooth_l1_loss(q_value,expected_q_value)
 
         else:
             pass
@@ -448,5 +470,5 @@ class DQN:
 
 if __name__ == "__main__":
     env = gym.make("Breakout-v0")
-    algo = DQN("cnn", env)
+    algo = DQN("mlp", env, prioritized_replay=False)
     algo.learn()
