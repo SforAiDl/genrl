@@ -2,7 +2,6 @@ import os
 
 import gym
 import torch
-import random
 import numpy as np
 
 from jigglypuffRL import (
@@ -16,8 +15,9 @@ from jigglypuffRL import (
     DQN,
     set_seeds,
 )
+from abc import ABC
 
-class Trainer():
+class Trainer(ABC):
     def __init__(self, agent, env, logger, buffer=None, off_policy=False, save_interval=0,
                  render=False, max_ep_len=1000, distributed=False, ckpt_log_name='experiment',
                  steps_per_epoch=4000, epochs=10, device='cpu', log_interval=10, batch_size=50,
@@ -26,7 +26,7 @@ class Trainer():
         self.env = env
         self.logger = logger
         self.off_policy = off_policy
-        if self.off_policy and buffer==None:
+        if self.off_policy and buffer is None:
             if self.agent.replay_buffer is None:
                 raise Exception("Off Policy Training requires a Replay Buffer")
             else:
@@ -55,7 +55,7 @@ class Trainer():
 
         save_dir = '{}/checkpoints/{}_{}'.format(logdir, algo, env_name)
         os.makedirs(save_dir, exist_ok=True)
-        torch.save('{}/{}.pt'.format(save_dir, self.ckpt_log_name))
+        torch.save(saving_params, '{}/{}.pt'.format(save_dir, self.ckpt_log_name))
 
     @property
     def n_envs(self):
