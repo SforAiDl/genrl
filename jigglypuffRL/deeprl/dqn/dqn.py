@@ -17,7 +17,7 @@ from jigglypuffRL.common import (
     load_params,
 )
 from jigglypuffRL.deeprl.dqn.utils import (
-    DuelingDQNValueMlp, 
+    DuelingDQNValueMlp,
     NoisyDQNValue,
     CategoricalDQNValue
 )
@@ -299,7 +299,7 @@ class DQN:
     def calculate_epsilon_by_frame(self, frame_idx):
         return (
             self.min_epsilon
-            + (self.max_epsilon - self.min_epsilon) 
+            + (self.max_epsilon - self.min_epsilon)
             * np.exp(-1.0 * frame_idx / self.epsilon_decay)
         )
 
@@ -417,5 +417,5 @@ class DQN:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env, prioritized_replay=True)
+    algo = DQN("mlp", env, epochs=300, noisy_dqn=True)
     algo.learn()
