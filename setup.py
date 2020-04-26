@@ -80,6 +80,7 @@ CONFIG = {
     "url": REPOSITORY,
     "project_urls": {"Source": REPOSITORY},
     "packages": find_packages(where=PROJECT, exclude=EXCLUDES),
+    "install_requires": list(get_requires()),
     "python_requires": ">=3.6",
 }
 
