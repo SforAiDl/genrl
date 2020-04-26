@@ -24,3 +24,7 @@ from jigglypuffRL.common.noise import (  # noqa
     OrnsteinUhlenbeckActionNoise,
 )
 from jigglypuffRL.common.logger import Logger
+from jigglypuffRL.common.trainer import (
+    OffPolicyTrainer,
+    OnPolicyTrainer,
+)
