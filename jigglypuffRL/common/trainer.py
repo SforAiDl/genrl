@@ -4,17 +4,17 @@ import gym
 import torch
 import numpy as np
 
-from jigglypuffRL import (
-    TD3, 
-    PPO1,
-    VPG,
-    SAC,
-    Logger, 
-    OrnsteinUhlenbeckActionNoise, 
-    DDPG,
-    DQN,
-    set_seeds,
-)
+#from jigglypuffRL import (
+#    TD3, 
+#    PPO1,
+#    VPG,
+#    SAC,
+#    Logger, 
+#    OrnsteinUhlenbeckActionNoise, 
+3    DDPG,
+#    DQN,
+#    set_seeds,
+#)
 from abc import ABC
 
 class Trainer(ABC):
@@ -202,12 +202,12 @@ if __name__ == "__main__":
     log_dir = os.getcwd()
     logger = Logger(log_dir, ['stdout'])
     env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env, seed=0)
+#    algo = SAC("mlp", env, seed=0)
 
     import time
     start = time.time()
-    trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=10)
-    trainer.train()
+#    trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=10)
+#    trainer.train()
     end = time.time()
 
     print(end-start)
