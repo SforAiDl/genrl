@@ -21,7 +21,7 @@ class Trainer():
     def __init__(self, agent, env, logger, buffer=None, off_policy=False, save_interval=0,
                  render=False, max_ep_len=1000, distributed=False, ckpt_log_name='experiment',
                  steps_per_epoch=4000, epochs=10, device='cpu', log_interval=10, batch_size=50,
-                 seed=None):
+                 seed=None, deterministic_actions=False):
         self.agent = agent
         self.env = env
         self.logger = logger
@@ -40,6 +40,7 @@ class Trainer():
         self.device = device
         self.log_interval = log_interval
         self.batch_size = batch_size
+        self.determinsitic_actions = deterministic_actions
         if seed is not None:
             set_seeds(seed, self.env)
 
@@ -65,12 +66,12 @@ class OffPolicyTrainer(Trainer):
     def __init__(self, agent, env, logger, buffer=None, off_policy=True, save_interval=0,
                  render=False, max_ep_len=1000, distributed=False, ckpt_log_name='experiment',
                  steps_per_epoch=4000, epochs=10, device='cpu', log_interval=10, batch_size=50,
-                 warmup_steps=1000, start_update=1000, update_interval=50, seed=0):
+                 warmup_steps=10000, start_update=1000, update_interval=50, seed=0, deterministic_actions=False):
         super(OffPolicyTrainer, self).__init__(agent, env, logger, buffer, 
                                                off_policy, save_interval, render, max_ep_len,
                                                distributed, ckpt_log_name,steps_per_epoch, 
-                                               epochs, device, log_interval, batch_size, seed
-                                               )
+                                               epochs, device, log_interval, batch_size, seed,
+                                               deterministic_actions)
         self.warmup_steps = warmup_steps
         self.update_interval = update_interval
         self.start_update = start_update
@@ -78,6 +79,7 @@ class OffPolicyTrainer(Trainer):
     def train(self):
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
+        # self.agent.learn()
 
         if 'noise' in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
@@ -87,7 +89,10 @@ class OffPolicyTrainer(Trainer):
             if t < self.warmup_steps:
                 action = self.env.action_space.sample()
             else:
-                action = self.agent.select_action(state)
+                if self.determinsitic_actions:
+                    action = self.agen.select_action(state, deterministic=True)
+                else:
+                    action = self.agent.select_action(state)
 
             next_state, reward, done, info = self.env.step(action)
             if self.render:
@@ -100,7 +105,7 @@ class OffPolicyTrainer(Trainer):
 
             self.buffer.push((state, action, reward, next_state, done))
 
-            states = next_state
+            state = next_state
 
             if done or (episode_len == self.max_ep_len):
                 if 'noise' in self.agent.__dict__ and self.agent.noise is not None:
@@ -122,7 +127,7 @@ class OffPolicyTrainer(Trainer):
                     )
                     if self.agent.__class__.__name__ == "TD3":
                         self.agent.update_params(
-                            states, actions, next_states, rewards, dones, t
+                            states, actions, next_states, rewards, dones, _
                         )
                     else:
                         self.agent.update_params(
@@ -142,12 +147,13 @@ class OnPolicyTrainer(Trainer):
     def __init__(self, agent, env, logger, save_interval=0, render=False, 
                  max_ep_len=1000, distributed=False, ckpt_log_name='experiment', 
                  steps_per_epoch=4000, epochs=10, device='cpu', log_interval=10, 
-                 batch_size=50, seed=None):
+                 batch_size=50, seed=None, deterministic_actions=False):
         super().__init__(agent, env, logger, buffer=None, off_policy=False, 
                          save_interval=save_interval, render=render, max_ep_len=max_ep_len, 
                          distributed=distributed, ckpt_log_name=ckpt_log_name, 
                          steps_per_epoch=steps_per_epoch, epochs=epochs, device=device, 
-                         log_interval=log_interval, batch_size=batch_size, seed=seed)
+                         log_interval=log_interval, batch_size=batch_size, seed=seed,
+                         deterministic_actions=deterministic_actions)
 
     def train(self):
        for episode in range(self.epochs):
@@ -160,7 +166,10 @@ class OnPolicyTrainer(Trainer):
                 done = False
 
                 for t in range(self.agent.timesteps_per_actorbatch):
-                    action = self.agent.select_action(state)
+                    if self.determinsitic_actions:
+                        action = self.agent.select_action(state, deterministic=True)
+                    else:
+                        action = self.agent.select_action(state)
                     state, reward, done, _ = self.env.step(np.array(action))
 
                     if self.render:
@@ -195,8 +204,13 @@ if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
     algo = SAC("mlp", env, seed=0)
 
-    trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0)
+    import time
+    start = time.time()
+    trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=10)
     trainer.train()
+    end = time.time()
+
+    print(end-start)
     # algo = VPG("mlp", env, seed=0)
     # trainer = OnPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=100, log_interval=1)
     # trainer.train()
