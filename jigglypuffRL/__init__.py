@@ -8,6 +8,9 @@ from jigglypuffRL.common import (  # noqa
     save_params,
     load_params,
     evaluate,
+    venv,
+    SerialVecEnv,
+    SubProcessVecEnv,
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise,
 )

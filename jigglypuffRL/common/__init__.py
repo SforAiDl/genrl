@@ -14,6 +14,11 @@ from jigglypuffRL.common.utils import (  # noqa
     save_params,
     load_params,
 )
+from jigglypuffRL.common.VecEnv import ( #noqa
+    SerialVecEnv, 
+    SubProcessVecEnv,
+    venv
+)
 from jigglypuffRL.common.noise import (  # noqa
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise,
