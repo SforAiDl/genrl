@@ -11,7 +11,7 @@ import numpy as np
 #    SAC,
 #    Logger, 
 #    OrnsteinUhlenbeckActionNoise, 
-3    DDPG,
+#    DDPG,
 #    DQN,
 #    set_seeds,
 #)
