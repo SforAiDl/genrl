@@ -1,6 +1,6 @@
 import gym
 
-from jigglypuffRL import Trainer, OffPolicyTrainer, OnPolicyTrainer, PPO1, TD3, Logger
+from jigglypuffRL import OffPolicyTrainer, OnPolicyTrainer, PPO1, TD3, Logger
 
 def test_on_policy_trainer():
     logger = Logger()
