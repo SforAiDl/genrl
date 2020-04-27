@@ -4,16 +4,9 @@ import gym
 import torch
 import numpy as np
 
-from jigglypuffRL import (
-    TD3, 
-    PPO1,
-    VPG,
-    SAC,
-    Logger, 
-    OrnsteinUhlenbeckActionNoise, 
-    DDPG,
-    DQN,
+from jigglypuffRL.common import (
     set_seeds,
+    Logger
 )
 from abc import ABC
 
