@@ -14,6 +14,6 @@ def test_off_policy_trainer():
     logger = Logger()
     env = gym.make("Pendulum-v0")
     algo = TD3("mlp", env)
-    trainer = OnPolicyTrainer(algo, env, logger)
+    trainer = OffPolicyTrainer(algo, env, logger)
     assert trainer.off_policy == True
     trainer.train()
