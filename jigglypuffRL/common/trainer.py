@@ -4,17 +4,17 @@ import gym
 import torch
 import numpy as np
 
-#from jigglypuffRL import (
-#    TD3, 
-#    PPO1,
-#    VPG,
-#    SAC,
-#    Logger, 
-#    OrnsteinUhlenbeckActionNoise, 
-#    DDPG,
-#    DQN,
-#    set_seeds,
-#)
+from jigglypuffRL import (
+    TD3, 
+    PPO1,
+    VPG,
+    SAC,
+    Logger, 
+    OrnsteinUhlenbeckActionNoise, 
+    DDPG,
+    DQN,
+    set_seeds,
+)
 from abc import ABC
 
 class Trainer(ABC):
