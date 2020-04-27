@@ -112,7 +112,7 @@ class OffPolicyTrainer(Trainer):
                     self.agent.noise.reset()
 
                 if episode % self.log_interval == 0:
-                    logger.write({'timestep':t,'Episode':episode,
+                    self.logger.write({'timestep':t,'Episode':episode,
                                   'Episode Reward':episode_reward})
 
                 state, episode_reward, episode_len = self.env.reset(), 0, 0
@@ -188,7 +188,7 @@ class OnPolicyTrainer(Trainer):
             self.agent.update_policy(episode, episode % self.agent.policy_copy_interval == 0)
 
             if episode % self.log_interval == 0:
-                logger.write({'Episode':episode, 'Reward':epoch_reward, 'Timestep':i*episode*self.agent.timesteps_per_actorbatch})
+                self.logger.write({'Episode':episode, 'Reward':epoch_reward, 'Timestep':i*episode*self.agent.timesteps_per_actorbatch})
 
             if self.save_interval!=0 and episode % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
