@@ -5,7 +5,7 @@ class TabularModel:
         self.s_model = np.zeros((s_dim, a_dim), dtype=np.uint8)
         self.r_model = np.zeros((s_dim, a_dim))
 
-    def add(self, s, a, s_, r):
+    def add(self, s, a, r, s_):
         self.s_model[s, a] = s_
         self.r_model[s,a] = r
 
