@@ -8,3 +8,4 @@ from jigglypuffRL.classicalrl.bandit import (  # noqa
     BayesianUCBBernoulliBandit,
     ThompsonSampling,
 )
+from jigglypuffRL.classicalrl.common import TabularModel, OnPolicyTrainer, Trainer

@@ -7,7 +7,7 @@ class TabularModel:
 
     def add(self, s, a, s_, r):
         self.s_model[s, a] = s_
-        self.rewards[s,a] = r
+        self.r_model[s,a] = r
 
     def sample(self):
         # select random visited state
@@ -16,6 +16,13 @@ class TabularModel:
         a = np.random.choice(np.where(self.s_model[s] > 0)[0])
 
     def step(self, s, a):
+        r = self.r_model[s,a]
         s_ = self.s_model[s,a]
-        r = self.s_model[s,a]
-        return s_, r
+        return r, s_
+
+model_registry = {
+    'tabular': TabularModel
+}
+
+def get_model_from_name(name_):
+    return model_registry[name_]
