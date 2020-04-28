@@ -3,10 +3,12 @@ import numpy as np
 from jigglypuffRL.classicalrl.common.models import get_model_from_name
 
 class Trainer:
-    def __init__(self, agent, env, mode, model, seed):
+    def __init__(self, agent, env, mode='learn', model=None, n_episodes=100, batch_size=50, plan_n_steps=50, seed):
         self.agent = agent
         self.env = env
-        self.model = model
+        self.n_episodes = n_episodes
+        self.batch_size = batch_size
+        self.plan_n_steps = plan_n_steps
 
         if mode == 'learn':
             self.learning = True
@@ -24,6 +26,9 @@ class Trainer:
         self.s_dim = self.env.observation_space.n
         self.a_dim = self.env.action_space.n
 
+        if self.planning == True and model is not None:
+            self.model = get_model_from_name(model)()
+
     def learn(self, transitions):
         self.agent.update(transitions)
 
@@ -34,21 +39,6 @@ class Trainer:
             self.agent.update((s, a, r, s_))
 
     def train(self):
-        raise NotImplementedError        
-
-
-class OnPolicyTrainer(Trainer):
-    def __init__(self, agent, env, mode='learn', model=None, n_episodes=100, batch_size=50, plan_n_steps=50, seed=None):
-        super(OnPolicyTrainer, self).__init__(agent, env, mode, model, seed)
-
-        if self.planning == True and model is not None:
-            self.model = get_model_from_name(model)()
-        
-        self.n_episodes = n_episodes
-        self.batch_size = batch_size
-        self.plan_n_steps = plan_n_steps
-
-    def train(self):
         t = 0
         s = self.env.reset()
 
@@ -57,7 +47,11 @@ class OnPolicyTrainer(Trainer):
             s_, r, done, _ = env.step(a)
             
             if self.learning == True:
-                self.learn((s, a, r, s_))
+                b_s, b_a, b_r, b_s_ = s, a, r, s_
+                if self.algo.is_off_policy:
+                    self.agent.buffer.push((s,a,r,s_))
+                    b_s, b_a, b_r, b_s_ = self.agent.buffer.sample(batch_size)
+                self.learn((b_s, b_a, b_r, b_s_))
 
             if self.planning == True:
                 self.model.add(s, a, r, s_)
