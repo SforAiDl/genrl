@@ -3,7 +3,6 @@ import gym
 import matplotlib.pyplot as plt
 
 from jigglypuffRL.classicalrl.common.models import get_model_from_name
-from jigglypuffRL.classicalrl import QLearning, SARSA
 
 
 class Trainer:
