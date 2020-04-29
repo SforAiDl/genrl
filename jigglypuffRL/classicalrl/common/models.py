@@ -14,6 +14,7 @@ class TabularModel:
         s = np.random.choice(np.where(np.sum(self.s_model, axis=1) > 0)[0])
         # random action in that state
         a = np.random.choice(np.where(self.s_model[s] > 0)[0])
+        return s, a
 
     def step(self, s, a):
         r = self.r_model[s,a]

@@ -9,7 +9,7 @@ from jigglypuffRL.classicalrl import (
 )
 
 class Trainer:
-    def __init__(self, agent, env, mode='learn', model=None, n_episodes=30000, plan_n_steps=50, start_steps=10000, seed=None, render=False):
+    def __init__(self, agent, env, mode='learn', model=None, n_episodes=30000, plan_n_steps=3, start_steps=5000, seed=None, render=False):
         self.agent = agent
         self.env = env
         self.n_episodes = n_episodes
@@ -31,13 +31,15 @@ class Trainer:
             np.random.seed(seed)
 
         if self.planning == True and model is not None:
-            self.model = get_model_from_name(model)()
+            self.model = get_model_from_name(model)(
+                self.env.observation_space.n, self.env.action_space.n
+            )
 
     def learn(self, transitions):
         self.agent.update(transitions)
 
-    def plan(self, n_steps):
-        for i in range(n_steps):
+    def plan(self):
+        for i in range(self.plan_n_steps):
             s, a = self.model.sample()
             r, s_ = self.model.step(s, a)
             self.agent.update((s, a, r, s_))
@@ -65,7 +67,7 @@ class Trainer:
 
             if self.planning == True:
                 self.model.add(s, a, r, s_)
-                self.plan(self.plan_n_steps)
+                self.plan()
 
             s = s_
             if done == True:
@@ -98,7 +100,7 @@ class Trainer:
 
 if __name__ == '__main__':
     env = gym.make('FrozenLake-v0')
-    agent = SARSA(env)
-    trainer = Trainer(agent, env, seed=42, n_episodes=20000)
+    agent = QLearning(env)
+    trainer = Trainer(agent, env, mode='dyna', model='tabular', seed=42, n_episodes=10000)
     ep_rs = trainer.train()
     trainer.plot(ep_rs)
