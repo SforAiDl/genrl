@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 
 from jigglypuffRL.classicalrl.common.models import get_model_from_name
 from jigglypuffRL.classicalrl import (
-    QLearning
+    QLearning,
+    SARSA
 )
 
 class Trainer:
@@ -97,7 +98,7 @@ class Trainer:
 
 if __name__ == '__main__':
     env = gym.make('FrozenLake-v0')
-    agent = QLearning(env)
-    trainer = Trainer(agent, env, seed=42, n_episodes=50000)
+    agent = SARSA(env)
+    trainer = Trainer(agent, env, seed=42, n_episodes=20000)
     ep_rs = trainer.train()
     trainer.plot(ep_rs)
