@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class TabularModel:
     def __init__(self, s_dim, a_dim):
         self.s_model = np.zeros((s_dim, a_dim), dtype=np.uint8)
@@ -7,7 +8,7 @@ class TabularModel:
 
     def add(self, s, a, r, s_):
         self.s_model[s, a] = s_
-        self.r_model[s,a] = r
+        self.r_model[s, a] = r
 
     def sample(self):
         # select random visited state
@@ -17,13 +18,13 @@ class TabularModel:
         return s, a
 
     def step(self, s, a):
-        r = self.r_model[s,a]
-        s_ = self.s_model[s,a]
+        r = self.r_model[s, a]
+        s_ = self.s_model[s, a]
         return r, s_
 
-model_registry = {
-    'tabular': TabularModel
-}
+
+model_registry = {"tabular": TabularModel}
+
 
 def get_model_from_name(name_):
     return model_registry[name_]
