@@ -1,4 +1,5 @@
 from jigglypuffRL.classicalrl.sarsa import SARSA  # noqa
+from jigglypuffRL.classicalrl.qlearning import QLearning
 from jigglypuffRL.classicalrl.bandit import (  # noqa
     EpsGreedyBernoulliBandit,
     EpsGreedyGaussianBandit,
@@ -8,4 +9,4 @@ from jigglypuffRL.classicalrl.bandit import (  # noqa
     BayesianUCBBernoulliBandit,
     ThompsonSampling,
 )
-from jigglypuffRL.classicalrl.common import TabularModel, OnPolicyTrainer, Trainer
+from jigglypuffRL.classicalrl.common import TabularModel, Trainer
