@@ -25,5 +25,4 @@ from jigglypuffRL.classicalrl import (  # noqa
     UCBGaussianBandit,
     BayesianUCBBernoulliBandit,
     ThompsonSampling,
-    SARSA,
 )

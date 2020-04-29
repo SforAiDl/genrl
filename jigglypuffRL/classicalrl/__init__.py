@@ -1,4 +1,3 @@
-from jigglypuffRL.classicalrl.sarsa import SARSA  # noqa
 from jigglypuffRL.classicalrl.qlearning import QLearning
 from jigglypuffRL.classicalrl.bandit import (  # noqa
     EpsGreedyBernoulliBandit,

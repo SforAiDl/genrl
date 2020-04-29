@@ -8,12 +8,13 @@ from jigglypuffRL.classicalrl import (
 )
 
 class Trainer:
-    def __init__(self, agent, env, mode='learn', model=None, n_episodes=30000, plan_n_steps=50, start_steps=10000, seed=None):
+    def __init__(self, agent, env, mode='learn', model=None, n_episodes=30000, plan_n_steps=50, start_steps=10000, seed=None, render=False):
         self.agent = agent
         self.env = env
         self.n_episodes = n_episodes
         self.plan_n_steps = plan_n_steps
         self.start_steps = start_steps
+        self.render = render
 
         if mode == 'learn':
             self.learning = True
@@ -52,7 +53,10 @@ class Trainer:
                 a = self.env.action_space.sample()
             else:
                 a = self.agent.get_action(s)
+
             s_, r, done, _ = env.step(a)
+            if self.render == True:
+                self.env.render()
             ep_r += r
             
             if self.learning == True:
@@ -76,6 +80,8 @@ class Trainer:
                 ep_r = 0
                 
             t += 1
+        self.env.close()
+
         return ep_rs
 
     def plot(self, results, window_size=100):
