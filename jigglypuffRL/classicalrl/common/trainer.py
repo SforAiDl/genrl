@@ -40,7 +40,10 @@ class Trainer:
 
     def train(self):
         t = 0
+        ep = 0
         s = self.env.reset()
+        ep_r = 0
+        ep_rs = []
 
         while True:
             a = self.agent.get_action()
@@ -59,6 +62,10 @@ class Trainer:
 
             s = s_
             if done == True:
+                ep_rs.append(ep_r)
+                print('Episode: {}, Reward: {}, timestep: {}'.format(ep, ep_r, t))
+                ep += 1
                 s = self.env.reset()
+                ep_r = 0
                 
             t += 1
