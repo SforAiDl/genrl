@@ -2,6 +2,11 @@ import numpy as np
 
 
 class TabularModel:
+    """
+    Sample-based tabular model class for deterministic, discrete environments
+    :param s_dim: (int) environment state dimension
+    :param a_dim: (int) environment action dimension
+    """
     def __init__(self, s_dim, a_dim):
         self.s_model = np.zeros((s_dim, a_dim), dtype=np.uint8)
         self.r_model = np.zeros((s_dim, a_dim))
@@ -27,4 +32,8 @@ model_registry = {"tabular": TabularModel}
 
 
 def get_model_from_name(name_):
+    """
+    get model object from name
+    :param name_: (str) name of the model ['tabular']
+    """
     return model_registry[name_]

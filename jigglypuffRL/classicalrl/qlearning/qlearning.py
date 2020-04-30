@@ -2,6 +2,14 @@ import numpy as np
 
 
 class QLearning:
+    """
+    Q-Learning Algorithm
+    Paper: https://link.springer.com/article/10.1007/BF00992698
+    :param env: (gym environment) standard gym environment to train on
+    :param epsilon: (float) exploration coefficient
+    :param gamma: (float) discount factor
+    :param lr: (float) learning rate
+    """
     def __init__(self, env, epsilon=0.9, gamma=0.95, lr=0.01):
         self.env = env
         self.epsilon = epsilon

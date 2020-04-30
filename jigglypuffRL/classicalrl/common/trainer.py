@@ -6,6 +6,18 @@ from jigglypuffRL.classicalrl.common.models import get_model_from_name
 
 
 class Trainer:
+    """
+    Global trainer class for classical RL algorithms
+    :param agent: (object) Algorithm object to train
+    :param env: (gym environment) standard gym environment to train on
+    :param mode: (str) mode of value function update ['learn', 'plan', 'dyna']
+    :param model: (str) model to use for planning ['tabular']
+    :param n_episodes: (int) number of training episodes
+    :param plan_n_steps: (int) number of planning step per environment interaction
+    :param start_steps: (int) number of initial exploration timesteps
+    :param seed: (int) seed for random number generator
+    :param render: (bool) render gym environment
+    """
     def __init__(
         self,
         agent,

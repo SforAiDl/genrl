@@ -2,6 +2,15 @@ import numpy as np
 
 
 class SARSA:
+    """
+    SARSA Algorithm
+    Paper: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2539&rep=rep1&type=pdf
+    :param env: (gym environment) standard gym environment to train on
+    :param epsilon: (float) exploration coefficient
+    :param lmbda: (float) eligibility trace coefficient
+    :param gamma: (float) discount factor
+    :param lr: (float) learning rate
+    """
     def __init__(self, env, epsilon=0.9, lmbda=0.9, gamma=0.95, lr=0.01):
         self.env = env
         self.epsilon = epsilon
