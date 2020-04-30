@@ -247,7 +247,7 @@ class DQN:
     def select_action(self, state):
         if np.random.rand() > self.epsilon:
             if self.categorical_dqn:
-                state = Variable(torch.FloatTensor(state).unsqueeze(0), volatile=True)
+                state = Variable(torch.FloatTensor(state), volatile=True)
                 dist = self.model(state).data.cpu()
                 dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
                 action = dist.sum(2).max(1)[1].numpy()[0]
@@ -409,12 +409,13 @@ class DQN:
                 self.replay_buffer.push((
                     phi_state, action, reward, phi_next_state, done
                 ))
+                phi_state = phi_next_state
             else:
                 self.replay_buffer.push((
                     state, action, reward, next_state, done
                 ))
+                state = next_state
 
-            state = next_state
             episode_reward += reward
             episode_len += 1
 
@@ -470,5 +471,5 @@ class DQN:
 
 if __name__ == "__main__":
     env = gym.make("Breakout-v0")
-    algo = DQN("mlp", env, prioritized_replay=False)
+    algo = DQN("cnn", env, double_dqn=True, prioritized_replay=True)
     algo.learn()

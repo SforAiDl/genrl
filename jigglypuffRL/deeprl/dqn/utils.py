@@ -171,7 +171,16 @@ class CategoricalDQNValue(nn.Module):
 
 
 class CategoricalDQNValueCNN(nn.Module):
-    def __init__(self, num_inputs, num_actions, num_atoms, Vmin, Vmax, history_length=4, fc_layers=(128, 128)):
+    def __init__(
+        self,
+        num_inputs,
+        num_actions,
+        num_atoms,
+        Vmin,
+        Vmax,
+        history_length=4,
+        fc_layers=(128, 128)
+    ):
         super(CategoricalDQNValueCNN, self).__init__()
 
         self.num_inputs = num_inputs
@@ -191,6 +200,9 @@ class CategoricalDQNValueCNN(nn.Module):
         x = F.relu(self.fc(x))
         x = F.relu(self.noisy1(x))
         x = self.noisy2(x)
+        x = F.softmax(x.view(-1, self.num_atoms)).view(
+            -1, self.num_actions, self.num_atoms
+        )
         return x
 
     def reset_noise(self):
