@@ -18,6 +18,7 @@ class Trainer:
     :param seed: (int) seed for random number generator
     :param render: (bool) render gym environment
     """
+
     def __init__(
         self,
         agent,

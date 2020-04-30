@@ -10,6 +10,7 @@ class QLearning:
     :param gamma: (float) discount factor
     :param lr: (float) learning rate
     """
+
     def __init__(self, env, epsilon=0.9, gamma=0.95, lr=0.01):
         self.env = env
         self.epsilon = epsilon
