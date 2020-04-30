@@ -9,6 +9,9 @@ class TabularModel:
     """
 
     def __init__(self, s_dim, a_dim):
+        self.s_dim = s_dim
+        self.a_dim = a_dim
+
         self.s_model = np.zeros((s_dim, a_dim), dtype=np.uint8)
         self.r_model = np.zeros((s_dim, a_dim))
 
@@ -27,6 +30,9 @@ class TabularModel:
         r = self.r_model[s, a]
         s_ = self.s_model[s, a]
         return r, s_
+
+    def is_empty(self):
+        return not (np.all(self.s_model) and np.all(self.r_model))
 
 
 model_registry = {"tabular": TabularModel}

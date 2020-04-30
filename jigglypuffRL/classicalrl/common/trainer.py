@@ -28,6 +28,7 @@ class Trainer:
         n_episodes=30000,
         plan_n_steps=3,
         start_steps=5000,
+        start_plan=50,
         seed=None,
         render=False,
     ):
@@ -36,6 +37,7 @@ class Trainer:
         self.n_episodes = n_episodes
         self.plan_n_steps = plan_n_steps
         self.start_steps = start_steps
+        self.start_plan = start_plan
         self.render = render
 
         if mode == "learn":
@@ -86,7 +88,7 @@ class Trainer:
             if self.learning == True:
                 self.learn((s, a, r, s_))
 
-            if self.planning == True:
+            if self.planning == True and t > self.start_plan and not self.model.is_empty():
                 self.model.add(s, a, r, s_)
                 self.plan()
 
