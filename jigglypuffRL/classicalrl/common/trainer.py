@@ -77,7 +77,7 @@ class Trainer:
             else:
                 a = self.agent.get_action(s)
 
-            s_, r, done, _ = env.step(a)
+            s_, r, done, _ = self.env.step(a)
             if self.render == True:
                 self.env.render()
             ep_r += r
