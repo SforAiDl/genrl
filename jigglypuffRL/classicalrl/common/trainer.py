@@ -59,58 +59,73 @@ class Trainer:
             )
 
     def learn(self, transitions):
+        """
+        learn from transition tuples
+        :param transitions: (tuple) s, a, r, s' transition
+        """
         self.agent.update(transitions)
 
     def plan(self):
+        """
+        plans on samples drawn from model
+        """
         for i in range(self.plan_n_steps):
             s, a = self.model.sample()
             r, s_ = self.model.step(s, a)
             self.agent.update((s, a, r, s_))
 
     def train(self):
-        t = 0
+        """
+        general training loop for classical RL
+        """
+        timestep = 0
         ep = 0
-        s = self.env.reset()
-        ep_r = 0
-        ep_rs = []
+        state = self.env.reset()
+        ep_rew = 0
+        ep_rews = []
 
         while True:
-            if t <= self.start_steps:
-                a = self.env.action_space.sample()
+            if timestep <= self.start_steps:
+                action = self.env.action_space.sample()
             else:
-                a = self.agent.get_action(s)
+                action = self.agent.get_action(state)
 
-            s_, r, done, _ = self.env.step(a)
+            next_state, reward, done, _ = self.env.step(action)
             if self.render == True:
                 self.env.render()
-            ep_r += r
+            ep_rew += reward
 
             if self.learning == True:
-                self.learn((s, a, r, s_))
+                self.learn((state, action, reward, next_state))
 
-            if self.planning == True and t > self.start_plan and not self.model.is_empty():
-                self.model.add(s, a, r, s_)
+            if self.planning == True and timestep > self.start_plan and not self.model.is_empty():
+                self.model.add(state, action, reward, next_state)
                 self.plan()
 
-            s = s_
+            state = next_state
             if done == True:
-                ep_rs.append(ep_r)
+                ep_rews.append(ep_rew)
                 if ep % 100 == 0:
-                    print("Episode: {}, Reward: {}, timestep: {}".format(ep, ep_r, t))
+                    print("Episode: {}, Reward: {}, timestep: {}".format(ep, ep_rew, timestep))
 
                 if ep == self.n_episodes:
                     break
 
                 ep += 1
-                s = self.env.reset()
-                ep_r = 0
+                state = self.env.reset()
+                ep_rew = 0
 
-            t += 1
+            timestep += 1
         self.env.close()
 
-        return ep_rs
+        return ep_rews
 
     def plot(self, results, window_size=100):
+        """
+        plot model rewards
+        :param results: (list) rewards for each episode
+        :param window_size: (int) size of moving average filter
+        """
         avgd_results = [0] * len(results)
         for i in range(window_size, len(results)):
             avgd_results[i] = np.mean(results[i - window_size : i])
