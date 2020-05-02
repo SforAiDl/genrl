@@ -26,4 +26,5 @@ from jigglypuffRL.classicalrl import (  # noqa
     BayesianUCBBernoulliBandit,
     ThompsonSampling,
     SARSA,
+    QLearning
 )
