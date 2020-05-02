@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.optim as opt
 import gym
 from copy import deepcopy
-import random
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
@@ -14,6 +13,7 @@ from jigglypuffRL.common import (
     save_params,
     load_params,
     evaluate,
+    set_seeds,
 )
 
 
@@ -113,12 +113,7 @@ class SAC:
 
         # Assign seed
         if seed is not None:
-            torch.manual_seed(seed)
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
-            np.random.seed(seed)
-            self.env.seed(seed)
-            random.seed(seed)
+            set_seeds(seed, self.env)
 
         # Setup tensorboard writer
         self.writer = None

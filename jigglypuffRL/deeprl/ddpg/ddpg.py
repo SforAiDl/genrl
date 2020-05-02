@@ -4,7 +4,6 @@ import torch.nn as nn
 import torch.optim as opt
 import gym
 from copy import deepcopy
-import random
 
 from jigglypuffRL.common import (
     ReplayBuffer,
@@ -13,6 +12,7 @@ from jigglypuffRL.common import (
     save_params,
     load_params,
     OrnsteinUhlenbeckActionNoise,
+    set_seeds,
 )
 
 
@@ -113,12 +113,7 @@ class DDPG:
 
         # Assign seed
         if seed is not None:
-            torch.manual_seed(seed)
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
-            np.random.seed(seed)
-            self.env.seed(seed)
-            random.seed(seed)
+            set_seeds(seed, self.env)
 
         # Setup tensorboard writer
         self.writer = None
@@ -164,7 +159,7 @@ class DDPG:
         with torch.no_grad():
             action = self.ac.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=deterministic,
+                deterministic=True,
             )[0].numpy()
 
         # add noise to output from policy network

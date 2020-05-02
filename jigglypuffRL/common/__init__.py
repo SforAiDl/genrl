@@ -12,6 +12,7 @@ from jigglypuffRL.common.utils import (  # noqa
     evaluate,
     save_params,
     load_params,
+    set_seeds,
 )
 from jigglypuffRL.common.VecEnv import ( #noqa
     SerialVecEnv, 
@@ -21,4 +22,9 @@ from jigglypuffRL.common.VecEnv import ( #noqa
 from jigglypuffRL.common.noise import (  # noqa
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise,
+)
+from jigglypuffRL.common.logger import Logger
+from jigglypuffRL.common.trainer import (
+    OffPolicyTrainer,
+    OnPolicyTrainer,
 )

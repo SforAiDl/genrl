@@ -73,3 +73,8 @@ class TestUtils:
         )
 
         rmtree("test_ckpt")
+
+    def test_set_seeds(self):
+        set_seeds(42)
+        sampled = random.sample([i for i in range(20)], 1)[0]
+        assert sampled == 3

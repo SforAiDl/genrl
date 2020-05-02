@@ -1,6 +1,9 @@
-import torch
-import torch.nn as nn
 import os
+import random
+
+import torch
+import numpy as np
+import torch.nn as nn
 
 
 def get_model(type_, name_):
@@ -87,3 +90,18 @@ def load_params(algo):
         algo.checkpoint = torch.load(path)
     except FileNotFoundError:
         raise Exception("Invalid file name")
+
+
+def set_seeds(seed, env=None):
+    """
+    Sets seeds for reproducibility
+    :param seed: (int) Seed Value
+    :param env: (gym environment) Optionally pass gym environment to set its seed
+    """
+    torch.manual_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+    if env is not None:
+        env.seed(seed)

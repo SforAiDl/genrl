@@ -10,6 +10,7 @@ from jigglypuffRL.common import (
     evaluate,
     save_params,
     load_params,
+    set_seeds
 )
 
 
@@ -88,11 +89,7 @@ class VPG:
 
         # Assign seed
         if seed is not None:
-            torch.manual_seed(seed)
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
-            np.random.seed(seed)
-            self.env.seed(seed)
+            set_seeds(seed, self.env)
 
         # init writer if tensorboard
         self.writer = None
@@ -185,7 +182,7 @@ class VPG:
         self.policy_hist = Variable(torch.Tensor())
         self.value_hist = Variable(torch.Tensor())
 
-    def update_policy(self, episode):
+    def update_policy(self, episode, copy_policy=False):
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_loss_hist)
         loss_value = torch.mean(self.value_loss_hist)
@@ -207,6 +204,9 @@ class VPG:
         # clear loss history for epoch
         self.policy_loss_hist = Variable(torch.Tensor())
         self.value_loss_hist = Variable(torch.Tensor())
+
+        if copy_policy:
+            pass
 
     def learn(self):
         # training loop
