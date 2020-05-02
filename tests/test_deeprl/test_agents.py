@@ -43,6 +43,15 @@ class TestAlgos:
         trainer.train()
         shutil.rmtree("./logs")
 
+    def test_vpg(self):
+        env = gym.make("Pendulum-v0")
+        algo = VPG("mlp", env, layers=[1, 1])
+        logger = Logger("./logs", ["csv"])
+
+        trainer = OnPolicyTrainer(algo, env, logger, epochs=1, render=False)
+        trainer.train()
+        shutil.rmtree("./logs")
+
     def test_ddpg(self):
         env = gym.make("Pendulum-v0")
         algo = DDPG("mlp", env, noise=NormalActionNoise, layers=[1, 1])
