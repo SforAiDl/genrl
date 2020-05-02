@@ -12,7 +12,7 @@ class Logger:
         self._formats = formats
         self.writers = []
         for format in self.formats:
-            self.writers.append(logger_registry[format](self.logdir))
+            self.writers.append(get_logger_by_name(format)(self.logdir))
 
     def write(self, kvs):
         for writer in self.writers:
@@ -96,3 +96,9 @@ class CSVLogger:
 logger_registry = {'stdout':HumanOutputFormat, 
                    'tensorboard':TensorboardLogger, 
                    'csv':CSVLogger}
+
+def get_logger_by_name(name):
+    if name not in logger_registry.keys():
+        raise NotImplementedError
+    else:
+        return logger_registry[name]
