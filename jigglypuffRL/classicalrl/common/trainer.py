@@ -98,7 +98,11 @@ class Trainer:
             if self.learning == True:
                 self.learn((state, action, reward, next_state))
 
-            if self.planning == True and timestep > self.start_plan and not self.model.is_empty():
+            if (
+                self.planning == True
+                and timestep > self.start_plan
+                and not self.model.is_empty()
+            ):
                 self.model.add(state, action, reward, next_state)
                 self.plan()
 
@@ -106,7 +110,11 @@ class Trainer:
             if done == True:
                 ep_rews.append(ep_rew)
                 if ep % 100 == 0:
-                    print("Episode: {}, Reward: {}, timestep: {}".format(ep, ep_rew, timestep))
+                    print(
+                        "Episode: {}, Reward: {}, timestep: {}".format(
+                            ep, ep_rew, timestep
+                        )
+                    )
 
                 if ep == self.n_episodes:
                     break
