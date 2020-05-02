@@ -95,7 +95,7 @@ class PPO1:
 
         # init writer if tensorboard
         self.writer = None
-        if self.tensorboard_log is not None:
+        if self.tensorboard_log is not None: #pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -240,7 +240,7 @@ class PPO1:
         if copy_policy:
             self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-    def learn(self):
+    def learn(self): #pragma: no cover
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0

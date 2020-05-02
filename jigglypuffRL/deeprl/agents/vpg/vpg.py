@@ -93,7 +93,7 @@ class VPG:
 
         # init writer if tensorboard
         self.writer = None
-        if self.tensorboard_log is not None:
+        if self.tensorboard_log is not None: #pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -208,7 +208,7 @@ class VPG:
         if copy_policy:
             pass
 
-    def learn(self):
+    def learn(self): #pragma: no cover
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
