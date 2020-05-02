@@ -4,7 +4,7 @@ import gym
 import torch
 import numpy as np
 
-from jigglypuffRL.common import set_seeds, Logger
+from jigglypuffRL.deeprl.common import set_seeds, Logger
 from abc import ABC
 
 

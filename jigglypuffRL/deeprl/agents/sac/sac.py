@@ -7,7 +7,7 @@ from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from jigglypuffRL.common import (
+from jigglypuffRL.deeprl.common import (
     get_model,
     ReplayBuffer,
     save_params,
@@ -117,7 +117,7 @@ class SAC:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None:
+        if self.tensorboard_log is not None: #pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -282,7 +282,7 @@ class SAC:
 
         return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
-    def learn(self):
+    def learn(self): #pragma: no cover
         if self.tensorboard_log:
             writer = SummaryWriter(self.tensorboard_log)
 

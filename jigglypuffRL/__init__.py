@@ -1,4 +1,10 @@
-from jigglypuffRL.common import (  # noqa
+from jigglypuffRL.deeprl import (  # noqa
+    SAC,
+    DDPG,
+    PPO1,
+    VPG,
+    TD3,
+    DQN,
     MlpActorCritic,
     MlpPolicy,
     ReplayBuffer,
@@ -16,10 +22,8 @@ from jigglypuffRL.common import (  # noqa
     Logger,
     set_seeds,
     OffPolicyTrainer,
-    OnPolicyTrainer,   
+    OnPolicyTrainer,
 )
-
-from jigglypuffRL.deeprl import SAC, DDPG, PPO1, VPG, TD3, DQN  # noqa
 
 from jigglypuffRL.classicalrl import (  # noqa
     EpsGreedyBernoulliBandit,
@@ -30,5 +34,5 @@ from jigglypuffRL.classicalrl import (  # noqa
     BayesianUCBBernoulliBandit,
     ThompsonSampling,
     SARSA,
-    QLearning
+    QLearning,
 )

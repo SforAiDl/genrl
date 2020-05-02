@@ -5,7 +5,7 @@ import torch.optim as opt
 import gym
 from copy import deepcopy
 
-from jigglypuffRL.common import (
+from jigglypuffRL.deeprl.common import (
     ReplayBuffer,
     get_model,
     evaluate,
@@ -117,7 +117,7 @@ class DDPG:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None:
+        if self.tensorboard_log is not None: #pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -216,7 +216,7 @@ class DDPG:
                 param_target.data.mul_(self.polyak)
                 param_target.data.add_((1 - self.polyak) * param.data)
 
-    def learn(self):
+    def learn(self): #pragma: no cover
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
 

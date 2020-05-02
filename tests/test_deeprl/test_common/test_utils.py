@@ -11,7 +11,7 @@ from jigglypuffRL import (
     MlpValue,
     PPO1,
 )
-from jigglypuffRL.common.utils import *
+from jigglypuffRL.deeprl.common.utils import *
 
 
 class TestUtils:
