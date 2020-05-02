@@ -259,9 +259,7 @@ class PPO1:
                     if done:
                         break
 
-                epoch_reward += (
-                    np.sum(self.traj_reward) / self.actor_batch_size
-                )
+                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
                 self.get_traj_loss()
 
             self.update_policy(episode)

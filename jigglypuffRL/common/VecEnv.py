@@ -4,25 +4,26 @@ import multiprocessing as mp
 
 from abc import ABC, abstractmethod
 
+
 def worker(parent_conn, child_conn, env):
     parent_conn.close()
     while True:
         cmd, data = child_conn.recv()
-        if cmd == 'step':
+        if cmd == "step":
             observation, reward, done, info = env.step(data)
             child_conn.send((observation, reward, done, info))
-        elif cmd == 'seed':
+        elif cmd == "seed":
             child_conn.send(env.seed(data))
-        elif cmd == 'reset':
+        elif cmd == "reset":
             observation = env.reset()
             child_conn.send(observation)
-        elif cmd == 'render':
+        elif cmd == "render":
             child_conn.send(env.render())
-        elif cmd == 'close':
+        elif cmd == "close":
             env.close()
             child_conn.close()
             break
-        elif cmd == 'get_spaces':
+        elif cmd == "get_spaces":
             child_conn.send((env.observation_space, env.action_space))
         else:
             raise NotImplementedError
@@ -41,6 +42,7 @@ class VecEnv(ABC):
     :param env: (str)
     :param n_envs: (int) Number of envs. 
     """
+
     def __init__(self, env, n_envs=2):
         self.envs = create_envs(env, n_envs)
         self._n_envs = len(self.envs)
@@ -83,6 +85,7 @@ class SerialVecEnv(VecEnv):
     :param envs: (str)
     :param n_envs: (int) Number of envs. 
     """
+
     def __init__(self, envs, n_envs=2):
         super(SerialVecEnv, self).__init__(envs, n_envs)
 
@@ -122,9 +125,9 @@ class SerialVecEnv(VecEnv):
         """
         Returns an array of images from each env render
         """
-        return [env.render(mode='rgb_array') for env in self.envs]
+        return [env.render(mode="rgb_array") for env in self.envs]
 
-    def render(self, mode='human'):
+    def render(self, mode="human"):
         """
         Renders all envs in a tiles format similar to baselines.
         :param mode: (str) Can either be 'human' or 'rgb_array'. \
@@ -137,11 +140,12 @@ class SerialVecEnv(VecEnv):
         out_image = images.reshape(newH, newW, H, W, C)
         out_image = out_image.transpose(0, 2, 1, 3, 4)
         out_image = out_image.reshape(newH * H, newW * W, C)
-        if mode == 'human':
+        if mode == "human":
             import cv2  # noqa
-            cv2.imshow('vecenv', out_image[:, :, ::-1])
+
+            cv2.imshow("vecenv", out_image[:, :, ::-1])
             cv2.waitKey(1)
-        elif mode == 'rgb_array':
+        elif mode == "rgb_array":
             return out_image
         else:
             raise NotImplementedError
@@ -153,13 +157,18 @@ class SubProcessVecEnv(VecEnv):
     :param env: (str) Environment Name. Should be registered with OpenAI Gym.
     :param n_envs: (int) Number of envs. 
     """
+
     def __init__(self, env, n_envs=2):
         super(SubProcessVecEnv, self).__init__(env, n_envs)
 
         self.procs = []
-        self.parent_conns, self.child_conns = zip(*[mp.Pipe() for i in range(self._n_envs)])
+        self.parent_conns, self.child_conns = zip(
+            *[mp.Pipe() for i in range(self._n_envs)]
+        )
 
-        for parent_conn, child_conn, env_fn in zip(self.parent_conns, self.child_conns, self.envs):
+        for parent_conn, child_conn, env_fn in zip(
+            self.parent_conns, self.child_conns, self.envs
+        ):
             args = (parent_conn, child_conn, env_fn)
             process = mp.Process(target=worker, args=args, daemon=True)
             process.start()
@@ -167,29 +176,28 @@ class SubProcessVecEnv(VecEnv):
             child_conn.close()
 
     def get_spaces(self):
-        self.parent_conns[0].send(('get_spaces', None))
+        self.parent_conns[0].send(("get_spaces", None))
         observation_space, action_space = self.parent_conns[0].recv()
         return (observation_space, action_space)
 
     def seed(self, seed=None):
         for idx, parent_conn in enumerate(self.parent_conns):
-            parent_conn.send(('seed', seed + idx))
+            parent_conn.send(("seed", seed + idx))
 
         return [parent_conn.recv() for parent_conn in self.parent_conns]
 
     def reset(self):
         for parent_conn in self.parent_conns:
-            parent_conn.send(('reset',None))
+            parent_conn.send(("reset", None))
 
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
         return obs
 
-
     def step(self, actions):
         for parent_conn, action in zip(self.parent_conns, actions):
-            parent_conn.send(('step', action))
+            parent_conn.send(("step", action))
         self.waiting = True
-        
+
         result = []
         for parent_conn in self.parent_conns:
             result.append(parent_conn.recv())
@@ -198,13 +206,13 @@ class SubProcessVecEnv(VecEnv):
         observations, rewards, dones, infos = zip(*result)
         print(observations, rewards, dones)
         return observations, rewards, dones, infos
-        
+
     def close(self):
         if self.waiting:
             for parent_conn in self.parent_conns:
                 parent_conn.recv()
         for parent_conn in self.parent_conns:
-            parent_conn.send(('close', None))
+            parent_conn.send(("close", None))
         for proc in self.procs:
             proc.join()
 
@@ -215,8 +223,9 @@ def venv(env, n_envs, parallel=False):
     else:
         return SerialVecEnv(env, n_envs)
 
+
 if __name__ == "__main__":
-    env = venv('CartPole-v1', 32, parallel=False)
+    env = venv("CartPole-v1", 32, parallel=False)
     env.seed(0)
     print(env.reset())
     env.step(env.sample())

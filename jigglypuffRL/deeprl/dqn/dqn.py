@@ -16,10 +16,11 @@ from jigglypuffRL.common import (
     set_seeds,
 )
 from jigglypuffRL.deeprl.dqn.utils import (
-    DuelingDQNValueMlp, 
+    DuelingDQNValueMlp,
     NoisyDQNValue,
-    CategoricalDQNValue
+    CategoricalDQNValue,
 )
+
 
 class DQN:
     """
@@ -137,20 +138,19 @@ class DQN:
                 self.model = DuelingDQNValueMlp(
                     self.env.observation_space.shape[0], self.env.action_space.n
                 )
-            
+
             elif self.categorical_dqn:
                 self.model = CategoricalDQNValue(
                     self.env.observation_space.shape[0],
                     self.env.action_space.n,
                     self.num_atoms,
                     self.Vmin,
-                    self.Vmax
+                    self.Vmax,
                 )
 
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(
-                    self.env.observation_space.shape[0],
-                    self.env.action_space.n
+                    self.env.observation_space.shape[0], self.env.action_space.n
                 )
             else:
                 self.model = get_model("v", network_type)(
@@ -221,10 +221,14 @@ class DQN:
         if self.categorical_dqn:
             proj_dist = self.projection_distribution(next_state, reward, done)
             dist = self.model(state)
-            action = action.unsqueeze(1).unsqueeze(1).expand(self.batch_size, 1, self.num_atoms)
+            action = (
+                action.unsqueeze(1)
+                .unsqueeze(1)
+                .expand(self.batch_size, 1, self.num_atoms)
+            )
             dist = dist.gather(1, action).squeeze(1)
             dist.data.clamp_(0.01, 0.99)
-            loss = - (Variable(proj_dist) * dist.log()).sum(1).mean()
+            loss = -(Variable(proj_dist) * dist.log()).sum(1).mean()
 
         elif self.double_dqn:
             q_values = self.model(state)
@@ -280,34 +284,46 @@ class DQN:
         )
 
     def projection_distribution(self, next_state, rewards, dones):
-      batch_size  = next_state.size(0)
-      
-      delta_z = float(self.Vmax - self.Vmin) / (self.num_atoms - 1)
-      support = torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-      
-      next_dist   = self.target_model(next_state).data.cpu() * support
-      next_action = next_dist.sum(2).max(1)[1]
-      next_action = next_action.unsqueeze(1).unsqueeze(1).expand(next_dist.size(0), 1, next_dist.size(2))
-      next_dist   = next_dist.gather(1, next_action).squeeze(1)
-          
-      rewards = rewards.unsqueeze(1).expand_as(next_dist)
-      dones   = dones.unsqueeze(1).expand_as(next_dist)
-      support = support.unsqueeze(0).expand_as(next_dist)
-      
-      Tz = rewards + (1 - dones) * 0.99 * support
-      Tz = Tz.clamp(min=self.Vmin, max=self.Vmax)
-      b  = (Tz - self.Vmin) / delta_z
-      l  = b.floor().long()
-      u  = b.ceil().long()
-          
-      offset = torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size).long()\
-                      .unsqueeze(1).expand(self.batch_size, self.num_atoms)
+        batch_size = next_state.size(0)
 
-      proj_dist = torch.zeros(next_dist.size())    
-      proj_dist.view(-1).index_add_(0, (l + offset).view(-1), (next_dist * (u.float() - b)).view(-1))
-      proj_dist.view(-1).index_add_(0, (u + offset).view(-1), (next_dist * (b - l.float())).view(-1))
-          
-      return proj_dist
+        delta_z = float(self.Vmax - self.Vmin) / (self.num_atoms - 1)
+        support = torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
+
+        next_dist = self.target_model(next_state).data.cpu() * support
+        next_action = next_dist.sum(2).max(1)[1]
+        next_action = (
+            next_action.unsqueeze(1)
+            .unsqueeze(1)
+            .expand(next_dist.size(0), 1, next_dist.size(2))
+        )
+        next_dist = next_dist.gather(1, next_action).squeeze(1)
+
+        rewards = rewards.unsqueeze(1).expand_as(next_dist)
+        dones = dones.unsqueeze(1).expand_as(next_dist)
+        support = support.unsqueeze(0).expand_as(next_dist)
+
+        Tz = rewards + (1 - dones) * 0.99 * support
+        Tz = Tz.clamp(min=self.Vmin, max=self.Vmax)
+        b = (Tz - self.Vmin) / delta_z
+        l = b.floor().long()
+        u = b.ceil().long()
+
+        offset = (
+            torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size)
+            .long()
+            .unsqueeze(1)
+            .expand(self.batch_size, self.num_atoms)
+        )
+
+        proj_dist = torch.zeros(next_dist.size())
+        proj_dist.view(-1).index_add_(
+            0, (l + offset).view(-1), (next_dist * (u.float() - b)).view(-1)
+        )
+        proj_dist.view(-1).index_add_(
+            0, (u + offset).view(-1), (next_dist * (b - l.float())).view(-1)
+        )
+
+        return proj_dist
 
     def learn(self):
         total_steps = self.max_epochs * self.max_iterations_per_epoch
