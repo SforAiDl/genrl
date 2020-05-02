@@ -277,8 +277,6 @@ class BernoulliBandits(Bandit):
     def Q(self):
         return self._Q
 
-    def get_action(self, t, bandit):
-        pass
 
     def step(self, t):
         bandit_rewards = []
