@@ -1,5 +1,5 @@
-from jigglypuffRL.common.base import BaseValue
-from jigglypuffRL.common.utils import mlp
+from jigglypuffRL.deeprl.common.base import BaseValue
+from jigglypuffRL.deeprl.common.utils import mlp
 
 
 def _get_val_model(

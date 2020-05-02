@@ -6,7 +6,7 @@ import torch.optim as opt
 from torch.autograd import Variable
 from copy import deepcopy
 
-from jigglypuffRL.common import (
+from jigglypuffRL.deeprl.common import (
     ReplayBuffer,
     PrioritizedBuffer,
     get_model,
@@ -15,7 +15,7 @@ from jigglypuffRL.common import (
     load_params,
     set_seeds,
 )
-from jigglypuffRL.deeprl.dqn.utils import (
+from jigglypuffRL.deeprl.agents.dqn.utils import (
     DuelingDQNValueMlp,
     NoisyDQNValue,
     CategoricalDQNValue,

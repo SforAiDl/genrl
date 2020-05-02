@@ -5,24 +5,18 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from jigglypuffRL.common import (
-    get_model,
-    evaluate,
-    save_params,
-    load_params,
-    set_seeds,
-)
+from jigglypuffRL.deeprl.common import get_model, evaluate, save_params, load_params, set_seeds
 
 
-class PPO1:
+class VPG:
     """
-    Proximal Policy Optimization algorithm (Clipped policy).
-    Paper: https://arxiv.org/abs/1707.06347
+    Vanilla Policy Gradient algorithm
+    Paper:
+    https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param timesteps_per_actorbatch: (int) timesteps per actor per update
     :param gamma: (float) discount factor
-    :param clip_param: (float) clipping parameter epsilon
     :param actor_batchsize: (int) trajectories per optimizer epoch
     :param epochs: (int) the optimizer's number of epochs
     :param lr_policy: (float) policy network learning rate
@@ -36,23 +30,22 @@ class PPO1:
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
     :param run_num: (boolean) if model has already been trained
-    :param save_model: (string) directory the user wants to save models to
+    :param save_model: (boolean) True if user wants to save model
     """
 
     def __init__(
         self,
         network_type,
         env,
-        timesteps_per_actorbatch=256,
+        timesteps_per_actorbatch=1000,
         gamma=0.99,
-        clip_param=0.2,
-        actor_batch_size=64,
+        actor_batch_size=4,
         epochs=1000,
-        lr_policy=0.001,
-        lr_value=0.001,
-        layers=(64, 64),
+        lr_policy=0.01,
+        lr_value=0.0005,
         policy_copy_interval=20,
         pretrained=None,
+        layers=(32, 32),
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -65,12 +58,10 @@ class PPO1:
         self.env = env
         self.timesteps_per_actorbatch = timesteps_per_actorbatch
         self.gamma = gamma
-        self.clip_param = clip_param
         self.actor_batch_size = actor_batch_size
         self.epochs = epochs
         self.lr_policy = lr_policy
         self.lr_value = lr_value
-        self.layers = layers
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
@@ -78,6 +69,7 @@ class PPO1:
         self.evaluate = evaluate
         self.save_interval = save_interval
         self.pretrained = pretrained
+        self.layers = layers
         self.run_num = run_num
         self.save_model = save_model
         self.save = save_params
@@ -99,125 +91,95 @@ class PPO1:
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
+
         self.create_model()
 
     def create_model(self):
-        # Instantiate networks and optimizers
-        state_dim, action_dim, disc, action_lim = self.get_env_properties(self.env)
-        self.policy_new, self.policy_old = (
-            get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
-            ),
-            get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
-            ),
-        )
-        self.policy_new = self.policy_new.to(self.device)
-        self.policy_old = self.policy_old.to(self.device)
+        s_dim = self.env.observation_space.shape[0]
 
-        self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
-            self.device
-        )
+        a_lim = None
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            a_dim = self.env.action_space.n
+            disc = True
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            a_dim = self.env.action_space.shape[0]
+            a_lim = self.env.action_space.high[0]
+            disc = False
+        else:
+            raise NotImplementedError
+
+        # Instantiate networks and optimizers
+        self.ac = get_model("ac", self.network_type)(
+            s_dim, a_dim, self.layers, "V", disc, action_lim=a_lim
+        ).to(self.device)
 
         # load paramaters if already trained
         if self.pretrained is not None:
             self.load(self)
-            self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
-            self.value_fn.load_state_dict(self.checkpoint["value_weights"])
+            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
+            self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
+
             for key, item in self.checkpoint.items():
                 if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.policy_old.load_state_dict(self.policy_new.state_dict())
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.optimizer_policy = opt.Adam(
-            self.policy_new.parameters(), lr=self.lr_policy
-        )
-        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
-
+        self.policy_hist = Variable(torch.Tensor())
+        self.value_hist = Variable(torch.Tensor())
         self.traj_reward = []
-        self.policy_old.policy_hist = Variable(torch.Tensor())
-        self.policy_new.policy_hist = Variable(torch.Tensor())
-        self.value_fn.value_hist = Variable(torch.Tensor())
+        self.policy_loss_hist = Variable(torch.Tensor())
+        self.value_loss_hist = Variable(torch.Tensor())
 
-        self.policy_new.loss_hist = Variable(torch.Tensor())
-        self.value_fn.loss_hist = Variable(torch.Tensor())
+    def select_action(self, state, deterministic=False):
+        state = Variable(torch.as_tensor(state).float().to(self.device))
 
-    def select_action(self, state):
-        state = torch.as_tensor(state).float().to(self.device)
-
-        # create distribution based on policy_old output
-        action, c_old = self.policy_old.get_action(Variable(state), deterministic=False)
-        _, c_new = self.policy_new.get_action(Variable(state), deterministic=False)
-        val = self.value_fn.get_value(Variable(state))
+        # create distribution based on policy_fn output
+        a, c = self.ac.get_action(state, deterministic=False)
+        val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current traj
-        self.policy_old.policy_hist = torch.cat(
-            [
-                self.policy_old.policy_hist,
-                c_old.log_prob(action).exp().prod().unsqueeze(0),
-            ]
-        )
+        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
 
-        self.policy_new.policy_hist = torch.cat(
-            [
-                self.policy_new.policy_hist,
-                c_new.log_prob(action).exp().prod().unsqueeze(0),
-            ]
-        )
+        self.value_hist = torch.cat([self.value_hist, val])
 
-        self.value_fn.value_hist = torch.cat(
-            [self.value_fn.value_hist, val.unsqueeze(0)]
-        )
+        return a
 
-        return action
-
-    # get clipped loss for single trajectory (episode)
     def get_traj_loss(self):
-        discounted_reward = 0
+        disc_R = 0
         returns = []
 
         # calculate discounted return
         for reward in self.traj_reward[::-1]:
-            discounted_reward = reward + self.gamma * discounted_reward
-            returns.insert(0, discounted_reward)
+            disc_R = reward + self.gamma * disc_R
+            returns.insert(0, disc_R)
 
         # advantage estimation
         returns = torch.FloatTensor(returns).to(self.device)
-        advantages = Variable(returns) - Variable(self.value_fn.value_hist)
+        advantage = Variable(returns) - Variable(self.value_hist)
 
         # compute policy and value loss
-        ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
-        clipping = (
-            torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
-            .mul(advantages)
-            .to(self.device)
-        )
-
-        loss_policy = (
-            torch.mean(torch.min(torch.mul(ratio, advantages), clipping))
-            .mul(-1)
-            .unsqueeze(0)
-        )
-        loss_value = nn.MSELoss()(
-            self.value_fn.value_hist, Variable(returns)
+        loss_policy = torch.sum(
+            torch.mul(self.policy_hist, advantage).mul(-1), -1
         ).unsqueeze(0)
 
+        loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
+
         # store traj loss values in epoch loss tensors
-        self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
-        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
+        self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
+        self.value_loss_hist = torch.cat([self.value_loss_hist, loss_value])
 
         # clear traj history
         self.traj_reward = []
-        self.policy_old.policy_hist = Variable(torch.Tensor())
-        self.policy_new.policy_hist = Variable(torch.Tensor())
-        self.value_fn.value_hist = Variable(torch.Tensor())
+        self.policy_hist = Variable(torch.Tensor())
+        self.value_hist = Variable(torch.Tensor())
 
-    def update_policy(self, episode, copy_policy=True):
+    def update_policy(self, episode, copy_policy=False):
         # mean of all traj losses in single epoch
-        loss_policy = torch.mean(self.policy_new.loss_hist)
-        loss_value = torch.mean(self.value_fn.loss_hist)
+        loss_policy = torch.mean(self.policy_loss_hist)
+        loss_value = torch.mean(self.value_loss_hist)
 
         # tensorboard book-keeping
         if self.tensorboard_log:
@@ -226,7 +188,7 @@ class PPO1:
 
         # take gradient step
         self.optimizer_policy.zero_grad()
-        loss_policy.backward()
+        loss_policy.backward()  # B
         self.optimizer_policy.step()
 
         self.optimizer_value.zero_grad()
@@ -234,11 +196,11 @@ class PPO1:
         self.optimizer_value.step()
 
         # clear loss history for epoch
-        self.policy_new.loss_hist = Variable(torch.Tensor())
-        self.value_fn.loss_hist = Variable(torch.Tensor())
+        self.policy_loss_hist = Variable(torch.Tensor())
+        self.value_loss_hist = Variable(torch.Tensor())
 
         if copy_policy:
-            self.policy_old.load_state_dict(self.policy_new.state_dict())
+            pass
 
     def learn(self):
         # training loop
@@ -248,8 +210,8 @@ class PPO1:
                 state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    action = self.select_action(state)
-                    state, reward, done, _ = self.env.step(np.array(action))
+                    action = Variable(self.select_action(state, deterministic=False))
+                    state, reward, done, _ = self.env.step(action.item())
 
                     if self.render:
                         self.env.render()
@@ -264,13 +226,10 @@ class PPO1:
 
             self.update_policy(episode)
 
-            if episode % 5 == 0:
+            if episode % 20 == 0:
                 print("Episode: {}, reward: {}".format(episode, epoch_reward))
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, episode)
-
-            if episode % self.policy_copy_interval == 0:
-                self.policy_old.load_state_dict(self.policy_new.state_dict())
 
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
@@ -282,40 +241,22 @@ class PPO1:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_env_properties(self, env):
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-            action_lim = None
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc, action_lim
-
     def get_hyperparams(self):
         hyperparams = {
             "network_type": self.network_type,
             "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
             "gamma": self.gamma,
-            "clip_param": self.clip_param,
             "actor_batch_size": self.actor_batch_size,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
-            "policy_weights": self.policy_new.state_dict(),
-            "value_weights": self.value_fn.state_dict(),
+            "weights": self.ac.state_dict(),
         }
 
         return hyperparams
 
 
 if __name__ == "__main__":
-
     env = gym.make("CartPole-v0")
-    algo = PPO1("mlp", env, save_model="checkpoints", render=True)
+    algo = VPG("mlp", env, save_model="checkpoints")
     algo.learn()
+    algo.evaluate(algo)

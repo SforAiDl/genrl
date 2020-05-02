@@ -7,7 +7,7 @@ from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from jigglypuffRL.common import (
+from jigglypuffRL.deeprl.common import (
     get_model,
     ReplayBuffer,
     save_params,

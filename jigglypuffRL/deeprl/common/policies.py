@@ -1,5 +1,5 @@
-from jigglypuffRL.common.base import BasePolicy
-from jigglypuffRL.common.utils import mlp
+from jigglypuffRL.deeprl.common.base import BasePolicy
+from jigglypuffRL.deeprl.common.utils import mlp
 
 
 class MlpPolicy(BasePolicy):

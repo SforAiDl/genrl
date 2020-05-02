@@ -1,6 +1,6 @@
-from jigglypuffRL.common.base import BaseActorCritic
-from jigglypuffRL.common.policies import MlpPolicy
-from jigglypuffRL.common.values import MlpValue
+from jigglypuffRL.deeprl.common.base import BaseActorCritic
+from jigglypuffRL.deeprl.common.policies import MlpPolicy
+from jigglypuffRL.deeprl.common.values import MlpValue
 
 
 class MlpActorCritic(BaseActorCritic):
