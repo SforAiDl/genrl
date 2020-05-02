@@ -8,6 +8,7 @@ from jigglypuffRL import (
     BayesianUCBBernoulliBandit,
 )
 
+
 class TestBandit:
     def test_softmax(self):
         softmaxBandit = SoftmaxActionSelection(1, 10)
@@ -16,7 +17,7 @@ class TestBandit:
     def test_ucb_gaussian(self):
         ucbBandit = UCBGaussianBandit(1, 10)
         ucbBandit.learn(10)
-        
+
     def test_eps_gaussian(self):
         epsGreedyBandit = EpsGreedyGaussianBandit(1, 10, 0.05)
         epsGreedyBandit.learn(10)
@@ -36,5 +37,3 @@ class TestBandit:
     def test_bayesian(self):
         bayesianbandit = BayesianUCBBernoulliBandit(1, 10)
         bayesianbandit.learn(10)
-
-    

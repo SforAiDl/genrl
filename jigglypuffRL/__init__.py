@@ -1,9 +1,9 @@
-from jigglypuffRL.deeprl import ( # noqa
-    SAC, 
-    DDPG, 
-    PPO1, 
-    VPG, 
-    TD3, 
+from jigglypuffRL.deeprl import (  # noqa
+    SAC,
+    DDPG,
+    PPO1,
+    VPG,
+    TD3,
     DQN,
     MlpActorCritic,
     MlpPolicy,

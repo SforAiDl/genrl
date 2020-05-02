@@ -5,7 +5,13 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from jigglypuffRL.deeprl.common import get_model, evaluate, save_params, load_params, set_seeds
+from jigglypuffRL.deeprl.common import (
+    get_model,
+    evaluate,
+    save_params,
+    load_params,
+    set_seeds,
+)
 
 
 class VPG:

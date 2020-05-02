@@ -1,11 +1,4 @@
-from jigglypuffRL.deeprl.agents import ( #noqa
-    DQN, 
-    PPO1, 
-    DDPG, 
-    VPG, 
-    SAC, 
-    TD3 
-)
+from jigglypuffRL.deeprl.agents import DQN, PPO1, DDPG, VPG, SAC, TD3  # noqa
 
 from jigglypuffRL.deeprl.common import (  # noqa
     MlpActorCritic,
