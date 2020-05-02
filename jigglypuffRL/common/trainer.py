@@ -11,6 +11,27 @@ from jigglypuffRL.common import (
 from abc import ABC
 
 class Trainer(ABC):
+    """
+    Base Trainer class. To be inherited specific usecases.
+    :param agent: (object) Algorithm object
+    :param env: (object) standard gym environment
+    :param logger: (object) Logger object
+    :param buffer: (object) Buffer Object
+    :param off_policy: (bool) Is the algorithm off-policy?
+    :param save_interval:(int) Model to save in each of these many timesteps
+    :param render: (bool) Should the Environment render
+    :param max_ep_len: (int) Max Episode Length
+    :param distributed: (int) Should distributed training be enabled? (To be implemented)
+    :param ckpt_log_name: (string) Model checkpoint name
+    :param steps_per_epochs: (int) Steps to take per epoch?
+    :param epochs: (int) Total Epochs to train for
+    :param device: (string) Device to train model on
+    :param log_interval: (int) Log important params every these many steps
+    :param batch_size: (int) Size of batch
+    :param seed: (int) Set seed for reproducibility
+    :param deterministic_actions: (bool) Take deterministic actions during training.
+    """
+
     def __init__(self, agent, env, logger, buffer=None, off_policy=False, save_interval=0,
                  render=False, max_ep_len=1000, distributed=False, ckpt_log_name='experiment',
                  steps_per_epoch=4000, epochs=10, device='cpu', log_interval=10, batch_size=50,
@@ -38,9 +59,16 @@ class Trainer(ABC):
             set_seeds(seed, self.env)
 
     def train(self):
+        """
+        To be defined in inherited classes
+        """
         raise NotImplementedError
 
     def save(self):
+        """
+        Save function. It calls `get_hyperparams` method of agent to get important model hyperparams.
+        Creates a checkpoint `{logger_dir}/{algo}_{env_name}/{ckpt_log_name}
+        """
         saving_params = self.agent.get_hyperparams()
         logdir = self.logger.logdir
         algo = self.agent.__class__.__name__
@@ -56,10 +84,34 @@ class Trainer(ABC):
 
 
 class OffPolicyTrainer(Trainer):
+    """
+    Off-Policy Trainer class. 
+    :param agent: (object) Algorithm object
+    :param env: (object) standard gym environment
+    :param logger: (object) Logger object
+    :param buffer: (object) Buffer Object. Cannot be None for Off-policy
+    :param off_policy: (bool) Is the algorithm off-policy?
+    :param save_interval:(int) Model to save in each of these many timesteps
+    :param render: (bool) Should the Environment render
+    :param max_ep_len: (int) Max Episode Length
+    :param distributed: (int) Should distributed training be enabled? (To be implemented)
+    :param ckpt_log_name: (string) Model checkpoint name
+    :param steps_per_epochs: (int) Steps to take per epoch?
+    :param epochs: (int) Total Epochs to train for
+    :param device: (string) Device to train model on
+    :param log_interval: (int) Log important params every these many steps
+    :param batch_size: (int) Size of batch
+    :param seed: (int) Set seed for reproducibility
+    :param deterministic_actions: (bool) Take deterministic actions during training.
+    :param warmup_steps: (int) Observe the environment for these many steps with randomly sampled actions to store in buffer.
+    :param start_update: (int) Starting updating the policy after these many steps
+    :param update_interval: (int) Update model policies after number of steps.
+    """
+
     def __init__(self, agent, env, logger, buffer=None, off_policy=True, save_interval=0,
                  render=False, max_ep_len=1000, distributed=False, ckpt_log_name='experiment',
                  steps_per_epoch=4000, epochs=10, device='cpu', log_interval=10, batch_size=50,
-                 warmup_steps=10000, start_update=1000, update_interval=50, seed=0, deterministic_actions=False):
+                 seed=0, deterministic_actions=False, warmup_steps=10000, start_update=1000, update_interval=50):
         super(OffPolicyTrainer, self).__init__(agent, env, logger, buffer, 
                                                off_policy, save_interval, render, max_ep_len,
                                                distributed, ckpt_log_name,steps_per_epoch, 
@@ -70,6 +122,9 @@ class OffPolicyTrainer(Trainer):
         self.start_update = start_update
         
     def train(self):
+        """
+        Run training
+        """
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
         # self.agent.learn()
@@ -137,6 +192,26 @@ class OffPolicyTrainer(Trainer):
 
 
 class OnPolicyTrainer(Trainer):
+    """
+    Base Trainer class. To be inherited specific usecases.
+    :param agent: (object) Algorithm object
+    :param env: (object) standard gym environment
+    :param logger: (object) Logger object
+    :param buffer: (object) Buffer Object
+    :param off_policy: (bool) Is the algorithm off-policy?
+    :param save_interval:(int) Model to save in each of these many timesteps
+    :param render: (bool) Should the Environment render
+    :param max_ep_len: (int) Max Episode Length
+    :param distributed: (int) Should distributed training be enabled? (To be implemented)
+    :param ckpt_log_name: (string) Model checkpoint name
+    :param steps_per_epochs: (int) Steps to take per epoch?
+    :param epochs: (int) Total Epochs to train for
+    :param device: (string) Device to train model on
+    :param log_interval: (int) Log important params every these many steps
+    :param batch_size: (int) Size of batch
+    :param seed: (int) Set seed for reproducibility
+    :param deterministic_actions: (bool) Take deterministic actions during training.
+    """
     def __init__(self, agent, env, logger, save_interval=0, render=False, 
                  max_ep_len=1000, distributed=False, ckpt_log_name='experiment', 
                  steps_per_epoch=4000, epochs=10, device='cpu', log_interval=10, 
@@ -149,6 +224,9 @@ class OnPolicyTrainer(Trainer):
                          deterministic_actions=deterministic_actions)
 
     def train(self):
+        """
+        Run training.
+        """
        for episode in range(self.epochs):
 
             epoch_reward = 0
