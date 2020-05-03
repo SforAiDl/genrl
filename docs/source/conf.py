@@ -12,7 +12,7 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../jigglypuffRL/'))
 
 
 # -- Project information -----------------------------------------------------
@@ -32,6 +32,7 @@ release = '0.2'
 # ones.
 extensions = [
     'sphinx.ext.githubpages',
+    'sphinx.ext.autodoc', 
 ]
 
 # Add any paths that contain templates here, relative to this directory.
