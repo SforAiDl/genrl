@@ -12,20 +12,12 @@
 #
 import os
 import sys
-<<<<<<< HEAD
-sys.path.insert(0, os.path.abspath('../../jigglypuffRL/'))
-=======
-sys.path.insert(0, os.path.abspath('../../jigglypuffRL'))
->>>>>>> upstream/master
+sys.path.insert(0, os.path.abspath('../../genrl'))
 
 
 # -- Project information -----------------------------------------------------
 
-<<<<<<< HEAD
-project = 'jigglypuffRL'
-=======
 project = 'genrl'
->>>>>>> upstream/master
 copyright = '2020, Society for Aritificial Intelligence and Deep Learning'
 author = 'Society for Aritificial Intelligence and Deep Learning'
 
@@ -65,8 +57,4 @@ html_theme = 'pytorch_sphinx_theme'
 html_static_path = ['_static']
 
 
-<<<<<<< HEAD
 # -- Extension configuration -------------------------------------------------
-=======
-# -- Extension configuration -------------------------------------------------
->>>>>>> upstream/master
