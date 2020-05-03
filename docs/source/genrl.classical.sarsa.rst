@@ -1,11 +1,11 @@
 genrl.classical.sarsa package
-======================================
+=============================
 
 Submodules
 ----------
 
 genrl.classical.sarsa.sarsa module
--------------------------------------------
+----------------------------------
 
 .. automodule:: genrl.classical.sarsa.sarsa
    :members:

@@ -1,11 +1,11 @@
 genrl.classical.common package
-=======================================
+==============================
 
 Submodules
 ----------
 
 genrl.classical.common.models module
----------------------------------------------
+------------------------------------
 
 .. automodule:: genrl.classical.common.models
    :members:
@@ -13,7 +13,7 @@ genrl.classical.common.models module
    :show-inheritance:
 
 genrl.classical.common.trainer module
-----------------------------------------------
+-------------------------------------
 
 .. automodule:: genrl.classical.common.trainer
    :members:

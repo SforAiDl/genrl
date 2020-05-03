@@ -1,11 +1,11 @@
 genrl.deep.agents.ppo1 package
-=======================================
+==============================
 
 Submodules
 ----------
 
 genrl.deep.agents.ppo1.ppo1 module
--------------------------------------------
+----------------------------------
 
 .. automodule:: genrl.deep.agents.ppo1.ppo1
    :members:

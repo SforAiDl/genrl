@@ -1,11 +1,11 @@
 genrl.deep.common package
-==================================
+=========================
 
 Submodules
 ----------
 
 genrl.deep.common.VecEnv module
-----------------------------------------
+-------------------------------
 
 .. automodule:: genrl.deep.common.VecEnv
    :members:
@@ -13,7 +13,7 @@ genrl.deep.common.VecEnv module
    :show-inheritance:
 
 genrl.deep.common.actor\_critic module
------------------------------------------------
+--------------------------------------
 
 .. automodule:: genrl.deep.common.actor_critic
    :members:
@@ -21,7 +21,7 @@ genrl.deep.common.actor\_critic module
    :show-inheritance:
 
 genrl.deep.common.base module
---------------------------------------
+-----------------------------
 
 .. automodule:: genrl.deep.common.base
    :members:
@@ -29,7 +29,7 @@ genrl.deep.common.base module
    :show-inheritance:
 
 genrl.deep.common.buffers module
------------------------------------------
+--------------------------------
 
 .. automodule:: genrl.deep.common.buffers
    :members:
@@ -37,7 +37,7 @@ genrl.deep.common.buffers module
    :show-inheritance:
 
 genrl.deep.common.logger module
-----------------------------------------
+-------------------------------
 
 .. automodule:: genrl.deep.common.logger
    :members:
@@ -45,7 +45,7 @@ genrl.deep.common.logger module
    :show-inheritance:
 
 genrl.deep.common.noise module
----------------------------------------
+------------------------------
 
 .. automodule:: genrl.deep.common.noise
    :members:
@@ -53,7 +53,7 @@ genrl.deep.common.noise module
    :show-inheritance:
 
 genrl.deep.common.policies module
-------------------------------------------
+---------------------------------
 
 .. automodule:: genrl.deep.common.policies
    :members:
@@ -61,7 +61,7 @@ genrl.deep.common.policies module
    :show-inheritance:
 
 genrl.deep.common.trainer module
------------------------------------------
+--------------------------------
 
 .. automodule:: genrl.deep.common.trainer
    :members:
@@ -69,7 +69,7 @@ genrl.deep.common.trainer module
    :show-inheritance:
 
 genrl.deep.common.utils module
----------------------------------------
+------------------------------
 
 .. automodule:: genrl.deep.common.utils
    :members:
@@ -77,7 +77,7 @@ genrl.deep.common.utils module
    :show-inheritance:
 
 genrl.deep.common.values module
-----------------------------------------
+-------------------------------
 
 .. automodule:: genrl.deep.common.values
    :members:

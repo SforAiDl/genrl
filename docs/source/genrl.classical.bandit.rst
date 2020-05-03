@@ -1,11 +1,11 @@
 genrl.classical.bandit package
-=======================================
+==============================
 
 Submodules
 ----------
 
 genrl.classical.bandit.bandit module
----------------------------------------------
+------------------------------------
 
 .. automodule:: genrl.classical.bandit.bandit
    :members:

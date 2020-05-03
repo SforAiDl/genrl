@@ -1,11 +1,11 @@
 genrl.deep.agents.ddpg package
-=======================================
+==============================
 
 Submodules
 ----------
 
 genrl.deep.agents.ddpg.ddpg module
--------------------------------------------
+----------------------------------
 
 .. automodule:: genrl.deep.agents.ddpg.ddpg
    :members:

@@ -1,11 +1,11 @@
 genrl.deep.agents.vpg package
-======================================
+=============================
 
 Submodules
 ----------
 
 genrl.deep.agents.vpg.vpg module
------------------------------------------
+--------------------------------
 
 .. automodule:: genrl.deep.agents.vpg.vpg
    :members:

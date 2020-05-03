@@ -1,11 +1,11 @@
 genrl.classical.qlearning package
-==========================================
+=================================
 
 Submodules
 ----------
 
 genrl.classical.qlearning.qlearning module
----------------------------------------------------
+------------------------------------------
 
 .. automodule:: genrl.classical.qlearning.qlearning
    :members:
