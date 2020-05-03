@@ -1,13 +1,13 @@
-tests.test\_classicalrl.test\_common package
+tests.test\_classical.test\_common package
 ============================================
 
 Submodules
 ----------
 
-tests.test\_classicalrl.test\_common.test\_trainer module
+tests.test\_classical.test\_common.test\_trainer module
 ---------------------------------------------------------
 
-.. automodule:: tests.test_classicalrl.test_common.test_trainer
+.. automodule:: tests.test_classical.test_common.test_trainer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ tests.test\_classicalrl.test\_common.test\_trainer module
 Module contents
 ---------------
 
-.. automodule:: tests.test_classicalrl.test_common
+.. automodule:: tests.test_classical.test_common
    :members:
    :undoc-members:
    :show-inheritance:

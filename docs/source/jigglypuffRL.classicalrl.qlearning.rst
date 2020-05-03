@@ -1,13 +1,13 @@
-jigglypuffRL.classicalrl.qlearning package
+genrl.classical.qlearning package
 ==========================================
 
 Submodules
 ----------
 
-jigglypuffRL.classicalrl.qlearning.qlearning module
+genrl.classical.qlearning.qlearning module
 ---------------------------------------------------
 
-.. automodule:: jigglypuffRL.classicalrl.qlearning.qlearning
+.. automodule:: genrl.classical.qlearning.qlearning
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ jigglypuffRL.classicalrl.qlearning.qlearning module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.classicalrl.qlearning
+.. automodule:: genrl.classical.qlearning
    :members:
    :undoc-members:
    :show-inheritance:

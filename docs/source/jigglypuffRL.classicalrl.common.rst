@@ -1,21 +1,21 @@
-jigglypuffRL.classicalrl.common package
+genrl.classical.common package
 =======================================
 
 Submodules
 ----------
 
-jigglypuffRL.classicalrl.common.models module
+genrl.classical.common.models module
 ---------------------------------------------
 
-.. automodule:: jigglypuffRL.classicalrl.common.models
+.. automodule:: genrl.classical.common.models
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.classicalrl.common.trainer module
+genrl.classical.common.trainer module
 ----------------------------------------------
 
-.. automodule:: jigglypuffRL.classicalrl.common.trainer
+.. automodule:: genrl.classical.common.trainer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +24,7 @@ jigglypuffRL.classicalrl.common.trainer module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.classicalrl.common
+.. automodule:: genrl.classical.common
    :members:
    :undoc-members:
    :show-inheritance:

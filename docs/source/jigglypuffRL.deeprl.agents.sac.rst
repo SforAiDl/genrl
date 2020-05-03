@@ -1,13 +1,13 @@
-jigglypuffRL.deeprl.agents.sac package
+genrl.deep.agents.sac package
 ======================================
 
 Submodules
 ----------
 
-jigglypuffRL.deeprl.agents.sac.sac module
+genrl.deep.agents.sac.sac module
 -----------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.sac.sac
+.. automodule:: genrl.deep.agents.sac.sac
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ jigglypuffRL.deeprl.agents.sac.sac module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.sac
+.. automodule:: genrl.deep.agents.sac
    :members:
    :undoc-members:
    :show-inheritance:

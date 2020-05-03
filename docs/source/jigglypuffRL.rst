@@ -1,4 +1,4 @@
-jigglypuffRL package
+genrl package
 ====================
 
 Subpackages
@@ -7,13 +7,13 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   jigglypuffRL.classicalrl
-   jigglypuffRL.deeprl
+   genrl.classical
+   genrl.deep
 
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL
+.. automodule:: genrl
    :members:
    :undoc-members:
    :show-inheritance:

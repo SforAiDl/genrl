@@ -1,4 +1,4 @@
-tests.test\_deeprl package
+tests.test\_deep package
 ==========================
 
 Subpackages
@@ -7,15 +7,15 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   tests.test_deeprl.test_common
+   tests.test_deep.test_common
 
 Submodules
 ----------
 
-tests.test\_deeprl.test\_agents module
+tests.test\_deep.test\_agents module
 --------------------------------------
 
-.. automodule:: tests.test_deeprl.test_agents
+.. automodule:: tests.test_deep.test_agents
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +24,7 @@ tests.test\_deeprl.test\_agents module
 Module contents
 ---------------
 
-.. automodule:: tests.test_deeprl
+.. automodule:: tests.test_deep
    :members:
    :undoc-members:
    :show-inheritance:

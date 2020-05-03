@@ -1,4 +1,4 @@
-jigglypuffRL.classicalrl package
+genrl.classical package
 ================================
 
 Subpackages
@@ -7,15 +7,15 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   jigglypuffRL.classicalrl.bandit
-   jigglypuffRL.classicalrl.common
-   jigglypuffRL.classicalrl.qlearning
-   jigglypuffRL.classicalrl.sarsa
+   genrl.classical.bandit
+   genrl.classical.common
+   genrl.classical.qlearning
+   genrl.classical.sarsa
 
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.classicalrl
+.. automodule:: genrl.classical
    :members:
    :undoc-members:
    :show-inheritance:

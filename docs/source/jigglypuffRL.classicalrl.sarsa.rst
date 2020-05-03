@@ -1,13 +1,13 @@
-jigglypuffRL.classicalrl.sarsa package
+genrl.classical.sarsa package
 ======================================
 
 Submodules
 ----------
 
-jigglypuffRL.classicalrl.sarsa.sarsa module
+genrl.classical.sarsa.sarsa module
 -------------------------------------------
 
-.. automodule:: jigglypuffRL.classicalrl.sarsa.sarsa
+.. automodule:: genrl.classical.sarsa.sarsa
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ jigglypuffRL.classicalrl.sarsa.sarsa module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.classicalrl.sarsa
+.. automodule:: genrl.classical.sarsa
    :members:
    :undoc-members:
    :show-inheritance:

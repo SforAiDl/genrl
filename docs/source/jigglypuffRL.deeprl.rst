@@ -1,4 +1,4 @@
-jigglypuffRL.deeprl package
+genrl.deep package
 ===========================
 
 Subpackages
@@ -7,13 +7,13 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   jigglypuffRL.deeprl.agents
-   jigglypuffRL.deeprl.common
+   genrl.deep.agents
+   genrl.deep.common
 
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.deeprl
+.. automodule:: genrl.deep
    :members:
    :undoc-members:
    :show-inheritance:

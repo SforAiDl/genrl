@@ -1,4 +1,4 @@
-tests.test\_classicalrl package
+tests.test\_classical package
 ===============================
 
 Subpackages
@@ -7,15 +7,15 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   tests.test_classicalrl.test_common
+   tests.test_classical.test_common
 
 Submodules
 ----------
 
-tests.test\_classicalrl.test\_bandits module
+tests.test\_classical.test\_bandits module
 --------------------------------------------
 
-.. automodule:: tests.test_classicalrl.test_bandits
+.. automodule:: tests.test_classical.test_bandits
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +24,7 @@ tests.test\_classicalrl.test\_bandits module
 Module contents
 ---------------
 
-.. automodule:: tests.test_classicalrl
+.. automodule:: tests.test_classical
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,21 +1,21 @@
-jigglypuffRL.deeprl.agents.dqn package
+genrl.deep.agents.dqn package
 ======================================
 
 Submodules
 ----------
 
-jigglypuffRL.deeprl.agents.dqn.dqn module
+genrl.deep.agents.dqn.dqn module
 -----------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.dqn.dqn
+.. automodule:: genrl.deep.agents.dqn.dqn
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.agents.dqn.utils module
+genrl.deep.agents.dqn.utils module
 -------------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.dqn.utils
+.. automodule:: genrl.deep.agents.dqn.utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +24,7 @@ jigglypuffRL.deeprl.agents.dqn.utils module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.dqn
+.. automodule:: genrl.deep.agents.dqn
    :members:
    :undoc-members:
    :show-inheritance:

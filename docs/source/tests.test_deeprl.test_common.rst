@@ -1,29 +1,29 @@
-tests.test\_deeprl.test\_common package
+tests.test\_deep.test\_common package
 =======================================
 
 Submodules
 ----------
 
-tests.test\_deeprl.test\_common.test\_logger module
+tests.test\_deep.test\_common.test\_logger module
 ---------------------------------------------------
 
-.. automodule:: tests.test_deeprl.test_common.test_logger
+.. automodule:: tests.test_deep.test_common.test_logger
    :members:
    :undoc-members:
    :show-inheritance:
 
-tests.test\_deeprl.test\_common.test\_trainer module
+tests.test\_deep.test\_common.test\_trainer module
 ----------------------------------------------------
 
-.. automodule:: tests.test_deeprl.test_common.test_trainer
+.. automodule:: tests.test_deep.test_common.test_trainer
    :members:
    :undoc-members:
    :show-inheritance:
 
-tests.test\_deeprl.test\_common.test\_utils module
+tests.test\_deep.test\_common.test\_utils module
 --------------------------------------------------
 
-.. automodule:: tests.test_deeprl.test_common.test_utils
+.. automodule:: tests.test_deep.test_common.test_utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -32,7 +32,7 @@ tests.test\_deeprl.test\_common.test\_utils module
 Module contents
 ---------------
 
-.. automodule:: tests.test_deeprl.test_common
+.. automodule:: tests.test_deep.test_common
    :members:
    :undoc-members:
    :show-inheritance:

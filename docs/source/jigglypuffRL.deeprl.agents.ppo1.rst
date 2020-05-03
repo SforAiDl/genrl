@@ -1,13 +1,13 @@
-jigglypuffRL.deeprl.agents.ppo1 package
+genrl.deep.agents.ppo1 package
 =======================================
 
 Submodules
 ----------
 
-jigglypuffRL.deeprl.agents.ppo1.ppo1 module
+genrl.deep.agents.ppo1.ppo1 module
 -------------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.ppo1.ppo1
+.. automodule:: genrl.deep.agents.ppo1.ppo1
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ jigglypuffRL.deeprl.agents.ppo1.ppo1 module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.ppo1
+.. automodule:: genrl.deep.agents.ppo1
    :members:
    :undoc-members:
    :show-inheritance:

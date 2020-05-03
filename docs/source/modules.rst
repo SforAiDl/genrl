@@ -1,9 +1,9 @@
-JigglypuffRL
+genrl
 ============
 
 .. toctree::
    :maxdepth: 4
 
-   jigglypuffRL
+   genrl
    setup
    tests

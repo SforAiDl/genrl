@@ -1,13 +1,13 @@
-jigglypuffRL.classicalrl.bandit package
+genrl.classical.bandit package
 =======================================
 
 Submodules
 ----------
 
-jigglypuffRL.classicalrl.bandit.bandit module
+genrl.classical.bandit.bandit module
 ---------------------------------------------
 
-.. automodule:: jigglypuffRL.classicalrl.bandit.bandit
+.. automodule:: genrl.classical.bandit.bandit
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ jigglypuffRL.classicalrl.bandit.bandit module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.classicalrl.bandit
+.. automodule:: genrl.classical.bandit
    :members:
    :undoc-members:
    :show-inheritance:

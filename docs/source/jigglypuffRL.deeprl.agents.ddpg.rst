@@ -1,13 +1,13 @@
-jigglypuffRL.deeprl.agents.ddpg package
+genrl.deep.agents.ddpg package
 =======================================
 
 Submodules
 ----------
 
-jigglypuffRL.deeprl.agents.ddpg.ddpg module
+genrl.deep.agents.ddpg.ddpg module
 -------------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.ddpg.ddpg
+.. automodule:: genrl.deep.agents.ddpg.ddpg
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ jigglypuffRL.deeprl.agents.ddpg.ddpg module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.ddpg
+.. automodule:: genrl.deep.agents.ddpg
    :members:
    :undoc-members:
    :show-inheritance:

@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.abspath('../../jigglypuffRL'))
 
 # -- Project information -----------------------------------------------------
 
-project = 'jigglypuffRL'
+project = 'genrl'
 copyright = '2020, Society for Aritificial Intelligence and Deep Learning'
 author = 'Society for Aritificial Intelligence and Deep Learning'
 

@@ -1,13 +1,13 @@
-jigglypuffRL.deeprl.agents.vpg package
+genrl.deep.agents.vpg package
 ======================================
 
 Submodules
 ----------
 
-jigglypuffRL.deeprl.agents.vpg.vpg module
+genrl.deep.agents.vpg.vpg module
 -----------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.vpg.vpg
+.. automodule:: genrl.deep.agents.vpg.vpg
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ jigglypuffRL.deeprl.agents.vpg.vpg module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.deeprl.agents.vpg
+.. automodule:: genrl.deep.agents.vpg
    :members:
    :undoc-members:
    :show-inheritance:

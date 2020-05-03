@@ -1,85 +1,85 @@
-jigglypuffRL.deeprl.common package
+genrl.deep.common package
 ==================================
 
 Submodules
 ----------
 
-jigglypuffRL.deeprl.common.VecEnv module
+genrl.deep.common.VecEnv module
 ----------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.VecEnv
+.. automodule:: genrl.deep.common.VecEnv
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.actor\_critic module
+genrl.deep.common.actor\_critic module
 -----------------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.actor_critic
+.. automodule:: genrl.deep.common.actor_critic
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.base module
+genrl.deep.common.base module
 --------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.base
+.. automodule:: genrl.deep.common.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.buffers module
+genrl.deep.common.buffers module
 -----------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.buffers
+.. automodule:: genrl.deep.common.buffers
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.logger module
+genrl.deep.common.logger module
 ----------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.logger
+.. automodule:: genrl.deep.common.logger
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.noise module
+genrl.deep.common.noise module
 ---------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.noise
+.. automodule:: genrl.deep.common.noise
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.policies module
+genrl.deep.common.policies module
 ------------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.policies
+.. automodule:: genrl.deep.common.policies
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.trainer module
+genrl.deep.common.trainer module
 -----------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.trainer
+.. automodule:: genrl.deep.common.trainer
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.utils module
+genrl.deep.common.utils module
 ---------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.utils
+.. automodule:: genrl.deep.common.utils
    :members:
    :undoc-members:
    :show-inheritance:
 
-jigglypuffRL.deeprl.common.values module
+genrl.deep.common.values module
 ----------------------------------------
 
-.. automodule:: jigglypuffRL.deeprl.common.values
+.. automodule:: genrl.deep.common.values
    :members:
    :undoc-members:
    :show-inheritance:
@@ -88,7 +88,7 @@ jigglypuffRL.deeprl.common.values module
 Module contents
 ---------------
 
-.. automodule:: jigglypuffRL.deeprl.common
+.. automodule:: genrl.deep.common
    :members:
    :undoc-members:
    :show-inheritance:
