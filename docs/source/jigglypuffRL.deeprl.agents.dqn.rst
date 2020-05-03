@@ -24,11 +24,7 @@ genrl.deep.agents.dqn.utils module
 Module contents
 ---------------
 
-<<<<<<< HEAD
-.. automodule:: jigglypuffRL.deeprl.agents.dqn
-=======
 .. automodule:: genrl.deep.agents.dqn
->>>>>>> upstream/master
    :members:
    :undoc-members:
    :show-inheritance:
