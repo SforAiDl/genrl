@@ -4,14 +4,14 @@ import codecs
 from setuptools import setup, find_packages
 
 # Basic information
-NAME = "jigglypuff-rl"
+NAME = "genrl"
 DESCRIPTION = "PyTorch implementations of reinforcement learning algorithms."
 VERSION = "0.0.2.dev2"
 AUTHOR = "Society for Artificial Intelligence and Deep Learning"
 EMAIL = "ajaysubramanian110@gmail.com"
 LICENSE = "MIT"
-REPOSITORY = "https://github.com/SforAiDl/JigglypuffRL"
-PACKAGE = "JigglypuffRL"
+REPOSITORY = "https://github.com/SforAiDl/genrl"
+PACKAGE = "genrl"
 with open("README.md", "r") as f:
     LONG_DESCRIPTION = f.read()
 

@@ -1,6 +1,6 @@
 # Bandit Algorithms
 
-JigglypuffRL currently supports multi-armed Bandits with the every arm modeled as:<br>
+genrl currently supports multi-armed Bandits with the every arm modeled as:<br>
 - Bernoulli/Beta Random Variable <br>
 - Gaussian Random Variable <br>
 
@@ -15,7 +15,7 @@ An example of the usage is as follows:
 
 #### Import
 ```
-from jigglypuffRL import EpsGreedyGaussianBandit, EpsGreedyBernoulliBandit, \
+from genrl import EpsGreedyGaussianBandit, EpsGreedyBernoulliBandit, \
 UCBGaussianBandit, UCBBernoulliBandit, BayesianUCBBernoulliBandit, \
 ThompsonSampling, SoftmaxAction Selection
 ```
