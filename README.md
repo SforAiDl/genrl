@@ -10,8 +10,8 @@
 
 We suggest creating a conda virtual environment before installing our package.
 ```
-conda create -n genrl_env python=3.6 pip
-conda activate genrl_env
+conda create -n genv python=3.6 pip
+conda activate genv
 ```
 
 ### From Source (Recommended)
