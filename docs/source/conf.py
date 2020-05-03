@@ -17,8 +17,8 @@ sys.path.insert(0, os.path.abspath('../../'))
 # -- Project information -----------------------------------------------------
 
 project = 'genrl'
-copyright = '2020, Ajay Subramanian, Sharad Chitlangia'
-author = 'Ajay Subramanian, Sharad Chitlangia'
+copyright = '2020, Society for Artificial Intelligence and Deep Learning (SAiDL)'
+author = 'Society for Artificial Intelligence and Deep Learning (SAiDL)'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0.1'
