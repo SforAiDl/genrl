@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 # Basic information
 NAME = "genrl"
-DESCRIPTION = "A PyTorch reinforcement learning library for generalizable and reproducible implementations."
+DESCRIPTION = "A PyTorch reinforcement learning library for generalizable and reproducible algorithm implementations."
 VERSION = "0.0.1"
 AUTHOR = "Society for Artificial Intelligence and Deep Learning"
 EMAIL = "ajaysubramanian110@gmail.com"
