@@ -1,5 +1,5 @@
 # GenRL
-[![pypi](https://img.shields.io/badge/pypi-jigglypuff--rl-blue)](https://pypi.org/project/genrl/)
+[![pypi](https://img.shields.io/badge/pypi%20package-v0.0.1-blue)](https://pypi.org/project/genrl/)
 [![GitHub license](https://img.shields.io/github/license/SforAiDl/genrl)](https://github.com/SforAiDl/genrl/blob/master/LICENSE)
 [![Build Status](https://travis-ci.com/SforAiDl/genrl.svg?branch=master)](https://travis-ci.com/SforAiDl/genrl)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/SforAiDl/genrl.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SforAiDl/genrl/alerts/)
@@ -10,8 +10,8 @@
 
 We suggest creating a conda virtual environment before installing our package.
 ```
-conda create -n JgRL_env python=3.6 pip
-conda activate JgRL_env
+conda create -n genrl_env python=3.6 pip
+conda activate genrl_env
 ```
 
 ### From Source (Recommended)

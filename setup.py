@@ -5,8 +5,8 @@ from setuptools import setup, find_packages
 
 # Basic information
 NAME = "genrl"
-DESCRIPTION = "PyTorch implementations of reinforcement learning algorithms."
-VERSION = "0.0.2.dev2"
+DESCRIPTION = "A PyTorch reinforcement learning library for generalizable and reproducible implementations."
+VERSION = "0.0.1"
 AUTHOR = "Society for Artificial Intelligence and Deep Learning"
 EMAIL = "ajaysubramanian110@gmail.com"
 LICENSE = "MIT"
@@ -16,12 +16,12 @@ with open("README.md", "r") as f:
     LONG_DESCRIPTION = f.read()
 
 # Define the keywords
-KEYWORDS = ("reinforcement learning", "pytorch", "neuroscience", "machine learning")
+KEYWORDS = ("reinforcement learning", "pytorch", "machine learning", "deep learning")
 
 # Define the classifiers
 # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
 CLASSIFIERS = (
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
