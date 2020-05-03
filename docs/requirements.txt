@@ -18,4 +18,4 @@ tensorboard==1.15.0
 
 # documentation dependencies
 sphinx
-sphinx_rtd_theme
+pytorch-sphinx-theme
