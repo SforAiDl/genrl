@@ -24,7 +24,7 @@ jobs:
         - pip install codecov
         - pip install pytest-cov
       script:
-        -pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
+        - pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
       
       after_success:
         - codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
