@@ -7,7 +7,8 @@ from torch.autograd import Variable
 
 def noisy_mlp(fc_layers, noisy_layers):
     """
-    generate Noisy MLP model given sizes of each layer
+    Generate Noisy MLP model given sizes of each
+        fully connected and noisy layers
     """
     model = []
     for j in range(len(fc_layers) - 1):
