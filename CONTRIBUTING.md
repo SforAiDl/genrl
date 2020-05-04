@@ -1,1 +1,1 @@
-Follow details at https://github.com/SforAiDl/JigglypuffRL/wiki/Contributing-Guidelines
+Follow details at https://github.com/SforAiDl/genrl/wiki/Contributing-Guidelines
