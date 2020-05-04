@@ -240,7 +240,6 @@ class DQN:
             )
             dist = dist.gather(1, action).squeeze(1)
             dist.data.clamp_(0.01, 0.99)
-            loss = -(Variable(projection_dist) * dist.log()).sum(1).mean()
 
         elif self.double_dqn:
             q_values = self.model(state)
