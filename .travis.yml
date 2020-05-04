@@ -9,7 +9,42 @@ install:
   - pip install pytest-cov
 # command to run tests
 script:
-  - pytest --cov-report xml --cov='./jigglypuffRL/'
+  - pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
   
 after_success:
   - codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
+
+jobs:
+  include:
+    - stage: Docs
+      python: "3.6"
+      if: type != cron
+      # Use previously defined before_install
+      before_install: *before_install
+
+      install:
+        - pip install -r docs/requirements.txt
+        - pip install git+https://github.com/vfdev-5/sphinxcontrib-versioning.git
+
+      script:
+        - sphinx-versioning --use-master-conf --use-master-templates build --greatest-tag --whitelist-branches master docs/source docs/build/html
+        # Create .nojekyll file to serve correctly _static and friends
+        - touch docs/build/html/.nojekyll
+      after_success: # Nothing to do
+
+      # Deploy built docs : a) when PR is merged to master, b) when a tag is built
+      deploy:
+        - provider: pages
+          edge: true
+          token: $GITHUB_TOKEN # Set in the settings page of your repository, as a secure variable
+          keep_history: false
+          local_dir: docs/build/html
+          on:
+            branch: master
+        - provider: pages
+          edge: true
+          token: $GITHUB_TOKEN # Set in the settings page of your repository, as a secure variable
+          keep_history: false
+          local_dir: docs/build/html
+          on:
+            tags: true

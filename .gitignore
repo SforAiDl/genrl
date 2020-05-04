@@ -5,3 +5,7 @@ dist/
 *.egg-info/
 site/
 checkpoints/
+*.pyc
+.DS_Store
+*.csv
+*.log
