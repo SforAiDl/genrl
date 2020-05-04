@@ -118,7 +118,8 @@ class NoisyDQNValue(nn.Module):
         super(NoisyDQNValue, self).__init__()
 
         self.noisy = noisy_mlp(
-            [state_dim] + list(fc_layers) + list(noisy_layers) + [action_dim]
+            [state_dim] + list(fc_layers),
+            list(noisy_layers) + [action_dim]
         )
 
     def forward(self, state):
