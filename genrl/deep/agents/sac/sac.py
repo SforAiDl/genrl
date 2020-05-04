@@ -117,7 +117,7 @@ class SAC:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -302,7 +302,7 @@ class SAC:
             alpha_loss.item()
         )
 
-    def learn(self): #pragma: no cover
+    def learn(self):  # pragma: no cover
         if self.tensorboard_log:
             writer = SummaryWriter(self.tensorboard_log)
 

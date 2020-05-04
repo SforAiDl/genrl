@@ -19,7 +19,8 @@ class Trainer(ABC):
     :param save_interval:(int) Model to save in each of these many timesteps
     :param render: (bool) Should the Environment render
     :param max_ep_len: (int) Max Episode Length
-    :param distributed: (int) Should distributed training be enabled? (To be implemented)
+    :param distributed: (int) Should distributed training be enabled?
+                                (To be implemented)
     :param ckpt_log_name: (string) Model checkpoint name
     :param steps_per_epochs: (int) Steps to take per epoch?
     :param epochs: (int) Total Epochs to train for
@@ -27,7 +28,8 @@ class Trainer(ABC):
     :param log_interval: (int) Log important params every these many steps
     :param batch_size: (int) Size of batch
     :param seed: (int) Set seed for reproducibility
-    :param deterministic_actions: (bool) Take deterministic actions during training.
+    :param deterministic_actions: (bool) Take deterministic actions during
+        training.
     """
 
     def __init__(
@@ -80,7 +82,8 @@ class Trainer(ABC):
 
     def save(self):
         """
-        Save function. It calls `get_hyperparams` method of agent to get important model hyperparams.
+        Save function. It calls `get_hyperparams` method of agent to
+            get important model hyperparams.
         Creates a checkpoint `{logger_dir}/{algo}_{env_name}/{ckpt_log_name}
         """
         saving_params = self.agent.get_hyperparams()
@@ -90,7 +93,9 @@ class Trainer(ABC):
 
         save_dir = "{}/checkpoints/{}_{}".format(logdir, algo, env_name)
         os.makedirs(save_dir, exist_ok=True)
-        torch.save(saving_params, "{}/{}.pt".format(save_dir, self.ckpt_log_name))
+        torch.save(saving_params, "{}/{}.pt".format(
+            save_dir, self.ckpt_log_name
+        ))
 
     @property
     def n_envs(self):
@@ -99,7 +104,7 @@ class Trainer(ABC):
 
 class OffPolicyTrainer(Trainer):
     """
-    Off-Policy Trainer class. 
+    Off-Policy Trainer class.
     :param agent: (object) Algorithm object
     :param env: (object) standard gym environment
     :param logger: (object) Logger object
@@ -108,7 +113,8 @@ class OffPolicyTrainer(Trainer):
     :param save_interval:(int) Model to save in each of these many timesteps
     :param render: (bool) Should the Environment render
     :param max_ep_len: (int) Max Episode Length
-    :param distributed: (int) Should distributed training be enabled? (To be implemented)
+    :param distributed: (int) Should distributed training be enabled?
+                                (To be implemented)
     :param ckpt_log_name: (string) Model checkpoint name
     :param steps_per_epochs: (int) Steps to take per epoch?
     :param epochs: (int) Total Epochs to train for
@@ -116,9 +122,12 @@ class OffPolicyTrainer(Trainer):
     :param log_interval: (int) Log important params every these many steps
     :param batch_size: (int) Size of batch
     :param seed: (int) Set seed for reproducibility
-    :param deterministic_actions: (bool) Take deterministic actions during training.
-    :param warmup_steps: (int) Observe the environment for these many steps with randomly sampled actions to store in buffer.
-    :param start_update: (int) Starting updating the policy after these many steps
+    :param deterministic_actions: (bool) Take deterministic actions
+        during training.
+    :param warmup_steps: (int) Observe the environment for these many steps
+        with randomly sampled actions to store in buffer.
+    :param start_update: (int) Starting updating the policy after these
+        many steps
     :param update_interval: (int) Update model policies after number of steps.
     """
 
@@ -203,7 +212,10 @@ class OffPolicyTrainer(Trainer):
             state = next_state
 
             if done or (episode_len == self.max_ep_len):
-                if "noise" in self.agent.__dict__ and self.agent.noise is not None:
+                if (
+                    "noise" in self.agent.__dict__
+                    and self.agent.noise is not None
+                ):
                     self.agent.noise.reset()
 
                 if episode % self.log_interval == 0:
@@ -257,7 +269,8 @@ class OnPolicyTrainer(Trainer):
     :param save_interval:(int) Model to save in each of these many timesteps
     :param render: (bool) Should the Environment render
     :param max_ep_len: (int) Max Episode Length
-    :param distributed: (int) Should distributed training be enabled? (To be implemented)
+    :param distributed: (int) Should distributed training be enabled?
+                                (To be implemented)
     :param ckpt_log_name: (string) Model checkpoint name
     :param steps_per_epochs: (int) Steps to take per epoch?
     :param epochs: (int) Total Epochs to train for
@@ -265,7 +278,8 @@ class OnPolicyTrainer(Trainer):
     :param log_interval: (int) Log important params every these many steps
     :param batch_size: (int) Size of batch
     :param seed: (int) Set seed for reproducibility
-    :param deterministic_actions: (bool) Take deterministic actions during training.
+    :param deterministic_actions: (bool) Take deterministic actions
+        during training.
     """
 
     def __init__(
@@ -321,7 +335,9 @@ class OnPolicyTrainer(Trainer):
 
                 for t in range(self.agent.timesteps_per_actorbatch):
                     if self.determinsitic_actions:
-                        action = self.agent.select_action(state, deterministic=True)
+                        action = self.agent.select_action(
+                            state, deterministic=True
+                        )
                     else:
                         action = self.agent.select_action(state)
                     state, reward, done, _ = self.env.step(np.array(action))
@@ -335,7 +351,8 @@ class OnPolicyTrainer(Trainer):
                         break
 
                 epoch_reward += (
-                    np.sum(self.agent.traj_reward) / self.agent.actor_batch_size
+                    np.sum(self.agent.traj_reward)
+                    / self.agent.actor_batch_size
                 )
                 self.agent.get_traj_loss()
 
@@ -348,7 +365,9 @@ class OnPolicyTrainer(Trainer):
                     {
                         "Episode": episode,
                         "Reward": epoch_reward,
-                        "Timestep": i * episode * self.agent.timesteps_per_actorbatch,
+                        "Timestep": (
+                            i * episode * self.agent.timesteps_per_actorbatch
+                        )
                     }
                 )
 
@@ -369,11 +388,15 @@ if __name__ == "__main__":
     import time
 
     start = time.time()
-    #    trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=10)
-    #    trainer.train()
+    # trainer = OffPolicyTrainer(
+    #     algo, env, logger, render=True, seed=0, epochs=10
+    # )
+    # trainer.train()
     end = time.time()
 
     print(end - start)
     # algo = VPG("mlp", env, seed=0)
-    # trainer = OnPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=100, log_interval=1)
+    # trainer = OnPolicyTrainer(
+    #     algo, env, logger, render=True, seed=0, epochs=100, log_interval=1
+    # )
     # trainer.train()

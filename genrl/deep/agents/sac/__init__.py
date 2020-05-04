@@ -1,1 +1,1 @@
-from genrl.deep.agents.sac.sac import SAC
+from genrl.deep.agents.sac.sac import SAC  # noqa

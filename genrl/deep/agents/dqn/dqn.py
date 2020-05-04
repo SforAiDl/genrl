@@ -125,7 +125,7 @@ class DQN:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -149,7 +149,8 @@ class DQN:
                 )
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(
-                    self.env.observation_space.shape[0], self.env.action_space.n
+                    self.env.observation_space.shape[0],
+                    self.env.action_space.n
                 )
             else:
                 self.model = get_model("v", network_type)(
@@ -239,7 +240,7 @@ class DQN:
             )
             dist = dist.gather(1, action).squeeze(1)
             dist.data.clamp_(0.01, 0.99)
-            loss = -(Variable(proj_dist) * dist.log()).sum(1).mean()
+            loss = -(Variable(projection_dist) * dist.log()).sum(1).mean()
 
         elif self.double_dqn:
             q_values = self.model(state)

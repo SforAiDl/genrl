@@ -131,7 +131,6 @@ class NoisyDQNValue(nn.Module):
                 layer.reset_noise()
 
 
-
 class CategoricalDQNValue(nn.Module):
     def __init__(
         self,

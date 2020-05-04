@@ -98,7 +98,7 @@ def set_seeds(seed, env=None):
     """
     Sets seeds for reproducibility
     :param seed: (int) Seed Value
-    :param env: (gym environment) Optionally pass gym environment to set its seed
+    :param env: (gym env) Optionally pass gym environment to set its seed
     """
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True

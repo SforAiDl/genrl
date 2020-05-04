@@ -3,12 +3,12 @@ from genrl.deep.common.values import MlpValue, get_value_from_name  # noqa
 from genrl.deep.common.actor_critic import (  # noqa
     MlpActorCritic,
     get_actor_critic_from_name,
-)  # noqa
-from genrl.deep.common.base import (
+)
+from genrl.deep.common.base import (  # noqa
     BasePolicy,
     BaseValue,
     BaseActorCritic,
-)  # noqa
+)
 from genrl.deep.common.buffers import ReplayBuffer, PrioritizedBuffer  # noqa
 from genrl.deep.common.utils import (  # noqa
     mlp,
@@ -18,17 +18,17 @@ from genrl.deep.common.utils import (  # noqa
     load_params,
     set_seeds,
 )
-from genrl.deep.common.VecEnv import (
+from genrl.deep.common.VecEnv import (  # noqa
     SerialVecEnv,
     SubProcessVecEnv,
     venv,
-)  # noqa
+)
 from genrl.deep.common.noise import (  # noqa
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise,
 )
-from genrl.deep.common.logger import Logger
-from genrl.deep.common.trainer import (
+from genrl.deep.common.logger import Logger  # noqa
+from genrl.deep.common.trainer import (  # noqa
     OffPolicyTrainer,
     OnPolicyTrainer,
 )
