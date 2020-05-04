@@ -11,7 +11,7 @@
 
 Reinforcement learning research is moving faster than ever before. In order to keep up with the growing trend and ensure that RL research remains reproducible, GenRL aims to aid faster paper reproduction and benchmarking by providing the following main features:
 
-- **PyTorch-first**: Pythonic and modular
+- **PyTorch-first**: Modular, Extensible and Idiomatic Python
 - **Unified Trainer and Logging class**: code reusability and high-level UI
 - **Ready-made algorithm implementations**: ready-made implementations of popular RL algorithms.
 - **Faster Benchmarking**: automated hyperparameter tuning, environment implementations etc.
