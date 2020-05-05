@@ -62,8 +62,8 @@ class TestAlgos:
         shutil.rmtree("./logs")
 
     def test_dqn(self):
-        env = gym.make("Pendulum-v0")
-        algo = DQN("mlp", env, double_dqn=True, prioritized_replay=True)
+        env = gym.make("CartPole-v0")
+        algo = DQN("mlp", env, double_dqn=True)
         logger = Logger("./logs", ["csv"])
 
         trainer = OffPolicyTrainer(algo, env, logger, epochs=1, render=False)

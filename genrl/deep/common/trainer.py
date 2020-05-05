@@ -229,6 +229,8 @@ class OffPolicyTrainer(Trainer):
                         self.agent.update_params(
                             states, actions, next_states, rewards, dones, _
                         )
+                    elif self.agent.__class__.__name__ == "DQN":
+                        self.agent.update_params()
                     else:
                         self.agent.update_params(
                             states, actions, next_states, rewards, dones
