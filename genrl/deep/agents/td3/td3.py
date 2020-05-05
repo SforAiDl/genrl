@@ -10,7 +10,6 @@ from genrl.deep.common import (
     evaluate,
     save_params,
     load_params,
-    OrnsteinUhlenbeckActionNoise,
     set_seeds,
 )
 

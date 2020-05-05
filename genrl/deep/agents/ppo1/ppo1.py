@@ -349,5 +349,5 @@ class PPO1:
 if __name__ == "__main__":
 
     env = gym.make("CartPole-v0")
-    algo = PPO1("mlp", env, device="cuda")
+    algo = PPO1("mlp", env)
     algo.learn()

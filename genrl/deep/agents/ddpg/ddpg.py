@@ -303,6 +303,6 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG("mlp", env, device="cuda")
+    algo = DDPG("mlp", env)
     algo.learn()
     algo.evaluate(algo)
