@@ -19,7 +19,7 @@ from genrl.deep.common import (
     set_seeds,
 )
 
-from genrl.deeprl.dqn.utils import (
+from genrl.deep.agents.dqn.utils import (
     DuelingDQNValueMlp,
     DuelingDQNValueCNN,
     NoisyDQNValue,
@@ -130,8 +130,6 @@ class DQN:
             self.device = torch.device(device)
         else:
             self.device = torch.device("cpu")
-
-        self.device = torch.device("cuda")
 
         # Assign seed
         if seed is not None:
@@ -482,6 +480,6 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = gym.make("Breakout-v0")
-    algo = DQN("cnn", env, double_dqn=True, prioritized_replay=True)
+    env = gym.make("Pong-v0")
+    algo = DQN("cnn", env)
     algo.learn()

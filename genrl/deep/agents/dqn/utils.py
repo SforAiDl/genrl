@@ -4,8 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
-from jigglypuffRL.common.base import BaseValue
-from jigglypuffRL.common.utils import mlp, cnn
+from genrl.deep.common.utils import mlp, cnn
 
 
 class DuelingDQNValueMlp(nn.Module):
@@ -28,7 +27,6 @@ class DuelingDQNValueMlp(nn.Module):
         advantage = self.advantage(x)
         value = self.value(x)
         return value + advantage - advantage.mean()
-
 
 
 class DuelingDQNValueCNN(nn.Module):
