@@ -179,13 +179,19 @@ class OffPolicyTrainer(Trainer):
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
 
+        if self.agent.__class__.__name__ == "DQN":
+            self.agent.update_target_model()
+
         for t in range(total_steps):
+            if self.agent.__class__.__name__ == "DQN":
+                self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
+                action = self.agent.select_action(state)
 
             if t < self.warmup_steps:
                 action = self.env.action_space.sample()
             else:
                 if self.determinsitic_actions:
-                    action = self.agen.select_action(state, deterministic=True)
+                    action = self.agent.select_action(state, deterministic=True)
                 else:
                     action = self.agent.select_action(state)
 
@@ -218,6 +224,11 @@ class OffPolicyTrainer(Trainer):
                 state, episode_reward, episode_len = self.env.reset(), 0, 0
                 episode += 1
 
+            # update params for DQN 
+            if self.agent.__class__.__name__ == "DQN":
+                if self.agent.replay_buffer.get_len() > self.agent.batch_size:
+                    self.agent.update_params()
+
             # update params
             if t >= self.start_update and t % self.update_interval == 0:
                 for _ in range(self.update_interval):
@@ -230,7 +241,7 @@ class OffPolicyTrainer(Trainer):
                             states, actions, next_states, rewards, dones, _
                         )
                     elif self.agent.__class__.__name__ == "DQN":
-                        self.agent.update_params()
+                        self.agent.update_target_model()
                     else:
                         self.agent.update_params(
                             states, actions, next_states, rewards, dones
