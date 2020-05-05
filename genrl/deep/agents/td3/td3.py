@@ -116,6 +116,8 @@ class TD3:
         else:
             self.device = torch.device("cpu")
 
+        self.device = torch.device("cuda")
+
         # Assign seed
         if seed is not None:
             set_seeds(seed, self.env)
@@ -146,6 +148,9 @@ class TD3:
         self.ac.qf2 = get_model("v", self.network_type)(
             state_dim, action_dim, hidden=self.layers, val_type="Qsa"
         )
+
+        self.ac.qf1.to(self.device)
+        self.ac.qf2.to(self.device)
 
         if self.pretrained is not None:
             self.load(self)
@@ -347,5 +352,5 @@ class TD3:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = TD3("mlp", env, render=True, noise=OrnsteinUhlenbeckActionNoise)
+    algo = TD3("mlp", env)
     algo.learn()

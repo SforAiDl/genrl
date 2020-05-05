@@ -146,7 +146,7 @@ class SAC:
 
         self.policy = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, disc, False, sac=True
-        )
+        ).to(self.device)
 
         if self.pretrained is not None:
             self.load(self)
@@ -186,15 +186,15 @@ class SAC:
 
         # set action scales
         if self.env.action_space is None:
-            self.action_scale = torch.tensor(1.0)
-            self.action_bias = torch.tensor(0.0)
+            self.action_scale = torch.tensor(1.0).to(self.device)
+            self.action_bias = torch.tensor(0.0).to(self.device)
         else:
             self.action_scale = torch.FloatTensor(
                 (self.env.action_space.high - self.env.action_space.low) / 2.0
-            )
+            ).to(self.device)
             self.action_bias = torch.FloatTensor(
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
-            )
+            ).to(self.device)
 
     def sample_action(self, state):
         mean, log_std = self.policy.forward(state)
@@ -418,6 +418,6 @@ class SAC:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env, seed=0)
+    algo = SAC("mlp", env)
     algo.learn()
     algo.evaluate(algo)

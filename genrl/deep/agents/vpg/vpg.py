@@ -101,22 +101,23 @@ class VPG:
         self.create_model()
 
     def create_model(self):
-        s_dim = self.env.observation_space.shape[0]
+        state_dim = self.env.observation_space.shape[0]
 
-        a_lim = None
+        action_lim = None
         if isinstance(self.env.action_space, gym.spaces.Discrete):
-            a_dim = self.env.action_space.n
-            disc = True
+            action_dim = self.env.action_space.n
+            discrete = True
         elif isinstance(self.env.action_space, gym.spaces.Box):
-            a_dim = self.env.action_space.shape[0]
-            a_lim = self.env.action_space.high[0]
-            disc = False
+            action_dim = self.env.action_space.shape[0]
+            action_lim = self.env.action_space.high[0]
+            discrete = False
         else:
             raise NotImplementedError
 
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
-            s_dim, a_dim, self.layers, "V", disc, action_lim=a_lim
+            state_dim, action_dim, self.layers, "V",
+            discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained
@@ -139,11 +140,11 @@ class VPG:
             self.ac.critic.parameters(), lr=self.lr_value
         )
 
-        self.policy_hist = Variable(torch.Tensor())
-        self.value_hist = Variable(torch.Tensor())
+        self.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_hist = Variable(torch.Tensor()).to(self.device)
         self.traj_reward = []
-        self.policy_loss_hist = Variable(torch.Tensor())
-        self.value_loss_hist = Variable(torch.Tensor())
+        self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
     def select_action(self, state, deterministic=False):
         state = Variable(torch.as_tensor(state).float().to(self.device))
@@ -152,7 +153,7 @@ class VPG:
         a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state).unsqueeze(0)
 
-        # store policy probs and value function for current traj
+        # store policy probs and value function for current trajectory
         self.policy_hist = torch.cat([
             self.policy_hist, c.log_prob(a).unsqueeze(0)
         ])
@@ -189,8 +190,8 @@ class VPG:
 
         # clear traj history
         self.traj_reward = []
-        self.policy_hist = Variable(torch.Tensor())
-        self.value_hist = Variable(torch.Tensor())
+        self.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_hist = Variable(torch.Tensor()).to(self.device)
 
     def update_policy(self, episode, copy_policy=False):
         # mean of all traj losses in single epoch
@@ -212,8 +213,8 @@ class VPG:
         self.optimizer_value.step()
 
         # clear loss history for epoch
-        self.policy_loss_hist = Variable(torch.Tensor())
-        self.value_loss_hist = Variable(torch.Tensor())
+        self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
         if copy_policy:
             pass
@@ -275,6 +276,6 @@ class VPG:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = VPG("mlp", env, save_model="checkpoints")
+    algo = VPG("mlp", env)
     algo.learn()
     algo.evaluate(algo)

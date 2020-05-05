@@ -11,7 +11,6 @@ from genrl.deep.common import (
     evaluate,
     save_params,
     load_params,
-    OrnsteinUhlenbeckActionNoise,
     set_seeds,
 )
 
@@ -164,9 +163,10 @@ class DDPG:
 
     def select_action(self, state, deterministic=True):
         with torch.no_grad():
-            action = self.ac.get_action(torch.as_tensor(
-                state, dtype=torch.float32, device=self.device
-            ), deterministic=deterministic)[0].numpy()
+            action, _ = self.ac.get_action(torch.as_tensor(
+                state, dtype=torch.float32
+            ).to(self.device), deterministic=deterministic)
+            action = action.detach().cpu().numpy()
 
         # add noise to output from policy network
         if self.noise is not None:
@@ -303,9 +303,6 @@ class DDPG:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = DDPG(
-        "mlp", env, seed=0,
-        save_model="checkpoints", noise=OrnsteinUhlenbeckActionNoise
-    )
+    algo = DDPG("mlp", env, device="cuda")
     algo.learn()
     algo.evaluate(algo)

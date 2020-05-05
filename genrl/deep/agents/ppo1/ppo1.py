@@ -155,12 +155,12 @@ class PPO1:
         )
 
         self.traj_reward = []
-        self.policy_old.policy_hist = Variable(torch.Tensor())
-        self.policy_new.policy_hist = Variable(torch.Tensor())
-        self.value_fn.value_hist = Variable(torch.Tensor())
+        self.policy_old.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.policy_new.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_fn.value_hist = Variable(torch.Tensor()).to(self.device)
 
-        self.policy_new.loss_hist = Variable(torch.Tensor())
-        self.value_fn.loss_hist = Variable(torch.Tensor())
+        self.policy_new.loss_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_fn.loss_hist = Variable(torch.Tensor()).to(self.device)
 
     def select_action(self, state):
         state = torch.as_tensor(state).float().to(self.device)
@@ -193,6 +193,7 @@ class PPO1:
             [self.value_fn.value_hist, val.unsqueeze(0)]
         )
 
+        action = action.detach().cpu().numpy()
         return action
 
     # get clipped loss for single trajectory (episode)
@@ -238,9 +239,9 @@ class PPO1:
 
         # clear traj history
         self.traj_reward = []
-        self.policy_old.policy_hist = Variable(torch.Tensor())
-        self.policy_new.policy_hist = Variable(torch.Tensor())
-        self.value_fn.value_hist = Variable(torch.Tensor())
+        self.policy_old.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.policy_new.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_fn.value_hist = Variable(torch.Tensor()).to(self.device)
 
     def update_policy(self, episode, copy_policy=True):
         # mean of all traj losses in single epoch
@@ -262,8 +263,8 @@ class PPO1:
         self.optimizer_value.step()
 
         # clear loss history for epoch
-        self.policy_new.loss_hist = Variable(torch.Tensor())
-        self.value_fn.loss_hist = Variable(torch.Tensor())
+        self.policy_new.loss_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_fn.loss_hist = Variable(torch.Tensor()).to(self.device)
 
         if copy_policy:
             self.policy_old.load_state_dict(self.policy_new.state_dict())
@@ -277,7 +278,7 @@ class PPO1:
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
                     action = self.select_action(state)
-                    state, reward, done, _ = self.env.step(np.array(action))
+                    state, reward, done, _ = self.env.step(action)
 
                     if self.render:
                         self.env.render()
@@ -348,5 +349,5 @@ class PPO1:
 if __name__ == "__main__":
 
     env = gym.make("CartPole-v0")
-    algo = PPO1("mlp", env, save_model="checkpoints", render=True)
+    algo = PPO1("mlp", env, device="cuda")
     algo.learn()
