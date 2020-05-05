@@ -187,13 +187,14 @@ class OffPolicyTrainer(Trainer):
                 self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
                 action = self.agent.select_action(state)
 
-            if t < self.warmup_steps:
-                action = self.env.action_space.sample()
             else:
-                if self.determinsitic_actions:
-                    action = self.agent.select_action(state, deterministic=True)
+                if t < self.warmup_steps:
+                    action = self.env.action_space.sample()
                 else:
-                    action = self.agent.select_action(state)
+                    if self.determinsitic_actions:
+                        action = self.agent.select_action(state, deterministic=True)
+                    else:
+                        action = self.agent.select_action(state)
 
             next_state, reward, done, info = self.env.step(action)
             if self.render:
@@ -229,23 +230,24 @@ class OffPolicyTrainer(Trainer):
                 if self.agent.replay_buffer.get_len() > self.agent.batch_size:
                     self.agent.update_params()
 
-            # update params
-            if t >= self.start_update and t % self.update_interval == 0:
-                for _ in range(self.update_interval):
-                    batch = self.buffer.sample(self.batch_size)
-                    states, actions, next_states, rewards, dones = (
-                        x.to(self.device) for x in batch
-                    )
-                    if self.agent.__class__.__name__ == "TD3":
-                        self.agent.update_params(
-                            states, actions, next_states, rewards, dones, _
+                if t % self.update_interval == 0:
+                    self.agent.update_target_model()
+            # update params for other agents 
+            else:
+                if t >= self.start_update and t % self.update_interval == 0:
+                    for _ in range(self.update_interval):
+                        batch = self.buffer.sample(self.batch_size)
+                        states, actions, next_states, rewards, dones = (
+                            x.to(self.device) for x in batch
                         )
-                    elif self.agent.__class__.__name__ == "DQN":
-                        self.agent.update_target_model()
-                    else:
-                        self.agent.update_params(
-                            states, actions, next_states, rewards, dones
-                        )
+                        if self.agent.__class__.__name__ == "TD3":
+                            self.agent.update_params(
+                                states, actions, next_states, rewards, dones, _
+                            )
+                        else:
+                            self.agent.update_params(
+                                states, actions, next_states, rewards, dones
+                            )
 
             if (
                 t >= self.start_update
