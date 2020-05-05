@@ -25,14 +25,14 @@ class DuelingDQNValueMlp(nn.Module):
         super(DuelingDQNValueMlp, self).__init__()
 
         self.feature = nn.Sequential(
-            nn.Linear(self.state_dim, hidden[0]),
+            nn.Linear(state_dim, hidden[0]),
             nn.ReLU()
         )
 
         self.advantage = nn.Sequential(
             nn.Linear(hidden[0], hidden[1]),
             nn.ReLU(),
-            nn.Linear(hidden[1], self.action_dim)
+            nn.Linear(hidden[1], action_dim)
         )
 
         self.value = nn.Sequential(
@@ -114,20 +114,20 @@ class NoisyLinear(nn.Module):
 
 class NoisyDQNValue(nn.Module):
     def __init__(
-        self, state_dim, action_dim, fc_layers=(128), noisy_layers=(128, 128)
+        self, state_dim, action_dim, fc_layers=(128,), noisy_layers=(128, 128)
     ):
         super(NoisyDQNValue, self).__init__()
 
-        self.noisy = noisy_mlp(
+        self.model = noisy_mlp(
             [state_dim] + list(fc_layers),
             list(noisy_layers) + [action_dim]
         )
 
     def forward(self, state):
-        return self.noisy(state)
+        return self.model(state)
 
     def reset_noise(self):
-        for layer in self.noisy:
+        for layer in self.model:
             if isinstance(layer, NoisyLinear):
                 layer.reset_noise()
 
@@ -153,17 +153,17 @@ class CategoricalDQNValue(nn.Module):
 
         self.model = noisy_mlp(
             [state_dim] + list(fc_layers),
-            list(noisy_layers) + [self.num_actions * self.num_atoms]
+            list(noisy_layers) + [self.action_dim * self.num_atoms]
         )
 
     def forward(self, state):
         features = self.model(state)
         dist = F.softmax(features.view(-1, self.num_atoms)).view(
-            -1, self.num_actions, self.num_atoms
+            -1, self.action_dim, self.num_atoms
         )
         return dist
 
     def reset_noise(self):
-        for layer in self.noisy:
+        for layer in self.model:
             if isinstance(layer, NoisyLinear):
                 layer.reset_noise()

@@ -22,7 +22,7 @@ class MlpPolicy(BasePolicy):
         **kwargs
     ):
         super(MlpPolicy, self).__init__(
-            disc, state_dim, action_dim, hidden, **kwargs
+            state_dim, action_dim, hidden, disc, **kwargs
         )
 
         self.state_dim = state_dim

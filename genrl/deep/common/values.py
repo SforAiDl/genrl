@@ -5,7 +5,7 @@ from genrl.deep.common.utils import mlp
 def _get_val_model(
     arch, val_type, state_dim, hidden, action_dim=None,
 ):
-    if val_type == "v":
+    if val_type == "V":
         return arch([state_dim] + list(hidden) + [1])
     elif val_type == "Qsa":
         return arch([state_dim + action_dim] + list(hidden) + [1])
@@ -29,7 +29,7 @@ class MlpValue(BaseValue):
         self,
         state_dim,
         action_dim=None,
-        val_type="v",
+        val_type="V",
         hidden=(32, 32)
     ):
         super(MlpValue, self).__init__()

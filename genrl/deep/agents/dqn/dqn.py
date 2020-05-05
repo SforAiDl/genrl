@@ -415,5 +415,5 @@ class DQN:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env, epochs=300, noisy_dqn=True)
+    algo = DQN("mlp", env)
     algo.learn()
