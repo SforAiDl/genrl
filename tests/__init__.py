@@ -4,4 +4,4 @@ from tests.test_deep import (
     test_off_policy_trainer,
     test_loggers,
 )
-from tests.test_classical import TestTrainer, TestBandit
+from tests.test_classical import TestTrainer, TestBandit, TestAgents, TestModels
