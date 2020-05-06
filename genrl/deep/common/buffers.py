@@ -23,6 +23,9 @@ class ReplayBuffer:
     def get_len(self):
         return len(self.memory)
 
+    def extend(self, x):
+        self.memory.extend(x)
+
 
 class PrioritizedBuffer:
     def __init__(self, capacity, prob_alpha=0.6):
