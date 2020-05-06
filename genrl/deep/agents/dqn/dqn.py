@@ -263,8 +263,8 @@ class DQN:
                 next_state,
                 done,
                 indices,
-                weight,
-            ) = self.replay_buffer.sample(self.batch_size)
+                weight
+             ) = self.replay_buffer.sample(self.batch_size)
             weights = Variable(torch.FloatTensor(weight))
         else:
             state, action, reward, next_state, done = self.replay_buffer.sample(
@@ -480,6 +480,6 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = gym.make("Pong-v0")
-    algo = DQN("cnn", env)
+    env = gym.make("Breakout-v0")
+    algo = DQN("cnn", env, prioritized_replay=True)
     algo.learn()
