@@ -12,6 +12,10 @@ from genrl.deep.common import (
     load_params,
     set_seeds,
 )
+from genrl.deep.common import (  # noqa
+    NormalActionNoise,
+    OrnsteinUhlenbeckActionNoise
+)
 
 
 class TD3:
@@ -114,8 +118,6 @@ class TD3:
             self.device = torch.device(device)
         else:
             self.device = torch.device("cpu")
-
-        self.device = torch.device("cuda")
 
         # Assign seed
         if seed is not None:

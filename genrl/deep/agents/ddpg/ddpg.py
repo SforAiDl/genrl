@@ -13,6 +13,10 @@ from genrl.deep.common import (
     load_params,
     set_seeds,
 )
+from genrl.deep.common import (  # noqa
+    NormalActionNoise,
+    OrnsteinUhlenbeckActionNoise
+)
 
 
 class DDPG:
