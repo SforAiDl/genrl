@@ -144,17 +144,18 @@ class DQN:
 
         self.create_model()
 
-    def create_model(self):
-        if self.network_type == "mlp":
+    def create_model(self, network_type):
+        state_dim, action_dim, disc = self.get_env_properties()
+        if network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(
-                    self.env.observation_space.shape[0], self.env.action_space.n
+                    state_dim, action_dim
                 )
 
             elif self.categorical_dqn:
                 self.model = CategoricalDQNValue(
-                    self.env.observation_space.shape[0],
-                    self.env.action_space.n,
+                    state_dim,
+                    action_dim,
                     self.num_atoms,
                     self.Vmin,
                     self.Vmax,
@@ -162,11 +163,11 @@ class DQN:
 
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(
-                    self.env.observation_space.shape[0], self.env.action_space.n
+                    state_dim, action_dim
                 )
             else:
-                self.model = get_model("v", self.network_type)(
-                    self.env.observation_space.shape[0], self.env.action_space.n, "Qs"
+                self.model = get_model("v", network_type)(
+                    state_dim, action_dim, "Qs"
                 )
             # load paramaters if already trained
             if self.pretrained is not None:
@@ -234,6 +235,20 @@ class DQN:
         else:
             self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
+
+    def get_env_properties(self):
+        state_dim = self.env.observation_space.shape[0]
+
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            action_dim = self.env.action_space.n
+            disc = True
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            action_dim = self.env.action_space.shape[0]
+            disc = False
+        else:
+            raise NotImplementedError
+
+        return state_dim, action_dim, disc
 
     def update_target_model(self):
         self.target_model.load_state_dict(self.model.state_dict())
@@ -387,7 +402,7 @@ class DQN:
 
         return proj_dist
 
-    def learn(self):
+    def learn(self): #pragma: no cover
         total_steps = self.max_epochs * self.max_iterations_per_epoch
         state, episode_reward, episode, episode_len = self.env.reset(), 0, 0, 0
 
