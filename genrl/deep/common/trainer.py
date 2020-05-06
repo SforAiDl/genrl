@@ -172,8 +172,8 @@ class OffPolicyTrainer(Trainer):
         """
         Run training
         """
-        state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
-        total_steps = self.steps_per_epoch * self.epochs
+        state, episode_reward, episode_len, episode = self.env.reset(), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
+        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
         # self.agent.learn()
 
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
@@ -182,14 +182,14 @@ class OffPolicyTrainer(Trainer):
         if self.agent.__class__.__name__ == "DQN":
             self.agent.update_target_model()
 
-        for t in range(total_steps):
+        for t in range(0, total_steps, self.env.n_envs):
             if self.agent.__class__.__name__ == "DQN":
                 self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
                 action = self.agent.select_action(state)
 
             else:
                 if t < self.warmup_steps:
-                    action = self.env.action_space.sample()
+                    action = self.env.sample()
                 else:
                     if self.determinsitic_actions:
                         action = self.agent.select_action(state, deterministic=True)
@@ -203,27 +203,30 @@ class OffPolicyTrainer(Trainer):
             episode_reward += reward
             episode_len += 1
 
-            done = False if episode_len == self.max_ep_len else done
+            done = [False if ep_len==self.max_ep_len else done for ep_len in episode_len]
 
-            self.buffer.push((state, action, reward, next_state, done))
+            self.buffer.extend(zip(state, action, reward, next_state, done))
 
             state = next_state
 
-            if done or (episode_len == self.max_ep_len):
+            if np.any(done) or np.any(episode_len == self.max_ep_len):
                 if "noise" in self.agent.__dict__ and self.agent.noise is not None:
                     self.agent.noise.reset()
 
-                if episode % self.log_interval == 0:
+                if sum(episode) % self.log_interval == 0:
                     self.logger.write(
                         {
                             "timestep": t,
-                            "Episode": episode,
-                            "Episode Reward": episode_reward,
+                            "Episode": sum(episode),
+                            "Episode Reward": np.mean(episode_reward),
                         }
                     )
 
-                state, episode_reward, episode_len = self.env.reset(), 0, 0
-                episode += 1
+                for i, d in enumerate(done):
+                    if d:
+                        episode_reward[i] = 0
+                        episode_len[i] = 0
+                        episode += 1
 
             # update params for DQN 
             if self.agent.__class__.__name__ == "DQN":
@@ -237,16 +240,16 @@ class OffPolicyTrainer(Trainer):
                 if t >= self.start_update and t % self.update_interval == 0:
                     for _ in range(self.update_interval):
                         batch = self.buffer.sample(self.batch_size)
-                        states, actions, next_states, rewards, dones = (
+                        states, actions, rewards, next_states, dones = (
                             x.to(self.device) for x in batch
                         )
                         if self.agent.__class__.__name__ == "TD3":
                             self.agent.update_params(
-                                states, actions, next_states, rewards, dones, _
+                                states, actions, rewards.unsqueeze(1), next_states, dones, _
                             )
                         else:
                             self.agent.update_params(
-                                states, actions, next_states, rewards, dones
+                                states, actions, rewards.unsqueeze(1), next_states, dones
                             )
 
             if (
