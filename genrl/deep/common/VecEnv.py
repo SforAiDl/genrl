@@ -4,6 +4,8 @@ import multiprocessing as mp
 
 from abc import ABC, abstractmethod
 
+from torchvision.utils import make_grid
+
 
 def worker(parent_conn, child_conn, env):
     parent_conn.close()
@@ -60,7 +62,7 @@ class VecEnv(ABC):
         return self.envs[index]
 
     def seed(self, seed):
-        [env.seed(seed) for env in self.envs]
+        [env.seed(seed+idx) for idx, env in enumerate(self.envs)]
 
     @abstractmethod
     def step(self, actions):
@@ -78,6 +80,21 @@ class VecEnv(ABC):
     def n_envs(self):
         return self._n_envs
 
+    @property
+    def observation_space(self):
+        return self.envs[0].observation_space
+
+    @property
+    def action_space(self):
+        return self.envs[0].action_space
+
+    @property
+    def observation_spaces(self):
+        return [i.observation_space for i in self.envs]
+
+    @property
+    def action_spaces(self):
+        return [i.action_space for i in self.envs]
 
 class SerialVecEnv(VecEnv):
     """
@@ -97,6 +114,8 @@ class SerialVecEnv(VecEnv):
         states, rewards, dones, infos = [], [], [], []
         for i, env in enumerate(self.envs):
             obs, reward, done, info = env.step(actions[i])
+            if done:
+              obs = env.reset()
             states.append(obs)
             rewards.append(reward)
             dones.append(done)
@@ -141,6 +160,7 @@ class SerialVecEnv(VecEnv):
         out_image = out_image.transpose(0, 2, 1, 3, 4)
         out_image = out_image.reshape(newH * H, newW * W, C)
         if mode == "human":
+            # make_grid(self.images())
             import cv2  # noqa
 
             cv2.imshow("vecenv", out_image[:, :, ::-1])
