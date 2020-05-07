@@ -50,7 +50,7 @@ class TabularModel:
         """
         True if model not updated yet
         """
-        return not (np.all(self.s_model) and np.all(self.r_model))
+        return not (np.any(self.s_model) or np.any(self.r_model))
 
 
 model_registry = {"tabular": TabularModel}

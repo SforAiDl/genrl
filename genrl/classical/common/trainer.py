@@ -98,13 +98,10 @@ class Trainer:
             if self.learning == True:
                 self.learn((state, action, reward, next_state))
 
-            if (
-                self.planning == True
-                and timestep > self.start_plan
-                and not self.model.is_empty()
-            ):
+            if self.planning == True and timestep > self.start_plan:
                 self.model.add(state, action, reward, next_state)
-                self.plan()
+                if not self.model.is_empty():
+                    self.plan()
 
             state = next_state
             if done == True:
@@ -149,7 +146,7 @@ if __name__ == "__main__":
     env = gym.make("FrozenLake-v0")
     agent = QLearning(env)
     trainer = Trainer(
-        agent, env, mode="dyna", model="tabular", seed=42, n_episodes=10000
+        agent, env, mode="dyna", model="tabular", seed=42, n_episodes=50, start_steps=0
     )
     ep_rs = trainer.train()
     trainer.plot(ep_rs)
