@@ -34,7 +34,7 @@ class DQN:
     Deep Q Networks
     Paper: (DQN) https://arxiv.org/pdf/1312.5602.pdf
     Paper: (Double DQN) https://arxiv.org/abs/1509.06461
-    :param network_type: (str) The deep neural network layer types
+    :param self.network_type: (str) The deep neural network layer types
         ['MLP', 'CNN']
     :param env: (Gym environment) The environment to learn from
     :param double_dqn: (boolean) For training Double DQN
@@ -144,9 +144,9 @@ class DQN:
 
         self.create_model()
 
-    def create_model(self, network_type):
+    def create_model(self):
         state_dim, action_dim, disc = self.get_env_properties()
-        if network_type == "mlp":
+        if self.network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(
                     state_dim, action_dim
@@ -166,7 +166,7 @@ class DQN:
                     state_dim, action_dim
                 )
             else:
-                self.model = get_model("v", network_type)(
+                self.model = get_model("v", self.network_type)(
                     state_dim, action_dim, "Qs"
                 )
             # load paramaters if already trained
@@ -495,6 +495,6 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = gym.make("Breakout-v0")
-    algo = DQN("cnn", env, prioritized_replay=True)
+    env = gym.make("Pong-v0")
+    algo = DQN("cnn", env)
     algo.learn()
