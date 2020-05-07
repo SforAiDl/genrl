@@ -204,9 +204,9 @@ class DQN:
             else:
                 state = Variable(torch.FloatTensor(state))
                 q_value = self.model(state)
-                action = np.argmax(q_value.detach().numpy())
+                action = np.argmax(q_value.detach().numpy(), axis=-1)
         else:
-            action = self.env.action_space.sample()
+            action = self.env.sample()
 
         return action
 
@@ -264,7 +264,8 @@ class DQN:
 
             q_next_state_values = self.target_model(next_state)
             q_s_a_prime = q_next_state_values.max(1)[0]
-            expected_q_value = reward + self.gamma * q_s_a_prime * (1 - done)
+            # print(reward.shape, q_s_a_prime.shape, done.shape)
+            expected_q_value = reward.unsqueeze(1) + self.gamma * q_s_a_prime.unsqueeze(1) * (1 - done)
 
         if self.prioritized_replay and (not self.categorical_dqn):
             loss = (q_value - expected_q_value.detach()).pow(2) * weights
@@ -273,7 +274,7 @@ class DQN:
             self.replay_buffer.update_priorities(indices, priorities.data.cpu().numpy())
 
         elif (not self.prioritized_replay) and (not self.categorical_dqn):
-            loss = (q_value - expected_q_value.detach()).pow(2).mean()
+            loss = (q_value.unsqueeze(1) - expected_q_value.detach()).pow(2).mean()
         # loss = F.smooth_l1_loss(q_value,expected_q_value)
 
         else:
