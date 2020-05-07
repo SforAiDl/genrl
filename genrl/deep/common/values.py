@@ -37,12 +37,12 @@ class MlpValue(BaseValue):
 class CNNValue(BaseValue):
     """
     CNN Value
-    :param state_dim: (int) state dimension of environment
-    :param action_dim: (int) action dimension of environment
-    :param history_length: (int) length of history of states
-    :param val_type: (str) type of value function.
-        'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
-    :param hidden: (tuple or list) sizes of hidden layers
+        :param state_dim: (int) state dimension of environment
+        :param action_dim: (int) action dimension of environment
+        :param history_length: (int) length of history of states
+        :param val_type: (str) type of value function.
+            'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
+        :param hidden: (tuple or list) sizes of hidden layers
     """
     def __init__(
         self, action_dim, history_length=4, val_type="Qs",
