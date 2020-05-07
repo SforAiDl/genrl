@@ -5,11 +5,11 @@ from genrl.deep.common.utils import mlp
 class MlpPolicy(BasePolicy):
     """
     MLP Policy
-    :param state_dim: (int) state dimension of environment
-    :param action_dim: (int) action dimension of environment
-    :param hidden: (tuple or list) sizes of hidden layers
-    :param disc: (bool) discrete action space?
-    :param det: (bool) deterministic policy?
+        :param state_dim: (int) State dimensions of the environment
+        :param action_dim: (int) Action dimensions of the environment
+        :param hidden: (tuple or list) Sizes of hidden layers
+        :param disc: (bool) True if action space is discrete, else False
+        :param det: (bool) True if policy is deterministic, else False
     """
 
     def __init__(
@@ -27,6 +27,12 @@ policy_registry = {"mlp": MlpPolicy}
 
 
 def get_policy_from_name(name_):
+    """
+    Returns policy given the name of the policy
+
+    Args:
+        :param name_: (string) Name of the policy needed
+    """
     if name_ in policy_registry:
         return policy_registry[name_]
     raise NotImplementedError
