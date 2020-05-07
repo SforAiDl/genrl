@@ -93,7 +93,7 @@ class VPG:
 
         # init writer if tensorboard
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -101,22 +101,23 @@ class VPG:
         self.create_model()
 
     def create_model(self):
-        s_dim = self.env.observation_space.shape[0]
+        state_dim = self.env.observation_space.shape[0]
 
-        a_lim = None
+        action_lim = None
         if isinstance(self.env.action_space, gym.spaces.Discrete):
-            a_dim = self.env.action_space.n
-            disc = True
+            action_dim = self.env.action_space.n
+            discrete = True
         elif isinstance(self.env.action_space, gym.spaces.Box):
-            a_dim = self.env.action_space.shape[0]
-            a_lim = self.env.action_space.high[0]
-            disc = False
+            action_dim = self.env.action_space.shape[0]
+            action_lim = self.env.action_space.high[0]
+            discrete = False
         else:
             raise NotImplementedError
 
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
-            s_dim, a_dim, self.layers, "V", disc, action_lim=a_lim
+            state_dim, action_dim, self.layers, "V",
+            discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained
@@ -126,18 +127,24 @@ class VPG:
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
 
             for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights", "save_model"]:
+                if key not in [
+                    "policy_weights", "value_weights", "save_model"
+                ]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(
+            self.ac.actor.parameters(), lr=self.lr_policy
+        )
+        self.optimizer_value = opt.Adam(
+            self.ac.critic.parameters(), lr=self.lr_value
+        )
 
-        self.policy_hist = Variable(torch.Tensor())
-        self.value_hist = Variable(torch.Tensor())
+        self.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_hist = Variable(torch.Tensor()).to(self.device)
         self.traj_reward = []
-        self.policy_loss_hist = Variable(torch.Tensor())
-        self.value_loss_hist = Variable(torch.Tensor())
+        self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
     def select_action(self, state, deterministic=False):
         state = Variable(torch.as_tensor(state).float().to(self.device))
@@ -146,8 +153,10 @@ class VPG:
         a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state).unsqueeze(0)
 
-        # store policy probs and value function for current traj
-        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
+        # store policy probs and value function for current trajectory
+        self.policy_hist = torch.cat([
+            self.policy_hist, c.log_prob(a).unsqueeze(0)
+        ])
 
         self.value_hist = torch.cat([self.value_hist, val])
 
@@ -171,7 +180,9 @@ class VPG:
             torch.mul(self.policy_hist, advantage).mul(-1), -1
         ).unsqueeze(0)
 
-        loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
+        loss_value = nn.MSELoss()(
+            self.value_hist, Variable(returns)
+        ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
         self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
@@ -179,8 +190,8 @@ class VPG:
 
         # clear traj history
         self.traj_reward = []
-        self.policy_hist = Variable(torch.Tensor())
-        self.value_hist = Variable(torch.Tensor())
+        self.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_hist = Variable(torch.Tensor()).to(self.device)
 
     def update_policy(self, episode, copy_policy=False):
         # mean of all traj losses in single epoch
@@ -202,13 +213,13 @@ class VPG:
         self.optimizer_value.step()
 
         # clear loss history for epoch
-        self.policy_loss_hist = Variable(torch.Tensor())
-        self.value_loss_hist = Variable(torch.Tensor())
+        self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
         if copy_policy:
             pass
 
-    def learn(self): #pragma: no cover
+    def learn(self):  # pragma: no cover
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
@@ -216,7 +227,9 @@ class VPG:
                 state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    action = Variable(self.select_action(state, deterministic=False))
+                    action = Variable(self.select_action(
+                        state, deterministic=False
+                    ))
                     state, reward, done, _ = self.env.step(action.item())
 
                     if self.render:
@@ -227,7 +240,7 @@ class VPG:
                     if done:
                         break
 
-                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
+                epoch_reward += np.sum(self.traj_reward)/self.actor_batch_size
                 self.get_traj_loss()
 
             self.update_policy(episode)
@@ -263,6 +276,6 @@ class VPG:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = VPG("mlp", env, save_model="checkpoints")
+    algo = VPG("mlp", env)
     algo.learn()
     algo.evaluate(algo)
