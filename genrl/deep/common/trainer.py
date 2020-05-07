@@ -4,7 +4,8 @@ import gym
 import torch
 import numpy as np
 
-from genrl.deep.common import set_seeds, Logger
+from genrl.deep.common import set_seeds, Logger, venv
+# from genrl import SAC
 from abc import ABC
 
 
@@ -247,9 +248,13 @@ class OffPolicyTrainer(Trainer):
                             self.agent.update_params(
                                 states, actions, rewards.unsqueeze(1), next_states, dones, _
                             )
+                        elif self.agent.__class__.__name__ == "DDPG":
+                            self.agent.update_params(
+                                states, actions, rewards.unsqueeze(1), next_states, dones, _
+                            )
                         else:
                             self.agent.update_params(
-                                states, actions, rewards.unsqueeze(1), next_states, dones
+                                states, actions, rewards, next_states, dones
                             )
 
             if (
@@ -381,14 +386,15 @@ class OnPolicyTrainer(Trainer):
 if __name__ == "__main__":
     log_dir = os.getcwd()
     logger = Logger(log_dir, ["stdout"])
-    env = gym.make("Pendulum-v0")
-    #    algo = SAC("mlp", env, seed=0)
+    # env = gym.make("Pendulum-v0")
+    env = venv("Pendulum-v0", 16, parallel=False)
+    algo = SAC("mlp", env, seed=0)
 
     import time
 
     start = time.time()
-    #    trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=10)
-    #    trainer.train()
+    trainer = OffPolicyTrainer(algo, env, logger, render=True, seed=0, epochs=10)
+    trainer.train()
     end = time.time()
 
     print(end - start)

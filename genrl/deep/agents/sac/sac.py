@@ -228,13 +228,15 @@ class SAC:
             next_q_targ = (
                 torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
             )
-            next_q = reward + self.gamma * (1 - done) * next_q_targ
+            # print(reward.shape, done.shape, next_q_targ.shape)
+            next_q = reward + self.gamma * (1 - done.squeeze()) * next_q_targ
 
         # compute losses
         q1 = self.q1(torch.cat([state, action], dim=-1))
         q2 = self.q2(torch.cat([state, action], dim=-1))
 
         q1_loss = nn.MSELoss()(q1, next_q)
+        # print(q1.shape, next_q.shape)
         q2_loss = nn.MSELoss()(q2, next_q)
 
         pi, log_pi, _ = self.sample_action(state)
@@ -286,43 +288,40 @@ class SAC:
         if self.tensorboard_log:
             writer = SummaryWriter(self.tensorboard_log)
 
-        i = 0
-        ep = 1
-        total_steps = self.steps_per_epoch * self.epochs
+        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
-        while ep >= 1:
-            episode_reward = 0
-            state = env.reset()
-            done = False
-            j = 0
+        episode_reward, episode_len = np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
+        state = self.env.reset()
+        for i in range(0, total_steps, self.env.n_envs):
+            # done = [False] * self.env.n_envs
 
-            while not done:
+            # while not done:
                 # sample action
-                if i > self.start_steps:
-                    action = self.select_action(state)
-                else:
-                    action = self.env.action_space.sample()
+            if i > self.start_steps:
+                action = self.select_action(state)
+            else:
+                action = self.env.sample()
 
-                if (
-                    i >= self.start_update
-                    and i % self.update_interval == 0
-                    and self.replay_buffer.get_len() > self.batch_size
-                ):
-                    # get losses
-                    batch = self.replay_buffer.sample(self.batch_size)
-                    states, actions, next_states, rewards, dones = (
-                        x.to(self.device) for x in batch
-                    )
-                    q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
-                        states, actions, next_states, rewards, dones
-                    )
+            if (
+                i >= self.start_update
+                and i % self.update_interval == 0
+                and self.replay_buffer.get_len() > self.batch_size
+            ):
+                # get losses
+                batch = self.replay_buffer.sample(self.batch_size)
+                states, actions, rewards, next_states, dones = (
+                    x.to(self.device) for x in batch
+                )
+                q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
+                    states, actions, rewards, next_states, dones
+                )
 
-                    # write loss logs to tensorboard
-                    if self.tensorboard_log:
-                        writer.add_scalar("loss/q1_loss", q1_loss, i)
-                        writer.add_scalar("loss/q2_loss", q2_loss, i)
-                        writer.add_scalar("loss/policy_loss", policy_loss, i)
-                        writer.add_scalar("loss/alpha_loss", alpha_loss, i)
+                # write loss logs to tensorboard
+                if self.tensorboard_log:
+                    writer.add_scalar("loss/q1_loss", q1_loss, i)
+                    writer.add_scalar("loss/q2_loss", q2_loss, i)
+                    writer.add_scalar("loss/policy_loss", policy_loss, i)
+                    writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
                 if self.save_model is not None:
                     if i >= self.start_update and i % self.save_interval == 0:
@@ -331,16 +330,20 @@ class SAC:
                         print("Saved current model")
 
                 # prepare transition for replay memory push
-                next_state, reward, done, _ = self.env.step(action)
-                if self.render:
-                    self.env.render()
-                i += 1
-                j += 1
-                episode_reward += reward
+            next_state, reward, done, _ = self.env.step(action)
+            if self.render:
+                self.env.render()
+            
+            done = [False if ep_len==self.max_ep_len else done for ep_len in episode_len]
 
-                ndone = 1 if j == self.max_ep_len else float(not done)
-                self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
-                state = next_state
+            if np.any(done) or np.any(episode_len == self.max_ep_len):
+                for i, d in enumerate(done):
+                    if d:
+                        episode_reward[i] = 0
+                        episode_len[i] = 0
+
+            self.replay_buffer.extend(zip(state, action, reward, next_state, done))
+            state = next_state
 
             if i > total_steps:
                 break
@@ -349,13 +352,13 @@ class SAC:
             if self.tensorboard_log:
                 writer.add_scalar("reward/episode_reward", episode_reward, i)
 
-            if ep % 5 == 0:
+            if sum(episode_len) % (5*self.env.n_envs) == 0 and sum(episode_len) != 0:
                 print(
                     "Episode: {}, total numsteps: {}, reward: {}".format(
-                        ep, i, episode_reward
+                        sum(episode_len), i, episode_reward
                     )
                 )
-            ep += 1
+            # ep += 1
 
         self.env.close()
         if self.tensorboard_log:

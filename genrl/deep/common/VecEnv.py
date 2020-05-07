@@ -152,23 +152,24 @@ class SerialVecEnv(VecEnv):
         :param mode: (str) Can either be 'human' or 'rgb_array'. \
         Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         """
-        images = np.asarray(self.images())
-        N, H, W, C = images.shape
-        newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
-        images = np.array(list(images) + [images[0] * 0 for _ in range(N, newH * newW)])
-        out_image = images.reshape(newH, newW, H, W, C)
-        out_image = out_image.transpose(0, 2, 1, 3, 4)
-        out_image = out_image.reshape(newH * H, newW * W, C)
-        if mode == "human":
-            # make_grid(self.images())
-            import cv2  # noqa
+        self.envs[0].render()
+        # images = np.asarray(self.images())
+        # N, H, W, C = images.shape
+        # newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
+        # images = np.array(list(images) + [images[0] * 0 for _ in range(N, newH * newW)])
+        # out_image = images.reshape(newH, newW, H, W, C)
+        # out_image = out_image.transpose(0, 2, 1, 3, 4)
+        # out_image = out_image.reshape(newH * H, newW * W, C)
+        # if mode == "human":
+        #     # make_grid(self.images())
+        #     import cv2  # noqa
 
-            cv2.imshow("vecenv", out_image[:, :, ::-1])
-            cv2.waitKey(1)
-        elif mode == "rgb_array":
-            return out_image
-        else:
-            raise NotImplementedError
+        #     cv2.imshow("vecenv", out_image[:, :, ::-1])
+        #     cv2.waitKey(1)
+        # elif mode == "rgb_array":
+        #     return out_image
+        # else:
+        #     raise NotImplementedError
 
 
 class SubProcessVecEnv(VecEnv):
