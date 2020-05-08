@@ -68,7 +68,8 @@ class BasePolicy(nn.Module):
         Get action from policy based on input
 
         :param state: The state being passed as input to the policy
-        :param deterministic: True if the action space is deterministic, else False  # noqa
+        :param deterministic: True if the action space is deterministic, \
+else False
         :type state: Tensor
         :type deterministic: boolean
         :returns: action
@@ -136,7 +137,8 @@ class BaseActorCritic(nn.Module):
         Get action from the Actor based on input
 
         :param state: The state being passed as input to the Actor
-        :param deterministic: True if the action space is deterministic, else False  # noqa
+        :param deterministic: True if the action space is deterministic, \
+else False
         :type state: Tensor
         :type deterministic: boolean
         :returns: action

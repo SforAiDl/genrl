@@ -31,7 +31,8 @@ class ReplayBuffer:
 
         :param batch_size: Number of samples per batch
         :type batch_size: int
-        :returns: Tuple composing of `state`, `action`, `reward`, `next_state` and `done`  # noqa
+        :returns: Tuple composing of `state`, `action`, `reward`, \
+`next_state` and `done`
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
@@ -68,7 +69,8 @@ class PrioritizedBuffer:
         """
         Adds new experience to buffer
 
-        :param x: Tuple containing `state`, `action`, `reward`, `next_state` and `done`  # noqa
+        :param x: Tuple containing `state`, `action`, `reward`, \
+`next_state` and `done`
         :type x: tuple
         :returns: None
         """
@@ -82,10 +84,12 @@ class PrioritizedBuffer:
         respective indices and weights
 
         :param batch_size: Number of samples per batch
-        :param beta: Bias exponent used to correct Importance Sampling (IS) weights  # noqa
+        :param beta: Bias exponent used to correct \
+Importance Sampling (IS) weights
         :type batch_size: int
         :type beta: float
-        :returns: Tuple containing `states`, `actions`, `next_states`, `rewards`, `dones`, `indices` and `weights`  # noqa
+        :returns: Tuple containing `states`, `actions`, `next_states`, \
+`rewards`, `dones`, `indices` and `weights`
         """
         total = len(self.buffer)
 
@@ -119,7 +123,8 @@ class PrioritizedBuffer:
         Updates list of priorities with new order of priorities
 
         :param batch_indices: List of indices of batch
-        :param batch_priorities: List of priorities of the batch at the specific indices  # noqa
+        :param batch_priorities: List of priorities of the batch at the \
+specific indices
         :type batch_indices: list or tuple
         :type batch_priorities: list or tuple
         """

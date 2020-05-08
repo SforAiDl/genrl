@@ -11,7 +11,8 @@ def get_model(function_type, function_name):
     Utility to get the class of required function
 
     :param function_type: "ac" for Actor Critic, "v" for Value, "p" for Policy
-    :param function_name: Name of the specific structure of model. Eg. "mlp" or "cnn"  # noqa
+    :param function_name: Name of the specific structure of model. \
+Eg. "mlp" or "cnn"
     :type function_type: str
     :type function_name: str
     :returns: Required class. Eg. MlpActorCritic
@@ -39,7 +40,8 @@ def mlp(sizes, sac=False):
     :param sac: True if Soft Actor Critic is being used, else False
     :type sizes: tuple or list
     :type sac: bool
-    :returns: Neural Network with fully-connected linear layers and activation layers  # noqa
+    :returns: Neural Network with fully-connected linear layers and \
+activation layers
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
@@ -51,7 +53,8 @@ def mlp(sizes, sac=False):
 
 def cnn(channels=(4, 16, 32), kernel_sizes=(8, 4), strides=(4, 2), in_size=84):
     """
-    Generates a CNN model given input dimensions, channels, kernel_sizes and strides  # noqa
+    Generates a CNN model given input dimensions, channels, kernel_sizes and \
+strides
 
     :param channels: Input output channels before and after each convolution
     :param kernel_sizes: Kernel sizes for each convolution
@@ -61,7 +64,8 @@ def cnn(channels=(4, 16, 32), kernel_sizes=(8, 4), strides=(4, 2), in_size=84):
     :type kernel_sizes: tuple
     :type strides: tuple
     :type in_size: int
-    :returns: Convolutional Neural Network with convolutional layers and activation layers
+    :returns: Convolutional Neural Network with convolutional layers and \
+activation layers
     """
     cnn_layers = []
     output_size = in_size
