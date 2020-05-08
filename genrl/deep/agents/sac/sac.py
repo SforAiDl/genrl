@@ -117,7 +117,7 @@ class SAC:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -143,9 +143,10 @@ class SAC:
         self.q2 = get_model("v", self.network_type)(
             state_dim, action_dim, "Qsa", self.layers
         ).to(self.device)
+
         self.policy = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, disc, False, sac=True
-        )
+        ).to(self.device)
 
         if self.pretrained is not None:
             self.load(self)
@@ -176,22 +177,24 @@ class SAC:
             self.target_entropy = -torch.prod(
                 torch.Tensor(self.env.action_space.shape).to(self.device)
             ).item()
-            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+            self.log_alpha = torch.zeros(
+                1, requires_grad=True, device=self.device
+            )
             self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
 
         # set action scales
         if self.env.action_space is None:
-            self.action_scale = torch.tensor(1.0)
-            self.action_bias = torch.tensor(0.0)
+            self.action_scale = torch.tensor(1.0).to(self.device)
+            self.action_bias = torch.tensor(0.0).to(self.device)
         else:
             self.action_scale = torch.FloatTensor(
                 (self.env.action_space.high - self.env.action_space.low) / 2.0
-            )
+            ).to(self.device)
             self.action_bias = torch.FloatTensor(
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
-            )
+            ).to(self.device)
 
     def sample_action(self, state):
         mean, log_std = self.policy.forward(state)
@@ -223,10 +226,15 @@ class SAC:
         # compute targets
         with torch.no_grad():
             next_action, next_log_pi, _ = self.sample_action(next_state)
-            next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
-            next_q2_targ = self.q2_targ(torch.cat([next_state, next_action], dim=-1))
+            next_q1_targ = self.q1_targ(
+                torch.cat([next_state, next_action], dim=-1)
+            )
+            next_q2_targ = self.q2_targ(
+                torch.cat([next_state, next_action], dim=-1)
+            )
             next_q_targ = (
-                torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
+                torch.min(next_q1_targ, next_q2_targ)
+                - self.alpha * next_log_pi
             )
             next_q = reward + self.gamma * (1 - done) * next_q_targ
 
@@ -271,26 +279,38 @@ class SAC:
             alpha_loss = torch.tensor(0.0).to(self.device)
 
         # soft update target params
-        for target_param, param in zip(self.q1_targ.parameters(), self.q1.parameters()):
+        for target_param, param in zip(
+            self.q1_targ.parameters(), self.q1.parameters()
+        ):
             target_param.data.copy_(
-                target_param.data * self.polyak + param.data * (1 - self.polyak)
-            )
-        for target_param, param in zip(self.q2_targ.parameters(), self.q2.parameters()):
-            target_param.data.copy_(
-                target_param.data * self.polyak + param.data * (1 - self.polyak)
+                target_param.data * self.polyak
+                + param.data * (1 - self.polyak)
             )
 
-        return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
+        for target_param, param in zip(
+            self.q2_targ.parameters(), self.q2.parameters()
+        ):
+            target_param.data.copy_(
+                target_param.data * self.polyak
+                + param.data * (1 - self.polyak)
+            )
 
-    def learn(self): #pragma: no cover
+        return (
+            q1_loss.item(),
+            q2_loss.item(),
+            policy_loss.item(),
+            alpha_loss.item()
+        )
+
+    def learn(self):  # pragma: no cover
         if self.tensorboard_log:
             writer = SummaryWriter(self.tensorboard_log)
 
-        i = 0
-        ep = 1
+        timestep = 0
+        episode = 1
         total_steps = self.steps_per_epoch * self.epochs
 
-        while ep >= 1:
+        while episode >= 1:
             episode_reward = 0
             state = env.reset()
             done = False
@@ -298,14 +318,14 @@ class SAC:
 
             while not done:
                 # sample action
-                if i > self.start_steps:
+                if timestep > self.start_steps:
                     action = self.select_action(state)
                 else:
                     action = self.env.action_space.sample()
 
                 if (
-                    i >= self.start_update
-                    and i % self.update_interval == 0
+                    timestep >= self.start_update
+                    and timestep % self.update_interval == 0
                     and self.replay_buffer.get_len() > self.batch_size
                 ):
                     # get losses
@@ -313,49 +333,67 @@ class SAC:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
+
+                    (
+                        q1_loss, q2_loss, policy_loss, alpha_loss
+                    ) = self.update_params(
                         states, actions, next_states, rewards, dones
                     )
 
                     # write loss logs to tensorboard
                     if self.tensorboard_log:
-                        writer.add_scalar("loss/q1_loss", q1_loss, i)
-                        writer.add_scalar("loss/q2_loss", q2_loss, i)
-                        writer.add_scalar("loss/policy_loss", policy_loss, i)
-                        writer.add_scalar("loss/alpha_loss", alpha_loss, i)
+                        writer.add_scalar(
+                            "loss/q1_loss", q1_loss, timestep
+                        )
+                        writer.add_scalar(
+                            "loss/q2_loss", q2_loss, timestep
+                        )
+                        writer.add_scalar(
+                            "loss/policy_loss", policy_loss, timestep
+                        )
+                        writer.add_scalar(
+                            "loss/alpha_loss", alpha_loss, timestep
+                        )
 
                 if self.save_model is not None:
-                    if i >= self.start_update and i % self.save_interval == 0:
+                    if (
+                        timestep >= self.start_update and
+                        timestep % self.save_interval == 0
+                    ):
                         self.checkpoint = self.get_hyperparams()
-                        self.save(self, i)
+                        self.save(self, timestep)
                         print("Saved current model")
 
                 # prepare transition for replay memory push
                 next_state, reward, done, _ = self.env.step(action)
                 if self.render:
                     self.env.render()
-                i += 1
+                timestep += 1
                 j += 1
                 episode_reward += reward
 
                 ndone = 1 if j == self.max_ep_len else float(not done)
-                self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
+                self.replay_buffer.push((
+                    state, action, reward, next_state, 1 - ndone
+                ))
                 state = next_state
 
-            if i > total_steps:
+            if timestep > total_steps:
                 break
 
             # write episode reward to tensorboard logs
             if self.tensorboard_log:
-                writer.add_scalar("reward/episode_reward", episode_reward, i)
+                writer.add_scalar(
+                    "reward/episode_reward", episode_reward, timestep
+                )
 
-            if ep % 5 == 0:
+            if episode % 5 == 0:
                 print(
-                    "Episode: {}, total numsteps: {}, reward: {}".format(
-                        ep, i, episode_reward
+                    "Episode: {}, Total Timesteps: {}, Reward: {}".format(
+                        episode, timestep, episode_reward
                     )
                 )
-            ep += 1
+            episode += 1
 
         self.env.close()
         if self.tensorboard_log:
@@ -380,6 +418,6 @@ class SAC:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env, seed=0)
+    algo = SAC("mlp", env)
     algo.learn()
     algo.evaluate(algo)

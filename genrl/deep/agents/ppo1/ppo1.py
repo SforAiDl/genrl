@@ -95,7 +95,7 @@ class PPO1:
 
         # init writer if tensorboard
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -103,21 +103,35 @@ class PPO1:
 
     def create_model(self):
         # Instantiate networks and optimizers
-        state_dim, action_dim, disc, action_lim = self.get_env_properties(self.env)
+        (
+            state_dim,
+            action_dim,
+            disc,
+            action_lim
+        ) = self.get_env_properties(self.env)
+
         self.policy_new, self.policy_old = (
             get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
+                state_dim,
+                action_dim,
+                self.layers,
+                disc=disc,
+                action_lim=action_lim
             ),
             get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
+                state_dim,
+                action_dim,
+                self.layers,
+                disc=disc,
+                action_lim=action_lim
             ),
         )
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
 
-        self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
-            self.device
-        )
+        self.value_fn = get_model("v", self.network_type)(
+            state_dim, action_dim
+        ).to(self.device)
 
         # load paramaters if already trained
         if self.pretrained is not None:
@@ -125,7 +139,9 @@ class PPO1:
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights", "save_model"]:
+                if key not in [
+                    "policy_weights", "value_weights", "save_model"
+                ]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
@@ -134,22 +150,28 @@ class PPO1:
         self.optimizer_policy = opt.Adam(
             self.policy_new.parameters(), lr=self.lr_policy
         )
-        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
+        self.optimizer_value = opt.Adam(
+            self.value_fn.parameters(), lr=self.lr_value
+        )
 
         self.traj_reward = []
-        self.policy_old.policy_hist = Variable(torch.Tensor())
-        self.policy_new.policy_hist = Variable(torch.Tensor())
-        self.value_fn.value_hist = Variable(torch.Tensor())
+        self.policy_old.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.policy_new.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_fn.value_hist = Variable(torch.Tensor()).to(self.device)
 
-        self.policy_new.loss_hist = Variable(torch.Tensor())
-        self.value_fn.loss_hist = Variable(torch.Tensor())
+        self.policy_new.loss_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_fn.loss_hist = Variable(torch.Tensor()).to(self.device)
 
     def select_action(self, state):
         state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on policy_old output
-        action, c_old = self.policy_old.get_action(Variable(state), deterministic=False)
-        _, c_new = self.policy_new.get_action(Variable(state), deterministic=False)
+        action, c_old = self.policy_old.get_action(
+            Variable(state), deterministic=False
+        )
+        _, c_new = self.policy_new.get_action(
+            Variable(state), deterministic=False
+        )
         val = self.value_fn.get_value(Variable(state))
 
         # store policy probs and value function for current traj
@@ -171,6 +193,7 @@ class PPO1:
             [self.value_fn.value_hist, val.unsqueeze(0)]
         )
 
+        action = action.detach().cpu().numpy()
         return action
 
     # get clipped loss for single trajectory (episode)
@@ -188,7 +211,9 @@ class PPO1:
         advantages = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
+        ratio = torch.div(
+            self.policy_new.policy_hist, self.policy_old.policy_hist
+        )
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
             .mul(advantages)
@@ -205,14 +230,18 @@ class PPO1:
         ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
-        self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
-        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
+        self.policy_new.loss_hist = torch.cat([
+            self.policy_new.loss_hist, loss_policy
+        ])
+        self.value_fn.loss_hist = torch.cat([
+            self.value_fn.loss_hist, loss_value
+        ])
 
         # clear traj history
         self.traj_reward = []
-        self.policy_old.policy_hist = Variable(torch.Tensor())
-        self.policy_new.policy_hist = Variable(torch.Tensor())
-        self.value_fn.value_hist = Variable(torch.Tensor())
+        self.policy_old.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.policy_new.policy_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_fn.value_hist = Variable(torch.Tensor()).to(self.device)
 
     def update_policy(self, episode, copy_policy=True):
         # mean of all traj losses in single epoch
@@ -234,13 +263,13 @@ class PPO1:
         self.optimizer_value.step()
 
         # clear loss history for epoch
-        self.policy_new.loss_hist = Variable(torch.Tensor())
-        self.value_fn.loss_hist = Variable(torch.Tensor())
+        self.policy_new.loss_hist = Variable(torch.Tensor()).to(self.device)
+        self.value_fn.loss_hist = Variable(torch.Tensor()).to(self.device)
 
         if copy_policy:
             self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-    def learn(self): #pragma: no cover
+    def learn(self):  # pragma: no cover
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
@@ -249,7 +278,7 @@ class PPO1:
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
                     action = self.select_action(state)
-                    state, reward, done, _ = self.env.step(np.array(action))
+                    state, reward, done, _ = self.env.step(action)
 
                     if self.render:
                         self.env.render()
@@ -259,7 +288,10 @@ class PPO1:
                     if done:
                         break
 
-                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
+                epoch_reward += (
+                    np.sum(self.traj_reward)
+                    / self.actor_batch_size
+                )
                 self.get_traj_loss()
 
             self.update_policy(episode)
@@ -317,5 +349,5 @@ class PPO1:
 if __name__ == "__main__":
 
     env = gym.make("CartPole-v0")
-    algo = PPO1("mlp", env, save_model="checkpoints", render=True)
+    algo = PPO1("mlp", env)
     algo.learn()

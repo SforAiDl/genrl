@@ -69,9 +69,9 @@ def evaluate(algo, num_timesteps=1000):
 
         if done:
             episode += 1
-            print(
-                "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, episode_t)
-            )
+            print("Episode: {}, Reward: {}, Timestep: {}".format(
+                    episode, episode_reward, episode_t
+            ))
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
         else:
@@ -87,20 +87,22 @@ def save_params(algo, timestep):
     directory = algo.save_model
     path = "{}/{}_{}".format(directory, algo_name, env_name)
 
-    if algo.run_num != None:
+    if algo.run_num is not None:
         run_num = algo.run_num
     else:
         if not os.path.exists(path):
             os.makedirs(path)
             run_num = 0
         else:
-            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
-                -1
-            ].path
-            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
+            last_path = sorted(
+                os.scandir(path), key=lambda d: d.stat().st_mtime
+            )[-1].path
+            run_num = int(last_path[len(path) + 1:].split("-")[0]) + 1
         algo.run_num = run_num
 
-    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(path, run_num, timestep))
+    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(
+        path, run_num, timestep
+    ))
 
 
 def load_params(algo):
@@ -116,7 +118,7 @@ def set_seeds(seed, env=None):
     """
     Sets seeds for reproducibility
     :param seed: (int) Seed Value
-    :param env: (gym environment) Optionally pass gym environment to set its seed
+    :param env: (gym env) Optionally pass gym environment to set its seed
     """
     torch.manual_seed(seed)
     torch.backends.cudnn.deterministic = True

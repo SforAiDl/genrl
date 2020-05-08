@@ -5,9 +5,9 @@ import numpy as np
 
 
 class ReplayBuffer:
-    def __init__(self, size):
-        self.size = size
-        self.memory = deque([], maxlen=size)
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.memory = deque([], maxlen=capacity)
 
     def push(self, x):
         self.memory.append(x)
@@ -65,8 +65,8 @@ class PrioritizedBuffer:
         )
 
     def update_priorities(self, batch_indices, batch_priorities):
-        for idx, prio in zip(batch_indices, batch_priorities):
-            self.priorities[int(idx)] = prio
+        for idx, priority in zip(batch_indices, batch_priorities):
+            self.priorities[int(idx)] = priority
 
     def get_len(self):
         return len(self.buffer)

@@ -40,7 +40,7 @@ class VecEnv(ABC):
     """
     Constructs a wrapper for serial execution through envs.
     :param env: (str)
-    :param n_envs: (int) Number of envs. 
+    :param n_envs: (int) Number of envs.
     """
 
     def __init__(self, env, n_envs=2):
@@ -83,7 +83,7 @@ class SerialVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
     :param envs: (str)
-    :param n_envs: (int) Number of envs. 
+    :param n_envs: (int) Number of envs.
     """
 
     def __init__(self, envs, n_envs=2):
@@ -130,13 +130,16 @@ class SerialVecEnv(VecEnv):
     def render(self, mode="human"):
         """
         Renders all envs in a tiles format similar to baselines.
-        :param mode: (str) Can either be 'human' or 'rgb_array'. \
-        Displays tiled images in 'human' and returns tiled images in 'rgb_array'
+        :param mode: (str) Can either be 'human' or 'rgb_array'.
+            Displays tiled images in 'human'
+            and returns tiled images in 'rgb_array'
         """
         images = np.asarray(self.images())
         N, H, W, C = images.shape
         newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
-        images = np.array(list(images) + [images[0] * 0 for _ in range(N, newH * newW)])
+        images = np.array(
+            list(images) + [images[0] * 0 for _ in range(N, newH * newW)]
+        )
         out_image = images.reshape(newH, newW, H, W, C)
         out_image = out_image.transpose(0, 2, 1, 3, 4)
         out_image = out_image.reshape(newH * H, newW * W, C)
@@ -155,7 +158,7 @@ class SubProcessVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
     :param env: (str) Environment Name. Should be registered with OpenAI Gym.
-    :param n_envs: (int) Number of envs. 
+    :param n_envs: (int) Number of envs.
     """
 
     def __init__(self, env, n_envs=2):
