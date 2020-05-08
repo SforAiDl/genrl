@@ -156,7 +156,7 @@ class DQN:
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(state_dim, action_dim)
             else:
-                self.model = get_model("v", network_type)(state_dim, action_dim, "Qs")
+                self.model = get_model("v", self.network_type)(state_dim, action_dim, "Qs")
             # load paramaters if already trained
             if self.pretrained is not None:
                 self.load(self)
@@ -182,7 +182,7 @@ class DQN:
             self.state_history = deque(
                 [
                     self.transform(
-                        env.observation_space.sample()
+                        self.env.observation_space.sample()
                     ).reshape(-1, 84, 84) for _ in range(self.history_length)
                 ], maxlen=self.history_length
             )
