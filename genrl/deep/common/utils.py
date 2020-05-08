@@ -49,9 +49,11 @@ def evaluate(algo, num_timesteps=1000):
 
         if done:
             episode += 1
-            print("Episode: {}, Reward: {}, Timestep: {}".format(
+            print(
+                "Episode: {}, Reward: {}, Timestep: {}".format(
                     episode, episode_reward, episode_t
-            ))
+                )
+            )
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
         else:
@@ -74,15 +76,13 @@ def save_params(algo, timestep):
             os.makedirs(path)
             run_num = 0
         else:
-            last_path = sorted(
-                os.scandir(path), key=lambda d: d.stat().st_mtime
-            )[-1].path
-            run_num = int(last_path[len(path) + 1:].split("-")[0]) + 1
+            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
+                -1
+            ].path
+            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
         algo.run_num = run_num
 
-    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(
-        path, run_num, timestep
-    ))
+    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(path, run_num, timestep))
 
 
 def load_params(algo):

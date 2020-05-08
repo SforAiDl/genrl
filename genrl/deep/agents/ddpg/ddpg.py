@@ -128,8 +128,7 @@ class DDPG:
         action_dim = self.env.action_space.shape[0]
         if self.noise is not None:
             self.noise = self.noise(
-                np.zeros_like(action_dim),
-                self.noise_std * np.ones_like(action_dim)
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
         self.ac = get_model("ac", self.network_type)(
@@ -152,20 +151,15 @@ class DDPG:
             param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.optimizer_policy = opt.Adam(
-            self.ac.actor.parameters(),
-            lr=self.lr_p
-        )
-        self.optimizer_q = opt.Adam(
-            self.ac.critic.parameters(),
-            lr=self.lr_q
-        )
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
+        self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
     def select_action(self, state, deterministic=True):
         with torch.no_grad():
-            action, _ = self.ac.get_action(torch.as_tensor(
-                state, dtype=torch.float32
-            ).to(self.device), deterministic=deterministic)
+            action, _ = self.ac.get_action(
+                torch.as_tensor(state, dtype=torch.float32).to(self.device),
+                deterministic=deterministic,
+            )
             action = action.detach().cpu().numpy()
 
         # add noise to output from policy network
@@ -180,11 +174,11 @@ class DDPG:
         q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            q_pi_target = self.ac_target.get_value(torch.cat([
-                next_state,
-                self.ac_target.get_action(next_state, True)[0]],
-                dim=-1
-            ))
+            q_pi_target = self.ac_target.get_value(
+                torch.cat(
+                    [next_state, self.ac_target.get_action(next_state, True)[0]], dim=-1
+                )
+            )
             target = reward + self.gamma * (1 - done) * q_pi_target
 
         return nn.MSELoss()(q, target)
@@ -255,9 +249,11 @@ class DDPG:
                     self.noise.reset()
 
                 if episode % 20 == 0:
-                    print("Episode: {}, Reward: {}, Timestep: {}".format(
-                        episode, episode_reward, t
-                    ))
+                    print(
+                        "Episode: {}, Reward: {}, Timestep: {}".format(
+                            episode, episode_reward, t
+                        )
+                    )
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, t)
 
@@ -271,9 +267,7 @@ class DDPG:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(
-                        states, actions, next_states, rewards, dones
-                    )
+                    self.update_params(states, actions, next_states, rewards, dones)
 
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:

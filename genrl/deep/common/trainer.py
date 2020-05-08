@@ -37,7 +37,7 @@ class Trainer(ABC):
         self,
         agent,
         env,
-        log_mode=['stdout'],
+        log_mode=["stdout"],
         buffer=None,
         off_policy=False,
         save_interval=0,
@@ -49,7 +49,7 @@ class Trainer(ABC):
         epochs=10,
         device="cpu",
         log_interval=10,
-        logdir = 'logs',
+        logdir="logs",
         batch_size=50,
         seed=None,
         deterministic_actions=False,
@@ -99,9 +99,7 @@ class Trainer(ABC):
 
         save_dir = "{}/checkpoints/{}_{}".format(logdir, algo, env_name)
         os.makedirs(save_dir, exist_ok=True)
-        torch.save(saving_params, "{}/{}.pt".format(
-            save_dir, self.ckpt_log_name
-        ))
+        torch.save(saving_params, "{}/{}.pt".format(save_dir, self.ckpt_log_name))
 
     @property
     def n_envs(self):
@@ -141,7 +139,7 @@ class OffPolicyTrainer(Trainer):
         self,
         agent,
         env,
-        log_mode=['stdout'],
+        log_mode=["stdout"],
         buffer=None,
         off_policy=True,
         save_interval=0,
@@ -153,7 +151,7 @@ class OffPolicyTrainer(Trainer):
         epochs=10,
         device="cpu",
         log_interval=10,
-        logdir = 'logs',
+        logdir="logs",
         batch_size=50,
         seed=0,
         deterministic_actions=False,
@@ -227,10 +225,7 @@ class OffPolicyTrainer(Trainer):
             state = next_state
 
             if done or (episode_len == self.max_ep_len):
-                if (
-                    "noise" in self.agent.__dict__
-                    and self.agent.noise is not None
-                ):
+                if "noise" in self.agent.__dict__ and self.agent.noise is not None:
                     self.agent.noise.reset()
 
                 if episode % self.log_interval == 0:
@@ -245,14 +240,14 @@ class OffPolicyTrainer(Trainer):
                 state, episode_reward, episode_len = self.env.reset(), 0, 0
                 episode += 1
 
-            # update params for DQN 
+            # update params for DQN
             if self.agent.__class__.__name__ == "DQN":
                 if self.agent.replay_buffer.get_len() > self.agent.batch_size:
                     self.agent.update_params()
 
                 if t % self.update_interval == 0:
                     self.agent.update_target_model()
-            # update params for other agents 
+            # update params for other agents
             else:
                 if t >= self.start_update and t % self.update_interval == 0:
                     for _ in range(self.update_interval):
@@ -309,7 +304,7 @@ class OnPolicyTrainer(Trainer):
         self,
         agent,
         env,
-        log_mode=['stdout'],
+        log_mode=["stdout"],
         save_interval=0,
         render=False,
         max_ep_len=1000,
@@ -319,7 +314,7 @@ class OnPolicyTrainer(Trainer):
         epochs=10,
         device="cpu",
         log_interval=10,
-        logdir='logs',
+        logdir="logs",
         batch_size=50,
         seed=None,
         deterministic_actions=False,
@@ -360,9 +355,7 @@ class OnPolicyTrainer(Trainer):
 
                 for t in range(self.agent.timesteps_per_actorbatch):
                     if self.determinsitic_actions:
-                        action = self.agent.select_action(
-                            state, deterministic=True
-                        )
+                        action = self.agent.select_action(state, deterministic=True)
                     else:
                         action = self.agent.select_action(state)
                     state, reward, done, _ = self.env.step(np.array(action))
@@ -376,8 +369,7 @@ class OnPolicyTrainer(Trainer):
                         break
 
                 epoch_reward += (
-                    np.sum(self.agent.traj_reward)
-                    / self.agent.actor_batch_size
+                    np.sum(self.agent.traj_reward) / self.agent.actor_batch_size
                 )
                 self.agent.get_traj_loss()
 
@@ -390,9 +382,7 @@ class OnPolicyTrainer(Trainer):
                     {
                         "Episode": episode,
                         "Reward": epoch_reward,
-                        "Timestep": (
-                            i * episode * self.agent.timesteps_per_actorbatch
-                        )
+                        "Timestep": (i * episode * self.agent.timesteps_per_actorbatch),
                     }
                 )
 

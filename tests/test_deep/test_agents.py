@@ -65,7 +65,7 @@ class TestAlgos:
 
     def test_dqn(self):
         env = gym.make("CartPole-v0")
-        # DQN 
+        # DQN
         algo = DQN("mlp", env)
         logger = Logger("./logs", ["csv"])
 
@@ -97,7 +97,7 @@ class TestAlgos:
         trainer.train()
         shutil.rmtree("./logs")
 
-        # Categorical DQN 
+        # Categorical DQN
         algo4 = DQN("mlp", env, categorical_dqn=True)
         logger = Logger("./logs", ["csv"])
 

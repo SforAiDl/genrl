@@ -277,7 +277,6 @@ class BernoulliBandits(Bandit):
     def Q(self):
         return self._Q
 
-
     def step(self, t):
         bandit_rewards = []
         for bandit in range(self.nbandits):

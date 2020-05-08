@@ -13,6 +13,7 @@ from genrl.deep.common import (
 from genrl.deep.common.utils import *
 from genrl import PPO1
 
+
 class TestUtils:
     def test_get_model(self):
         """

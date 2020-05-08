@@ -116,8 +116,7 @@ class VPG:
 
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "V",
-            discrete, action_lim=action_lim
+            state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained
@@ -127,18 +126,12 @@ class VPG:
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
 
             for key, item in self.checkpoint.items():
-                if key not in [
-                    "policy_weights", "value_weights", "save_model"
-                ]:
+                if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.optimizer_policy = opt.Adam(
-            self.ac.actor.parameters(), lr=self.lr_policy
-        )
-        self.optimizer_value = opt.Adam(
-            self.ac.critic.parameters(), lr=self.lr_value
-        )
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
         self.policy_hist = Variable(torch.Tensor()).to(self.device)
         self.value_hist = Variable(torch.Tensor()).to(self.device)
@@ -154,9 +147,7 @@ class VPG:
         val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current trajectory
-        self.policy_hist = torch.cat([
-            self.policy_hist, c.log_prob(a).unsqueeze(0)
-        ])
+        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
 
         self.value_hist = torch.cat([self.value_hist, val])
 
@@ -180,9 +171,7 @@ class VPG:
             torch.mul(self.policy_hist, advantage).mul(-1), -1
         ).unsqueeze(0)
 
-        loss_value = nn.MSELoss()(
-            self.value_hist, Variable(returns)
-        ).unsqueeze(0)
+        loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
         self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
@@ -227,9 +216,7 @@ class VPG:
                 state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    action = Variable(self.select_action(
-                        state, deterministic=False
-                    ))
+                    action = Variable(self.select_action(state, deterministic=False))
                     state, reward, done, _ = self.env.step(action.item())
 
                     if self.render:
@@ -240,7 +227,7 @@ class VPG:
                     if done:
                         break
 
-                epoch_reward += np.sum(self.traj_reward)/self.actor_batch_size
+                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
                 self.get_traj_loss()
 
             self.update_policy(episode)

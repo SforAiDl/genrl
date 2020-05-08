@@ -89,9 +89,7 @@ class CSVLogger:
                     "A new value '{}' cannot be added to CSVLogger".format(key)
                 )
             if i != self.keynames[key]:
-                raise Exception(
-                    "Value not at the same index as when initialized"
-                )
+                raise Exception("Value not at the same index as when initialized")
             self.file.write(str(value))
             self.file.write(",")
 
