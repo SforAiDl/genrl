@@ -11,8 +11,6 @@ from ...common import (
     save_params,
     load_params,
     set_seeds,
-    NormalActionNoise,
-    OrnsteinUhlenbeckActionNoise,
 )
 
 

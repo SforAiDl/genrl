@@ -438,6 +438,7 @@ class DQN:
                         "Episode: {}, Reward: {}, Frame Index: {}".format(
                             episode, episode_reward, frame_idx
                         )
+                    )
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, frame_idx)
 
