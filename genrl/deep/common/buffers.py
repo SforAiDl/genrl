@@ -48,10 +48,12 @@ class PrioritizedBuffer:
 
         weights = (total * probabilities[indices]) ** (-beta)
         weights /= weights.max()
-        weights = np.array(weights, dtype=np.float32)
+        weights = np.asarray(weights, dtype=np.float32)
 
-        samples = np.asarray(self.buffer)[indices]
-        states, actions, rewards, next_states, dones = zip(*samples)
+        samples = np.asarray(self.buffer, dtype=deque)[indices]
+        states, actions, rewards, next_states, dones = map(
+            np.stack, zip(*samples)
+        )
 
         return (
             torch.as_tensor(v, dtype=torch.float32)

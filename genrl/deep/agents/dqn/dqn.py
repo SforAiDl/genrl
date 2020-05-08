@@ -1,8 +1,11 @@
+from collections import deque
+
 import gym
 import numpy as np
 
 import torch
 import torch.optim as opt
+import torchvision.transforms as transforms
 from torch.autograd import Variable
 from copy import deepcopy
 
@@ -15,10 +18,14 @@ from ...common import (
     load_params,
     set_seeds,
 )
+
 from .utils import (
     DuelingDQNValueMlp,
+    DuelingDQNValueCNN,
     NoisyDQNValue,
+    NoisyDQNValueCNN,
     CategoricalDQNValue,
+    CategoricalDQNValueCNN,
 )
 
 
@@ -27,7 +34,8 @@ class DQN:
     Deep Q Networks
     Paper: (DQN) https://arxiv.org/pdf/1312.5602.pdf
     Paper: (Double DQN) https://arxiv.org/abs/1509.06461
-    :param network_type: (str) The deep neural network layer types ['MLP']
+    :param self.network_type: (str) The deep neural network layer types
+        ['MLP', 'CNN']
     :param env: (Gym environment) The environment to learn from
     :param double_dqn: (boolean) For training Double DQN
     :param dueling_dqn: (boolean) For training Dueling DQN
@@ -80,6 +88,7 @@ class DQN:
         pretrained=None,
         run_num=None,
         save_model=None,
+        transform=None,
     ):
         self.env = env
         self.double_dqn = double_dqn
@@ -112,6 +121,9 @@ class DQN:
         self.save = save_params
         self.load = load_params
         self.pretrained = pretrained
+        self.network_type = network_type
+        self.history_length = None
+        self.transform = transform
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -130,16 +142,16 @@ class DQN:
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
-        self.create_model(network_type)
+        self.create_model()
 
-    def create_model(self, network_type):
+    def create_model(self):
         state_dim, action_dim, disc = self.get_env_properties()
-        if network_type == "mlp":
+        if self.network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(state_dim, action_dim)
             elif self.categorical_dqn:
                 self.model = CategoricalDQNValue(
-                    state_dim, action_dim, self.num_atoms, self.Vmin, self.Vmax,
+                    state_dim, action_dim, self.num_atoms
                 )
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(state_dim, action_dim)
@@ -154,7 +166,51 @@ class DQN:
                         setattr(self, key, item)
                 print("Loaded pretrained model")
 
-            self.target_model = deepcopy(self.model)
+        elif self.network_type == "cnn":
+            if self.history_length is None:
+                self.history_length = 4
+
+            if self.transform is None:
+                self.transform = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.Grayscale(),
+                    transforms.Resize((110, 84)),
+                    transforms.CenterCrop(84),
+                    transforms.ToTensor()
+                ])
+
+            self.state_history = deque(
+                [
+                    self.transform(
+                        env.observation_space.sample()
+                    ).reshape(-1, 84, 84) for _ in range(self.history_length)
+                ], maxlen=self.history_length
+            )
+
+            if self.dueling_dqn:
+                self.model = DuelingDQNValueCNN(
+                    self.env.action_space.n,
+                    self.history_length
+                )
+            elif self.noisy_dqn:
+                self.model = NoisyDQNValueCNN(
+                    self.env.action_space.n,
+                    self.history_length
+                )
+            elif self.categorical_dqn:
+                self.model = CategoricalDQNValueCNN(
+                    self.env.action_space.n,
+                    self.num_atoms,
+                    self.history_length
+                )
+            else:
+                self.model = get_model("v", self.network_type)(
+                    self.env.action_space.n,
+                    self.history_length,
+                    "Qs"
+                )
+
+        self.target_model = deepcopy(self.model)
 
         if self.prioritized_replay:
             self.replay_buffer = PrioritizedBuffer(
@@ -186,7 +242,7 @@ class DQN:
         if np.random.rand() > self.epsilon:
             if self.categorical_dqn:
                 with torch.no_grad():
-                    state = Variable(torch.FloatTensor(state).unsqueeze(0))
+                    state = Variable(torch.FloatTensor(state))
                     dist = self.model(state).data.cpu()
                     dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
                     action = dist.sum(2).max(1)[1].numpy()[0]
@@ -221,6 +277,10 @@ class DQN:
         action = Variable(torch.LongTensor(action.long()))
         reward = Variable(torch.FloatTensor(reward))
         done = Variable(torch.FloatTensor(done))
+
+        if self.network_type == "cnn":
+            state = state.view(-1, 4, 84, 84)
+            next_state = next_state.view(-1, 4, 84, 84)
 
         if self.categorical_dqn:
             projection_dist = self.projection_distribution(next_state, reward, done)
@@ -332,32 +392,52 @@ class DQN:
         total_steps = self.max_epochs * self.max_iterations_per_epoch
         state, episode_reward, episode, episode_len = self.env.reset(), 0, 0, 0
 
+        if self.network_type == "cnn":
+            self.state_history.append(self.transform(state))
+            phi_state = torch.stack(list(self.state_history), dim=1)
+
         if self.double_dqn:
             self.update_target_model()
 
         for frame_idx in range(1, total_steps + 1):
             self.epsilon = self.calculate_epsilon_by_frame(frame_idx)
-            action = self.select_action(state)
+
+            if self.network_type == "mlp":
+                action = self.select_action(state)
+            elif self.network_type == "cnn":
+                action = self.select_action(phi_state)
+
             next_state, reward, done, _ = self.env.step(action)
 
             if self.render:
                 self.env.render()
 
-            self.replay_buffer.push((state, action, reward, next_state, done))
+            if self.network_type == "cnn":
+                self.state_history.append(self.transform(next_state))
+                phi_next_state = torch.stack(
+                    list(self.state_history), dim=1
+                )
+                self.replay_buffer.push((
+                    phi_state, action, reward, phi_next_state, done
+                ))
+                phi_state = phi_next_state
+            else:
+                self.replay_buffer.push((
+                    state, action, reward, next_state, done
+                ))
+                state = next_state
 
-            state = next_state
             episode_reward += reward
             episode_len += 1
 
             done = False if episode_len == self.max_ep_len else done
 
             if done or (episode_len == self.max_ep_len):
-                if episode % 20 == 0:
+                if episode % 2 == 0:
                     print(
                         "Episode: {}, Reward: {}, Frame Index: {}".format(
                             episode, episode_reward, frame_idx
                         )
-                    )
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, frame_idx)
 
@@ -400,6 +480,6 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env)
+    env = gym.make("Pong-v0")
+    algo = DQN("cnn", env)
     algo.learn()

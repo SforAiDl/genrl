@@ -9,6 +9,7 @@ from genrl.deep.common import (
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
+    CNNValue,
 )
 from genrl.deep.common.utils import *
 from genrl import PPO1
@@ -22,10 +23,12 @@ class TestUtils:
         ac = get_model("ac", "mlp")
         p = get_model("p", "mlp")
         v = get_model("v", "mlp")
+        v_ = get_model("v", "cnn")
 
         assert ac == MlpActorCritic
         assert p == MlpPolicy
         assert v == MlpValue
+        assert v_ == CNNValue
 
     def test_mlp(self):
         """
@@ -43,6 +46,28 @@ class TestUtils:
         inp = torch.randn((2,))
         assert mlp_nn(inp).shape == (2,)
         assert mlp_nn_sac(inp).shape == (3,)
+
+    def test_cnn(self):
+        """
+        test getting CNN layers
+        """
+        channels = [1, 2, 4]
+        kernels = [4, 1]
+        strides = [2, 2]
+        input_size = 84
+
+        cnn_nn, output_size = cnn(channels, kernels, strides, input_size)
+
+        assert len(cnn_nn) == 2*(len(channels)-1)
+        assert all(
+            isinstance(cnn_nn[i], nn.Conv2d)
+            for i in range(0, len(channels), 2)
+        )
+        assert all(
+            isinstance(cnn_nn[i], nn.ReLU)
+            for i in range(1, len(channels)+1, 2)
+        )
+        assert output_size == 1600
 
     def test_evaluate(self):
         """

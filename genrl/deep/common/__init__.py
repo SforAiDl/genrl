@@ -17,6 +17,7 @@ from genrl.deep.common.trainer import Trainer, OffPolicyTrainer, OnPolicyTrainer
 from genrl.deep.common.utils import (
     get_model,
     mlp,
+    cnn,
     evaluate,
     save_params,
     load_params,
