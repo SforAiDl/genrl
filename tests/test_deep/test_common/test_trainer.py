@@ -1,6 +1,7 @@
 import gym
 
-from genrl import OffPolicyTrainer, OnPolicyTrainer, PPO1, TD3, Logger
+from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer, Logger
+from genrl import PPO1, TD3
 
 
 def test_on_policy_trainer():

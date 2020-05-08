@@ -7,7 +7,7 @@ from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from genrl.deep.common import (
+from ...common import (
     get_model,
     ReplayBuffer,
     save_params,

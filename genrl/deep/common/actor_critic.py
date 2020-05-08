@@ -1,6 +1,6 @@
-from genrl.deep.common.base import BaseActorCritic
-from genrl.deep.common.policies import MlpPolicy
-from genrl.deep.common.values import MlpValue
+from .base import BaseActorCritic
+from .policies import MlpPolicy
+from .values import MlpValue
 
 
 class MlpActorCritic(BaseActorCritic):

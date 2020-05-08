@@ -4,15 +4,13 @@ import torch.nn as nn
 import gym
 from copy import deepcopy
 
-from genrl.deep.common import (
+from ...common import (
     ReplayBuffer,
     get_model,
     evaluate,
     save_params,
     load_params,
     set_seeds,
-)
-from genrl.deep.common import (  # noqa
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise
 )

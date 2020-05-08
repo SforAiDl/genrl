@@ -5,7 +5,7 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from genrl.deep.common import (
+from ...common import (
     get_model,
     evaluate,
     save_params,

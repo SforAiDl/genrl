@@ -7,6 +7,8 @@ from genrl import (
     PPO1,
     VPG,
     DQN,
+)
+from genrl.deep.common import (
     OffPolicyTrainer,
     OnPolicyTrainer,
     Logger,

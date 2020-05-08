@@ -3,9 +3,9 @@ import os
 import gym
 import torch
 import numpy as np
-
-from genrl.deep.common import set_seeds, Logger
 from abc import ABC
+
+from .utils import set_seeds
 
 
 class Trainer(ABC):

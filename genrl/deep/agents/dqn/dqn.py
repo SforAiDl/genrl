@@ -6,7 +6,7 @@ import torch.optim as opt
 from torch.autograd import Variable
 from copy import deepcopy
 
-from genrl.deep.common import (
+from ...common import (
     ReplayBuffer,
     PrioritizedBuffer,
     get_model,
@@ -15,7 +15,7 @@ from genrl.deep.common import (
     load_params,
     set_seeds,
 )
-from genrl.deep.agents.dqn.utils import (
+from .utils import (
     DuelingDQNValueMlp,
     NoisyDQNValue,
     CategoricalDQNValue,

@@ -1,5 +1,5 @@
-from genrl.deep.common.base import BasePolicy
-from genrl.deep.common.utils import mlp
+from .base import BasePolicy
+from .utils import mlp
 
 
 class MlpPolicy(BasePolicy):

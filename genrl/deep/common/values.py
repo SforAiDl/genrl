@@ -1,5 +1,5 @@
-from genrl.deep.common.base import BaseValue
-from genrl.deep.common.utils import mlp
+from .base import BaseValue
+from .utils import mlp
 
 
 def _get_val_model(
