@@ -6,6 +6,7 @@ import numpy as np
 from abc import ABC
 
 from .utils import set_seeds
+from .logger import Logger
 
 
 class Trainer(ABC):
@@ -13,7 +14,7 @@ class Trainer(ABC):
     Base Trainer class. To be inherited specific usecases.
     :param agent: (object) Algorithm object
     :param env: (object) standard gym environment
-    :param logger: (object) Logger object
+    :param log_mode: (list of str) which logging modes to use
     :param buffer: (object) Buffer Object
     :param off_policy: (bool) Is the algorithm off-policy?
     :param save_interval:(int) Model to save in each of these many timesteps
@@ -36,7 +37,7 @@ class Trainer(ABC):
         self,
         agent,
         env,
-        logger,
+        log_mode=['stdout'],
         buffer=None,
         off_policy=False,
         save_interval=0,
@@ -48,13 +49,15 @@ class Trainer(ABC):
         epochs=10,
         device="cpu",
         log_interval=10,
+        logdir = 'logs',
         batch_size=50,
         seed=None,
         deterministic_actions=False,
     ):
         self.agent = agent
         self.env = env
-        self.logger = logger
+        self.log_mode = log_mode
+        self.logdir = logdir
         self.off_policy = off_policy
         if self.off_policy and buffer is None:
             if self.agent.replay_buffer is None:
@@ -71,8 +74,11 @@ class Trainer(ABC):
         self.log_interval = log_interval
         self.batch_size = batch_size
         self.determinsitic_actions = deterministic_actions
+
         if seed is not None:
             set_seeds(seed, self.env)
+
+        self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
     def train(self):
         """
@@ -135,7 +141,7 @@ class OffPolicyTrainer(Trainer):
         self,
         agent,
         env,
-        logger,
+        log_mode=['stdout'],
         buffer=None,
         off_policy=True,
         save_interval=0,
@@ -147,6 +153,7 @@ class OffPolicyTrainer(Trainer):
         epochs=10,
         device="cpu",
         log_interval=10,
+        logdir = 'logs',
         batch_size=50,
         seed=0,
         deterministic_actions=False,
@@ -157,7 +164,7 @@ class OffPolicyTrainer(Trainer):
         super(OffPolicyTrainer, self).__init__(
             agent,
             env,
-            logger,
+            log_mode,
             buffer,
             off_policy,
             save_interval,
@@ -169,6 +176,7 @@ class OffPolicyTrainer(Trainer):
             epochs,
             device,
             log_interval,
+            logdir,
             batch_size,
             seed,
             deterministic_actions,
@@ -301,7 +309,7 @@ class OnPolicyTrainer(Trainer):
         self,
         agent,
         env,
-        logger,
+        log_mode=['stdout'],
         save_interval=0,
         render=False,
         max_ep_len=1000,
@@ -311,6 +319,7 @@ class OnPolicyTrainer(Trainer):
         epochs=10,
         device="cpu",
         log_interval=10,
+        logdir='logs',
         batch_size=50,
         seed=None,
         deterministic_actions=False,
@@ -318,7 +327,7 @@ class OnPolicyTrainer(Trainer):
         super().__init__(
             agent,
             env,
-            logger,
+            log_mode,
             buffer=None,
             off_policy=False,
             save_interval=save_interval,
@@ -330,6 +339,7 @@ class OnPolicyTrainer(Trainer):
             epochs=epochs,
             device=device,
             log_interval=log_interval,
+            logdir=logdir,
             batch_size=batch_size,
             seed=seed,
             deterministic_actions=deterministic_actions,
@@ -392,26 +402,3 @@ class OnPolicyTrainer(Trainer):
 
             self.env.close()
             self.logger.close()
-
-
-if __name__ == "__main__":
-    log_dir = os.getcwd()
-    logger = Logger(log_dir, ["stdout"])
-    env = gym.make("Pendulum-v0")
-    #    algo = SAC("mlp", env, seed=0)
-
-    import time
-
-    start = time.time()
-    # trainer = OffPolicyTrainer(
-    #     algo, env, logger, render=True, seed=0, epochs=10
-    # )
-    # trainer.train()
-    end = time.time()
-
-    print(end - start)
-    # algo = VPG("mlp", env, seed=0)
-    # trainer = OnPolicyTrainer(
-    #     algo, env, logger, render=True, seed=0, epochs=100, log_interval=1
-    # )
-    # trainer.train()

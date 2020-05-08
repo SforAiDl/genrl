@@ -10,6 +10,8 @@ class Logger:
             self._logdir = os.getcwd()
         else:
             self._logdir = logdir
+            if not os.path.isdir(self._logdir):
+                os.makedirs(self._logdir)
         self._formats = formats
         self.writers = []
         for format in self.formats:
