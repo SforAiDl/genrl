@@ -10,8 +10,11 @@ from genrl.deep.common import (
     evaluate,
     save_params,
     load_params,
-    OrnsteinUhlenbeckActionNoise,
     set_seeds,
+)
+from genrl.deep.common import (  # noqa
+    NormalActionNoise,
+    OrnsteinUhlenbeckActionNoise
 )
 
 
@@ -122,7 +125,7 @@ class TD3:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -134,7 +137,8 @@ class TD3:
         state_dim, action_dim, disc = self.get_env_properties()
         if self.noise is not None:
             self.noise = self.noise(
-                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+                np.zeros_like(action_dim),
+                self.noise_std * np.ones_like(action_dim)
             )
 
         self.ac = get_model("ac", self.network_type)(
@@ -145,6 +149,9 @@ class TD3:
         self.ac.qf2 = get_model("v", self.network_type)(
             state_dim, action_dim, hidden=self.layers, val_type="Qsa"
         )
+
+        self.ac.qf1.to(self.device)
+        self.ac.qf2.to(self.device)
 
         if self.pretrained is not None:
             self.load(self)
@@ -164,7 +171,10 @@ class TD3:
             param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
+        self.q_params = (
+            list(self.ac.qf1.parameters())
+            + list(self.ac.qf2.parameters())
+        )
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
         self.optimizer_policy = torch.optim.Adam(
@@ -188,19 +198,19 @@ class TD3:
     def select_action(self, state, deterministic=True):
         with torch.no_grad():
             action = self.ac_target.get_action(
-                torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=True,
+                torch.as_tensor(
+                    state, dtype=torch.float32, device=self.device
+                ), deterministic=deterministic
             )[0].numpy()
 
         # add noise to output from policy network
         if self.noise is not None:
-            # action += self.noise_std * np.random.randn(
-            #     self.env.action_space.shape[0]
-            # )
             action += self.noise()
 
         return np.clip(
-            action, -self.env.action_space.high[0], self.env.action_space.high[0]
+            action,
+            -self.env.action_space.high[0],
+            self.env.action_space.high[0]
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
@@ -208,24 +218,14 @@ class TD3:
         q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            target_q1 = self.ac_target.qf1.get_value(
-                torch.cat(
-                    [
-                        next_state,
-                        self.ac_target.get_action(next_state, deterministic=True)[0],
-                    ],
-                    dim=-1,
-                )
-            )
-            target_q2 = self.ac_target.qf2.get_value(
-                torch.cat(
-                    [
-                        next_state,
-                        self.ac_target.get_action(next_state, deterministic=True)[0],
-                    ],
-                    dim=-1,
-                )
-            )
+            target_q1 = self.ac_target.qf1.get_value(torch.cat([
+                next_state,
+                self.ac_target.get_action(next_state, deterministic=True)[0]
+            ], dim=-1))
+            target_q2 = self.ac_target.qf2.get_value(torch.cat([
+                next_state,
+                self.ac_target.get_action(next_state, deterministic=True)[0],
+            ], dim=-1))
             target_q = torch.min(target_q1, target_q2)
 
             target = reward + self.gamma * (1 - done) * target_q
@@ -236,9 +236,10 @@ class TD3:
         return l1 + l2
 
     def get_p_loss(self, state):
-        q_pi = self.ac.get_value(
-            torch.cat([state, self.ac.get_action(state, deterministic=True)[0]], dim=-1)
-        )
+        q_pi = self.ac.get_value(torch.cat([
+            state,
+            self.ac.get_action(state, deterministic=True)[0]
+        ], dim=-1))
         return -torch.mean(q_pi)
 
     def update_params(self, state, action, reward, next_state, done, timestep):
@@ -270,7 +271,7 @@ class TD3:
                     param_target.data.mul_(self.polyak)
                     param_target.data.add_((1 - self.polyak) * param.data)
 
-    def learn(self): #pragma: no cover
+    def learn(self):  # pragma: no cover
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
 
@@ -290,7 +291,7 @@ class TD3:
             episode_reward += reward
             episode_len += 1
 
-            # dont set d to True if max_ep_len reached
+            # dont set done to True if max_ep_len reached
             done = False if episode_len == self.max_ep_len else done
 
             self.replay_buffer.push((state, action, reward, next_state, done))
@@ -303,9 +304,9 @@ class TD3:
                     self.noise.reset()
 
                 if episode % 20 == 0:
-                    print(
-                        "Ep: {}, reward: {}, t: {}".format(episode, episode_reward, t)
-                    )
+                    print("Episode: {}, Reward: {}, Timestep: {}".format(
+                            episode, episode_reward, t
+                    ))
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, t)
 
@@ -319,7 +320,9 @@ class TD3:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(states, actions, next_states, rewards, dones, t)
+                    self.update_params(
+                        states, actions, next_states, rewards, dones, t
+                    )
 
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:
@@ -350,5 +353,5 @@ class TD3:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = TD3("mlp", env, render=True, noise=OrnsteinUhlenbeckActionNoise)
+    algo = TD3("mlp", env)
     algo.learn()

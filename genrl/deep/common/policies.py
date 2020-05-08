@@ -13,14 +13,24 @@ class MlpPolicy(BasePolicy):
     """
 
     def __init__(
-        self, state_dim, action_dim, hidden=(32, 32), disc=True, *args, **kwargs
+        self,
+        state_dim,
+        action_dim,
+        hidden=(32, 32),
+        disc=True,
+        *args,
+        **kwargs
     ):
-        super(MlpPolicy, self).__init__(disc, state_dim, action_dim, hidden, **kwargs)
+        super(MlpPolicy, self).__init__(
+            state_dim, action_dim, hidden, disc, **kwargs
+        )
 
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = mlp([state_dim] + list(hidden) + [action_dim], sac=self.sac)
+        self.model = mlp(
+            [state_dim] + list(hidden) + [action_dim], sac=self.sac
+        )
 
 
 policy_registry = {"mlp": MlpPolicy}
