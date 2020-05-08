@@ -156,8 +156,6 @@ class DQN:
                     state_dim,
                     action_dim,
                     self.num_atoms,
-                    self.Vmin,
-                    self.Vmax,
                 )
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(
@@ -209,11 +207,8 @@ class DQN:
                 )
             elif self.categorical_dqn:
                 self.model = CategoricalDQNValueCNN(
-                    self.env.observation_space.shape[0],
                     self.env.action_space.n,
                     self.num_atoms,
-                    self.Vmin,
-                    self.Vmax,
                     self.history_length
                 )
             else:
@@ -255,7 +250,7 @@ class DQN:
         if np.random.rand() > self.epsilon:
             if self.categorical_dqn:
                 with torch.no_grad():
-                    state = Variable(torch.FloatTensor(state).unsqueeze(0))
+                    state = Variable(torch.FloatTensor(state))
                     dist = self.model(state).data.cpu()
                     dist = (
                         dist
@@ -461,7 +456,7 @@ class DQN:
             done = False if episode_len == self.max_ep_len else done
 
             if done or (episode_len == self.max_ep_len):
-                if episode % 20 == 0:
+                if episode % 2 == 0:
                     print("Episode: {}, Reward: {}, Frame Index: {}".format(
                         episode, episode_reward, frame_idx
                     ))
