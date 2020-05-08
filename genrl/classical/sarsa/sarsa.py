@@ -36,7 +36,9 @@ class SARSA:
         :param s: Current state
         :param explore: Whether you are exploring or exploiting
         :type s: int, float, ...
-        :type explore: bool   
+        :type explore: bool 
+        :returns: Action based on the Q table 
+        :rtype: int, float, ...  
         '''
         if explore == True:
             if np.random.uniform() > self.epsilon:
