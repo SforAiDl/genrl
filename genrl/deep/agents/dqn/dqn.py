@@ -35,7 +35,7 @@ class DQN:
     Paper (DQN) https://arxiv.org/pdf/1312.5602.pdf
     Paper (Double DQN) https://arxiv.org/abs/1509.06461
 
-    :param network_type: The deep neural network layer types ['mlp']
+    :param network_type: The deep neural network layer types ['mlp', 'cnn']
     :param env: The environment to learn from
     :param double_dqn: For training Double DQN
     :param dueling_dqn:  For training Dueling DQN
