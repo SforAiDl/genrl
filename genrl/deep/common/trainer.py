@@ -224,7 +224,7 @@ class OffPolicyTrainer(Trainer):
                 self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
 
                 if self.network_type == "cnn":
-                    action = self.select_action(phi_state)
+                    action = self.agent.select_action(phi_state)
                 else:
                     action = self.agent.select_action(state)
 
