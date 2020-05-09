@@ -34,7 +34,7 @@ class DQN:
     Deep Q Networks
     Paper: (DQN) https://arxiv.org/pdf/1312.5602.pdf
     Paper: (Double DQN) https://arxiv.org/abs/1509.06461
-    :param self.network_type: (str) The deep neural network layer types
+    :param network_type: (str) The deep neural network layer types
         ['MLP', 'CNN']
     :param env: (Gym environment) The environment to learn from
     :param double_dqn: (boolean) For training Double DQN
@@ -165,14 +165,6 @@ class DQN:
                 self.model = get_model("v", self.network_type)(
                     state_dim, action_dim, "Qs"
                 )
-            # load paramaters if already trained
-            if self.pretrained is not None:
-                self.load(self)
-                self.model.load_state_dict(self.checkpoint["weights"])
-                for key, item in self.checkpoint.items():
-                    if key not in ["weights", "save_model"]:
-                        setattr(self, key, item)
-                print("Loaded pretrained model")
 
         elif self.network_type == "cnn":
             if self.history_length is None:
@@ -217,6 +209,15 @@ class DQN:
                     self.history_length,
                     "Qs"
                 )
+
+        # load paramaters if already trained
+        if self.pretrained is not None:
+            self.load(self)
+            self.model.load_state_dict(self.checkpoint["weights"])
+            for key, item in self.checkpoint.items():
+                if key not in ["weights", "save_model"]:
+                    setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.target_model = deepcopy(self.model)
 
