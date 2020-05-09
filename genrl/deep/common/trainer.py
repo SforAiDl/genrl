@@ -363,7 +363,7 @@ class OnPolicyTrainer(Trainer):
         seed=None,
         deterministic_actions=False,
     ):
-        super().__init__(
+        super(OnPolicyTrainer, self).__init__(
             agent,
             env,
             logger,
