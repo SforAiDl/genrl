@@ -190,7 +190,7 @@ class DQN:
             self.state_history = deque(
                 [
                     self.transform(
-                        env.observation_space.sample()
+                        self.env.observation_space.sample()
                     ).reshape(-1, 84, 84) for _ in range(self.history_length)
                 ], maxlen=self.history_length
             )
