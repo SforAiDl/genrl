@@ -8,15 +8,25 @@ from genrl.classical.common.models import get_model_from_name
 class Trainer:
     """
     Global trainer class for classical RL algorithms
-    :param agent: (object) Algorithm object to train
-    :param env: (gym environment) standard gym environment to train on
-    :param mode: (str) mode of value function update ['learn', 'plan', 'dyna']
-    :param model: (str) model to use for planning ['tabular']
-    :param n_episodes: (int) number of training episodes
-    :param plan_n_steps: (int) number of planning step per environment interaction
-    :param start_steps: (int) number of initial exploration timesteps
-    :param seed: (int) seed for random number generator
-    :param render: (bool) render gym environment
+
+    :param agent: Algorithm object to train
+    :param env: standard gym environment to train on
+    :param mode: mode of value function update ['learn', 'plan', 'dyna']
+    :param model: model to use for planning ['tabular']
+    :param n_episodes: number of training episodes
+    :param plan_n_steps: number of planning step per environment interaction
+    :param start_steps: number of initial exploration timesteps
+    :param seed: seed for random number generator
+    :param render: render gym environment
+    :type agent: object
+    :type env: Gym environment
+    :type mode: str
+    :type model: str
+    :type n_episodes: int
+    :type plan_n_steps: int
+    :type start_steps: int
+    :type seed: int
+    :type render: bool
     """
 
     def __init__(
@@ -61,7 +71,9 @@ class Trainer:
     def learn(self, transitions):
         """
         learn from transition tuples
-        :param transitions: (tuple) s, a, r, s' transition
+
+        :param transitions: s, a, r, s' transition
+        :type transitions: tuple
         """
         self.agent.update(transitions)
 
@@ -128,8 +140,10 @@ class Trainer:
     def plot(self, results, window_size=100):
         """
         plot model rewards
-        :param results: (list) rewards for each episode
-        :param window_size: (int) size of moving average filter
+        :param results: rewards for each episode
+        :param window_size: size of moving average filter
+        :type results: int
+        :type window_size: int
         """
         avgd_results = [0] * len(results)
         for i in range(window_size, len(results)):

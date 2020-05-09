@@ -42,7 +42,7 @@ class QLearning:
 
     def update(self, transition):
         '''
-        Update the Q tabl
+        Update the Q table
 
         :param transition: step taken in the envrionment 
         '''
