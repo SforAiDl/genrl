@@ -14,7 +14,6 @@ class Trainer(ABC):
     Base Trainer class. To be inherited specific usecases.
     :param agent: (object) Algorithm object
     :param env: (object) standard gym environment
-    :param network_type: (string) The deep neural network layer types ['MLP', 'CNN']
     :param logger: (object) Logger object
     :param buffer: (object) Buffer Object
     :param off_policy: (bool) Is the algorithm off-policy?
@@ -38,7 +37,6 @@ class Trainer(ABC):
         self,
         agent,
         env,
-        network_type,
         logger,
         buffer=None,
         off_policy=False,
@@ -59,7 +57,6 @@ class Trainer(ABC):
     ):
         self.agent = agent
         self.env = env
-        self.network_type = network_type
         self.logger = logger
         self.off_policy = off_policy
         if self.off_policy and buffer is None:
@@ -184,6 +181,7 @@ class OffPolicyTrainer(Trainer):
         self.warmup_steps = warmup_steps
         self.update_interval = update_interval
         self.start_update = start_update
+        self.network_type = self.agent.network_type
 
         if self.network_type == "cnn":
             if self.transform is None:
