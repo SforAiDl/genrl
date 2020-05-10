@@ -246,16 +246,18 @@ class OffPolicyTrainer(Trainer):
 
             done = False if episode_len == self.max_ep_len else done
 
-            if self.agent.__class__.__name__ == "DQN":
-                if self.network_type == "cnn":
-                    self.state_history.append(self.transform(next_state))
-                    phi_next_state = torch.stack(
-                        list(self.state_history), dim=1
-                    )
-                    self.buffer.push((
-                        phi_state, action, reward, phi_next_state, done
-                    ))
-                    phi_state = phi_next_state
+            if (
+                self.agent.__class__.__name__ == "DQN" and
+                self.network_type == "cnn"
+            ):
+                self.state_history.append(self.transform(next_state))
+                phi_next_state = torch.stack(
+                    list(self.state_history), dim=1
+                )
+                self.buffer.push((
+                    phi_state, action, reward, phi_next_state, done
+                ))
+                phi_state = phi_next_state
             else:
                 self.buffer.push((
                     state, action, reward, next_state, done
