@@ -29,6 +29,7 @@ class Trainer:
         plan_n_steps=3,
         start_steps=5000,
         start_plan=50,
+        log_frequency=500,
         seed=None,
         render=False,
     ):
@@ -38,6 +39,7 @@ class Trainer:
         self.plan_n_steps = plan_n_steps
         self.start_steps = start_steps
         self.start_plan = start_plan
+        self.log_frequency = log_frequency
         self.render = render
 
         if mode == "learn":
@@ -106,12 +108,13 @@ class Trainer:
             state = next_state
             if done == True:
                 ep_rews.append(ep_rew)
-                if ep % 100 == 0:
-                    print(
-                        "Episode: {}, Reward: {}, timestep: {}".format(
-                            ep, ep_rew, timestep
-                        )
-                    )
+                if ep % self.log_frequency == 0:
+                    self.evaluate(ep/self.log_frequency)
+                    # print(
+                    #     "Episode: {}, Reward: {}, timestep: {}".format(
+                    #         ep, ep_rew, timestep
+                    #     )
+                    # )
 
                 if ep == self.n_episodes:
                     break
@@ -124,6 +127,30 @@ class Trainer:
         self.env.close()
 
         return ep_rews
+
+    def evaluate(self, eval_ep):
+        ep = 0
+        ep_rew = 0
+        ep_rews = []
+        state = self.env.reset()
+
+        while True:
+            action = self.agent.get_action(state, False)
+            next_state, reward, done, _ = self.env.step(action)
+
+            state = next_state
+            ep_rew+=reward
+            if done == True:
+                ep_rews.append(ep_rew)
+                ep+=1
+                if ep == 100:
+                    print(
+                        "Evaluating on 100 episodes for iteration: {}, Mean Reward: {} and Std Deviation for the reward: {}".format(
+                            eval_ep, np.mean(ep_rews), np.std(ep_rews)
+                        )
+                    )
+                    break
+                
 
     def plot(self, results, window_size=100):
         """
