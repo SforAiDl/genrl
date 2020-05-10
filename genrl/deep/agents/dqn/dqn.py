@@ -160,12 +160,10 @@ class DQN:
 
         self.create_model()
 
-    def create_model(self, network_type):
+    def create_model(self):
         '''
         Initialize the model and target model for various variants of DQN. 
         Initializes optimizer and replay buffers as well.
-
-        :param network_type: (string) The type of model that you want ['mlp']
         '''
         state_dim, action_dim, disc = self.get_env_properties()
         if self.network_type == "mlp":
