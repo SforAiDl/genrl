@@ -63,7 +63,7 @@ class TestAlgos:
 
     def test_dqn(self):
         env = gym.make("CartPole-v0")
-        # DQN 
+        # DQN
         algo = DQN("mlp", env)
         logger = Logger("./logs", ["csv"])
 
@@ -95,7 +95,7 @@ class TestAlgos:
         trainer.train()
         shutil.rmtree("./logs")
 
-        # Categorical DQN 
+        # Categorical DQN
         algo4 = DQN("mlp", env, categorical_dqn=True)
         logger = Logger("./logs", ["csv"])
 
@@ -105,11 +105,14 @@ class TestAlgos:
 
     def test_dqn_cnn(self):
         env = gym.make("Breakout-v0")
-        # DQN 
+
+        # DQN
         algo = DQN("cnn", env)
         logger = Logger("./logs", ["csv"])
 
-        trainer = OffPolicyTrainer(algo, env, logger, epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo, env, logger, epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
@@ -117,7 +120,9 @@ class TestAlgos:
         algo1 = DQN("cnn", env, double_dqn=True, prioritized_replay=True)
         logger = Logger("./logs", ["csv"])
 
-        trainer = OffPolicyTrainer(algo1, env, logger, epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo1, env, logger, epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
@@ -125,7 +130,9 @@ class TestAlgos:
         algo2 = DQN("cnn", env, noisy_dqn=True)
         logger = Logger("./logs", ["csv"])
 
-        trainer = OffPolicyTrainer(algo2, env, logger, epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo2, env, logger, epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
@@ -133,14 +140,18 @@ class TestAlgos:
         algo3 = DQN("cnn", env, dueling_dqn=True)
         logger = Logger("./logs", ["csv"])
 
-        trainer = OffPolicyTrainer(algo3, env, logger, epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo3, env, logger, epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
-        # Categorical DQN 
+        # Categorical DQN
         algo4 = DQN("cnn", env, categorical_dqn=True)
         logger = Logger("./logs", ["csv"])
 
-        trainer = OffPolicyTrainer(algo4, env, logger, epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo4, env, logger, epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")

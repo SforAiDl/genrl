@@ -187,14 +187,6 @@ class DQN:
                 self.model = get_model("v", self.network_type)(
                     state_dim, action_dim, "Qs"
                 )
-            # load paramaters if already trained
-            if self.pretrained is not None:
-                self.load(self)
-                self.model.load_state_dict(self.checkpoint["weights"])
-                for key, item in self.checkpoint.items():
-                    if key not in ["weights", "save_model"]:
-                        setattr(self, key, item)
-                print("Loaded pretrained model")
 
         elif self.network_type == "cnn":
             if self.history_length is None:
@@ -212,7 +204,7 @@ class DQN:
             self.state_history = deque(
                 [
                     self.transform(
-                        env.observation_space.sample()
+                        self.env.observation_space.sample()
                     ).reshape(-1, 84, 84) for _ in range(self.history_length)
                 ], maxlen=self.history_length
             )
@@ -239,6 +231,15 @@ class DQN:
                     self.history_length,
                     "Qs"
                 )
+
+        # load paramaters if already trained
+        if self.pretrained is not None:
+            self.load(self)
+            self.model.load_state_dict(self.checkpoint["weights"])
+            for key, item in self.checkpoint.items():
+                if key not in ["weights", "save_model"]:
+                    setattr(self, key, item)
+            print("Loaded pretrained model")
 
         self.target_model = deepcopy(self.model)
 
