@@ -32,29 +32,45 @@ from genrl.deep.agents.dqn.utils import (
 class DQN:
     """
     Deep Q Networks
-    Paper: (DQN) https://arxiv.org/pdf/1312.5602.pdf
-    Paper: (Double DQN) https://arxiv.org/abs/1509.06461
-    :param network_type: (str) The deep neural network layer types
-        ['MLP', 'CNN']
-    :param env: (Gym environment) The environment to learn from
-    :param double_dqn: (boolean) For training Double DQN
-    :param dueling_dqn: (boolean) For training Dueling DQN
-    :param noisy_dqn: (boolean) For using Noisy Q
-    :param categorical_dqn: (boolean) For using Distributional DQN
-    :param parameterized_replay: (boolean) For using a prioritized buffer
-    :param epochs: (int) Number of epochs
-    :param max_iterations_per_epoch: (int) Number of iterations per epoch
-    :param max_ep_len: (int) Maximum steps per episode
-    :param gamma: (float) discount factor
-    :param lr: (float) learing rate for the optimizer
-    :param batch_size: (int) Update batch size
-    :param replay_size: (int) Replay memory size
-    :param tensorboard_log: (str) the log location for tensorboard
-        (if None, no logging)
-    :param seed : (int) seed for torch and gym
-    :param render : (boolean) if environment is to be rendered
-    :param device : (str) device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
+    Paper (DQN) https://arxiv.org/pdf/1312.5602.pdf
+    Paper (Double DQN) https://arxiv.org/abs/1509.06461
+
+    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param env: The environment to learn from
+    :param double_dqn: For training Double DQN
+    :param dueling_dqn:  For training Dueling DQN
+    :param noisy_dqn: For using Noisy Q
+    :param categorical_dqn: For using Distributional DQN
+    :param parameterized_replay: For using a prioritized buffer
+    :param epochs: Number of epochs
+    :param max_iterations_per_epoch: Number of iterations per epoch
+    :param max_ep_len: Maximum steps per episode
+    :param gamma: discount factor
+    :param lr: learing rate for the optimizer
+    :param batch_size: Update batch size
+    :param replay_size: Replay memory size
+    :param tensorboard_log: the log location for tensorboard
+    :param seed: seed for torch and gym
+    :param render: if environment is to be rendered
+    :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :type network_type: str
+    :type env: Gym environment
+    :type double_dqn: bool
+    :type dueling_dqn: bool
+    :type noisy_dqn: bool 
+    :type categorical_dqn: bool 
+    :type parameterized_replay: bool 
+    :type epochs: int
+    :type max_iterations_per_epoch: int
+    :type max_ep_len: int
+    :type gamma: float
+    :type lr: float
+    :type batch_size: int
+    :type replay_size: int
+    :type tensorboard_log: str
+    :type seed: int
+    :type render: bool
+    :type device: str
     """
 
     def __init__(
@@ -144,7 +160,13 @@ class DQN:
 
         self.create_model()
 
-    def create_model(self):
+    def create_model(self, network_type):
+        '''
+        Initialize the model and target model for various variants of DQN. 
+        Initializes optimizer and replay buffers as well.
+
+        :param network_type: (str) The type of model that you want ['mlp']
+        '''
         state_dim, action_dim, disc = self.get_env_properties()
         if self.network_type == "mlp":
             if self.dueling_dqn:
@@ -231,6 +253,12 @@ class DQN:
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def get_env_properties(self):
+        '''
+        Helper function to extract the observation and action space
+
+        :returns: Observation space, Action Space and whether the action space is discrete or not 
+        :rtype: int, float, ... ; int, float, ... ; bool
+        '''
         state_dim = self.env.observation_space.shape[0]
 
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -245,9 +273,20 @@ class DQN:
         return state_dim, action_dim, disc
 
     def update_target_model(self):
+        '''
+        Copy the target model weights with the model
+        '''
         self.target_model.load_state_dict(self.model.state_dict())
 
     def select_action(self, state):
+        '''
+        Epsilon Greedy selection of action
+
+        :param state: Observation state
+        :type state: int, float, ...
+        :returns: Action based on the state and epsilon value 
+        :rtype: int, float, ... 
+        '''
         if np.random.rand() > self.epsilon:
             if self.categorical_dqn:
                 with torch.no_grad():
@@ -268,6 +307,12 @@ class DQN:
         return action
 
     def get_td_loss(self):
+        '''
+        Computes loss for various variants 
+
+        :returns: the TD loss depending upon the variant
+        :rtype: float
+        '''
         if self.prioritized_replay:
             (
                 state,
@@ -353,6 +398,9 @@ class DQN:
         return loss
 
     def update_params(self):
+        '''
+        Takes the step for optimizer. This internally call get_td_loss(), so no need to call the function explicitly.
+        '''
         loss = self.get_td_loss()
         self.optimizer.zero_grad()
         loss.backward()
@@ -363,6 +411,14 @@ class DQN:
             self.target_model.reset_noise()
 
     def calculate_epsilon_by_frame(self, frame_idx):
+        '''
+        A helper function to calculate the value of epsilon after every step. 
+
+        :param frame_idx: Current step 
+        :type frame_idx: int
+        :returns: epsilon value for the step
+        :rtype: float 
+        '''
         return (
             self.min_epsilon
             + (self.max_epsilon - self.min_epsilon)
@@ -370,6 +426,18 @@ class DQN:
         )
 
     def projection_distribution(self, next_state, rewards, dones):
+        '''
+        A helper function used for categorical DQN
+
+        :param next_state: next observation state
+        :param rewards: rewards collected
+        :param dones: dones 
+        :type next_state: int, float, ...
+        :type rewards: list 
+        :type dones: list
+        :returns: projection distribution 
+        :rtype: float 
+        '''
         batch_size = next_state.size(0)
 
         delta_z = float(self.Vmax - self.Vmin) / (self.num_atoms - 1)
