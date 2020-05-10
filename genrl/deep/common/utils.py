@@ -13,8 +13,8 @@ def get_model(function_type, function_name):
     :param function_type: "ac" for Actor Critic, "v" for Value, "p" for Policy
     :param function_name: Name of the specific structure of model. \
 Eg. "mlp" or "cnn"
-    :type function_type: str
-    :type function_name: str
+    :type function_type: string
+    :type function_name: string
     :returns: Required class. Eg. MlpActorCritic
     """
     if function_type == "ac":

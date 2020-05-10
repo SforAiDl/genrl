@@ -14,9 +14,9 @@ def _get_val_model(
     :param state_dim: State dimensions of environment
     :param action_dim: Action dimensions of environment
     :param hidden: Sizes of hidden layers
-    :type arch: str
-    :type val_type: str
-    :type state_dim: str
+    :type arch: string
+    :type val_type: string
+    :type state_dim: string
     :type action_dim: int
     :type hidden: tuple or list
 
@@ -43,7 +43,7 @@ class MlpValue(BaseValue):
     :param hidden: Sizes of hidden layers
     :type state_dim: int
     :type action_dim: int
-    :type val_type: str
+    :type val_type: string
     :type hidden: tuple or list
     """
 
@@ -77,7 +77,7 @@ class CNNValue(BaseValue):
     :type state_dim: int
     :type action_dim: int
     :type history_length: int
-    :type val_type: str
+    :type val_type: string
     :type hidden: tuple or list
     """
     def __init__(
@@ -109,7 +109,7 @@ def get_value_from_name(value_name):
     Gets the value function given the name of the value function
 
     :param value_name: Name of the value function needed
-    :type value_name: str
+    :type value_name: string
     :returns: Value function
     """
     if value_name in value_registry:
