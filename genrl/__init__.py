@@ -10,6 +10,7 @@ from genrl.deep import (  # noqa
     ReplayBuffer,
     PrioritizedBuffer,
     MlpValue,
+    CNNValue,
     get_model,
     save_params,
     load_params,
