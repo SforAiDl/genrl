@@ -4,12 +4,20 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+from genrl.deep.common.utils import mlp, cnn
+
 
 def noisy_mlp(fc_layers, noisy_layers):
-    """
-    Generate Noisy MLP model given sizes of each
-        fully connected and noisy layers
-    """
+    '''
+    Generate Noisy MLP model given sizes of each fully connected and noisy layers
+
+    :param fc_layers: list of fc layers
+    :param noisy_layers: list of noisy layers 
+    :type fc_layers: list
+    :type noisy_layers: list
+    :returns: Noisy model
+    :rtype: Pytorch model
+    '''
     model = []
     for j in range(len(fc_layers) - 1):
         model += [nn.Linear(fc_layers[j], fc_layers[j + 1]), nn.ReLU()]
@@ -21,6 +29,16 @@ def noisy_mlp(fc_layers, noisy_layers):
 
 
 class DuelingDQNValueMlp(nn.Module):
+    '''
+    Class for Dueling DQN's MLP Value function 
+
+    :param state_dim: Observation space
+    :param action_dim: Action space
+    :param hidden: Number of hidden Nodes
+    :type state_dim: int, float, ...
+    :type action_dim: int, float, ...
+    :type hidden: tuple 
+    '''
     def __init__(self, state_dim, action_dim, hidden=(128, 128)):
         super(DuelingDQNValueMlp, self).__init__()
 
@@ -48,7 +66,46 @@ class DuelingDQNValueMlp(nn.Module):
         return value + advantage - advantage.mean()
 
 
+class DuelingDQNValueCNN(nn.Module):
+    '''
+    Class for Dueling DQN's CNN Value function 
+
+    :param action_dim: Action space
+    :param history_length: History length that you want
+    :param fc_layers: no of units in fc layers 
+    :type action_dim: int, float, ...
+    :type history_length: int
+    :type fc_layers: tuple
+    '''
+    def __init__(self, action_dim, history_length=4, fc_layers=(256,)):
+        super(DuelingDQNValueCNN, self).__init__()
+
+        self.action_dim = action_dim
+
+        self.conv, output_size = cnn((history_length, 16, 32))
+
+        self.advantage = mlp([output_size] + list(fc_layers) + [action_dim])
+        self.value = mlp([output_size] + list(fc_layers) + [1])
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.view(x.size(0), -1)
+        advantage = self.advantage(x)
+        value = self.value(x)
+        return value + advantage - advantage.mean()
+
+
 class NoisyLinear(nn.Module):
+    '''
+    Noisy Layer definition for NoisyDQN
+
+    :param in_features: input features for the network
+    :param out_features: output features for the network
+    :param std_init: Used for initializing weights 
+    :type in_features: int
+    :type out_features: int
+    :type std_init: float 
+    '''
     def __init__(self, in_features, out_features, std_init=0.4):
         super(NoisyLinear, self).__init__()
 
@@ -87,6 +144,9 @@ class NoisyLinear(nn.Module):
         return F.linear(state, weight, bias)
 
     def reset_parameters(self):
+        '''
+        Reset the parameters 
+        '''
         mu_range = 1 / math.sqrt(self.weight_mu.size(1))
 
         self.weight_mu.data.uniform_(-mu_range, mu_range)
@@ -100,6 +160,9 @@ class NoisyLinear(nn.Module):
         )
 
     def reset_noise(self):
+        '''
+        Reset Noisy layers weights
+        '''
         epsilon_in = self._scale_noise(self.in_features)
         epsilon_out = self._scale_noise(self.out_features)
 
@@ -113,6 +176,18 @@ class NoisyLinear(nn.Module):
 
 
 class NoisyDQNValue(nn.Module):
+    '''
+    Class for Dueling DQN's MLP Value function
+
+    :param state_dim: Observation space
+    :param action_dim: Action space
+    :param fc_layers: no of units in fc layers
+    :param noisy_layers: no of units in noisy layers
+    :type state_dim: int, float, ... 
+    :type action_dim: int, float, ...
+    :type fc_layers: tuple  
+    :type noisy_layers: tuple
+    '''
     def __init__(
         self, state_dim, action_dim, fc_layers=(128,), noisy_layers=(128, 128)
     ):
@@ -132,14 +207,66 @@ class NoisyDQNValue(nn.Module):
                 layer.reset_noise()
 
 
+class NoisyDQNValueCNN(nn.Module):
+    '''
+    Class for Dueling DQN's CNN Value function
+
+    :param action_dim: Action space
+    :param history_length: History length that you want
+    :param fc_layers: no of units in fc layers
+    :param noisy_layers: no of units in noisy layers
+    :type action_dim: int, float, ...
+    :type history_length: int
+    :type fc_layers: tuple  
+    :type noisy_layers: tuple
+    '''
+    def __init__(
+        self,
+        action_dim,
+        history_length=4,
+        fc_layers=(128,),
+        noisy_layers=(128, 128)
+    ):
+        super(NoisyDQNValueCNN, self).__init__()
+
+        self.conv, output_size = cnn((history_length, 16, 32))
+
+        self.model = noisy_mlp(
+            [output_size] + list(fc_layers),
+            list(noisy_layers) + [action_dim])
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.view(x.size(0), -1)
+        x = self.model(x)
+        return x
+
+    def reset_noise(self):
+        for layer in self.model:
+            if isinstance(layer, NoisyLinear):
+                layer.reset_noise()
+
+
 class CategoricalDQNValue(nn.Module):
+    '''
+    Class for Categorical DQN's MLP Value function
+
+    :param state_dim: Observation space
+    :param action_dim: Action space
+    :param num_atoms: Number of atoms in the Categorical network
+    :param fc_layers: no of units in fc layers
+    :param noisy_layers: no of units in noisy layers
+    :type state_dim: int, float, ... 
+    :type action_dim: int, float, ...
+    :type num_atoms: int
+    :type fc_layers: tuple  
+    :type noisy_layers: tuple
+    '''    
     def __init__(
         self,
         state_dim,
         action_dim,
         num_atoms,
-        Vmin,
-        Vmax,
         fc_layers=(128, 128),
         noisy_layers=(128, 512)
     ):
@@ -148,8 +275,6 @@ class CategoricalDQNValue(nn.Module):
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.num_atoms = num_atoms
-        self.Vmin = Vmin
-        self.Vmax = Vmax
 
         self.model = noisy_mlp(
             [state_dim] + list(fc_layers),
@@ -162,6 +287,55 @@ class CategoricalDQNValue(nn.Module):
             -1, self.action_dim, self.num_atoms
         )
         return dist
+
+    def reset_noise(self):
+        for layer in self.model:
+            if isinstance(layer, NoisyLinear):
+                layer.reset_noise()
+
+
+class CategoricalDQNValueCNN(nn.Module):
+    '''
+    Class for Categorical DQN's MLP Value function
+
+    :param action_dim: Action space
+    :param num_atoms: Number of atoms in the Categorical network
+    :param history_length: History length that you want
+    :param fc_layers: no of units in fc layers
+    :param noisy_layers: no of units in noisy layers
+    :type action_dim: int, float, ...
+    :type num_atoms: int
+    :type history_length: int
+    :type fc_layers: tuple  
+    :type noisy_layers: tuple
+    '''   
+    def __init__(
+        self,
+        action_dim,
+        num_atoms,
+        history_length=4,
+        fc_layers=(128, 128),
+        noisy_layers=(128, 512)
+    ):
+        super(CategoricalDQNValueCNN, self).__init__()
+
+        self.action_dim = action_dim
+        self.num_atoms = num_atoms
+
+        self.conv, output_size = cnn((history_length, 16, 32))
+        self.model = noisy_mlp(
+            [output_size] + list(fc_layers),
+            list(noisy_layers) + [self.action_dim * self.num_atoms]
+        )
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = x.view(x.size(0), -1)
+        x = self.model(x)
+        x = F.softmax(x.view(-1, self.num_atoms)).view(
+            -1, self.action_dim, self.num_atoms
+        )
+        return x
 
     def reset_noise(self):
         for layer in self.model:

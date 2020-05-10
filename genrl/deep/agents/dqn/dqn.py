@@ -1,8 +1,11 @@
+from collections import deque
+
 import gym
 import numpy as np
 
 import torch
 import torch.optim as opt
+import torchvision.transforms as transforms
 from torch.autograd import Variable
 from copy import deepcopy
 
@@ -15,38 +18,59 @@ from genrl.deep.common import (
     load_params,
     set_seeds,
 )
+
 from genrl.deep.agents.dqn.utils import (
     DuelingDQNValueMlp,
+    DuelingDQNValueCNN,
     NoisyDQNValue,
+    NoisyDQNValueCNN,
     CategoricalDQNValue,
+    CategoricalDQNValueCNN,
 )
 
 
 class DQN:
     """
     Deep Q Networks
-    Paper: (DQN) https://arxiv.org/pdf/1312.5602.pdf
-    Paper: (Double DQN) https://arxiv.org/abs/1509.06461
-    :param network_type: (str) The deep neural network layer types ['MLP']
-    :param env: (Gym environment) The environment to learn from
-    :param double_dqn: (boolean) For training Double DQN
-    :param dueling_dqn: (boolean) For training Dueling DQN
-    :param noisy_dqn: (boolean) For using Noisy Q
-    :param categorical_dqn: (boolean) For using Distributional DQN
-    :param parameterized_replay: (boolean) For using a prioritized buffer
-    :param epochs: (int) Number of epochs
-    :param max_iterations_per_epoch: (int) Number of iterations per epoch
-    :param max_ep_len: (int) Maximum steps per episode
-    :param gamma: (float) discount factor
-    :param lr: (float) learing rate for the optimizer
-    :param batch_size: (int) Update batch size
-    :param replay_size: (int) Replay memory size
-    :param tensorboard_log: (str) the log location for tensorboard
-        (if None, no logging)
-    :param seed : (int) seed for torch and gym
-    :param render : (boolean) if environment is to be rendered
-    :param device : (str) device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
+    Paper (DQN) https://arxiv.org/pdf/1312.5602.pdf
+    Paper (Double DQN) https://arxiv.org/abs/1509.06461
+
+    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param env: The environment to learn from
+    :param double_dqn: For training Double DQN
+    :param dueling_dqn:  For training Dueling DQN
+    :param noisy_dqn: For using Noisy Q
+    :param categorical_dqn: For using Distributional DQN
+    :param parameterized_replay: For using a prioritized buffer
+    :param epochs: Number of epochs
+    :param max_iterations_per_epoch: Number of iterations per epoch
+    :param max_ep_len: Maximum steps per episode
+    :param gamma: discount factor
+    :param lr: learing rate for the optimizer
+    :param batch_size: Update batch size
+    :param replay_size: Replay memory size
+    :param tensorboard_log: the log location for tensorboard
+    :param seed: seed for torch and gym
+    :param render: if environment is to be rendered
+    :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :type network_type: str
+    :type env: Gym environment
+    :type double_dqn: bool
+    :type dueling_dqn: bool
+    :type noisy_dqn: bool 
+    :type categorical_dqn: bool 
+    :type parameterized_replay: bool 
+    :type epochs: int
+    :type max_iterations_per_epoch: int
+    :type max_ep_len: int
+    :type gamma: float
+    :type lr: float
+    :type batch_size: int
+    :type replay_size: int
+    :type tensorboard_log: str
+    :type seed: int
+    :type render: bool
+    :type device: str
     """
 
     def __init__(
@@ -80,6 +104,7 @@ class DQN:
         pretrained=None,
         run_num=None,
         save_model=None,
+        transform=None,
     ):
         self.env = env
         self.double_dqn = double_dqn
@@ -112,6 +137,9 @@ class DQN:
         self.save = save_params
         self.load = load_params
         self.pretrained = pretrained
+        self.network_type = network_type
+        self.history_length = None
+        self.transform = transform
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -130,11 +158,17 @@ class DQN:
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
-        self.create_model(network_type)
+        self.create_model()
 
     def create_model(self, network_type):
+        '''
+        Initialize the model and target model for various variants of DQN. 
+        Initializes optimizer and replay buffers as well.
+
+        :param network_type: (str) The type of model that you want ['mlp']
+        '''
         state_dim, action_dim, disc = self.get_env_properties()
-        if network_type == "mlp":
+        if self.network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(
                     state_dim, action_dim
@@ -144,27 +178,70 @@ class DQN:
                     state_dim,
                     action_dim,
                     self.num_atoms,
-                    self.Vmin,
-                    self.Vmax,
                 )
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(
                     state_dim, action_dim
                 )
             else:
-                self.model = get_model("v", network_type)(
+                self.model = get_model("v", self.network_type)(
                     state_dim, action_dim, "Qs"
                 )
-            # load paramaters if already trained
-            if self.pretrained is not None:
-                self.load(self)
-                self.model.load_state_dict(self.checkpoint["weights"])
-                for key, item in self.checkpoint.items():
-                    if key not in ["weights", "save_model"]:
-                        setattr(self, key, item)
-                print("Loaded pretrained model")
 
-            self.target_model = deepcopy(self.model)
+        elif self.network_type == "cnn":
+            if self.history_length is None:
+                self.history_length = 4
+
+            if self.transform is None:
+                self.transform = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.Grayscale(),
+                    transforms.Resize((110, 84)),
+                    transforms.CenterCrop(84),
+                    transforms.ToTensor()
+                ])
+
+            self.state_history = deque(
+                [
+                    self.transform(
+                        self.env.observation_space.sample()
+                    ).reshape(-1, 84, 84) for _ in range(self.history_length)
+                ], maxlen=self.history_length
+            )
+
+            if self.dueling_dqn:
+                self.model = DuelingDQNValueCNN(
+                    self.env.action_space.n,
+                    self.history_length
+                )
+            elif self.noisy_dqn:
+                self.model = NoisyDQNValueCNN(
+                    self.env.action_space.n,
+                    self.history_length
+                )
+            elif self.categorical_dqn:
+                self.model = CategoricalDQNValueCNN(
+                    self.env.action_space.n,
+                    self.num_atoms,
+                    self.history_length
+                )
+            else:
+                self.model = get_model("v", self.network_type)(
+                    self.env.action_space.n,
+                    self.history_length,
+                    "Qs"
+                )
+
+        # load paramaters if already trained
+        if self.pretrained is not None:
+            self.load(self)
+            self.model.load_state_dict(self.checkpoint["weights"])
+            for key, item in self.checkpoint.items():
+                if key not in ["weights", "save_model"]:
+                    setattr(self, key, item)
+            print("Loaded pretrained model")
+
+        self.target_model = deepcopy(self.model)
 
         if self.prioritized_replay:
             self.replay_buffer = PrioritizedBuffer(
@@ -176,6 +253,12 @@ class DQN:
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def get_env_properties(self):
+        '''
+        Helper function to extract the observation and action space
+
+        :returns: Observation space, Action Space and whether the action space is discrete or not 
+        :rtype: int, float, ... ; int, float, ... ; bool
+        '''
         state_dim = self.env.observation_space.shape[0]
 
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -190,13 +273,24 @@ class DQN:
         return state_dim, action_dim, disc
 
     def update_target_model(self):
+        '''
+        Copy the target model weights with the model
+        '''
         self.target_model.load_state_dict(self.model.state_dict())
 
     def select_action(self, state):
+        '''
+        Epsilon Greedy selection of action
+
+        :param state: Observation state
+        :type state: int, float, ...
+        :returns: Action based on the state and epsilon value 
+        :rtype: int, float, ... 
+        '''
         if np.random.rand() > self.epsilon:
             if self.categorical_dqn:
                 with torch.no_grad():
-                    state = Variable(torch.FloatTensor(state).unsqueeze(0))
+                    state = Variable(torch.FloatTensor(state))
                     dist = self.model(state).data.cpu()
                     dist = (
                         dist
@@ -213,6 +307,12 @@ class DQN:
         return action
 
     def get_td_loss(self):
+        '''
+        Computes loss for various variants 
+
+        :returns: the TD loss depending upon the variant
+        :rtype: float
+        '''
         if self.prioritized_replay:
             (
                 state,
@@ -238,6 +338,10 @@ class DQN:
         action = Variable(torch.LongTensor(action.long()))
         reward = Variable(torch.FloatTensor(reward))
         done = Variable(torch.FloatTensor(done))
+
+        if self.network_type == "cnn":
+            state = state.view(-1, 4, 84, 84)
+            next_state = next_state.view(-1, 4, 84, 84)
 
         if self.categorical_dqn:
             projection_dist = self.projection_distribution(
@@ -294,6 +398,9 @@ class DQN:
         return loss
 
     def update_params(self):
+        '''
+        Takes the step for optimizer. This internally call get_td_loss(), so no need to call the function explicitly.
+        '''
         loss = self.get_td_loss()
         self.optimizer.zero_grad()
         loss.backward()
@@ -304,6 +411,14 @@ class DQN:
             self.target_model.reset_noise()
 
     def calculate_epsilon_by_frame(self, frame_idx):
+        '''
+        A helper function to calculate the value of epsilon after every step. 
+
+        :param frame_idx: Current step 
+        :type frame_idx: int
+        :returns: epsilon value for the step
+        :rtype: float 
+        '''
         return (
             self.min_epsilon
             + (self.max_epsilon - self.min_epsilon)
@@ -311,6 +426,18 @@ class DQN:
         )
 
     def projection_distribution(self, next_state, rewards, dones):
+        '''
+        A helper function used for categorical DQN
+
+        :param next_state: next observation state
+        :param rewards: rewards collected
+        :param dones: dones 
+        :type next_state: int, float, ...
+        :type rewards: list 
+        :type dones: list
+        :returns: projection distribution 
+        :rtype: float 
+        '''
         batch_size = next_state.size(0)
 
         delta_z = float(self.Vmax - self.Vmin) / (self.num_atoms - 1)
@@ -357,27 +484,48 @@ class DQN:
         total_steps = self.max_epochs * self.max_iterations_per_epoch
         state, episode_reward, episode, episode_len = self.env.reset(), 0, 0, 0
 
+        if self.network_type == "cnn":
+            self.state_history.append(self.transform(state))
+            phi_state = torch.stack(list(self.state_history), dim=1)
+
         if self.double_dqn:
             self.update_target_model()
 
         for frame_idx in range(1, total_steps + 1):
             self.epsilon = self.calculate_epsilon_by_frame(frame_idx)
-            action = self.select_action(state)
+
+            if self.network_type == "mlp":
+                action = self.select_action(state)
+            elif self.network_type == "cnn":
+                action = self.select_action(phi_state)
+
             next_state, reward, done, _ = self.env.step(action)
 
             if self.render:
                 self.env.render()
 
-            self.replay_buffer.push((state, action, reward, next_state, done))
+            if self.network_type == "cnn":
+                self.state_history.append(self.transform(next_state))
+                phi_next_state = torch.stack(
+                    list(self.state_history), dim=1
+                )
+                self.replay_buffer.push((
+                    phi_state, action, reward, phi_next_state, done
+                ))
+                phi_state = phi_next_state
+            else:
+                self.replay_buffer.push((
+                    state, action, reward, next_state, done
+                ))
+                state = next_state
 
-            state = next_state
             episode_reward += reward
             episode_len += 1
 
             done = False if episode_len == self.max_ep_len else done
 
             if done or (episode_len == self.max_ep_len):
-                if episode % 20 == 0:
+                if episode % 2 == 0:
                     print("Episode: {}, Reward: {}, Frame Index: {}".format(
                         episode, episode_reward, frame_idx
                     ))
@@ -425,6 +573,6 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env)
+    env = gym.make("Pong-v0")
+    algo = DQN("cnn", env)
     algo.learn()

@@ -1,5 +1,5 @@
 from genrl.deep.common.policies import MlpPolicy, get_policy_from_name  # noqa
-from genrl.deep.common.values import MlpValue, get_value_from_name  # noqa
+from genrl.deep.common.values import MlpValue, CNNValue, get_value_from_name  # noqa
 from genrl.deep.common.actor_critic import (  # noqa
     MlpActorCritic,
     get_actor_critic_from_name,
@@ -12,6 +12,7 @@ from genrl.deep.common.base import (  # noqa
 from genrl.deep.common.buffers import ReplayBuffer, PrioritizedBuffer  # noqa
 from genrl.deep.common.utils import (  # noqa
     mlp,
+    cnn,
     get_model,
     evaluate,
     save_params,
