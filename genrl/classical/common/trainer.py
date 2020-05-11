@@ -121,12 +121,8 @@ class Trainer:
             if done == True:
                 ep_rews.append(ep_rew)
                 if ep % self.log_frequency == 0:
-                    self.evaluate(ep/self.log_frequency)
-                    # print(
-                    #     "Episode: {}, Reward: {}, timestep: {}".format(
-                    #         ep, ep_rew, timestep
-                    #     )
-                    # )
+                    print("Evaluating at the episode number: {}".format(ep))
+                    self.evaluate()
 
                 if ep == self.n_episodes:
                     break
@@ -140,7 +136,7 @@ class Trainer:
 
         return ep_rews
 
-    def evaluate(self, eval_ep):
+    def evaluate(self, eval_ep=100):
         ep = 0
         ep_rew = 0
         ep_rews = []
@@ -157,7 +153,7 @@ class Trainer:
                 ep+=1
                 if ep == 100:
                     print(
-                        "Evaluating on 100 episodes for iteration: {}, Mean Reward: {} and Std Deviation for the reward: {}".format(
+                        "Evaluating on {} episodes, Mean Reward: {} and Std Deviation for the reward: {}".format(
                             eval_ep, np.mean(ep_rews), np.std(ep_rews)
                         )
                     )
@@ -185,9 +181,12 @@ class Trainer:
 
 if __name__ == "__main__":
     env = gym.make("FrozenLake-v0")
-    agent = QLearning(env)
+    agent = QLearning(env, epsilon=0.6, lr=0.1)
     trainer = Trainer(
-        agent, env, mode="dyna", model="tabular", seed=42, n_episodes=50, start_steps=0
+        agent, env, mode="dyna", model="tabular", seed=42, n_episodes=1000, start_steps=0, log_frequency=500
     )
     ep_rs = trainer.train()
+    print("-"*82)
+    print("Evaluating the learned model")
+    trainer.evaluate()
     trainer.plot(ep_rs)
