@@ -4,7 +4,7 @@ import numpy as np
 class SARSA:
     """
     SARSA Algorithm
-    Paper: http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2539&rep=rep1&type=pdf
+    Paper- http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2539&rep=rep1&type=pdf
 
     :param env: Standard gym environment to train on
     :param epsilon: Exploration coefficient
@@ -64,8 +64,8 @@ class SARSA:
         )
         self.e[state, action] += 1
 
-        for si in range(self.env.observation_space.n):
-            for ai in range(self.env.action_space.n):
+        for state in range(self.env.observation_space.n):
+            for action in range(self.env.action_space.n):
                 self.Q[state, action] += (
                     self.lr * delta * self.e[state, action]
                 )
