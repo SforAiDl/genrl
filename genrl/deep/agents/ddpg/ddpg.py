@@ -70,7 +70,6 @@ class DDPG:
         start_update=1000,
         update_interval=50,
         layers=(32, 32),
-        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
