@@ -5,7 +5,6 @@ from torchvision import transforms
 import numpy as np
 from collections import deque
 
-from genrl.deep.common import set_seeds, Logger
 from abc import ABC
 
 from .utils import set_seeds
@@ -403,7 +402,7 @@ class OnPolicyTrainer(Trainer):
                 done = False
 
                 for t in range(self.agent.timesteps_per_actorbatch):
-                    if self.determinsitic_actions:
+                    if self.deterministic_actions:
                         action = self.agent.select_action(state, deterministic=True)
                     else:
                         action = self.agent.select_action(state)

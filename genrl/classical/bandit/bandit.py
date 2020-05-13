@@ -166,7 +166,7 @@ class UCBGaussianBandit(GaussianBandits):
 
     def get_action(self, t, bandit):
         action = np.argmax(
-            self.Q[bandit] + np.sqrt(2 * np.log(t) / self.counts[bandit])
+            self.Q[bandit] + np.sqrt(2 * np.log(t + 1) / (self.counts[bandit] + 1))
         )
         return action
 
@@ -339,7 +339,7 @@ class UCBBernoulliBandit(BernoulliBandits):
 
     def get_action(self, t, bandit):
         action = np.argmax(
-            self.Q[bandit] + np.sqrt(2 * np.log(t) / self.counts[bandit])
+            self.Q[bandit] + np.sqrt(2 * np.log(t + 1) / (self.counts[bandit] + 1))
         )
         return action
 
