@@ -137,9 +137,7 @@ class SerialVecEnv(VecEnv):
         images = np.asarray(self.images())
         N, H, W, C = images.shape
         newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
-        images = np.array(
-            list(images) + [images[0] * 0 for _ in range(N, newH * newW)]
-        )
+        images = np.array(list(images) + [images[0] * 0 for _ in range(N, newH * newW)])
         out_image = images.reshape(newH, newW, H, W, C)
         out_image = out_image.transpose(0, 2, 1, 3, 4)
         out_image = out_image.reshape(newH * H, newW * W, C)

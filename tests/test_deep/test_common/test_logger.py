@@ -1,4 +1,4 @@
-from genrl import Logger
+from genrl.deep.common import Logger
 import shutil
 
 

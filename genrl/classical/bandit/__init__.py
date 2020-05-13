@@ -1,9 +1,12 @@
-from genrl.classical.bandit.bandit import (  # noqa
-    EpsGreedyBernoulliBandit,
+from genrl.classical.bandit.bandit import (
+    Bandit,
+    GaussianBandits,
     EpsGreedyGaussianBandit,
-    SoftmaxActionSelection,
-    UCBBernoulliBandit,
     UCBGaussianBandit,
+    SoftmaxActionSelection,
+    BernoulliBandits,
+    EpsGreedyBernoulliBandit,
+    UCBBernoulliBandit,
     BayesianUCBBernoulliBandit,
     ThompsonSampling,
 )

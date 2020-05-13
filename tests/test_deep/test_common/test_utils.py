@@ -5,14 +5,14 @@ import gym
 import os
 from shutil import rmtree
 
-from genrl import (
+from genrl.deep.common import (
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
     CNNValue,
-    PPO1,
 )
 from genrl.deep.common.utils import *
+from genrl import PPO1
 
 
 class TestUtils:

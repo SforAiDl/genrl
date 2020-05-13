@@ -2,7 +2,7 @@ import numpy as np
 import gym
 import matplotlib.pyplot as plt
 
-from genrl.classical.common.models import get_model_from_name
+from .models import get_model_from_name
 
 
 class Trainer:

@@ -3,7 +3,7 @@ import numpy as np
 import gym
 
 from genrl import SARSA, QLearning
-from genrl.classical import Trainer
+from genrl.classical.common import Trainer
 
 
 class TestTrainer:

@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import gym
 
-from genrl.classical import TabularModel
+from genrl.classical.common import TabularModel
 
 
 class TestModels:

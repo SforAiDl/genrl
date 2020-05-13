@@ -5,8 +5,10 @@ from torchvision import transforms
 import numpy as np
 from collections import deque
 
-from genrl.deep.common import set_seeds, Logger
 from abc import ABC
+
+from .utils import set_seeds
+from .logger import Logger
 
 
 class Trainer(ABC):
@@ -14,7 +16,7 @@ class Trainer(ABC):
     Base Trainer class. To be inherited specific usecases.
     :param agent: (object) Algorithm object
     :param env: (object) standard gym environment
-    :param logger: (object) Logger object
+    :param log_mode: (list of str) which logging modes to use
     :param buffer: (object) Buffer Object
     :param off_policy: (bool) Is the algorithm off-policy?
     :param save_interval:(int) Model to save in each of these many timesteps
@@ -37,7 +39,7 @@ class Trainer(ABC):
         self,
         agent,
         env,
-        logger,
+        log_mode=["stdout"],
         buffer=None,
         off_policy=False,
         save_interval=0,
@@ -50,6 +52,7 @@ class Trainer(ABC):
         device="cpu",
         log_interval=10,
         evaluate_episodes=500,
+        logdir="logs",
         batch_size=50,
         seed=None,
         deterministic_actions=False,
@@ -58,7 +61,8 @@ class Trainer(ABC):
     ):
         self.agent = agent
         self.env = env
-        self.logger = logger
+        self.log_mode = log_mode
+        self.logdir = logdir
         self.off_policy = off_policy
         if self.off_policy and buffer is None:
             if self.agent.replay_buffer is None:
@@ -78,8 +82,11 @@ class Trainer(ABC):
         self.deterministic_actions = deterministic_actions
         self.transform = transform
         self.history_length = history_length
+
         if seed is not None:
             set_seeds(seed, self.env)
+
+        self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
     def train(self):
         """
@@ -100,9 +107,7 @@ class Trainer(ABC):
 
         save_dir = "{}/checkpoints/{}_{}".format(logdir, algo, env_name)
         os.makedirs(save_dir, exist_ok=True)
-        torch.save(saving_params, "{}/{}.pt".format(
-            save_dir, self.ckpt_log_name
-        ))
+        torch.save(saving_params, "{}/{}.pt".format(save_dir, self.ckpt_log_name))
 
     def evaluate(self): 
         '''
@@ -168,7 +173,7 @@ class OffPolicyTrainer(Trainer):
         self,
         agent,
         env,
-        logger,
+        log_mode=["stdout"],
         buffer=None,
         off_policy=True,
         save_interval=0,
@@ -181,6 +186,7 @@ class OffPolicyTrainer(Trainer):
         device="cpu",
         log_interval=10,
         evaluate_episodes=500,
+        logdir="logs",
         batch_size=50,
         seed=0,
         deterministic_actions=False,
@@ -191,7 +197,7 @@ class OffPolicyTrainer(Trainer):
         super(OffPolicyTrainer, self).__init__(
             agent,
             env,
-            logger,
+            log_mode,
             buffer,
             off_policy,
             save_interval,
@@ -204,6 +210,7 @@ class OffPolicyTrainer(Trainer):
             device,
             log_interval,
             evaluate_episodes,
+            logdir,
             batch_size,
             seed,
             deterministic_actions,
@@ -295,10 +302,7 @@ class OffPolicyTrainer(Trainer):
                 state = next_state
 
             if done or (episode_len == self.max_ep_len):
-                if (
-                    "noise" in self.agent.__dict__
-                    and self.agent.noise is not None
-                ):
+                if "noise" in self.agent.__dict__ and self.agent.noise is not None:
                     self.agent.noise.reset()
 
                 if episode % self.log_interval == 0:
@@ -378,7 +382,7 @@ class OnPolicyTrainer(Trainer):
         self,
         agent,
         env,
-        logger,
+        log_mode=["stdout"],
         save_interval=0,
         render=False,
         max_ep_len=1000,
@@ -389,6 +393,7 @@ class OnPolicyTrainer(Trainer):
         device="cpu",
         log_interval=10,
         evaluate_episodes=500,
+        logdir="logs",
         batch_size=50,
         seed=None,
         deterministic_actions=False,
@@ -396,7 +401,7 @@ class OnPolicyTrainer(Trainer):
         super(OnPolicyTrainer, self).__init__(
             agent,
             env,
-            logger,
+            log_mode,
             buffer=None,
             off_policy=False,
             save_interval=save_interval,
@@ -409,6 +414,7 @@ class OnPolicyTrainer(Trainer):
             device=device,
             log_interval=log_interval,
             evaluate_episodes=evaluate_episodes,
+            logdir=logdir,
             batch_size=batch_size,
             seed=seed,
             deterministic_actions=deterministic_actions,
@@ -429,9 +435,7 @@ class OnPolicyTrainer(Trainer):
 
                 for t in range(self.agent.timesteps_per_actorbatch):
                     if self.deterministic_actions:
-                        action = self.agent.select_action(
-                            state, deterministic=True
-                        )
+                        action = self.agent.select_action(state, deterministic=True)
                     else:
                         action = self.agent.select_action(state)
                     state, reward, done, _ = self.env.step(np.array(action))
@@ -445,8 +449,7 @@ class OnPolicyTrainer(Trainer):
                         break
 
                 epoch_reward += (
-                    np.sum(self.agent.traj_reward)
-                    / self.agent.actor_batch_size
+                    np.sum(self.agent.traj_reward) / self.agent.actor_batch_size
                 )
                 self.agent.get_traj_loss()
 
@@ -459,9 +462,7 @@ class OnPolicyTrainer(Trainer):
                     {
                         "Episode": episode,
                         "Reward": epoch_reward,
-                        "Timestep": (
-                            i * episode * self.agent.timesteps_per_actorbatch
-                        )
+                        "Timestep": (i * episode * self.agent.timesteps_per_actorbatch),
                     }
                 )
 
@@ -471,8 +472,3 @@ class OnPolicyTrainer(Trainer):
 
             self.env.close()
             self.logger.close()
-
-
-if __name__ == "__main__":
-    log_dir = os.getcwd()
-    logger = Logger(log_dir, ["stdout"])
