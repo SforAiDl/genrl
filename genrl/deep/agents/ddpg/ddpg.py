@@ -130,7 +130,9 @@ class DDPG:
     def create_model(self):
         state_dim, action_dim, discrete = self.get_env_properties()
         if discrete == True:
-            raise NotImplementedError
+            raise Exception(
+                "Discrete Environments not supported."
+            )
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim),

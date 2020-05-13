@@ -116,18 +116,6 @@ class VPG:
         '''
         Initialize the actor and critic networks 
         '''
-        # state_dim = self.env.observation_space.shape[0]
-
-        # action_lim = None
-        # if isinstance(self.env.action_space, gym.spaces.Discrete):
-        #     action_dim = self.env.action_space.n
-        #     discrete = True
-        # elif isinstance(self.env.action_space, gym.spaces.Box):
-        #     action_dim = self.env.action_space.shape[0]
-        #     action_lim = self.env.action_space.high[0]
-        #     discrete = False
-        # else:
-        #     raise NotImplementedError
         state_dim, action_dim, action_lim, discrete = self.get_env_properties()
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
