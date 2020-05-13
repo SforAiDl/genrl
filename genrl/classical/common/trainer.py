@@ -137,6 +137,12 @@ class Trainer:
         return ep_rews
 
     def evaluate(self, eval_ep=100):
+        '''
+        Evaluate function.
+
+        :param eval_ep: Number of episodes you want to evaluate for
+        :type eval_ep: int
+        '''
         ep = 0
         ep_rew = 0
         ep_rews = []
