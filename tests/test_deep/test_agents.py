@@ -30,8 +30,9 @@ class TestAlgos:
         algo = TD3("mlp", env, noise=OrnsteinUhlenbeckActionNoise, layers=[1, 1])
         logger = Logger("./logs", ["csv"])
 
-        trainer = OffPolicyTrainer(algo, env, logger, epochs=1, render=False)
+        trainer = OffPolicyTrainer(algo, env, logger, epochs=1, render=False, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_ppo1(self):
@@ -39,8 +40,9 @@ class TestAlgos:
         algo = PPO1("mlp", env, layers=[1, 1])
         logger = Logger("./logs", ["csv"])
 
-        trainer = OnPolicyTrainer(algo, env, logger, epochs=1, render=False)
+        trainer = OnPolicyTrainer(algo, env, logger, epochs=1, render=False, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_vpg(self):
