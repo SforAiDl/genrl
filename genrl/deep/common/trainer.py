@@ -1,7 +1,11 @@
 import os
 
 import torch
+from torchvision import transforms
 import numpy as np
+from collections import deque
+
+from genrl.deep.common import set_seeds, Logger
 from abc import ABC
 
 from .utils import set_seeds
@@ -52,6 +56,8 @@ class Trainer(ABC):
         batch_size=50,
         seed=None,
         deterministic_actions=False,
+        transform=None,
+        history_length=4,
     ):
         self.agent = agent
         self.env = env
@@ -72,7 +78,9 @@ class Trainer(ABC):
         self.device = device
         self.log_interval = log_interval
         self.batch_size = batch_size
-        self.determinsitic_actions = deterministic_actions
+        self.deterministic_actions = deterministic_actions
+        self.transform = transform
+        self.history_length = history_length
 
         if seed is not None:
             set_seeds(seed, self.env)
@@ -181,6 +189,25 @@ class OffPolicyTrainer(Trainer):
         self.warmup_steps = warmup_steps
         self.update_interval = update_interval
         self.start_update = start_update
+        self.network_type = self.agent.network_type
+
+        if self.network_type == "cnn":
+            if self.transform is None:
+                self.transform = transforms.Compose([
+                    transforms.ToPILImage(),
+                    transforms.Grayscale(),
+                    transforms.Resize((110, 84)),
+                    transforms.CenterCrop(84),
+                    transforms.ToTensor()
+                ])
+
+            self.state_history = deque(
+                [
+                    self.transform(
+                        self.env.observation_space.sample()
+                    ) for _ in range(self.history_length)
+                ], maxlen=self.history_length
+            )
 
     def train(self):
         """
@@ -196,16 +223,24 @@ class OffPolicyTrainer(Trainer):
         if self.agent.__class__.__name__ == "DQN":
             self.agent.update_target_model()
 
+            if self.network_type == "cnn":
+                self.state_history.append(self.transform(state))
+                phi_state = torch.stack(list(self.state_history), dim=1)
+
         for t in range(total_steps):
             if self.agent.__class__.__name__ == "DQN":
                 self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
-                action = self.agent.select_action(state)
+
+                if self.network_type == "cnn":
+                    action = self.agent.select_action(phi_state)
+                else:
+                    action = self.agent.select_action(state)
 
             else:
                 if t < self.warmup_steps:
                     action = self.env.action_space.sample()
                 else:
-                    if self.determinsitic_actions:
+                    if self.deterministic_actions:
                         action = self.agent.select_action(state, deterministic=True)
                     else:
                         action = self.agent.select_action(state)
@@ -219,9 +254,23 @@ class OffPolicyTrainer(Trainer):
 
             done = False if episode_len == self.max_ep_len else done
 
-            self.buffer.push((state, action, reward, next_state, done))
-
-            state = next_state
+            if (
+                self.agent.__class__.__name__ == "DQN" and
+                self.network_type == "cnn"
+            ):
+                self.state_history.append(self.transform(next_state))
+                phi_next_state = torch.stack(
+                    list(self.state_history), dim=1
+                )
+                self.buffer.push((
+                    phi_state, action, reward, phi_next_state, done
+                ))
+                phi_state = phi_next_state
+            else:
+                self.buffer.push((
+                    state, action, reward, next_state, done
+                ))
+                state = next_state
 
             if done or (episode_len == self.max_ep_len):
                 if "noise" in self.agent.__dict__ and self.agent.noise is not None:
@@ -246,6 +295,7 @@ class OffPolicyTrainer(Trainer):
 
                 if t % self.update_interval == 0:
                     self.agent.update_target_model()
+
             # update params for other agents
             else:
                 if t >= self.start_update and t % self.update_interval == 0:
@@ -318,7 +368,7 @@ class OnPolicyTrainer(Trainer):
         seed=None,
         deterministic_actions=False,
     ):
-        super().__init__(
+        super(OnPolicyTrainer, self).__init__(
             agent,
             env,
             log_mode,

@@ -17,26 +17,38 @@ from ...common import (
 class VPG:
     """
     Vanilla Policy Gradient algorithm
-    Paper:
-    https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
-    :param network_type: (str) The deep neural network layer types ['mlp']
-    :param env: (Gym environment) The environment to learn from
-    :param timesteps_per_actorbatch: (int) timesteps per actor per update
-    :param gamma: (float) discount factor
-    :param actor_batchsize: (int) trajectories per optimizer epoch
-    :param epochs: (int) the optimizer's number of epochs
-    :param lr_policy: (float) policy network learning rate
-    :param lr_value: (float) value network learning rate
-    :param policy_copy_interval: (int) number of optimizer before copying
-        params from new policy to old policy
-    :param save_interval: (int) Number of episodes between saves of models
-    :param tensorboard_log: (str) the log location for tensorboard (if None,
-        no logging)
-    :param seed (int): seed for torch and gym
-    :param device (str): device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
-    :param run_num: (boolean) if model has already been trained
-    :param save_model: (boolean) True if user wants to save model
+    Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
+    
+    :param network_type: The deep neural network layer types ['mlp']
+    :param env: The environment to learn from
+    :param timesteps_per_actorbatch: timesteps per actor per update
+    :param gamma: discount factor
+    :param actor_batchsize: trajectories per optimizer epoch
+    :param epochs: the optimizer's number of epochs
+    :param lr_policy: policy network learning rate
+    :param lr_value: value network learning rate
+    :param policy_copy_interval: number of optimizer before copying params from new policy to old policy
+    :param save_interval: Number of episodes between saves of models
+    :param tensorboard_log: the log location for tensorboard
+    :param seed: seed for torch and gym
+    :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param run_num: if model has already been trained
+    :param save_model: True if user wants to save model
+    :type network_type: str
+    :type env: Gym environment
+    :type timesteps_per_actorbatch: int
+    :type gamma: float
+    :type actor_batchsize: int
+    :type epochs: int
+    :type lr_policy: float
+    :type lr_value: float
+    :type policy_copy_interval: int
+    :type save_interval: int
+    :type tensorboard_log: str
+    :type seed: int
+    :type device: str
+    :type run_num: bool
+    :type save_model: bool
     """
 
     def __init__(
@@ -101,6 +113,9 @@ class VPG:
         self.create_model()
 
     def create_model(self):
+        '''
+        Initialize the actor and critic networks 
+        '''
         state_dim = self.env.observation_space.shape[0]
 
         action_lim = None
@@ -140,6 +155,16 @@ class VPG:
         self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
     def select_action(self, state, deterministic=False):
+        '''
+        Select action for the given state 
+
+        :param state: State for which action has to be sampled
+        :param deterministic: Whether the action is deterministic or not 
+        :type state: int, float, ...
+        :type deterministic: bool
+        :returns: The action 
+        :rtype: int, float, ...
+        '''
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
@@ -154,6 +179,9 @@ class VPG:
         return a
 
     def get_traj_loss(self):
+        '''
+        Calculates the loss for the trajectory 
+        '''
         disc_R = 0
         returns = []
 
@@ -183,6 +211,14 @@ class VPG:
         self.value_hist = Variable(torch.Tensor()).to(self.device)
 
     def update_policy(self, episode, copy_policy=False):
+        '''
+        Update the policy and take the step for the optimizer
+
+        :param episode: Episode number 
+        :param copy_policy: Whether you want to copy the policy or not 
+        :type episode: int 
+        :type copy_policy: bool
+        '''
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_loss_hist)
         loss_value = torch.mean(self.value_loss_hist)

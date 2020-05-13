@@ -67,7 +67,7 @@ class TestUtils:
             isinstance(cnn_nn[i], nn.ReLU)
             for i in range(1, len(channels)+1, 2)
         )
-        assert output_size == 1600
+        assert output_size == 1764
 
     def test_evaluate(self):
         """
