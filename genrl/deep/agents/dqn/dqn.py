@@ -53,7 +53,7 @@ class DQN:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
-    :type network_type: str
+    :type network_type: string
     :type env: Gym environment
     :type double_dqn: bool
     :type dueling_dqn: bool
@@ -67,10 +67,10 @@ class DQN:
     :type lr: float
     :type batch_size: int
     :type replay_size: int
-    :type tensorboard_log: str
+    :type tensorboard_log: string
     :type seed: int
     :type render: bool
-    :type device: str
+    :type device: string
     """
 
     def __init__(
@@ -160,12 +160,10 @@ class DQN:
 
         self.create_model()
 
-    def create_model(self, network_type):
+    def create_model(self):
         '''
         Initialize the model and target model for various variants of DQN. 
         Initializes optimizer and replay buffers as well.
-
-        :param network_type: (str) The type of model that you want ['mlp']
         '''
         state_dim, action_dim, disc = self.get_env_properties()
         if self.network_type == "mlp":
