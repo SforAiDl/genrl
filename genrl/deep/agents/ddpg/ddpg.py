@@ -131,7 +131,7 @@ class DDPG:
         state_dim, action_dim, discrete = self.get_env_properties()
         if discrete == True:
             raise Exception(
-                "Discrete Environments not supported."
+                "Discrete Environments not supported for {}.".format(__class__.__name__)
             )
         if self.noise is not None:
             self.noise = self.noise(
