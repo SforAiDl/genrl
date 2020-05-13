@@ -1,5 +1,5 @@
-from genrl.deep.common.base import BasePolicy
-from genrl.deep.common.utils import mlp
+from .base import BasePolicy
+from .utils import mlp
 
 
 class MlpPolicy(BasePolicy):
@@ -13,24 +13,14 @@ class MlpPolicy(BasePolicy):
     """
 
     def __init__(
-        self,
-        state_dim,
-        action_dim,
-        hidden=(32, 32),
-        disc=True,
-        *args,
-        **kwargs
+        self, state_dim, action_dim, hidden=(32, 32), disc=True, *args, **kwargs
     ):
-        super(MlpPolicy, self).__init__(
-            state_dim, action_dim, hidden, disc, **kwargs
-        )
+        super(MlpPolicy, self).__init__(state_dim, action_dim, hidden, disc, **kwargs)
 
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = mlp(
-            [state_dim] + list(hidden) + [action_dim], sac=self.sac
-        )
+        self.model = mlp([state_dim] + list(hidden) + [action_dim], sac=self.sac)
 
 
 policy_registry = {"mlp": MlpPolicy}

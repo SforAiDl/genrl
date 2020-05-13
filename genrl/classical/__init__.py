@@ -1,12 +1,14 @@
-from genrl.classical.qlearning import QLearning
-from genrl.classical.sarsa import SARSA
-from genrl.classical.bandit import (  # noqa
-    EpsGreedyBernoulliBandit,
+from genrl.classical.bandit import (
+    Bandit,
+    GaussianBandits,
     EpsGreedyGaussianBandit,
-    SoftmaxActionSelection,
-    UCBBernoulliBandit,
     UCBGaussianBandit,
+    SoftmaxActionSelection,
+    BernoulliBandits,
+    EpsGreedyBernoulliBandit,
+    UCBBernoulliBandit,
     BayesianUCBBernoulliBandit,
     ThompsonSampling,
 )
-from genrl.classical.common import TabularModel, Trainer
+from genrl.classical.sarsa import SARSA
+from genrl.classical.qlearning import QLearning

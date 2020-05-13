@@ -4,14 +4,7 @@ from torch.distributions import Categorical, Normal
 
 
 class BasePolicy(nn.Module):
-    def __init__(
-        self,
-        state_dim,
-        action_dim,
-        hidden,
-        discrete,
-        **kwargs
-    ):
+    def __init__(self, state_dim, action_dim, hidden, discrete, **kwargs):
         super(BasePolicy, self).__init__()
 
         self.state_dim = state_dim
@@ -19,14 +12,8 @@ class BasePolicy(nn.Module):
         self.hidden = hidden
         self.discrete = discrete
 
-        self.action_lim = (
-            kwargs["action_lim"]
-            if "action_lim" in kwargs else 1.0
-        )
-        self.action_var = (
-            kwargs["action_var"]
-            if "action_var" in kwargs else 0.1
-        )
+        self.action_lim = kwargs["action_lim"] if "action_lim" in kwargs else 1.0
+        self.action_var = kwargs["action_var"] if "action_var" in kwargs else 0.1
         self.sac = kwargs["sac"] if "sac" in kwargs else False
 
         if self.sac:

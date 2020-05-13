@@ -44,9 +44,7 @@ class PrioritizedBuffer:
         probabilities = priorities ** self.alpha
         probabilities /= probabilities.sum()
 
-        indices = np.random.choice(
-            total, batch_size, p=probabilities
-        )
+        indices = np.random.choice(total, batch_size, p=probabilities)
 
         weights = (total * probabilities[indices]) ** (-beta)
         weights /= weights.max()
@@ -59,9 +57,7 @@ class PrioritizedBuffer:
 
         return (
             torch.as_tensor(v, dtype=torch.float32)
-            for v in [
-                states, actions, rewards, next_states, dones, indices, weights
-            ]
+            for v in [states, actions, rewards, next_states, dones, indices, weights]
         )
 
     def update_priorities(self, batch_indices, batch_priorities):

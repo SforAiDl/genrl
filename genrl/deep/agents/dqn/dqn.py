@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 from copy import deepcopy
 
-from genrl.deep.common import (
+from ...common import (
     ReplayBuffer,
     PrioritizedBuffer,
     get_model,
@@ -19,7 +19,7 @@ from genrl.deep.common import (
     set_seeds,
 )
 
-from genrl.deep.agents.dqn.utils import (
+from .utils import (
     DuelingDQNValueMlp,
     DuelingDQNValueCNN,
     NoisyDQNValue,
@@ -168,19 +168,13 @@ class DQN:
         state_dim, action_dim, disc = self.get_env_properties()
         if self.network_type == "mlp":
             if self.dueling_dqn:
-                self.model = DuelingDQNValueMlp(
-                    state_dim, action_dim
-                )
+                self.model = DuelingDQNValueMlp(state_dim, action_dim)
             elif self.categorical_dqn:
                 self.model = CategoricalDQNValue(
-                    state_dim,
-                    action_dim,
-                    self.num_atoms,
+                    state_dim, action_dim, self.num_atoms
                 )
             elif self.noisy_dqn:
-                self.model = NoisyDQNValue(
-                    state_dim, action_dim
-                )
+                self.model = NoisyDQNValue(state_dim, action_dim)
             else:
                 self.model = get_model("v", self.network_type)(
                     state_dim, action_dim, "Qs"
@@ -290,10 +284,7 @@ class DQN:
                 with torch.no_grad():
                     state = Variable(torch.FloatTensor(state))
                     dist = self.model(state).data.cpu()
-                    dist = (
-                        dist
-                        * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                    )
+                    dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
                     action = dist.sum(2).max(1)[1].numpy()[0]
             else:
                 state = Variable(torch.FloatTensor(state))
@@ -323,13 +314,9 @@ class DQN:
             ) = self.replay_buffer.sample(self.batch_size)
             weights = Variable(torch.FloatTensor(weights))
         else:
-            (
-                state,
-                action,
-                reward,
-                next_state,
-                done
-            ) = self.replay_buffer.sample(self.batch_size)
+            (state, action, reward, next_state, done) = self.replay_buffer.sample(
+                self.batch_size
+            )
 
         state = Variable(torch.FloatTensor(np.float32(state)))
         next_state = Variable(torch.FloatTensor(np.float32(next_state)))
@@ -342,9 +329,7 @@ class DQN:
             next_state = next_state.view(-1, 4, 84, 84)
 
         if self.categorical_dqn:
-            projection_dist = self.projection_distribution(
-                next_state, reward, done
-            )
+            projection_dist = self.projection_distribution(next_state, reward, done)
             dist = self.model(state)
             action = (
                 action.unsqueeze(1)
@@ -365,10 +350,7 @@ class DQN:
             q_target_s_a_prime = q_target_next_state_values.gather(
                 1, action_next.unsqueeze(1)
             ).squeeze(1)
-            expected_q_value = (
-                reward
-                + self.gamma * q_target_s_a_prime * (1 - done)
-            )
+            expected_q_value = reward + self.gamma * q_target_s_a_prime * (1 - done)
 
         else:
             q_values = self.model(state)
@@ -379,7 +361,7 @@ class DQN:
             expected_q_value = reward + self.gamma * q_s_a_prime * (1 - done)
 
         if self.categorical_dqn:
-            loss = - (Variable(projection_dist) * dist.log()).sum(1).mean()
+            loss = -(Variable(projection_dist) * dist.log()).sum(1).mean()
         else:
             if self.prioritized_replay:
                 loss = (q_value - expected_q_value.detach()).pow(2) * weights
@@ -460,20 +442,19 @@ class DQN:
         lower = b.floor().long()
         upper = b.ceil().long()
 
-        offset = torch.linspace(
-            0, (batch_size - 1) * self.num_atoms, batch_size
-        ).long().unsqueeze(1).expand(self.batch_size, self.num_atoms)
+        offset = (
+            torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size)
+            .long()
+            .unsqueeze(1)
+            .expand(self.batch_size, self.num_atoms)
+        )
 
         projection_dist = torch.zeros(next_dist.size())
         projection_dist.view(-1).index_add_(
-            0,
-            (lower + offset).view(-1),
-            (next_dist * (upper.float() - b)).view(-1)
+            0, (lower + offset).view(-1), (next_dist * (upper.float() - b)).view(-1)
         )
         projection_dist.view(-1).index_add_(
-            0,
-            (upper + offset).view(-1),
-            (next_dist * (b - lower.float())).view(-1)
+            0, (upper + offset).view(-1), (next_dist * (b - lower.float())).view(-1)
         )
 
         return projection_dist
@@ -524,13 +505,13 @@ class DQN:
 
             if done or (episode_len == self.max_ep_len):
                 if episode % 2 == 0:
-                    print("Episode: {}, Reward: {}, Frame Index: {}".format(
-                        episode, episode_reward, frame_idx
-                    ))
-                if self.tensorboard_log:
-                    self.writer.add_scalar(
-                        "episode_reward", episode_reward, frame_idx
+                    print(
+                        "Episode: {}, Reward: {}, Frame Index: {}".format(
+                            episode, episode_reward, frame_idx
+                        )
                     )
+                if self.tensorboard_log:
+                    self.writer.add_scalar("episode_reward", episode_reward, frame_idx)
 
                 self.reward_hist.append(episode_reward)
                 state, episode_reward, episode_len = self.env.reset(), 0, 0
