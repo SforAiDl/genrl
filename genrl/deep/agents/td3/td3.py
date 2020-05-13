@@ -130,7 +130,12 @@ class TD3:
         self.checkpoint = self.get_hyperparams()
 
     def create_model(self):
-        state_dim, action_dim, disc = self.get_env_properties()
+        state_dim, action_dim, discrete = self.get_env_properties()
+        if discrete == True: 
+            raise Exception(
+                "Discrete Environments not supported for {}.".format(__class__.__name__)
+            )
+        
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
