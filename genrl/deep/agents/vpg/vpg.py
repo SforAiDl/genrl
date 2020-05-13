@@ -116,19 +116,19 @@ class VPG:
         '''
         Initialize the actor and critic networks 
         '''
-        state_dim = self.env.observation_space.shape[0]
+        # state_dim = self.env.observation_space.shape[0]
 
-        action_lim = None
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            discrete = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            discrete = False
-        else:
-            raise NotImplementedError
-
+        # action_lim = None
+        # if isinstance(self.env.action_space, gym.spaces.Discrete):
+        #     action_dim = self.env.action_space.n
+        #     discrete = True
+        # elif isinstance(self.env.action_space, gym.spaces.Box):
+        #     action_dim = self.env.action_space.shape[0]
+        #     action_lim = self.env.action_space.high[0]
+        #     discrete = False
+        # else:
+        #     raise NotImplementedError
+        state_dim, action_dim, action_lim, discrete = self.get_env_properties()
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "V",
@@ -160,6 +160,28 @@ class VPG:
         self.traj_reward = []
         self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
         self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
+
+    def get_env_properties(self):
+        '''
+        Helper function to extract the observation and action space
+
+        :returns: Observation space, Action Space and whether the action space is discrete or not 
+        :rtype: int, float, ... ; int, float, ... ; bool
+        '''
+        state_dim = self.env.observation_space.shape[0]
+        action_lim = None
+
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            action_dim = self.env.action_space.n
+            disc = True
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            action_dim = self.env.action_space.shape[0]
+            action_lim = self.env.action_space.high[0]
+            disc = False
+        else:
+            raise NotImplementedError
+
+        return state_dim, action_dim, action_lim, disc
 
     def select_action(self, state, deterministic=False):
         '''

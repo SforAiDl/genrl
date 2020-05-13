@@ -48,8 +48,9 @@ class TestAlgos:
         algo = VPG("mlp", env, layers=[1, 1])
         logger = Logger("./logs", ["csv"])
 
-        trainer = OnPolicyTrainer(algo, env, logger, epochs=1, render=False)
+        trainer = OnPolicyTrainer(algo, env, logger, epochs=1, render=False, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_ddpg(self):
@@ -57,8 +58,9 @@ class TestAlgos:
         algo = DDPG("mlp", env, noise=NormalActionNoise, layers=[1, 1])
         logger = Logger("./logs", ["csv"])
 
-        trainer = OffPolicyTrainer(algo, env, logger, epochs=1, render=False)
+        trainer = OffPolicyTrainer(algo, env, logger, epochs=1, render=False, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_dqn(self):
@@ -67,8 +69,9 @@ class TestAlgos:
         algo = DQN("mlp", env)
         logger = Logger("./logs", ["csv"])
 
-        trainer = OffPolicyTrainer(algo, env, logger, epochs=1, render=False)
+        trainer = OffPolicyTrainer(algo, env, logger, epochs=1, render=False, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
         # Double DQN with prioritized replay buffer
