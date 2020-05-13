@@ -116,7 +116,7 @@ class Trainer(ABC):
                 action = self.agent.select_action(state,explore=False)
             else:
                 action = self.agent.select_action(state)
-            next_state, reward, done, _ = self.env.step(action.item())
+            next_state, reward, done, _ = self.env.step(action)
             ep_r += reward
             state = next_state
             if done: 

@@ -39,7 +39,7 @@ class Trainer:
         plan_n_steps=3,
         start_steps=5000,
         start_plan=50,
-        log_frequency=500,
+        evaluate_frequency=500,
         seed=None,
         render=False,
     ):
@@ -49,7 +49,7 @@ class Trainer:
         self.plan_n_steps = plan_n_steps
         self.start_steps = start_steps
         self.start_plan = start_plan
-        self.log_frequency = log_frequency
+        self.evaluate_frequency = evaluate_frequency
         self.render = render
 
         if mode == "learn":
@@ -120,7 +120,7 @@ class Trainer:
             state = next_state
             if done == True:
                 ep_rews.append(ep_rew)
-                if ep % self.log_frequency == 0:
+                if ep % self.evaluate_frequency == 0:
                     print("Evaluating at the episode number: {}".format(ep))
                     self.evaluate()
 

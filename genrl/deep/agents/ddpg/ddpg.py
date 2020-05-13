@@ -128,8 +128,9 @@ class DDPG:
         self.create_model()
 
     def create_model(self):
-        state_dim = self.env.observation_space.shape[0]
-        action_dim = self.env.action_space.shape[0]
+        state_dim, action_dim, discrete = self.get_env_properties()
+        if discrete == True:
+            raise NotImplementedError
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim),
@@ -164,6 +165,26 @@ class DDPG:
             self.ac.critic.parameters(),
             lr=self.lr_q
         )
+
+    def get_env_properties(self):
+        '''
+        Helper function to extract the observation and action space
+
+        :returns: Observation space, Action Space and whether the action space is discrete or not 
+        :rtype: int, float, ... ; int, float, ... ; bool
+        '''
+        state_dim = self.env.observation_space.shape[0]
+
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            action_dim = self.env.action_space.n
+            disc = True
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            action_dim = self.env.action_space.shape[0]
+            disc = False
+        else:
+            raise NotImplementedError
+
+        return state_dim, action_dim, disc
 
     def select_action(self, state, deterministic=True):
         with torch.no_grad():
