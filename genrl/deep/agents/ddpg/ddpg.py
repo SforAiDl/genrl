@@ -18,7 +18,9 @@ from ...common import (
 class DDPG:
     """
     Deep Deterministic Policy Gradient algorithm (DDPG)
+    
     Paper: https://arxiv.org/abs/1509.02971
+
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
     :param env: The environment to learn from
     :param gamma: discount factor

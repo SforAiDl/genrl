@@ -17,7 +17,9 @@ from ...common import (
 class PPO1:
     """
     Proximal Policy Optimization algorithm (Clipped policy).
+
     Paper: https://arxiv.org/abs/1707.06347
+    
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param timesteps_per_actorbatch: (int) timesteps per actor per update

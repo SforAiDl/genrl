@@ -17,6 +17,7 @@ from ...common import (
 class VPG:
     """
     Vanilla Policy Gradient algorithm
+    
     Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
     
     :param network_type: The deep neural network layer types ['mlp']

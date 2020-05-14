@@ -32,7 +32,9 @@ from .utils import (
 class DQN:
     """
     Deep Q Networks
+
     Paper (DQN) https://arxiv.org/pdf/1312.5602.pdf
+    
     Paper (Double DQN) https://arxiv.org/abs/1509.06461
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']

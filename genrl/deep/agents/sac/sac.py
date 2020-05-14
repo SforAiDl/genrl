@@ -20,7 +20,9 @@ from ...common import (
 class SAC:
     """
     Soft Actor Critic algorithm (SAC)
+    
     Paper: https://arxiv.org/abs/1812.05905
+
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
     :param env: The environment to learn from
     :param gamma: discount factor

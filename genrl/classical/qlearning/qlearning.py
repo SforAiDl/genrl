@@ -4,6 +4,7 @@ import numpy as np
 class QLearning:
     """
     Q-Learning Algorithm
+    
     Paper- https://link.springer.com/article/10.1007/BF00992698
 
     :param env: standard gym environment to train on
