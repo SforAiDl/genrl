@@ -146,10 +146,10 @@ class DDPG:
         self.create_model()
 
     def create_model(self):
-        '''
+        """
         Initialize the model
         Initializes optimizer and replay buffers as well.
-        '''
+        """
         state_dim = self.env.observation_space.shape[0]
         action_dim = self.env.action_space.shape[0]
         if self.noise is not None:
@@ -181,7 +181,7 @@ class DDPG:
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
     def select_action(self, state, deterministic=True):
-        '''
+        """
         Selection of action
 
         :param state: Observation state
@@ -190,7 +190,7 @@ class DDPG:
         :type deterministic: bool
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
-        '''
+        """
         with torch.no_grad():
             action, _ = self.ac.get_action(
                 torch.as_tensor(state, dtype=torch.float32).to(self.device),
@@ -207,7 +207,7 @@ class DDPG:
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
-        '''
+        """
         Computes loss for Q-Network
 
         :param state: environment observation
@@ -222,7 +222,7 @@ class DDPG:
         :type done: bool
         :returns: the Q loss value
         :rtype: float
-        '''
+        """
         q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
@@ -236,23 +236,23 @@ class DDPG:
         return nn.MSELoss()(q, target)
 
     def get_p_loss(self, state):
-        '''
+        """
         Computes policy loss
 
         :param state: Environment observation
         :type state: int, float, ...
         :returns: Policy loss
         :rtype: float
-        '''
+        """
         q_pi = self.ac.get_value(
             torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
         )
         return -torch.mean(q_pi)
 
     def update_params(self, state, action, reward, next_state, done):
-        '''
+        """
         Takes the step for optimizer.
-        '''
+        """
         self.optimizer_q.zero_grad()
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
         loss_q.backward()

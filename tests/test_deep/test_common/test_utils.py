@@ -58,14 +58,10 @@ class TestUtils:
 
         cnn_nn, output_size = cnn(channels, kernels, strides, input_size)
 
-        assert len(cnn_nn) == 2*(len(channels)-1)
+        assert len(cnn_nn) == 2 * (len(channels) - 1)
+        assert all(isinstance(cnn_nn[i], nn.Conv2d) for i in range(0, len(channels), 2))
         assert all(
-            isinstance(cnn_nn[i], nn.Conv2d)
-            for i in range(0, len(channels), 2)
-        )
-        assert all(
-            isinstance(cnn_nn[i], nn.ReLU)
-            for i in range(1, len(channels)+1, 2)
+            isinstance(cnn_nn[i], nn.ReLU) for i in range(1, len(channels) + 1, 2)
         )
         assert output_size == 1764
 

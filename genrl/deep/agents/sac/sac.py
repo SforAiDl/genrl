@@ -146,10 +146,10 @@ class SAC:
         self.create_model()
 
     def create_model(self):
-        '''
+        """
         Initialize the model
         Initializes optimizer and replay buffers as well.
-        '''
+        """
         state_dim = self.env.observation_space.shape[0]
 
         # initialize models
@@ -264,7 +264,7 @@ class SAC:
         return action.detach().cpu().numpy()[0]
 
     def update_params(self, state, action, reward, next_state, done):
-        '''
+        """
         Computes loss and takes optimizer step
 
         :param state: environment observation
@@ -285,7 +285,7 @@ class SAC:
         :rtype: float
         :returns: entropy coefficient loss
         :rtype: float
-        '''
+        """
         reward = reward.unsqueeze(1)
         done = done.unsqueeze(1)
         # compute targets

@@ -163,18 +163,16 @@ class DQN:
         self.create_model()
 
     def create_model(self):
-        '''
+        """
         Initialize the model and target model for various variants of DQN. 
         Initializes optimizer and replay buffers as well.
-        '''
+        """
         state_dim, action_dim, disc = self.get_env_properties()
         if self.network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(state_dim, action_dim)
             elif self.categorical_dqn:
-                self.model = CategoricalDQNValue(
-                    state_dim, action_dim, self.num_atoms
-                )
+                self.model = CategoricalDQNValue(state_dim, action_dim, self.num_atoms)
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(state_dim, action_dim)
             else:
@@ -187,43 +185,41 @@ class DQN:
                 self.history_length = 4
 
             if self.transform is None:
-                self.transform = transforms.Compose([
-                    transforms.ToPILImage(),
-                    transforms.Grayscale(),
-                    transforms.Resize((110, 84)),
-                    transforms.CenterCrop(84),
-                    transforms.ToTensor()
-                ])
+                self.transform = transforms.Compose(
+                    [
+                        transforms.ToPILImage(),
+                        transforms.Grayscale(),
+                        transforms.Resize((110, 84)),
+                        transforms.CenterCrop(84),
+                        transforms.ToTensor(),
+                    ]
+                )
 
             self.state_history = deque(
                 [
-                    self.transform(
-                        self.env.observation_space.sample()
-                    ).reshape(-1, 84, 84) for _ in range(self.history_length)
-                ], maxlen=self.history_length
+                    self.transform(self.env.observation_space.sample()).reshape(
+                        -1, 84, 84
+                    )
+                    for _ in range(self.history_length)
+                ],
+                maxlen=self.history_length,
             )
 
             if self.dueling_dqn:
                 self.model = DuelingDQNValueCNN(
-                    self.env.action_space.n,
-                    self.history_length
+                    self.env.action_space.n, self.history_length
                 )
             elif self.noisy_dqn:
                 self.model = NoisyDQNValueCNN(
-                    self.env.action_space.n,
-                    self.history_length
+                    self.env.action_space.n, self.history_length
                 )
             elif self.categorical_dqn:
                 self.model = CategoricalDQNValueCNN(
-                    self.env.action_space.n,
-                    self.num_atoms,
-                    self.history_length
+                    self.env.action_space.n, self.num_atoms, self.history_length
                 )
             else:
                 self.model = get_model("v", self.network_type)(
-                    self.env.action_space.n,
-                    self.history_length,
-                    "Qs"
+                    self.env.action_space.n, self.history_length, "Qs"
                 )
 
         # load paramaters if already trained
@@ -247,12 +243,12 @@ class DQN:
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def get_env_properties(self):
-        '''
+        """
         Helper function to extract the observation and action space
 
         :returns: Observation space, Action Space and whether the action space is discrete or not 
         :rtype: int, float, ... ; int, float, ... ; bool
-        '''
+        """
         state_dim = self.env.observation_space.shape[0]
 
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -267,20 +263,20 @@ class DQN:
         return state_dim, action_dim, disc
 
     def update_target_model(self):
-        '''
+        """
         Copy the target model weights with the model
-        '''
+        """
         self.target_model.load_state_dict(self.model.state_dict())
 
     def select_action(self, state):
-        '''
+        """
         Epsilon Greedy selection of action
 
         :param state: Observation state
         :type state: int, float, ...
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
-        '''
+        """
         if np.random.rand() > self.epsilon:
             if self.categorical_dqn:
                 with torch.no_grad():
@@ -298,12 +294,12 @@ class DQN:
         return action
 
     def get_td_loss(self):
-        '''
+        """
         Computes loss for various variants 
 
         :returns: the TD loss depending upon the variant
         :rtype: float
-        '''
+        """
         if self.prioritized_replay:
             (
                 state,
@@ -380,9 +376,9 @@ class DQN:
         return loss
 
     def update_params(self):
-        '''
+        """
         Takes the step for optimizer. This internally call get_td_loss(), so no need to call the function explicitly.
-        '''
+        """
         loss = self.get_td_loss()
         self.optimizer.zero_grad()
         loss.backward()
@@ -393,22 +389,20 @@ class DQN:
             self.target_model.reset_noise()
 
     def calculate_epsilon_by_frame(self, frame_idx):
-        '''
+        """
         A helper function to calculate the value of epsilon after every step. 
 
         :param frame_idx: Current step 
         :type frame_idx: int
         :returns: epsilon value for the step
         :rtype: float 
-        '''
-        return (
-            self.min_epsilon
-            + (self.max_epsilon - self.min_epsilon)
-            * np.exp(-1.0 * frame_idx / self.epsilon_decay)
+        """
+        return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
+            -1.0 * frame_idx / self.epsilon_decay
         )
 
     def projection_distribution(self, next_state, rewards, dones):
-        '''
+        """
         A helper function used for categorical DQN
 
         :param next_state: next observation state
@@ -419,7 +413,7 @@ class DQN:
         :type dones: list
         :returns: projection distribution 
         :rtype: float 
-        '''
+        """
         batch_size = next_state.size(0)
 
         delta_z = float(self.Vmax - self.Vmin) / (self.num_atoms - 1)
@@ -487,17 +481,13 @@ class DQN:
 
             if self.network_type == "cnn":
                 self.state_history.append(self.transform(next_state))
-                phi_next_state = torch.stack(
-                    list(self.state_history), dim=1
+                phi_next_state = torch.stack(list(self.state_history), dim=1)
+                self.replay_buffer.push(
+                    (phi_state, action, reward, phi_next_state, done)
                 )
-                self.replay_buffer.push((
-                    phi_state, action, reward, phi_next_state, done
-                ))
                 phi_state = phi_next_state
             else:
-                self.replay_buffer.push((
-                    state, action, reward, next_state, done
-                ))
+                self.replay_buffer.push((state, action, reward, next_state, done))
                 state = next_state
 
             episode_reward += reward

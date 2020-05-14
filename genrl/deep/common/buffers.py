@@ -51,9 +51,7 @@ class PrioritizedBuffer:
         weights = np.asarray(weights, dtype=np.float32)
 
         samples = np.asarray(self.buffer, dtype=deque)[indices]
-        states, actions, rewards, next_states, dones = map(
-            np.stack, zip(*samples)
-        )
+        states, actions, rewards, next_states, dones = map(np.stack, zip(*samples))
 
         return (
             torch.as_tensor(v, dtype=torch.float32)
