@@ -51,6 +51,7 @@ class Trainer(ABC):
         epochs=10,
         device="cpu",
         log_interval=10,
+        evaluate_episodes=500,
         logdir="logs",
         batch_size=50,
         seed=None,
@@ -76,6 +77,7 @@ class Trainer(ABC):
         self.epochs = epochs
         self.device = device
         self.log_interval = log_interval
+        self.evaluate_episodes = evaluate_episodes
         self.batch_size = batch_size
         self.deterministic_actions = deterministic_actions
         self.transform = transform
@@ -106,6 +108,32 @@ class Trainer(ABC):
         save_dir = "{}/checkpoints/{}_{}".format(logdir, algo, env_name)
         os.makedirs(save_dir, exist_ok=True)
         torch.save(saving_params, "{}/{}.pt".format(save_dir, self.ckpt_log_name))
+
+    def evaluate(self): 
+        '''
+        Evaluate function.  
+        '''
+        ep, ep_r = 0, 0
+        ep_rews = []
+        state = self.env.reset()
+        while True: 
+            if self.agent.__class__.__name__ == "DQN":
+                action = self.agent.select_action(state,explore=False)
+            else:
+                action = self.agent.select_action(state)
+            next_state, reward, done, _ = self.env.step(action)
+            ep_r += reward
+            state = next_state
+            if done: 
+                ep+=1
+                ep_rews.append(ep_r)
+                state = self.env.reset()
+                ep_r = 0
+                if ep == self.evaluate_episodes:
+                    print("Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                        self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews)
+                    ))
+                    break
 
     @property
     def n_envs(self):
@@ -157,6 +185,7 @@ class OffPolicyTrainer(Trainer):
         epochs=10,
         device="cpu",
         log_interval=10,
+        evaluate_episodes=500,
         logdir="logs",
         batch_size=50,
         seed=0,
@@ -180,6 +209,7 @@ class OffPolicyTrainer(Trainer):
             epochs,
             device,
             log_interval,
+            evaluate_episodes,
             logdir,
             batch_size,
             seed,
@@ -355,6 +385,7 @@ class OnPolicyTrainer(Trainer):
         epochs=10,
         device="cpu",
         log_interval=10,
+        evaluate_episodes=500,
         logdir="logs",
         batch_size=50,
         seed=None,
@@ -375,6 +406,7 @@ class OnPolicyTrainer(Trainer):
             epochs=epochs,
             device=device,
             log_interval=log_interval,
+            evaluate_episodes=evaluate_episodes,
             logdir=logdir,
             batch_size=batch_size,
             seed=seed,

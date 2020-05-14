@@ -32,40 +32,36 @@ class TestAlgos:
         env = gym.make("Pendulum-v0")
         algo = TD3("mlp", env, noise=OrnsteinUhlenbeckActionNoise, layers=[1, 1])
 
-        trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
-        )
+        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_ppo1(self):
         env = gym.make("Pendulum-v0")
         algo = PPO1("mlp", env, layers=[1, 1])
 
-        trainer = OnPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
-        )
+        trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_vpg(self):
         env = gym.make("Pendulum-v0")
         algo = VPG("mlp", env, layers=[1, 1])
 
-        trainer = OnPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
-        )
+        trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_ddpg(self):
         env = gym.make("Pendulum-v0")
         algo = DDPG("mlp", env, noise=NormalActionNoise, layers=[1, 1])
 
-        trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
-        )
+        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_dqn(self):
@@ -73,10 +69,9 @@ class TestAlgos:
         # DQN
         algo = DQN("mlp", env)
 
-        trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
-        )
+        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
         # Double DQN with prioritized replay buffer
