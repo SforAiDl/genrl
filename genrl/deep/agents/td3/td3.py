@@ -17,7 +17,9 @@ from ...common import (
 class TD3:
     """
     Twin Delayed DDPG
+
     Paper: https://arxiv.org/abs/1509.02971
+    
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor

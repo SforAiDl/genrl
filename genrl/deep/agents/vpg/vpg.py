@@ -17,6 +17,7 @@ from ...common import (
 class VPG:
     """
     Vanilla Policy Gradient algorithm
+    
     Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
     
     :param network_type: The deep neural network layer types ['mlp']
@@ -113,9 +114,9 @@ class VPG:
         self.create_model()
 
     def create_model(self):
-        '''
+        """
         Initialize the actor and critic networks 
-        '''
+        """
         state_dim, action_dim, action_lim, discrete = self.get_env_properties()
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
@@ -165,7 +166,7 @@ class VPG:
         return state_dim, action_dim, action_lim, disc
 
     def select_action(self, state, deterministic=False):
-        '''
+        """
         Select action for the given state 
 
         :param state: State for which action has to be sampled
@@ -174,7 +175,7 @@ class VPG:
         :type deterministic: bool
         :returns: The action 
         :rtype: int, float, ...
-        '''
+        """
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
@@ -189,9 +190,9 @@ class VPG:
         return a
 
     def get_traj_loss(self):
-        '''
+        """
         Calculates the loss for the trajectory 
-        '''
+        """
         disc_R = 0
         returns = []
 
@@ -221,14 +222,14 @@ class VPG:
         self.value_hist = Variable(torch.Tensor()).to(self.device)
 
     def update_policy(self, episode, copy_policy=False):
-        '''
+        """
         Update the policy and take the step for the optimizer
 
         :param episode: Episode number 
         :param copy_policy: Whether you want to copy the policy or not 
         :type episode: int 
         :type copy_policy: bool
-        '''
+        """
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_loss_hist)
         loss_value = torch.mean(self.value_loss_hist)

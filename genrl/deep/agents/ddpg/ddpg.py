@@ -18,33 +18,55 @@ from ...common import (
 class DDPG:
     """
     Deep Deterministic Policy Gradient algorithm (DDPG)
+    
     Paper: https://arxiv.org/abs/1509.02971
-    :param network_type: (str) The deep neural network layer types ['mlp']
-    :param env: (Gym environment) The environment to learn from
-    :param gamma: (float) discount factor
-    :param replay_size: (int) Replay memory size
-    :param batch_size: (int) Update batch size
-    :param lr_p: (float) Policy network learning rate
-    :param lr_q: (float) Q network learning rate
-    :param polyak: (float) Polyak averaging weight to update target network
-    :param epochs: (int) Number of epochs
-    :param start_steps: (int) Number of exploratory steps at start
-    :param steps_per_epoch: (int) Number of steps per epoch
-    :param noise_std: (float) Standard deviation for action noise
-    :param max_ep_len: (int) Maximum steps per episode
-    :param start_update: (int) Number of steps before first parameter update
-    :param update_interval: (int) Number of steps between parameter updates
-    :param save_interval: (int) Number of steps between saves of models
-    :param layers: (tuple or list) Number of neurons in hidden layers
-    :param tensorboard_log: (str) the log location for tensorboard (if None,
-        no logging)
-    :param seed (int): seed for torch and gym
-    :param render (boolean): if environment is to be rendered
-    :param device (str): device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
-    :param run_num: (int) model run number if it has already been trained,
-        (if None, don't load from past model)
-    :param save_model: (string) directory the user wants to save models to
+
+    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param env: The environment to learn from
+    :param gamma: discount factor
+    :param replay_size: Replay memory size
+    :param batch_size: Update batch size
+    :param lr_p: learning rate for policy optimizer
+    :param lr_q: learning rate for value fn optimizer
+    :param polyak: polyak averaging weight for target network update
+    :param epochs: Number of epochs
+    :param start_steps: Number of exploratory steps at start
+    :param steps_per_epoch: Number of steps per epoch
+    :param noise_std: Standard deviation for action noise
+    :param max_ep_len: Maximum steps per episode
+    :param start_update: Number of steps before first parameter update
+    :param update_interval: Number of steps between parameter updates
+    :param save_interval: Number of steps between saves of models
+    :param layers: Number of neurons in hidden layers
+    :param tensorboard_log: the log location for tensorboard
+    :param seed: seed for torch and gym
+    :param render: if environment is to be rendered
+    :param device: device to use for tensor operations; ['cpu','cuda']
+    :param run_num: model run number if it has already been trained
+    :param save_model: model save directory
+    :type network_type: string
+    :type env: Gym environment
+    :type gamma: float
+    :type replay_size: int
+    :type batch_size: int
+    :type lr_p: float
+    :type lr_q: float
+    :type polyak: float
+    :type epochs: int
+    :type start_steps: int
+    :type steps_per_epoch: int
+    :type noise_std: float
+    :type max_ep_len: int
+    :type start_update: int
+    :type update_interval: int
+    :type save_interval: int
+    :type layers: tuple
+    :type tensorboard_log: string
+    :type seed: int
+    :type render: bool
+    :type device: string
+    :type run_num: int
+    :type save_model: string
     """
 
     def __init__(
@@ -124,6 +146,10 @@ class DDPG:
         self.create_model()
 
     def create_model(self):
+        """
+        Initialize the model
+        Initializes optimizer and replay buffers as well.
+        """
         state_dim, action_dim, discrete = self.get_env_properties()
         if discrete == True:
             raise Exception(
@@ -178,6 +204,16 @@ class DDPG:
         return state_dim, action_dim, disc
 
     def select_action(self, state, deterministic=True):
+        """
+        Selection of action
+
+        :param state: Observation state
+        :param deterministic: Action selection type
+        :type state: int, float, ...
+        :type deterministic: bool
+        :returns: Action based on the state and epsilon value 
+        :rtype: int, float, ... 
+        """
         with torch.no_grad():
             action, _ = self.ac.get_action(
                 torch.as_tensor(state, dtype=torch.float32).to(self.device),
@@ -194,6 +230,22 @@ class DDPG:
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
+        """
+        Computes loss for Q-Network
+
+        :param state: environment observation
+        :param action: agent action
+        :param: reward: environment reward
+        :param next_state: environment next observation
+        :param done: if episode is over
+        :type state: int, float, ...
+        :type action: float
+        :type: reward: float
+        :type next_state: int, float, ...
+        :type done: bool
+        :returns: the Q loss value
+        :rtype: float
+        """
         q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
@@ -207,12 +259,23 @@ class DDPG:
         return nn.MSELoss()(q, target)
 
     def get_p_loss(self, state):
+        """
+        Computes policy loss
+
+        :param state: Environment observation
+        :type state: int, float, ...
+        :returns: Policy loss
+        :rtype: float
+        """
         q_pi = self.ac.get_value(
             torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
         )
         return -torch.mean(q_pi)
 
     def update_params(self, state, action, reward, next_state, done):
+        """
+        Takes the step for optimizer.
+        """
         self.optimizer_q.zero_grad()
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
         loss_q.backward()

@@ -41,8 +41,8 @@ def cnn(channels=(4, 16, 32), kernel_sizes=(8, 4), strides=(4, 2), in_size=84):
     cnn_layers = []
     output_size = in_size
 
-    for i in range(len(channels)-1):
-        in_channels, out_channels = channels[i], channels[i+1]
+    for i in range(len(channels) - 1):
+        in_channels, out_channels = channels[i], channels[i + 1]
         kernel_size, stride = kernel_sizes[i], strides[i]
         conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
         activation = nn.ReLU()
@@ -50,7 +50,7 @@ def cnn(channels=(4, 16, 32), kernel_sizes=(8, 4), strides=(4, 2), in_size=84):
         output_size = (output_size - kernel_size) / stride + 1
 
     cnn_layers = nn.Sequential(*cnn_layers)
-    output_size = int(out_channels * (output_size**2))
+    output_size = int(out_channels * (output_size ** 2))
     return cnn_layers, output_size
 
 

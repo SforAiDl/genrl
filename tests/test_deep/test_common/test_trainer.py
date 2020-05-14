@@ -8,7 +8,7 @@ def test_on_policy_trainer():
     logger = Logger()
     env = gym.make("CartPole-v1")
     algo = PPO1("mlp", env)
-    trainer = OnPolicyTrainer(algo, env, ['stdout'], epochs=1)
+    trainer = OnPolicyTrainer(algo, env, ["stdout"], epochs=1)
     assert trainer.off_policy == False
     trainer.train()
 

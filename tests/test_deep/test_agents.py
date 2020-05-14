@@ -22,7 +22,9 @@ class TestAlgos:
         env = gym.make("Pendulum-v0")
         algo = SAC("mlp", env, layers=[1, 1])
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
@@ -75,28 +77,36 @@ class TestAlgos:
         # Double DQN with prioritized replay buffer
         algo1 = DQN("mlp", env, double_dqn=True, prioritized_replay=True)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
         # Noisy DQN
         algo2 = DQN("mlp", env, noisy_dqn=True)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
         # Dueling DQN
         algo3 = DQN("mlp", env, dueling_dqn=True)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
         # Categorical DQN
         algo4 = DQN("mlp", env, categorical_dqn=True)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
@@ -106,34 +116,44 @@ class TestAlgos:
         # DQN
         algo = DQN("cnn", env)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
         # Double DQN with prioritized replay buffer
         algo1 = DQN("cnn", env, double_dqn=True, prioritized_replay=True)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
         # Noisy DQN
         algo2 = DQN("cnn", env, noisy_dqn=True)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
         # Dueling DQN
         algo3 = DQN("cnn", env, dueling_dqn=True)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")
 
         # Categorical DQN
         algo4 = DQN("cnn", env, categorical_dqn=True)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        )
         trainer.train()
         shutil.rmtree("./logs")

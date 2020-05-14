@@ -44,19 +44,15 @@ class CNNValue(BaseValue):
             'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
         :param hidden: (tuple or list) sizes of hidden layers
     """
-    def __init__(
-        self, action_dim, history_length=4, val_type="Qs",
-        fc_layers=(256,)
-    ):
+
+    def __init__(self, action_dim, history_length=4, val_type="Qs", fc_layers=(256,)):
         super(CNNValue, self).__init__()
 
         self.action_dim = action_dim
 
         self.conv, output_size = cnn((history_length, 16, 32))
 
-        self.fc = _get_val_model(
-            mlp, val_type, output_size, fc_layers, action_dim
-        )
+        self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
 
     def forward(self, state):
         state = self.conv(state)

@@ -4,6 +4,7 @@ import numpy as np
 class SARSA:
     """
     SARSA Algorithm
+    
     Paper- http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2539&rep=rep1&type=pdf
 
     :param env: standard gym environment to train on
@@ -30,7 +31,7 @@ class SARSA:
         self.e = np.zeros((self.env.observation_space.n, self.env.action_space.n))
 
     def get_action(self, s, explore=True):
-        '''
+        """
         Epsilon greedy selection of epsilon in the explore phase 
 
         :param s: Current state
@@ -39,18 +40,18 @@ class SARSA:
         :type explore: bool 
         :returns: Action based on the Q table 
         :rtype: int, float, ...  
-        '''
+        """
         if explore == True:
             if np.random.uniform() > self.epsilon:
                 return self.env.action_space.sample()
         return np.argmax(self.Q[s, :])
 
     def update(self, transition):
-        '''
+        """
         Update the Q table and e values
 
         :param transition: step taken in the envrionment 
-        '''
+        """
         s, a, r, s_ = transition
 
         a_ = self.get_action(s_)

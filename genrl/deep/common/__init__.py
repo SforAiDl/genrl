@@ -23,5 +23,10 @@ from genrl.deep.common.utils import (
     load_params,
     set_seeds,
 )
-from genrl.deep.common.values import _get_val_model, MlpValue, CNNValue, get_value_from_name
+from genrl.deep.common.values import (
+    _get_val_model,
+    MlpValue,
+    CNNValue,
+    get_value_from_name,
+)
 from genrl.deep.common.VecEnv import VecEnv, SerialVecEnv, SubProcessVecEnv, venv
