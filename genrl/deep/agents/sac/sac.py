@@ -82,7 +82,7 @@ class SAC:
         entropy_tuning=True,
         epochs=1000,
         start_steps=0,
-        steps_per_epoch=1000,    :param 
+        steps_per_epoch=1000,
         max_ep_len=1000,
         start_update=256,
         update_interval=1,
@@ -144,6 +144,10 @@ class SAC:
         self.create_model()
 
     def create_model(self):
+        '''
+        Initialize the model
+        Initializes optimizer and replay buffers as well.
+        '''
         state_dim = self.env.observation_space.shape[0]
 
         # initialize models
@@ -214,6 +218,18 @@ class SAC:
             ).to(self.device)
 
     def sample_action(self, state):
+        """
+        sample action normal distribution parameterized by policy network
+        
+        :param state: Observation state
+        :type: int, float, ...
+        :returns: action
+        :returns: log likelihood of policy
+        :returns: scaled mean of normal distribution
+        :rtype: int, float, ...
+        :rtype: float
+        :rtype: float
+        """
         mean, log_std = self.policy.forward(state)
         std = log_std.exp()
 
@@ -233,11 +249,41 @@ class SAC:
         return action, log_pi, mean
 
     def select_action(self, state):
+        """
+        select action given a state
+
+        :param state: Environment state
+        :type state: int, float, ...
+        :returns: action
+        :rtype: int, float, ...
+        """
         state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
         action, _, _ = self.sample_action(state)
         return action.detach().cpu().numpy()[0]
 
     def update_params(self, state, action, reward, next_state, done):
+        '''
+        Computes loss and takes optimizer step
+
+        :param state: environment observation
+        :param action: agent action
+        :param: reward: environment reward
+        :param next_state: environment next observation
+        :param done: if episode is over
+        :type state: int, float, ...
+        :type action: float
+        :type: reward: float
+        :type next_state: int, float, ...
+        :type done: bool
+        :returns: Q1-loss
+        :rtype: float
+        :returns: Q2-loss
+        :rtype: float
+        :returns: policy loss
+        :rtype: float
+        :returns: entropy coefficient loss
+        :rtype: float
+        '''
         reward = reward.unsqueeze(1)
         done = done.unsqueeze(1)
         # compute targets

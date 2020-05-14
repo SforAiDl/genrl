@@ -145,7 +145,7 @@ class DDPG:
 
     def create_model(self):
         '''
-        Initialize the model and target model for various variants of DQN. 
+        Initialize the model
         Initializes optimizer and replay buffers as well.
         '''
         state_dim = self.env.observation_space.shape[0]
