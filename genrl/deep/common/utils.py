@@ -41,8 +41,8 @@ def cnn(channels=(4, 16, 32), kernel_sizes=(8, 4), strides=(4, 2), in_size=84):
     cnn_layers = []
     output_size = in_size
 
-    for i in range(len(channels)-1):
-        in_channels, out_channels = channels[i], channels[i+1]
+    for i in range(len(channels) - 1):
+        in_channels, out_channels = channels[i], channels[i + 1]
         kernel_size, stride = kernel_sizes[i], strides[i]
         conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
         activation = nn.ReLU()
@@ -50,7 +50,7 @@ def cnn(channels=(4, 16, 32), kernel_sizes=(8, 4), strides=(4, 2), in_size=84):
         output_size = (output_size - kernel_size) / stride + 1
 
     cnn_layers = nn.Sequential(*cnn_layers)
-    output_size = int(out_channels * (output_size**2))
+    output_size = int(out_channels * (output_size ** 2))
     return cnn_layers, output_size
 
 
@@ -69,9 +69,11 @@ def evaluate(algo, num_timesteps=1000):
 
         if done:
             episode += 1
-            print("Episode: {}, Reward: {}, Timestep: {}".format(
+            print(
+                "Episode: {}, Reward: {}, Timestep: {}".format(
                     episode, episode_reward, episode_t
-            ))
+                )
+            )
             state = algo.env.reset()
             episode_reward, episode_t = 0, 0
         else:
@@ -94,15 +96,13 @@ def save_params(algo, timestep):
             os.makedirs(path)
             run_num = 0
         else:
-            last_path = sorted(
-                os.scandir(path), key=lambda d: d.stat().st_mtime
-            )[-1].path
-            run_num = int(last_path[len(path) + 1:].split("-")[0]) + 1
+            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
+                -1
+            ].path
+            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
         algo.run_num = run_num
 
-    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(
-        path, run_num, timestep
-    ))
+    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(path, run_num, timestep))
 
 
 def load_params(algo):

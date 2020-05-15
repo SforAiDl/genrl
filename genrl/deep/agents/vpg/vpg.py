@@ -5,7 +5,7 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from genrl.deep.common import (
+from ...common import (
     get_model,
     evaluate,
     save_params,
@@ -17,6 +17,7 @@ from genrl.deep.common import (
 class VPG:
     """
     Vanilla Policy Gradient algorithm
+    
     Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
     
     :param network_type: The deep neural network layer types ['mlp']
@@ -113,26 +114,13 @@ class VPG:
         self.create_model()
 
     def create_model(self):
-        '''
+        """
         Initialize the actor and critic networks 
-        '''
-        state_dim = self.env.observation_space.shape[0]
-
-        action_lim = None
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            discrete = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            discrete = False
-        else:
-            raise NotImplementedError
-
+        """
+        state_dim, action_dim, action_lim, discrete = self.get_env_properties()
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "V",
-            discrete, action_lim=action_lim
+            state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained
@@ -142,18 +130,12 @@ class VPG:
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
 
             for key, item in self.checkpoint.items():
-                if key not in [
-                    "policy_weights", "value_weights", "save_model"
-                ]:
+                if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.optimizer_policy = opt.Adam(
-            self.ac.actor.parameters(), lr=self.lr_policy
-        )
-        self.optimizer_value = opt.Adam(
-            self.ac.critic.parameters(), lr=self.lr_value
-        )
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
         self.policy_hist = Variable(torch.Tensor()).to(self.device)
         self.value_hist = Variable(torch.Tensor()).to(self.device)
@@ -161,8 +143,30 @@ class VPG:
         self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
         self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
-    def select_action(self, state, deterministic=False):
+    def get_env_properties(self):
         '''
+        Helper function to extract the observation and action space
+
+        :returns: Observation space, Action Space and whether the action space is discrete or not 
+        :rtype: int, float, ... ; int, float, ... ; bool
+        '''
+        state_dim = self.env.observation_space.shape[0]
+        action_lim = None
+
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            action_dim = self.env.action_space.n
+            disc = True
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            action_dim = self.env.action_space.shape[0]
+            action_lim = self.env.action_space.high[0]
+            disc = False
+        else:
+            raise NotImplementedError
+
+        return state_dim, action_dim, action_lim, disc
+
+    def select_action(self, state, deterministic=False):
+        """
         Select action for the given state 
 
         :param state: State for which action has to be sampled
@@ -171,7 +175,7 @@ class VPG:
         :type deterministic: bool
         :returns: The action 
         :rtype: int, float, ...
-        '''
+        """
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
@@ -179,18 +183,16 @@ class VPG:
         val = self.ac.get_value(state).unsqueeze(0)
 
         # store policy probs and value function for current trajectory
-        self.policy_hist = torch.cat([
-            self.policy_hist, c.log_prob(a).unsqueeze(0)
-        ])
+        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
 
         self.value_hist = torch.cat([self.value_hist, val])
 
         return a
 
     def get_traj_loss(self):
-        '''
+        """
         Calculates the loss for the trajectory 
-        '''
+        """
         disc_R = 0
         returns = []
 
@@ -208,9 +210,7 @@ class VPG:
             torch.mul(self.policy_hist, advantage).mul(-1), -1
         ).unsqueeze(0)
 
-        loss_value = nn.MSELoss()(
-            self.value_hist, Variable(returns)
-        ).unsqueeze(0)
+        loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
         self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
@@ -222,14 +222,14 @@ class VPG:
         self.value_hist = Variable(torch.Tensor()).to(self.device)
 
     def update_policy(self, episode, copy_policy=False):
-        '''
+        """
         Update the policy and take the step for the optimizer
 
         :param episode: Episode number 
         :param copy_policy: Whether you want to copy the policy or not 
         :type episode: int 
         :type copy_policy: bool
-        '''
+        """
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_loss_hist)
         loss_value = torch.mean(self.value_loss_hist)
@@ -263,9 +263,7 @@ class VPG:
                 state = self.env.reset()
                 done = False
                 for t in range(self.timesteps_per_actorbatch):
-                    action = Variable(self.select_action(
-                        state, deterministic=False
-                    ))
+                    action = Variable(self.select_action(state, deterministic=False))
                     state, reward, done, _ = self.env.step(action.item())
 
                     if self.render:
@@ -276,7 +274,7 @@ class VPG:
                     if done:
                         break
 
-                epoch_reward += np.sum(self.traj_reward)/self.actor_batch_size
+                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
                 self.get_traj_loss()
 
             self.update_policy(episode)
