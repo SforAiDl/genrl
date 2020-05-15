@@ -96,7 +96,6 @@ class DDPG:
         self.start_update = start_update
         self.update_interval = update_interval
         self.save_interval = save_interval
-        self.pretrained = pretrained
         self.layers = layers
         self.tensorboard_log = tensorboard_log
         self.seed = seed
@@ -140,7 +139,7 @@ class DDPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.run_num is not None:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
