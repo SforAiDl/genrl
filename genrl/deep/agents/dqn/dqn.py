@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 from copy import deepcopy
 
-from genrl.deep.common import (
+from ...common import (
     ReplayBuffer,
     PrioritizedBuffer,
     get_model,
@@ -19,7 +19,7 @@ from genrl.deep.common import (
     set_seeds,
 )
 
-from genrl.deep.agents.dqn.utils import (
+from .utils import (
     DuelingDQNValueMlp,
     DuelingDQNValueCNN,
     NoisyDQNValue,
@@ -32,7 +32,9 @@ from genrl.deep.agents.dqn.utils import (
 class DQN:
     """
     Deep Q Networks
+
     Paper (DQN) https://arxiv.org/pdf/1312.5602.pdf
+    
     Paper (Double DQN) https://arxiv.org/abs/1509.06461
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
@@ -161,26 +163,18 @@ class DQN:
         self.create_model()
 
     def create_model(self):
-        '''
+        """
         Initialize the model and target model for various variants of DQN. 
         Initializes optimizer and replay buffers as well.
-        '''
+        """
         state_dim, action_dim, disc = self.get_env_properties()
         if self.network_type == "mlp":
             if self.dueling_dqn:
-                self.model = DuelingDQNValueMlp(
-                    state_dim, action_dim
-                )
+                self.model = DuelingDQNValueMlp(state_dim, action_dim)
             elif self.categorical_dqn:
-                self.model = CategoricalDQNValue(
-                    state_dim,
-                    action_dim,
-                    self.num_atoms,
-                )
+                self.model = CategoricalDQNValue(state_dim, action_dim, self.num_atoms)
             elif self.noisy_dqn:
-                self.model = NoisyDQNValue(
-                    state_dim, action_dim
-                )
+                self.model = NoisyDQNValue(state_dim, action_dim)
             else:
                 self.model = get_model("v", self.network_type)(
                     state_dim, action_dim, "Qs"
@@ -191,43 +185,41 @@ class DQN:
                 self.history_length = 4
 
             if self.transform is None:
-                self.transform = transforms.Compose([
-                    transforms.ToPILImage(),
-                    transforms.Grayscale(),
-                    transforms.Resize((110, 84)),
-                    transforms.CenterCrop(84),
-                    transforms.ToTensor()
-                ])
+                self.transform = transforms.Compose(
+                    [
+                        transforms.ToPILImage(),
+                        transforms.Grayscale(),
+                        transforms.Resize((110, 84)),
+                        transforms.CenterCrop(84),
+                        transforms.ToTensor(),
+                    ]
+                )
 
             self.state_history = deque(
                 [
-                    self.transform(
-                        self.env.observation_space.sample()
-                    ).reshape(-1, 84, 84) for _ in range(self.history_length)
-                ], maxlen=self.history_length
+                    self.transform(self.env.observation_space.sample()).reshape(
+                        -1, 84, 84
+                    )
+                    for _ in range(self.history_length)
+                ],
+                maxlen=self.history_length,
             )
 
             if self.dueling_dqn:
                 self.model = DuelingDQNValueCNN(
-                    self.env.action_space.n,
-                    self.history_length
+                    self.env.action_space.n, self.history_length
                 )
             elif self.noisy_dqn:
                 self.model = NoisyDQNValueCNN(
-                    self.env.action_space.n,
-                    self.history_length
+                    self.env.action_space.n, self.history_length
                 )
             elif self.categorical_dqn:
                 self.model = CategoricalDQNValueCNN(
-                    self.env.action_space.n,
-                    self.num_atoms,
-                    self.history_length
+                    self.env.action_space.n, self.num_atoms, self.history_length
                 )
             else:
                 self.model = get_model("v", self.network_type)(
-                    self.env.action_space.n,
-                    self.history_length,
-                    "Qs"
+                    self.env.action_space.n, self.history_length, "Qs"
                 )
 
         # load paramaters if already trained
@@ -251,12 +243,12 @@ class DQN:
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def get_env_properties(self):
-        '''
+        """
         Helper function to extract the observation and action space
 
         :returns: Observation space, Action Space and whether the action space is discrete or not 
         :rtype: int, float, ... ; int, float, ... ; bool
-        '''
+        """
         state_dim = self.env.observation_space.shape[0]
 
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -271,46 +263,49 @@ class DQN:
         return state_dim, action_dim, disc
 
     def update_target_model(self):
-        '''
+        """
         Copy the target model weights with the model
-        '''
+        """
         self.target_model.load_state_dict(self.model.state_dict())
 
-    def select_action(self, state):
+    def select_action(self, state, explore=True):
         '''
         Epsilon Greedy selection of action
 
         :param state: Observation state
         :type state: int, float, ...
+        :param explore: randomness in action selection
+        :type explore: bool
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
         '''
-        if np.random.rand() > self.epsilon:
-            if self.categorical_dqn:
-                with torch.no_grad():
-                    state = Variable(torch.FloatTensor(state))
-                    dist = self.model(state).data.cpu()
-                    dist = (
-                        dist
-                        * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                    )
-                    action = dist.sum(2).max(1)[1].numpy()[0]
-            else:
+        if explore == True:
+            if np.random.rand() <= self.epsilon: 
+                return self.env.action_space.sample()
+        
+        if self.categorical_dqn:
+            with torch.no_grad():
                 state = Variable(torch.FloatTensor(state))
-                q_value = self.model(state)
-                action = np.argmax(q_value.detach().numpy())
+                dist = self.model(state).data.cpu()
+                dist = (
+                    dist
+                    * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
+                )
+                action = dist.sum(2).max(1)[1].numpy()[0]
         else:
-            action = self.env.action_space.sample()
-
+            state = Variable(torch.FloatTensor(state))
+            q_value = self.model(state)
+            action = np.argmax(q_value.detach().numpy())
+    
         return action
 
     def get_td_loss(self):
-        '''
+        """
         Computes loss for various variants 
 
         :returns: the TD loss depending upon the variant
         :rtype: float
-        '''
+        """
         if self.prioritized_replay:
             (
                 state,
@@ -323,13 +318,9 @@ class DQN:
             ) = self.replay_buffer.sample(self.batch_size)
             weights = Variable(torch.FloatTensor(weights))
         else:
-            (
-                state,
-                action,
-                reward,
-                next_state,
-                done
-            ) = self.replay_buffer.sample(self.batch_size)
+            (state, action, reward, next_state, done) = self.replay_buffer.sample(
+                self.batch_size
+            )
 
         state = Variable(torch.FloatTensor(np.float32(state)))
         next_state = Variable(torch.FloatTensor(np.float32(next_state)))
@@ -342,9 +333,7 @@ class DQN:
             next_state = next_state.view(-1, 4, 84, 84)
 
         if self.categorical_dqn:
-            projection_dist = self.projection_distribution(
-                next_state, reward, done
-            )
+            projection_dist = self.projection_distribution(next_state, reward, done)
             dist = self.model(state)
             action = (
                 action.unsqueeze(1)
@@ -365,10 +354,7 @@ class DQN:
             q_target_s_a_prime = q_target_next_state_values.gather(
                 1, action_next.unsqueeze(1)
             ).squeeze(1)
-            expected_q_value = (
-                reward
-                + self.gamma * q_target_s_a_prime * (1 - done)
-            )
+            expected_q_value = reward + self.gamma * q_target_s_a_prime * (1 - done)
 
         else:
             q_values = self.model(state)
@@ -379,7 +365,7 @@ class DQN:
             expected_q_value = reward + self.gamma * q_s_a_prime * (1 - done)
 
         if self.categorical_dqn:
-            loss = - (Variable(projection_dist) * dist.log()).sum(1).mean()
+            loss = -(Variable(projection_dist) * dist.log()).sum(1).mean()
         else:
             if self.prioritized_replay:
                 loss = (q_value - expected_q_value.detach()).pow(2) * weights
@@ -396,9 +382,9 @@ class DQN:
         return loss
 
     def update_params(self):
-        '''
+        """
         Takes the step for optimizer. This internally call get_td_loss(), so no need to call the function explicitly.
-        '''
+        """
         loss = self.get_td_loss()
         self.optimizer.zero_grad()
         loss.backward()
@@ -409,22 +395,20 @@ class DQN:
             self.target_model.reset_noise()
 
     def calculate_epsilon_by_frame(self, frame_idx):
-        '''
+        """
         A helper function to calculate the value of epsilon after every step. 
 
         :param frame_idx: Current step 
         :type frame_idx: int
         :returns: epsilon value for the step
         :rtype: float 
-        '''
-        return (
-            self.min_epsilon
-            + (self.max_epsilon - self.min_epsilon)
-            * np.exp(-1.0 * frame_idx / self.epsilon_decay)
+        """
+        return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
+            -1.0 * frame_idx / self.epsilon_decay
         )
 
     def projection_distribution(self, next_state, rewards, dones):
-        '''
+        """
         A helper function used for categorical DQN
 
         :param next_state: next observation state
@@ -435,7 +419,7 @@ class DQN:
         :type dones: list
         :returns: projection distribution 
         :rtype: float 
-        '''
+        """
         batch_size = next_state.size(0)
 
         delta_z = float(self.Vmax - self.Vmin) / (self.num_atoms - 1)
@@ -460,20 +444,19 @@ class DQN:
         lower = b.floor().long()
         upper = b.ceil().long()
 
-        offset = torch.linspace(
-            0, (batch_size - 1) * self.num_atoms, batch_size
-        ).long().unsqueeze(1).expand(self.batch_size, self.num_atoms)
+        offset = (
+            torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size)
+            .long()
+            .unsqueeze(1)
+            .expand(self.batch_size, self.num_atoms)
+        )
 
         projection_dist = torch.zeros(next_dist.size())
         projection_dist.view(-1).index_add_(
-            0,
-            (lower + offset).view(-1),
-            (next_dist * (upper.float() - b)).view(-1)
+            0, (lower + offset).view(-1), (next_dist * (upper.float() - b)).view(-1)
         )
         projection_dist.view(-1).index_add_(
-            0,
-            (upper + offset).view(-1),
-            (next_dist * (b - lower.float())).view(-1)
+            0, (upper + offset).view(-1), (next_dist * (b - lower.float())).view(-1)
         )
 
         return projection_dist
@@ -504,17 +487,13 @@ class DQN:
 
             if self.network_type == "cnn":
                 self.state_history.append(self.transform(next_state))
-                phi_next_state = torch.stack(
-                    list(self.state_history), dim=1
+                phi_next_state = torch.stack(list(self.state_history), dim=1)
+                self.replay_buffer.push(
+                    (phi_state, action, reward, phi_next_state, done)
                 )
-                self.replay_buffer.push((
-                    phi_state, action, reward, phi_next_state, done
-                ))
                 phi_state = phi_next_state
             else:
-                self.replay_buffer.push((
-                    state, action, reward, next_state, done
-                ))
+                self.replay_buffer.push((state, action, reward, next_state, done))
                 state = next_state
 
             episode_reward += reward
@@ -524,13 +503,13 @@ class DQN:
 
             if done or (episode_len == self.max_ep_len):
                 if episode % 2 == 0:
-                    print("Episode: {}, Reward: {}, Frame Index: {}".format(
-                        episode, episode_reward, frame_idx
-                    ))
-                if self.tensorboard_log:
-                    self.writer.add_scalar(
-                        "episode_reward", episode_reward, frame_idx
+                    print(
+                        "Episode: {}, Reward: {}, Frame Index: {}".format(
+                            episode, episode_reward, frame_idx
+                        )
                     )
+                if self.tensorboard_log:
+                    self.writer.add_scalar("episode_reward", episode_reward, frame_idx)
 
                 self.reward_hist.append(episode_reward)
                 state, episode_reward, episode_len = self.env.reset(), 0, 0

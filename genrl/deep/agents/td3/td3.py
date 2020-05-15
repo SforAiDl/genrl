@@ -4,7 +4,7 @@ import torch.nn as nn
 import gym
 from copy import deepcopy
 
-from genrl.deep.common import (
+from ...common import (
     ReplayBuffer,
     get_model,
     evaluate,
@@ -12,16 +12,14 @@ from genrl.deep.common import (
     load_params,
     set_seeds,
 )
-from genrl.deep.common import (  # noqa
-    NormalActionNoise,
-    OrnsteinUhlenbeckActionNoise
-)
 
 
 class TD3:
     """
     Twin Delayed DDPG
+
     Paper: https://arxiv.org/abs/1509.02971
+    
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
@@ -134,11 +132,15 @@ class TD3:
         self.checkpoint = self.get_hyperparams()
 
     def create_model(self):
-        state_dim, action_dim, disc = self.get_env_properties()
+        state_dim, action_dim, discrete = self.get_env_properties()
+        if discrete == True: 
+            raise Exception(
+                "Discrete Environments not supported for {}.".format(__class__.__name__)
+            )
+        
         if self.noise is not None:
             self.noise = self.noise(
-                np.zeros_like(action_dim),
-                self.noise_std * np.ones_like(action_dim)
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
         self.ac = get_model("ac", self.network_type)(
@@ -171,10 +173,7 @@ class TD3:
             param.requires_grad = False
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
-        self.q_params = (
-            list(self.ac.qf1.parameters())
-            + list(self.ac.qf2.parameters())
-        )
+        self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
         self.optimizer_policy = torch.optim.Adam(
@@ -198,9 +197,8 @@ class TD3:
     def select_action(self, state, deterministic=True):
         with torch.no_grad():
             action = self.ac_target.get_action(
-                torch.as_tensor(
-                    state, dtype=torch.float32, device=self.device
-                ), deterministic=deterministic
+                torch.as_tensor(state, dtype=torch.float32, device=self.device),
+                deterministic=deterministic,
             )[0].numpy()
 
         # add noise to output from policy network
@@ -208,9 +206,7 @@ class TD3:
             action += self.noise()
 
         return np.clip(
-            action,
-            -self.env.action_space.high[0],
-            self.env.action_space.high[0]
+            action, -self.env.action_space.high[0], self.env.action_space.high[0]
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
@@ -218,14 +214,24 @@ class TD3:
         q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
-            target_q1 = self.ac_target.qf1.get_value(torch.cat([
-                next_state,
-                self.ac_target.get_action(next_state, deterministic=True)[0]
-            ], dim=-1))
-            target_q2 = self.ac_target.qf2.get_value(torch.cat([
-                next_state,
-                self.ac_target.get_action(next_state, deterministic=True)[0],
-            ], dim=-1))
+            target_q1 = self.ac_target.qf1.get_value(
+                torch.cat(
+                    [
+                        next_state,
+                        self.ac_target.get_action(next_state, deterministic=True)[0],
+                    ],
+                    dim=-1,
+                )
+            )
+            target_q2 = self.ac_target.qf2.get_value(
+                torch.cat(
+                    [
+                        next_state,
+                        self.ac_target.get_action(next_state, deterministic=True)[0],
+                    ],
+                    dim=-1,
+                )
+            )
             target_q = torch.min(target_q1, target_q2)
 
             target = reward + self.gamma * (1 - done) * target_q
@@ -236,10 +242,9 @@ class TD3:
         return l1 + l2
 
     def get_p_loss(self, state):
-        q_pi = self.ac.get_value(torch.cat([
-            state,
-            self.ac.get_action(state, deterministic=True)[0]
-        ], dim=-1))
+        q_pi = self.ac.get_value(
+            torch.cat([state, self.ac.get_action(state, deterministic=True)[0]], dim=-1)
+        )
         return -torch.mean(q_pi)
 
     def update_params(self, state, action, reward, next_state, done, timestep):
@@ -304,9 +309,11 @@ class TD3:
                     self.noise.reset()
 
                 if episode % 20 == 0:
-                    print("Episode: {}, Reward: {}, Timestep: {}".format(
+                    print(
+                        "Episode: {}, Reward: {}, Timestep: {}".format(
                             episode, episode_reward, t
-                    ))
+                        )
+                    )
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", episode_reward, t)
 
@@ -320,9 +327,7 @@ class TD3:
                     states, actions, next_states, rewards, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(
-                        states, actions, next_states, rewards, dones, t
-                    )
+                    self.update_params(states, actions, next_states, rewards, dones, t)
 
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:

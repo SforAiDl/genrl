@@ -1,6 +1,6 @@
-from genrl.deep.common.base import BaseActorCritic
-from genrl.deep.common.policies import MlpPolicy
-from genrl.deep.common.values import MlpValue
+from .base import BaseActorCritic
+from .policies import MlpPolicy
+from .values import MlpValue
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -31,9 +31,7 @@ class MlpActorCritic(BaseActorCritic):
     ):
         super(MlpActorCritic, self).__init__()
 
-        self.actor = MlpPolicy(
-            state_dim, action_dim, hidden, discrete, **kwargs
-        )
+        self.actor = MlpPolicy(state_dim, action_dim, hidden, discrete, **kwargs)
         self.critic = MlpValue(state_dim, action_dim, val_type, hidden)
 
 

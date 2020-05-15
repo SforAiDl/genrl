@@ -4,6 +4,7 @@ import numpy as np
 class QLearning:
     """
     Q-Learning Algorithm
+    
     Paper- https://link.springer.com/article/10.1007/BF00992698
 
     :param env: Standard gym environment to train on
@@ -34,6 +35,7 @@ class QLearning:
         :type state: Numpy array
         :type explore: bool
         :returns: Action with the highest Q-value for the given state
+        :rtype: int, float ...
         """
         if explore is True:
             if np.random.uniform() > self.epsilon:

@@ -5,5 +5,5 @@ from genrl.deep.agents.dqn.utils import (  # noqa
     NoisyDQNValue,
     NoisyDQNValueCNN,
     CategoricalDQNValue,
-    CategoricalDQNValueCNN
+    CategoricalDQNValueCNN,
 )

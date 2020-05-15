@@ -8,7 +8,7 @@ from genrl.deep.common.utils import mlp, cnn
 
 
 def noisy_mlp(fc_layers, noisy_layers):
-    '''
+    """
     Generate Noisy MLP model given sizes of each fully connected and noisy layers
 
     :param fc_layers: list of fc layers
@@ -17,7 +17,7 @@ def noisy_mlp(fc_layers, noisy_layers):
     :type noisy_layers: list
     :returns: Noisy model
     :rtype: Pytorch model
-    '''
+    """
     model = []
     for j in range(len(fc_layers) - 1):
         model += [nn.Linear(fc_layers[j], fc_layers[j + 1]), nn.ReLU()]
@@ -29,7 +29,7 @@ def noisy_mlp(fc_layers, noisy_layers):
 
 
 class DuelingDQNValueMlp(nn.Module):
-    '''
+    """
     Class for Dueling DQN's MLP Value function 
 
     :param state_dim: Observation space
@@ -38,25 +38,19 @@ class DuelingDQNValueMlp(nn.Module):
     :type state_dim: int, float, ...
     :type action_dim: int, float, ...
     :type hidden: tuple 
-    '''
+    """
+
     def __init__(self, state_dim, action_dim, hidden=(128, 128)):
         super(DuelingDQNValueMlp, self).__init__()
 
-        self.feature = nn.Sequential(
-            nn.Linear(state_dim, hidden[0]),
-            nn.ReLU()
-        )
+        self.feature = nn.Sequential(nn.Linear(state_dim, hidden[0]), nn.ReLU())
 
         self.advantage = nn.Sequential(
-            nn.Linear(hidden[0], hidden[1]),
-            nn.ReLU(),
-            nn.Linear(hidden[1], action_dim)
+            nn.Linear(hidden[0], hidden[1]), nn.ReLU(), nn.Linear(hidden[1], action_dim)
         )
 
         self.value = nn.Sequential(
-            nn.Linear(hidden[0], hidden[1]),
-            nn.ReLU(),
-            nn.Linear(hidden[1], 1)
+            nn.Linear(hidden[0], hidden[1]), nn.ReLU(), nn.Linear(hidden[1], 1)
         )
 
     def forward(self, state):
@@ -67,7 +61,7 @@ class DuelingDQNValueMlp(nn.Module):
 
 
 class DuelingDQNValueCNN(nn.Module):
-    '''
+    """
     Class for Dueling DQN's CNN Value function 
 
     :param action_dim: Action space
@@ -76,7 +70,8 @@ class DuelingDQNValueCNN(nn.Module):
     :type action_dim: int, float, ...
     :type history_length: int
     :type fc_layers: tuple
-    '''
+    """
+
     def __init__(self, action_dim, history_length=4, fc_layers=(256,)):
         super(DuelingDQNValueCNN, self).__init__()
 
@@ -96,7 +91,7 @@ class DuelingDQNValueCNN(nn.Module):
 
 
 class NoisyLinear(nn.Module):
-    '''
+    """
     Noisy Layer definition for NoisyDQN
 
     :param in_features: input features for the network
@@ -105,7 +100,8 @@ class NoisyLinear(nn.Module):
     :type in_features: int
     :type out_features: int
     :type std_init: float 
-    '''
+    """
+
     def __init__(self, in_features, out_features, std_init=0.4):
         super(NoisyLinear, self).__init__()
 
@@ -113,19 +109,15 @@ class NoisyLinear(nn.Module):
         self.out_features = out_features
         self.std_init = std_init
 
-        self.weight_mu = nn.Parameter(torch.FloatTensor(
-            out_features, in_features
-        ))
-        self.weight_sigma = nn.Parameter(torch.FloatTensor(
-            out_features, in_features
-        ))
-        self.register_buffer('weight_epsilon', torch.FloatTensor(
-            out_features, in_features
-        ))
+        self.weight_mu = nn.Parameter(torch.FloatTensor(out_features, in_features))
+        self.weight_sigma = nn.Parameter(torch.FloatTensor(out_features, in_features))
+        self.register_buffer(
+            "weight_epsilon", torch.FloatTensor(out_features, in_features)
+        )
 
         self.bias_mu = nn.Parameter(torch.FloatTensor(out_features))
         self.bias_sigma = nn.Parameter(torch.FloatTensor(out_features))
-        self.register_buffer('bias_epsilon', torch.FloatTensor(out_features))
+        self.register_buffer("bias_epsilon", torch.FloatTensor(out_features))
 
         self.reset_parameters()
         self.reset_noise()
@@ -135,18 +127,16 @@ class NoisyLinear(nn.Module):
             weight = self.weight_mu + self.weight_sigma.mul(
                 Variable(self.weight_epsilon)
             )
-            bias = self.bias_mu + self.bias_sigma.mul(
-                Variable(self.bias_epsilon)
-            )
+            bias = self.bias_mu + self.bias_sigma.mul(Variable(self.bias_epsilon))
         else:
             weight = self.weight_mu
             bias = self.bias_mu
         return F.linear(state, weight, bias)
 
     def reset_parameters(self):
-        '''
+        """
         Reset the parameters 
-        '''
+        """
         mu_range = 1 / math.sqrt(self.weight_mu.size(1))
 
         self.weight_mu.data.uniform_(-mu_range, mu_range)
@@ -155,14 +145,12 @@ class NoisyLinear(nn.Module):
         )
 
         self.bias_mu.data.uniform_(-mu_range, mu_range)
-        self.bias_sigma.data.fill_(
-            self.std_init / math.sqrt(self.bias_sigma.size(0))
-        )
+        self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.bias_sigma.size(0)))
 
     def reset_noise(self):
-        '''
+        """
         Reset Noisy layers weights
-        '''
+        """
         epsilon_in = self._scale_noise(self.in_features)
         epsilon_out = self._scale_noise(self.out_features)
 
@@ -176,7 +164,7 @@ class NoisyLinear(nn.Module):
 
 
 class NoisyDQNValue(nn.Module):
-    '''
+    """
     Class for Dueling DQN's MLP Value function
 
     :param state_dim: Observation space
@@ -187,15 +175,15 @@ class NoisyDQNValue(nn.Module):
     :type action_dim: int, float, ...
     :type fc_layers: tuple  
     :type noisy_layers: tuple
-    '''
+    """
+
     def __init__(
         self, state_dim, action_dim, fc_layers=(128,), noisy_layers=(128, 128)
     ):
         super(NoisyDQNValue, self).__init__()
 
         self.model = noisy_mlp(
-            [state_dim] + list(fc_layers),
-            list(noisy_layers) + [action_dim]
+            [state_dim] + list(fc_layers), list(noisy_layers) + [action_dim]
         )
 
     def forward(self, state):
@@ -208,7 +196,7 @@ class NoisyDQNValue(nn.Module):
 
 
 class NoisyDQNValueCNN(nn.Module):
-    '''
+    """
     Class for Dueling DQN's CNN Value function
 
     :param action_dim: Action space
@@ -219,21 +207,18 @@ class NoisyDQNValueCNN(nn.Module):
     :type history_length: int
     :type fc_layers: tuple  
     :type noisy_layers: tuple
-    '''
+    """
+
     def __init__(
-        self,
-        action_dim,
-        history_length=4,
-        fc_layers=(128,),
-        noisy_layers=(128, 128)
+        self, action_dim, history_length=4, fc_layers=(128,), noisy_layers=(128, 128)
     ):
         super(NoisyDQNValueCNN, self).__init__()
 
         self.conv, output_size = cnn((history_length, 16, 32))
 
         self.model = noisy_mlp(
-            [output_size] + list(fc_layers),
-            list(noisy_layers) + [action_dim])
+            [output_size] + list(fc_layers), list(noisy_layers) + [action_dim]
+        )
 
     def forward(self, x):
         x = self.conv(x)
@@ -248,7 +233,7 @@ class NoisyDQNValueCNN(nn.Module):
 
 
 class CategoricalDQNValue(nn.Module):
-    '''
+    """
     Class for Categorical DQN's MLP Value function
 
     :param state_dim: Observation space
@@ -261,14 +246,15 @@ class CategoricalDQNValue(nn.Module):
     :type num_atoms: int
     :type fc_layers: tuple  
     :type noisy_layers: tuple
-    '''    
+    """
+
     def __init__(
         self,
         state_dim,
         action_dim,
         num_atoms,
         fc_layers=(128, 128),
-        noisy_layers=(128, 512)
+        noisy_layers=(128, 512),
     ):
         super(CategoricalDQNValue, self).__init__()
 
@@ -278,7 +264,7 @@ class CategoricalDQNValue(nn.Module):
 
         self.model = noisy_mlp(
             [state_dim] + list(fc_layers),
-            list(noisy_layers) + [self.action_dim * self.num_atoms]
+            list(noisy_layers) + [self.action_dim * self.num_atoms],
         )
 
     def forward(self, state):
@@ -295,7 +281,7 @@ class CategoricalDQNValue(nn.Module):
 
 
 class CategoricalDQNValueCNN(nn.Module):
-    '''
+    """
     Class for Categorical DQN's MLP Value function
 
     :param action_dim: Action space
@@ -308,14 +294,15 @@ class CategoricalDQNValueCNN(nn.Module):
     :type history_length: int
     :type fc_layers: tuple  
     :type noisy_layers: tuple
-    '''   
+    """
+
     def __init__(
         self,
         action_dim,
         num_atoms,
         history_length=4,
         fc_layers=(128, 128),
-        noisy_layers=(128, 512)
+        noisy_layers=(128, 512),
     ):
         super(CategoricalDQNValueCNN, self).__init__()
 
@@ -325,7 +312,7 @@ class CategoricalDQNValueCNN(nn.Module):
         self.conv, output_size = cnn((history_length, 16, 32))
         self.model = noisy_mlp(
             [output_size] + list(fc_layers),
-            list(noisy_layers) + [self.action_dim * self.num_atoms]
+            list(noisy_layers) + [self.action_dim * self.num_atoms],
         )
 
     def forward(self, x):

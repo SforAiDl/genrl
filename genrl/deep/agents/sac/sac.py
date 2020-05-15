@@ -7,7 +7,7 @@ from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from genrl.deep.common import (
+from ...common import (
     get_model,
     ReplayBuffer,
     save_params,
@@ -20,34 +20,55 @@ from genrl.deep.common import (
 class SAC:
     """
     Soft Actor Critic algorithm (SAC)
+    
     Paper: https://arxiv.org/abs/1812.05905
-    :param network_type: (str) The deep neural network layer types ['mlp']
-    :param env: (Gym environment) The environment to learn from
-    :param gamma: (float) discount factor
-    :param replay_size: (int) Replay memory size
-    :param batch_size: (int) Update batch size
-    :param lr: (float) network learning rate
-    :param alpha: (float) entropy weight
-    :param polyak: (float) Polyak averaging weight to update target network
-    :param epochs: (int) Number of epochs
-    :param start_steps: (int) Number of exploratory steps at start
-    :param steps_per_epoch: (int) Number of steps per epoch
-    :param max_ep_len: (int) Maximum steps per episode
-    :param start_update: (int) Number of steps before first parameter update
-    :param update_interval: (int) Number of steps between parameter updates
-    :param save_interval: (int) Number of steps between saves of models
-    :param layers: (tuple or list) Number of neurons in hidden layers
-    :param tensorboard_log: (str) the log location for tensorboard (if None,
-        no logging)
-    :param seed (int): seed for torch and gym
-    :param render (boolean): if environment is to be rendered
-    :param device (str): device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
-    :param run_num: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
+
+    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param env: The environment to learn from
+    :param gamma: discount factor
+    :param replay_size: Replay memory size
+    :param batch_size: Update batch size
+    :param lr: learning rate for optimizers
+    :param alpha: entropy coefficient
+    :param polyak: polyak averaging weight for target network update
+    :param entropy_tuning: if alpha should be a learned parameter
+    :param epochs: Number of epochs to train on
+    :param start_steps: Number of initial exploratory steps
+    :param steps_per_epoch: Number of parameter updates per epoch
+    :param max_ep_len: Maximum number of steps per episode
+    :param start_update: Number of steps before first parameter update
+    :param update_interval: Number of step between updates
+    :layers: Neural network layer dimensions
+    :pretrained: if loading pretrained weights
+    :param tensorboard_log: the log location for tensorboard
+    :param seed: seed for torch and gym
+    :param render: if environment is to be rendered
+    :param device: device to use for tensor operations; ['cpu','cuda']
+    :param run_num: model run number if it has already been trained
+    :param save_model: model save directory
+    :type network_type: string
+    :type env: Gym environment
+    :type gamma: float
+    :type replay_size: int
+    :type batch_size: int
+    :type lr: float
+    :type alpha: float
+    :type polyak: float
+    :type entropy_tuning: bool
+    :type epochs: int
+    :type start_steps: int
+    :type steps_per_epoch: int
+    :type max_ep_len: int
+    :type start_update: int
+    :type update_interval: int
+    :type layers: tuple
+    :type pretrained: string
+    :type tensorboard_log: string
+    :type seed: int
+    :type render: bool
+    :type device: string
+    :type run_num: int
+    :type save_model: string
     """
 
     def __init__(
@@ -125,6 +146,10 @@ class SAC:
         self.create_model()
 
     def create_model(self):
+        """
+        Initialize the model
+        Initializes optimizer and replay buffers as well.
+        """
         state_dim = self.env.observation_space.shape[0]
 
         # initialize models
@@ -177,9 +202,7 @@ class SAC:
             self.target_entropy = -torch.prod(
                 torch.Tensor(self.env.action_space.shape).to(self.device)
             ).item()
-            self.log_alpha = torch.zeros(
-                1, requires_grad=True, device=self.device
-            )
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
 
         self.replay_buffer = ReplayBuffer(self.replay_size)
@@ -197,6 +220,18 @@ class SAC:
             ).to(self.device)
 
     def sample_action(self, state):
+        """
+        sample action normal distribution parameterized by policy network
+        
+        :param state: Observation state
+        :type: int, float, ...
+        :returns: action
+        :returns: log likelihood of policy
+        :returns: scaled mean of normal distribution
+        :rtype: int, float, ...
+        :rtype: float
+        :rtype: float
+        """
         mean, log_std = self.policy.forward(state)
         std = log_std.exp()
 
@@ -216,25 +251,50 @@ class SAC:
         return action, log_pi, mean
 
     def select_action(self, state):
+        """
+        select action given a state
+
+        :param state: Environment state
+        :type state: int, float, ...
+        :returns: action
+        :rtype: int, float, ...
+        """
         state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
         action, _, _ = self.sample_action(state)
         return action.detach().cpu().numpy()[0]
 
     def update_params(self, state, action, reward, next_state, done):
+        """
+        Computes loss and takes optimizer step
+
+        :param state: environment observation
+        :param action: agent action
+        :param: reward: environment reward
+        :param next_state: environment next observation
+        :param done: if episode is over
+        :type state: int, float, ...
+        :type action: float
+        :type: reward: float
+        :type next_state: int, float, ...
+        :type done: bool
+        :returns: Q1-loss
+        :rtype: float
+        :returns: Q2-loss
+        :rtype: float
+        :returns: policy loss
+        :rtype: float
+        :returns: entropy coefficient loss
+        :rtype: float
+        """
         reward = reward.unsqueeze(1)
         done = done.unsqueeze(1)
         # compute targets
         with torch.no_grad():
             next_action, next_log_pi, _ = self.sample_action(next_state)
-            next_q1_targ = self.q1_targ(
-                torch.cat([next_state, next_action], dim=-1)
-            )
-            next_q2_targ = self.q2_targ(
-                torch.cat([next_state, next_action], dim=-1)
-            )
+            next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
+            next_q2_targ = self.q2_targ(torch.cat([next_state, next_action], dim=-1))
             next_q_targ = (
-                torch.min(next_q1_targ, next_q2_targ)
-                - self.alpha * next_log_pi
+                torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
             )
             next_q = reward + self.gamma * (1 - done) * next_q_targ
 
@@ -279,28 +339,17 @@ class SAC:
             alpha_loss = torch.tensor(0.0).to(self.device)
 
         # soft update target params
-        for target_param, param in zip(
-            self.q1_targ.parameters(), self.q1.parameters()
-        ):
+        for target_param, param in zip(self.q1_targ.parameters(), self.q1.parameters()):
             target_param.data.copy_(
-                target_param.data * self.polyak
-                + param.data * (1 - self.polyak)
+                target_param.data * self.polyak + param.data * (1 - self.polyak)
             )
 
-        for target_param, param in zip(
-            self.q2_targ.parameters(), self.q2.parameters()
-        ):
+        for target_param, param in zip(self.q2_targ.parameters(), self.q2.parameters()):
             target_param.data.copy_(
-                target_param.data * self.polyak
-                + param.data * (1 - self.polyak)
+                target_param.data * self.polyak + param.data * (1 - self.polyak)
             )
 
-        return (
-            q1_loss.item(),
-            q2_loss.item(),
-            policy_loss.item(),
-            alpha_loss.item()
-        )
+        return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
     def learn(self):  # pragma: no cover
         if self.tensorboard_log:
@@ -334,31 +383,21 @@ class SAC:
                         x.to(self.device) for x in batch
                     )
 
-                    (
-                        q1_loss, q2_loss, policy_loss, alpha_loss
-                    ) = self.update_params(
+                    (q1_loss, q2_loss, policy_loss, alpha_loss) = self.update_params(
                         states, actions, next_states, rewards, dones
                     )
 
                     # write loss logs to tensorboard
                     if self.tensorboard_log:
-                        writer.add_scalar(
-                            "loss/q1_loss", q1_loss, timestep
-                        )
-                        writer.add_scalar(
-                            "loss/q2_loss", q2_loss, timestep
-                        )
-                        writer.add_scalar(
-                            "loss/policy_loss", policy_loss, timestep
-                        )
-                        writer.add_scalar(
-                            "loss/alpha_loss", alpha_loss, timestep
-                        )
+                        writer.add_scalar("loss/q1_loss", q1_loss, timestep)
+                        writer.add_scalar("loss/q2_loss", q2_loss, timestep)
+                        writer.add_scalar("loss/policy_loss", policy_loss, timestep)
+                        writer.add_scalar("loss/alpha_loss", alpha_loss, timestep)
 
                 if self.save_model is not None:
                     if (
-                        timestep >= self.start_update and
-                        timestep % self.save_interval == 0
+                        timestep >= self.start_update
+                        and timestep % self.save_interval == 0
                     ):
                         self.checkpoint = self.get_hyperparams()
                         self.save(self, timestep)
@@ -373,9 +412,7 @@ class SAC:
                 episode_reward += reward
 
                 ndone = 1 if j == self.max_ep_len else float(not done)
-                self.replay_buffer.push((
-                    state, action, reward, next_state, 1 - ndone
-                ))
+                self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
                 state = next_state
 
             if timestep > total_steps:
@@ -383,9 +420,7 @@ class SAC:
 
             # write episode reward to tensorboard logs
             if self.tensorboard_log:
-                writer.add_scalar(
-                    "reward/episode_reward", episode_reward, timestep
-                )
+                writer.add_scalar("reward/episode_reward", episode_reward, timestep)
 
             if episode % 5 == 0:
                 print(

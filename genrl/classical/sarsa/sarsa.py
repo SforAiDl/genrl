@@ -4,6 +4,7 @@ import numpy as np
 class SARSA:
     """
     SARSA Algorithm
+
     Paper- http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2539&rep=rep1&type=pdf
 
     :param env: Standard gym environment to train on
@@ -41,6 +42,7 @@ class SARSA:
         :type state: Numpy array
         :type explore: bool
         :returns: Action with the highest Q-value for the given state
+        :rtype: int, float, ...
         """
         if explore is True:
             if np.random.uniform() > self.epsilon:

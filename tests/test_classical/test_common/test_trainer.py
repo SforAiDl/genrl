@@ -3,7 +3,7 @@ import numpy as np
 import gym
 
 from genrl import SARSA, QLearning
-from genrl.classical import Trainer
+from genrl.classical.common import Trainer
 
 
 class TestTrainer:
@@ -11,6 +11,7 @@ class TestTrainer:
         env = gym.make("FrozenLake-v0")
         agent = QLearning(env)
         trainer = Trainer(
-            agent, env, mode="dyna", model="tabular", n_episodes=50, start_steps=0
+            agent, env, mode="dyna", model="tabular", n_episodes=50, start_steps=0, evaluate_frequency=1
         )
         ep_rs = trainer.train()
+        trainer.evaluate()

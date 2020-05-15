@@ -18,6 +18,8 @@ class Logger:
             self._logdir = os.getcwd()
         else:
             self._logdir = logdir
+            if not os.path.isdir(self._logdir):
+                os.makedirs(self._logdir)
         self._formats = formats
         self.writers = []
         for format in self.formats:
@@ -149,9 +151,7 @@ class CSVLogger:
                     "A new value '{}' cannot be added to CSVLogger".format(key)
                 )
             if i != self.keynames[key]:
-                raise Exception(
-                    "Value not at the same index as when initialized"
-                )
+                raise Exception("Value not at the same index as when initialized")
             self.file.write(str(value))
             self.file.write(",")
 

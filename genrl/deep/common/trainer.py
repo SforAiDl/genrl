@@ -5,8 +5,10 @@ from torchvision import transforms
 import numpy as np
 from collections import deque
 
-from genrl.deep.common import set_seeds, Logger
 from abc import ABC
+
+from .utils import set_seeds
+from .logger import Logger
 
 
 class Trainer(ABC):
@@ -53,7 +55,7 @@ False (To be implemented)
         self,
         agent,
         env,
-        logger,
+        log_mode=["stdout"],
         buffer=None,
         off_policy=False,
         save_interval=0,
@@ -65,6 +67,8 @@ False (To be implemented)
         epochs=10,
         device="cpu",
         log_interval=10,
+        evaluate_episodes=500,
+        logdir="logs",
         batch_size=50,
         seed=None,
         deterministic_actions=False,
@@ -73,7 +77,8 @@ False (To be implemented)
     ):
         self.agent = agent
         self.env = env
-        self.logger = logger
+        self.log_mode = log_mode
+        self.logdir = logdir
         self.off_policy = off_policy
         if self.off_policy and buffer is None:
             if self.agent.replay_buffer is None:
@@ -88,12 +93,16 @@ False (To be implemented)
         self.epochs = epochs
         self.device = device
         self.log_interval = log_interval
+        self.evaluate_episodes = evaluate_episodes
         self.batch_size = batch_size
         self.deterministic_actions = deterministic_actions
         self.transform = transform
         self.history_length = history_length
+
         if seed is not None:
             set_seeds(seed, self.env)
+
+        self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
     def train(self):
         """
@@ -114,9 +123,33 @@ get important model hyperparams.
 
         save_dir = "{}/checkpoints/{}_{}".format(logdir, algo, env_name)
         os.makedirs(save_dir, exist_ok=True)
-        torch.save(saving_params, "{}/{}.pt".format(
-            save_dir, self.ckpt_log_name
-        ))
+        torch.save(saving_params, "{}/{}.pt".format(save_dir, self.ckpt_log_name))
+
+    def evaluate(self): 
+        '''
+        Evaluate function.  
+        '''
+        ep, ep_r = 0, 0
+        ep_rews = []
+        state = self.env.reset()
+        while True: 
+            if self.agent.__class__.__name__ == "DQN":
+                action = self.agent.select_action(state,explore=False)
+            else:
+                action = self.agent.select_action(state)
+            next_state, reward, done, _ = self.env.step(action)
+            ep_r += reward
+            state = next_state
+            if done: 
+                ep+=1
+                ep_rews.append(ep_r)
+                state = self.env.reset()
+                ep_r = 0
+                if ep == self.evaluate_episodes:
+                    print("Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                        self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews)
+                    ))
+                    break
 
     @property
     def n_envs(self):
@@ -178,7 +211,7 @@ many steps
         self,
         agent,
         env,
-        logger,
+        log_mode=["stdout"],
         buffer=None,
         off_policy=True,
         save_interval=0,
@@ -190,6 +223,8 @@ many steps
         epochs=10,
         device="cpu",
         log_interval=10,
+        evaluate_episodes=500,
+        logdir="logs",
         batch_size=50,
         seed=0,
         deterministic_actions=False,
@@ -200,7 +235,7 @@ many steps
         super(OffPolicyTrainer, self).__init__(
             agent,
             env,
-            logger,
+            log_mode,
             buffer,
             off_policy,
             save_interval,
@@ -212,6 +247,8 @@ many steps
             epochs,
             device,
             log_interval,
+            evaluate_episodes,
+            logdir,
             batch_size,
             seed,
             deterministic_actions,
@@ -223,20 +260,22 @@ many steps
 
         if self.network_type == "cnn":
             if self.transform is None:
-                self.transform = transforms.Compose([
-                    transforms.ToPILImage(),
-                    transforms.Grayscale(),
-                    transforms.Resize((110, 84)),
-                    transforms.CenterCrop(84),
-                    transforms.ToTensor()
-                ])
+                self.transform = transforms.Compose(
+                    [
+                        transforms.ToPILImage(),
+                        transforms.Grayscale(),
+                        transforms.Resize((110, 84)),
+                        transforms.CenterCrop(84),
+                        transforms.ToTensor(),
+                    ]
+                )
 
             self.state_history = deque(
                 [
-                    self.transform(
-                        self.env.observation_space.sample()
-                    ) for _ in range(self.history_length)
-                ], maxlen=self.history_length
+                    self.transform(self.env.observation_space.sample())
+                    for _ in range(self.history_length)
+                ],
+                maxlen=self.history_length,
             )
 
     def train(self):
@@ -284,29 +323,17 @@ many steps
 
             done = False if episode_len == self.max_ep_len else done
 
-            if (
-                self.agent.__class__.__name__ == "DQN" and
-                self.network_type == "cnn"
-            ):
+            if self.agent.__class__.__name__ == "DQN" and self.network_type == "cnn":
                 self.state_history.append(self.transform(next_state))
-                phi_next_state = torch.stack(
-                    list(self.state_history), dim=1
-                )
-                self.buffer.push((
-                    phi_state, action, reward, phi_next_state, done
-                ))
+                phi_next_state = torch.stack(list(self.state_history), dim=1)
+                self.buffer.push((phi_state, action, reward, phi_next_state, done))
                 phi_state = phi_next_state
             else:
-                self.buffer.push((
-                    state, action, reward, next_state, done
-                ))
+                self.buffer.push((state, action, reward, next_state, done))
                 state = next_state
 
             if done or (episode_len == self.max_ep_len):
-                if (
-                    "noise" in self.agent.__dict__
-                    and self.agent.noise is not None
-                ):
+                if "noise" in self.agent.__dict__ and self.agent.noise is not None:
                     self.agent.noise.reset()
 
                 if episode % self.log_interval == 0:
@@ -403,7 +430,7 @@ class OnPolicyTrainer(Trainer):
         self,
         agent,
         env,
-        logger,
+        log_mode=["stdout"],
         save_interval=0,
         render=False,
         max_ep_len=1000,
@@ -413,6 +440,8 @@ class OnPolicyTrainer(Trainer):
         epochs=10,
         device="cpu",
         log_interval=10,
+        evaluate_episodes=500,
+        logdir="logs",
         batch_size=50,
         seed=None,
         deterministic_actions=False,
@@ -420,7 +449,7 @@ class OnPolicyTrainer(Trainer):
         super(OnPolicyTrainer, self).__init__(
             agent,
             env,
-            logger,
+            log_mode,
             buffer=None,
             off_policy=False,
             save_interval=save_interval,
@@ -432,6 +461,8 @@ class OnPolicyTrainer(Trainer):
             epochs=epochs,
             device=device,
             log_interval=log_interval,
+            evaluate_episodes=evaluate_episodes,
+            logdir=logdir,
             batch_size=batch_size,
             seed=seed,
             deterministic_actions=deterministic_actions,
@@ -452,9 +483,7 @@ class OnPolicyTrainer(Trainer):
 
                 for t in range(self.agent.timesteps_per_actorbatch):
                     if self.deterministic_actions:
-                        action = self.agent.select_action(
-                            state, deterministic=True
-                        )
+                        action = self.agent.select_action(state, deterministic=True)
                     else:
                         action = self.agent.select_action(state)
                     state, reward, done, _ = self.env.step(np.array(action))
@@ -468,8 +497,7 @@ class OnPolicyTrainer(Trainer):
                         break
 
                 epoch_reward += (
-                    np.sum(self.agent.traj_reward)
-                    / self.agent.actor_batch_size
+                    np.sum(self.agent.traj_reward) / self.agent.actor_batch_size
                 )
                 self.agent.get_traj_loss()
 
@@ -482,9 +510,7 @@ class OnPolicyTrainer(Trainer):
                     {
                         "Episode": episode,
                         "Reward": epoch_reward,
-                        "Timestep": (
-                            i * episode * self.agent.timesteps_per_actorbatch
-                        )
+                        "Timestep": (i * episode * self.agent.timesteps_per_actorbatch),
                     }
                 )
 
@@ -494,8 +520,3 @@ class OnPolicyTrainer(Trainer):
 
             self.env.close()
             self.logger.close()
-
-
-if __name__ == "__main__":
-    log_dir = os.getcwd()
-    logger = Logger(log_dir, ["stdout"])
