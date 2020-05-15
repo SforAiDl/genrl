@@ -62,11 +62,11 @@ class A2C:
         network_type,
         env,
         gamma=0.99,
-        batch_size=100,
+        batch_size=64,
         lr_policy=0.0001,
         lr_value=0.001,
         num_episodes=100,
-        steps_per_epoch=4000,
+        steps_per_epoch=4000, 
         max_ep_len=1000,
         layers=(32, 32),
         tensorboard_log=None,
@@ -121,29 +121,40 @@ class A2C:
             action_lim
         ) = self.get_env_properties(self.env)
 
-        self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "V", discrete
+        self.policy = get_model("p", self.network_type)(
+            state_dim,
+            action_dim,
+            self.layers,
+            disc=discrete,
+            action_lim=action_lim
         ).to(self.device)
 
-        self.optimizer_actor = opt.Adam(
-            self.ac.actor.parameters(), lr=self.lr_policy
+        self.value = get_model("v", self.network_type)(
+            state_dim,
+            action_dim
+        ).to(self.device)
+
+        self.policy_optimizer = opt.Adam(
+            self.policy.parameters(), lr=self.lr_policy
         )
-        self.optimizer_critic = opt.Adam(
-            self.ac.critic.parameters(), lr=self.lr_value
+
+        self.value_optimizer = opt.Adam(
+            self.value.parameters(), lr=self.lr_value
         )
 
         self.traj_reward = []
         self.policy_hist = torch.Tensor().to(self.device)
         self.value_hist = torch.Tensor().to(self.device)
-        self.actor_loss = torch.Tensor().to(self.device)
-        self.critic_loss = torch.Tensor().to(self.device)
+
+        self.policy_loss_hist = torch.Tensor().to(self.device)
+        self.value_loss_hist = torch.Tensor().to(self.device)
 
     def select_action(self, state, deterministic=True):
         state = torch.as_tensor(state).float().to(self.device)
 
-        action, distribution = self.ac.get_action(state)
+        action, distribution = self.policy.get_action(state)
         log_prob = distribution.log_prob(action)
-        value = self.ac.get_value(state)
+        value = self.value.get_value(state)
 
         self.policy_hist = torch.cat(
             [self.policy_hist, log_prob.unsqueeze(0)]
@@ -166,37 +177,44 @@ class A2C:
         returns = torch.FloatTensor(returns).to(self.device)
         advantages = Variable(returns) - Variable(self.value_hist)
 
-        actor_loss = torch.mean(torch.mul(
+        policy_loss = torch.mean(torch.mul(
             advantages,
             self.policy_hist.mul(-1)
         ))
 
-        critic_loss = nn.MSELoss()(
+        value_loss = nn.MSELoss()(
             self.value_hist, Variable(returns)
         )
 
-        self.actor_loss = actor_loss
-        self.critic_loss = critic_loss
+        self.policy_loss_hist = torch.cat([
+            self.policy_loss_hist, policy_loss.unsqueeze(0)
+        ])
+        self.value_loss_hist = torch.cat([
+            self.value_loss_hist, value_loss.unsqueeze(0)
+        ])
 
         self.traj_reward = []
         self.policy_hist = torch.Tensor().to(self.device)
         self.value_hist = torch.Tensor().to(self.device)
 
     def update(self, episode):
+        policy_loss = torch.mean(self.policy_loss_hist)
+        value_loss = torch.mean(self.value_loss_hist)
+
         if self.tensorboard_log:
-            self.writer.add_scalar("loss/actor", self.actor_loss, episode)
-            self.writer.add_scalar("loss/critic", self.critic_loss, episode)
+            self.writer.add_scalar("loss/actor", self.policy_loss, episode)
+            self.writer.add_scalar("loss/critic", self.policy_loss, episode)
         
-        self.optimizer_actor.zero_grad()
-        self.actor_loss.backward()
-        self.optimizer_actor.step()
+        self.policy_optimizer.zero_grad()
+        policy_loss.backward()
+        self.policy_optimizer.step()
 
-        self.optimizer_critic.zero_grad()
-        self.critic_loss.backward()
-        self.optimizer_critic.step()
+        self.value_optimizer.zero_grad()
+        value_loss.backward()
+        self.value_optimizer.step()
 
-        self.actor_loss = torch.Tensor().to(self.device)
-        self.critic_loss = torch.Tensor().to(self.device)
+        self.policy_loss_hist = torch.Tensor().to(self.device)
+        self.value_loss_hist = torch.Tensor().to(self.device)
 
     def learn(self):  # pragma: no cover
         for episode in range(self.num_episodes):
@@ -249,5 +267,5 @@ class A2C:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = A2C("mlp", env)
+    algo = A2C("mlp", env, device="cuda")
     algo.learn()
