@@ -74,7 +74,6 @@ class A2C:
         render=False,
         device='cpu',
         run_num=None,
-        save_model=None,
         save_interval=5000,
     ):
         self.network_type = network_type
@@ -91,7 +90,6 @@ class A2C:
         self.seed = seed
         self.render = render
         self.run_num = run_num
-        self.save_model = save_model
         self.save_interval = save_interval
 
         # Assign device
@@ -144,6 +142,16 @@ class A2C:
 
         self.actor_loss_hist = torch.Tensor().to(self.device)
         self.critic_loss_hist = torch.Tensor().to(self.device)
+
+        # load paramaters if already trained
+        if self.run_num is not None:
+            self.load(self)
+            self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
+            self.ac.critic.load_state_dict(self.checkpoint["critic_weights"])
+            for key, item in self.checkpoint.items():
+                if key not in ["actor_weights", "critic_weights"]:
+                    setattr(self, key, item)
+            print("Loaded pretrained model")
 
     def select_action(self, state, deterministic=True):
         state = torch.as_tensor(state).float().to(self.device)
@@ -244,6 +252,12 @@ class A2C:
                 ))
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", episode_reward, episode)
+
+            if self.run_num is not None:
+                if episode % self.save_interval == 0:
+                    self.checkpoint = self.get_hyperparams()
+                    self.save(self, episode)
+                    print("Saved current model")
         
         self.env.close()
         if self.tensorboard_log:
@@ -264,6 +278,21 @@ class A2C:
             raise NotImplementedError
 
         return state_dim, action_dim, disc, action_lim
+
+    def get_hyperparams(self):
+        hyperparams = {
+            "network_type": self.network_type,
+            "steps_per_epoch": self.steps_per_epoch,
+            "gamma": self.gamma,
+            "batch_size": self.batch_size,
+            "lr_actor": self.lr_actor,
+            "lr_critic": self.lr_critic,
+            "actor_weights": self.ac.actor.state_dict(),
+            "critic_weights": self.ac.critic.state_dict(),
+        }
+
+        return hyperparams
+
 
 
 if __name__ == "__main__":
