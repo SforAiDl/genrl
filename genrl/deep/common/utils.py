@@ -106,7 +106,7 @@ def save_params(algo, timestep):
 
 
 def load_params(algo):
-    path = algo.pretrained
+    path = algo.save_model
 
     try:
         algo.checkpoint = torch.load(path)
