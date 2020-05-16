@@ -15,6 +15,11 @@ from genrl.deep.common import (
     set_seeds,
 )
 
+from genrl.deep.common import (  # noqa
+    OrnsteinUhlenbeckActionNoise,
+    NormalActionNoise
+)
+
 
 class A2C:
     """
@@ -25,13 +30,15 @@ class A2C:
     :param network_type: The deep neural network layer types ['mlp']
     :param env: The environment to learn from
     :param gamma: Discount factor
-    :param batch_size: Update batch size
+    :param actor_batch_size: Update batch size
     :param lr_actor: Policy Network learning rate
     :param lr_critic: Value Network learning rate
     :param num_episodes: Number of episodes
-    :param steps_per_epoch: Number of timesteps per epoch
+    :param timesteps_per_actorbatch: Number of timesteps per epoch
     :param max_ep_len: Maximum timesteps in an episode
     :param layers: Number of neurons in hidden layers
+    :param noise: Noise function to use
+    :param noise_std: Standard deviation for action noise
     :param tensorboard_log: The log location for Tensorboard(if None, no logging)
     :param seed: Seed for reproducing results
     :param render: True if environment is to be rendered, else False
@@ -42,13 +49,15 @@ class A2C:
     :type network_type: string
     :type env: Gym Environment
     :type gamma: float
-    :type batch_size: int
+    :type actor_batch_size: int
     :type lr_a: float
     :type lr_c: float
     :type num_episodes: int
-    :type steps_per_epoch: int
+    :type timesteps_per_actorbatch: int
     :type max_ep_len: int
     :type layers: tuple or list
+    :type noise: function
+    :type noise_std: float
     :type tensorboard_log: string
     :type seed: int
     :type render: boolean
@@ -62,31 +71,35 @@ class A2C:
         network_type,
         env,
         gamma=0.99,
-        batch_size=64,
+        actor_batch_size=64,
         lr_actor=0.01,
         lr_critic=0.1,
-        num_episodes=400,
-        steps_per_epoch=4000, 
+        num_episodes=100,
+        timesteps_per_actorbatch=4000, 
         max_ep_len=1000,
         layers=(32, 32),
+        noise=None,
+        noise_std=0.1,
         tensorboard_log=None,
         seed=None,
         render=False,
         device='cpu',
         run_num=None,
         save_model=None,
-        save_interval=5000,
+        save_interval=1000,
     ):
         self.network_type = network_type
         self.env = env
         self.gamma = gamma
-        self.batch_size = batch_size
+        self.actor_batch_size = actor_batch_size
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.num_episodes = num_episodes
-        self.steps_per_epoch = steps_per_epoch
+        self.timesteps_per_actorbatch = timesteps_per_actorbatch
         self.max_ep_len = max_ep_len
         self.layers = layers
+        self.noise = noise
+        self.noise_std = noise_std
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
@@ -120,6 +133,11 @@ class A2C:
             discrete,
             action_lim
         ) = self.get_env_properties(self.env)
+
+        if self.noise is not None:
+            self.noise = self.noise(
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+            )
 
         self.ac = get_model("ac", self.network_type)(
             state_dim,
@@ -170,6 +188,10 @@ class A2C:
         )
 
         action = action.detach().cpu().numpy()
+
+        if self.noise is not None:
+            action += self.noise()
+
         return action
 
     def get_traj_loss(self):
@@ -183,20 +205,20 @@ class A2C:
         returns = torch.FloatTensor(returns).to(self.device)
         advantages = Variable(returns) - Variable(self.critic_hist)
 
-        policy_loss = torch.mean(torch.mul(
+        actor_loss = torch.mean(torch.mul(
             advantages,
             self.actor_hist.mul(-1)
         ))
 
-        value_loss = nn.MSELoss()(
+        critic_loss = nn.MSELoss()(
             self.critic_hist, Variable(returns)
         )
 
         self.actor_loss_hist = torch.cat([
-            self.actor_loss_hist, policy_loss.unsqueeze(0)
+            self.actor_loss_hist, actor_loss.unsqueeze(0)
         ])
         self.critic_loss_hist = torch.cat([
-            self.critic_loss_hist, value_loss.unsqueeze(0)
+            self.critic_loss_hist, critic_loss.unsqueeze(0)
         ])
 
         self.traj_reward = []
@@ -204,19 +226,19 @@ class A2C:
         self.critic_hist = torch.Tensor().to(self.device)
 
     def update(self, episode):
-        policy_loss = torch.mean(self.actor_loss_hist)
-        value_loss = torch.mean(self.critic_loss_hist)
+        actor_loss = torch.mean(self.actor_loss_hist)
+        critic_loss = torch.mean(self.critic_loss_hist)
 
         if self.tensorboard_log:
             self.writer.add_scalar("loss/actor", self.actor_loss, episode)
             self.writer.add_scalar("loss/critic", self.actor_loss, episode)
         
         self.actor_optimizer.zero_grad()
-        policy_loss.backward()
+        actor_loss.backward()
         self.actor_optimizer.step()
 
         self.critic_optimizer.zero_grad()
-        value_loss.backward()
+        critic_loss.backward()
         self.critic_optimizer.step()
 
         self.actor_loss_hist = torch.Tensor().to(self.device)
@@ -226,11 +248,11 @@ class A2C:
         for episode in range(self.num_episodes):
             episode_reward = 0
             steps = []
-            for i in range(self.batch_size):
+            for i in range(self.actor_batch_size):
                 state = self.env.reset()
                 done = False
 
-                for t in range(self.steps_per_epoch):
+                for t in range(self.timesteps_per_actorbatch):
                     action = self.select_action(state)
                     state, reward, done, _ = self.env.step(action)
 
@@ -243,7 +265,7 @@ class A2C:
                         steps.append(t)
                         break
                 
-                episode_reward += np.sum(self.traj_reward) / self.batch_size
+                episode_reward += np.sum(self.traj_reward) / self.actor_batch_size
                 self.get_traj_loss()
         
             self.update(episode)
@@ -284,9 +306,9 @@ class A2C:
     def get_hyperparams(self):
         hyperparams = {
             "network_type": self.network_type,
-            "steps_per_epoch": self.steps_per_epoch,
+            "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
             "gamma": self.gamma,
-            "batch_size": self.batch_size,
+            "actor_batch_size": self.actor_batch_size,
             "lr_actor": self.lr_actor,
             "lr_critic": self.lr_critic,
             "actor_weights": self.ac.actor.state_dict(),
@@ -296,8 +318,13 @@ class A2C:
         return hyperparams
 
 
-
 if __name__ == "__main__":
-    env = gym.make("Pendulum-v0")
-    algo = A2C("mlp", env, device="cuda", save_model="checkpoints")
+    env = gym.make("CartPole-v0")
+    algo = A2C(
+        "mlp",
+        env,
+        device="cuda",
+        save_model="checkpoints",
+        save_interval=500,
+    )
     algo.learn()

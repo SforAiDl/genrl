@@ -218,7 +218,7 @@ class PPO1:
         self.policy_new.policy_hist = Variable(torch.Tensor()).to(self.device)
         self.value_fn.value_hist = Variable(torch.Tensor()).to(self.device)
 
-    def update_policy(self, episode, copy_policy=True):
+    def update(self, episode, copy_policy=True):
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_new.loss_hist)
         loss_value = torch.mean(self.value_fn.loss_hist)
@@ -266,7 +266,7 @@ class PPO1:
                 epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
                 self.get_traj_loss()
 
-            self.update_policy(episode)
+            self.update(episode)
 
             if episode % 5 == 0:
                 print("Episode: {}, reward: {}".format(episode, epoch_reward))
