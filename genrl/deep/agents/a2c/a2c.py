@@ -74,6 +74,7 @@ class A2C:
         render=False,
         device='cpu',
         run_num=None,
+        save_model=None,
         save_interval=5000,
     ):
         self.network_type = network_type
@@ -91,6 +92,7 @@ class A2C:
         self.render = render
         self.run_num = run_num
         self.save_interval = save_interval
+        self.save_model = None
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -253,7 +255,7 @@ class A2C:
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", episode_reward, episode)
 
-            if self.run_num is not None:
+            if self.save_model is not None:
                 if episode % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
                     self.save(self, episode)
@@ -297,5 +299,5 @@ class A2C:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = A2C("mlp", env, device="cuda")
+    algo = A2C("mlp", env, device="cuda", save_model="checkpoints")
     algo.learn()
