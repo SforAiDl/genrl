@@ -127,6 +127,9 @@ class A2C:
         self.create_model()
 
     def create_model(self):
+        """
+        Creates actor critic model and initialises optimizers
+        """
         (
             state_dim,
             action_dim,
@@ -174,6 +177,16 @@ class A2C:
             print("Loaded pretrained model")
 
     def select_action(self, state, deterministic=True):
+        """
+        Selection of action
+
+        :param state: Observation state
+        :param deterministic: Action selection type
+        :type state: int, float, ...
+        :type deterministic: bool
+        :returns: Action based on the state and epsilon value 
+        :rtype: int, float, ... 
+        """
         state = torch.as_tensor(state).float().to(self.device)
 
         action, distribution = self.ac.get_action(state)
@@ -195,6 +208,9 @@ class A2C:
         return action
 
     def get_traj_loss(self):
+        """
+        Get trajectory of agent to calculate discounted rewards and calculate losses
+        """
         discounted_reward = 0
         returns = []
 
@@ -226,6 +242,12 @@ class A2C:
         self.critic_hist = torch.Tensor().to(self.device)
 
     def update(self, episode):
+        """
+        Updates actor and critic model parameters
+
+        :param episode: Number of the episode at which the agent is training
+        :type episode: int
+        """
         actor_loss = torch.mean(self.actor_loss_hist)
         critic_loss = torch.mean(self.critic_loss_hist)
 
@@ -245,6 +267,9 @@ class A2C:
         self.critic_loss_hist = torch.Tensor().to(self.device)
 
     def learn(self):  # pragma: no cover
+        """
+        Trains actor critic model
+        """
         for episode in range(self.num_episodes):
             episode_reward = 0
             steps = []
@@ -288,6 +313,12 @@ class A2C:
             self.writer.close()
 
     def get_env_properties(self, env):
+        """
+        Helper function to extract the observation and action space
+
+        :returns: Observation space, Action Space and whether the action space is discrete or not 
+        :rtype: int, float, ... ; int, float, ... ; bool
+        """
         state_dim = self.env.observation_space.shape[0]
 
         if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -304,6 +335,12 @@ class A2C:
         return state_dim, action_dim, disc, action_lim
 
     def get_hyperparams(self):
+        """
+        Loads important hyperparameters that need to be loaded or saved
+
+        :returns: Hyperparameters that need to be saved or loaded
+        :rtype: dict
+        """
         hyperparams = {
             "network_type": self.network_type,
             "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
@@ -320,11 +357,5 @@ class A2C:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = A2C(
-        "mlp",
-        env,
-        device="cuda",
-        save_model="checkpoints",
-        save_interval=500,
-    )
+    algo = A2C("mlp", env)
     algo.learn()
