@@ -141,6 +141,7 @@ else False
         :type deterministic: boolean
         :returns: action
         """
+        state = torch.as_tensor(state).float()
         return self.actor.get_action(state, deterministic=deterministic)
 
     def get_value(self, state):
@@ -151,4 +152,5 @@ else False
         :type state: Tensor
         :returns: value
         """
+        state = torch.as_tensor(state).float()
         return self.critic.get_value(state)
