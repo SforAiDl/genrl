@@ -114,6 +114,33 @@ def load_params(algo):
         raise Exception("Invalid file name")
 
 
+def get_env_properties(self, env):
+    """
+    Finds important properties of environment
+
+    :param env: Environment that the agent is interacting with
+    :type env: Gym Environment
+
+    :returns: State space dimensions, Action space dimensions, \
+discreteness of action space and action limit (highest action value)
+    :rtype: int, float, ...; int, float, ...; bool; int, float, ...
+    """
+    state_dim = self.env.observation_space.shape[0]
+
+    if isinstance(self.env.action_space, gym.spaces.Discrete):
+        action_dim = self.env.action_space.n
+        disc = True
+        action_lim = None
+    elif isinstance(self.env.action_space, gym.spaces.Box):
+        action_dim = self.env.action_space.shape[0]
+        action_lim = self.env.action_space.high[0]
+        disc = False
+    else:
+        raise NotImplementedError
+
+    return state_dim, action_dim, disc, action_lim
+
+
 def set_seeds(seed, env=None):
     """
     Sets seeds for reproducibility

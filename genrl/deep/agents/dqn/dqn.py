@@ -16,6 +16,7 @@ from ...common import (
     evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
 )
 
@@ -103,7 +104,6 @@ class DQN:
         render=False,
         device="cpu",
         save_interval=5000,
-        pretrained=None,
         run_num=None,
         save_model=None,
         transform=None,
@@ -138,7 +138,6 @@ class DQN:
         self.save_interval = save_interval
         self.save = save_params
         self.load = load_params
-        self.pretrained = pretrained
         self.network_type = network_type
         self.history_length = None
         self.transform = transform
@@ -167,7 +166,7 @@ class DQN:
         Initialize the model and target model for various variants of DQN. 
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, disc = self.get_env_properties()
+        state_dim, action_dim, _, _ = get_env_properties(self.env)
         if self.network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(state_dim, action_dim)
@@ -223,7 +222,7 @@ class DQN:
                 )
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.run_num is not None:
             self.load(self)
             self.model.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
@@ -241,26 +240,6 @@ class DQN:
             self.replay_buffer = ReplayBuffer(self.replay_size)
 
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
-
-    def get_env_properties(self):
-        """
-        Helper function to extract the observation and action space
-
-        :returns: Observation space, Action Space and whether the action space is discrete or not 
-        :rtype: int, float, ... ; int, float, ... ; bool
-        """
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc
 
     def update_target_model(self):
         """

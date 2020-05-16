@@ -10,6 +10,7 @@ from ...common import (
     evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
 )
 
@@ -63,7 +64,6 @@ class VPG:
         lr_policy=0.01,
         lr_value=0.0005,
         policy_copy_interval=20,
-        pretrained=None,
         layers=(32, 32),
         tensorboard_log=None,
         seed=None,
@@ -87,7 +87,6 @@ class VPG:
         self.policy_copy_interval = policy_copy_interval
         self.evaluate = evaluate
         self.save_interval = save_interval
-        self.pretrained = pretrained
         self.layers = layers
         self.run_num = run_num
         self.save_model = save_model
@@ -117,14 +116,14 @@ class VPG:
         """
         Initialize the actor and critic networks 
         """
-        state_dim, action_dim, action_lim, discrete = self.get_env_properties()
+        state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.run_num is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
@@ -142,28 +141,6 @@ class VPG:
         self.traj_reward = []
         self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
         self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
-
-    def get_env_properties(self):
-        '''
-        Helper function to extract the observation and action space
-
-        :returns: Observation space, Action Space and whether the action space is discrete or not 
-        :rtype: int, float, ... ; int, float, ... ; bool
-        '''
-        state_dim = self.env.observation_space.shape[0]
-        action_lim = None
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, action_lim, disc
 
     def select_action(self, state, deterministic=False):
         """

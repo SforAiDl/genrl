@@ -38,8 +38,7 @@ class SAC:
     :param max_ep_len: Maximum number of steps per episode
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of step between updates
-    :layers: Neural network layer dimensions
-    :pretrained: if loading pretrained weights
+    :param layers: Neural network layer dimensions
     :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
@@ -62,7 +61,6 @@ class SAC:
     :type start_update: int
     :type update_interval: int
     :type layers: tuple
-    :type pretrained: string
     :type tensorboard_log: string
     :type seed: int
     :type render: bool
@@ -89,7 +87,6 @@ class SAC:
         start_update=256,
         update_interval=1,
         layers=(256, 256),
-        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -116,7 +113,6 @@ class SAC:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
-        self.pretrained = pretrained
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
@@ -173,7 +169,7 @@ class SAC:
             state_dim, action_dim, self.layers, disc, False, sac=True
         ).to(self.device)
 
-        if self.pretrained is not None:
+        if self.run_num is not None:
             self.load(self)
             self.q1.load_state_dict(self.checkpoint["q1_weights"])
             self.q2.load_state_dict(self.checkpoint["q2_weights"])

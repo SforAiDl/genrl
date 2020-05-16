@@ -10,6 +10,7 @@ from ...common import (
     evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
 )
 
@@ -54,7 +55,6 @@ class PPO1:
         lr_value=0.001,
         layers=(64, 64),
         policy_copy_interval=20,
-        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -79,7 +79,6 @@ class PPO1:
         self.policy_copy_interval = policy_copy_interval
         self.evaluate = evaluate
         self.save_interval = save_interval
-        self.pretrained = pretrained
         self.run_num = run_num
         self.save_model = save_model
         self.save = save_params
@@ -105,7 +104,7 @@ class PPO1:
 
     def create_model(self):
         # Instantiate networks and optimizers
-        (state_dim, action_dim, disc, action_lim) = self.get_env_properties(self.env)
+        state_dim, action_dim, disc, action_lim = get_env_properties(self.env)
 
         self.policy_new, self.policy_old = (
             get_model("p", self.network_type)(
@@ -123,7 +122,7 @@ class PPO1:
         )
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.run_num is not None:
             self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
@@ -285,22 +284,6 @@ class PPO1:
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-
-    def get_env_properties(self, env):
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-            action_lim = None
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc, action_lim
 
     def get_hyperparams(self):
         hyperparams = {

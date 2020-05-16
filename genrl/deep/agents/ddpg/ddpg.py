@@ -11,6 +11,7 @@ from ...common import (
     evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
 )
 
@@ -88,7 +89,6 @@ class DDPG:
         start_update=1000,
         update_interval=50,
         layers=(32, 32),
-        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
@@ -115,7 +115,6 @@ class DDPG:
         self.start_update = start_update
         self.update_interval = update_interval
         self.save_interval = save_interval
-        self.pretrained = pretrained
         self.layers = layers
         self.tensorboard_log = tensorboard_log
         self.seed = seed
@@ -150,8 +149,8 @@ class DDPG:
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, discrete = self.get_env_properties()
-        if discrete == True:
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
             )
@@ -165,7 +164,7 @@ class DDPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.run_num is not None:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
@@ -182,26 +181,6 @@ class DDPG:
         self.replay_buffer = ReplayBuffer(self.replay_size)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
-
-    def get_env_properties(self):
-        '''
-        Helper function to extract the observation and action space
-
-        :returns: Observation space, Action Space and whether the action space is discrete or not 
-        :rtype: int, float, ... ; int, float, ... ; bool
-        '''
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc
 
     def select_action(self, state, deterministic=True):
         """

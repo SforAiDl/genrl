@@ -21,6 +21,7 @@ from genrl.deep.common.utils import (
     evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
 )
 from genrl.deep.common.values import (
