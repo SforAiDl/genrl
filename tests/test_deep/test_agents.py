@@ -170,12 +170,3 @@ class TestAlgos:
         )
         trainer.train()
         shutil.rmtree("./logs")
-
-
-if __name__ == "__main__":
-    tester = TestAlgos()
-
-    for test_name in dir(tester):
-        if not test_name.startswith("__"):
-            test = getattr(tester, test_name)
-            test()
