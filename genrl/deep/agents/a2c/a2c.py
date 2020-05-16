@@ -7,6 +7,7 @@ import gym
 
 from genrl.deep.common import (
     get_model,
+    evaluate,
     save_params,
     load_params,
     set_seeds,
@@ -104,7 +105,8 @@ class A2C:
         self.save_interval = save_interval
         self.save_model = None
         self.save = save_params
-        self.load = load_param
+        self.load = load_params
+        self.evaluate = evaluate
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
