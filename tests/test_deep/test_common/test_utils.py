@@ -95,6 +95,25 @@ class TestUtils:
 
         rmtree("test_ckpt")
 
+    def test_get_env_properties(self):
+        """
+        test getting environment properties
+        """
+        env = gym.make("CartPole-v0")
+
+        state_dim, action_dim, discrete, _ = get_env_properties(env)
+        assert state_dim == 4
+        assert action_dim == 2
+        assert discrete == True
+        
+        env = gym.make("Pendulum-v0")
+
+        state_dim, action_dim, discrete, action_lim = get_env_properties(env)
+        assert state_dim == 3
+        assert action_dim == 1
+        assert discrete == False
+        assert action_lim == 2.0
+
     def test_set_seeds(self):
         set_seeds(42)
         sampled = random.sample([i for i in range(20)], 1)[0]
