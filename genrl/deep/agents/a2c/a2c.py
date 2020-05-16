@@ -2,14 +2,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-import torch.nn.functional as F
 from torch.autograd import Variable
 import gym
-from copy import deepcopy
 
 from genrl.deep.common import (
     get_model,
-    evaluate,
     save_params,
     load_params,
     set_seeds,
@@ -106,6 +103,8 @@ class A2C:
         self.run_num = run_num
         self.save_interval = save_interval
         self.save_model = None
+        self.save = save_params
+        self.load = load_param
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
