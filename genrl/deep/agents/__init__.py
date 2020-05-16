@@ -4,3 +4,4 @@ from genrl.deep.agents.ppo1 import PPO1
 from genrl.deep.agents.sac import SAC
 from genrl.deep.agents.td3 import TD3
 from genrl.deep.agents.vpg import VPG
+from genrl.deep.agents.a2c import A2C
