@@ -7,6 +7,7 @@ from genrl import (
     PPO1,
     VPG,
     DQN,
+    A2C,
 )
 from genrl.deep.common import (
     OffPolicyTrainer,
@@ -110,6 +111,18 @@ class TestAlgos:
         trainer.train()
         shutil.rmtree("./logs")
 
+    def test_a2c(self):
+        env = gym.make("CartPole-v0")
+
+        # A2C
+        algo = A2C("mlp", env)
+
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
+
     def test_dqn_cnn(self):
         env = gym.make("Breakout-v0")
 
@@ -157,3 +170,12 @@ class TestAlgos:
         )
         trainer.train()
         shutil.rmtree("./logs")
+
+
+if __name__ == "__main__":
+    tester = TestAlgos()
+
+    for test_name in dir(tester):
+        if not test_name.startswith("__"):
+            test = getattr(tester, test_name)
+            test()
