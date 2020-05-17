@@ -10,6 +10,7 @@ from ...common import (
     evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
 )
 
@@ -33,7 +34,8 @@ class VPG:
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
     :param run_num: if model has already been trained
-    :param save_model: True if user wants to save model
+    :param save_model: True if user wants to save 
+    :param load_model: model loading path
     :type network_type: str
     :type env: Gym environment
     :type timesteps_per_actorbatch: int
@@ -48,6 +50,7 @@ class VPG:
     :type device: str
     :type run_num: bool
     :type save_model: bool
+    :type load_model: string
     """
 
     def __init__(
@@ -60,7 +63,7 @@ class VPG:
         epochs=1000,
         lr_policy=0.01,
         lr_value=0.0005,
-        pretrained=None,
+        policy_copy_interval=20,
         layers=(32, 32),
         tensorboard_log=None,
         seed=None,
@@ -68,6 +71,7 @@ class VPG:
         device="cpu",
         run_num=None,
         save_model=None,
+        load_model=None,
         save_interval=50,
     ):
         self.network_type = network_type
@@ -83,10 +87,10 @@ class VPG:
         self.render = render
         self.evaluate = evaluate
         self.save_interval = save_interval
-        self.pretrained = pretrained
         self.layers = layers
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -113,14 +117,14 @@ class VPG:
         """
         Initialize the actor and critic networks 
         """
-        state_dim, action_dim, action_lim, discrete = self.get_env_properties()
+        state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.load_model is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
@@ -138,28 +142,6 @@ class VPG:
         self.traj_reward = []
         self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
         self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
-
-    def get_env_properties(self):
-        '''
-        Helper function to extract the observation and action space
-
-        :returns: Observation space, Action Space and whether the action space is discrete or not 
-        :rtype: int, float, ... ; int, float, ... ; bool
-        '''
-        state_dim = self.env.observation_space.shape[0]
-        action_lim = None
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, action_lim, disc
 
     def select_action(self, state, deterministic=False):
         """
