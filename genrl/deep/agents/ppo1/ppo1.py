@@ -40,6 +40,8 @@ class PPO1:
         and 'cuda' for gpu
     :param run_num: (boolean) if model has already been trained
     :param save_model: (string) directory the user wants to save models to
+    :param load_model: model loading path
+    :type load_model: string
     """
 
     def __init__(
@@ -61,6 +63,7 @@ class PPO1:
         device="cpu",
         run_num=None,
         save_model=None,
+        load_model=None,
         save_interval=50,
     ):
         self.network_type = network_type
@@ -81,6 +84,7 @@ class PPO1:
         self.save_interval = save_interval
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -122,7 +126,7 @@ class PPO1:
         )
 
         # load paramaters if already trained
-        if self.run_num is not None:
+        if self.load_model is not None:
             self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])

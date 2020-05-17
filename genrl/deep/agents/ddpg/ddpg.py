@@ -45,6 +45,7 @@ class DDPG:
     :param device: device to use for tensor operations; ['cpu','cuda']
     :param run_num: model run number if it has already been trained
     :param save_model: model save directory
+    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type gamma: float
@@ -68,6 +69,7 @@ class DDPG:
     :type device: string
     :type run_num: int
     :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
@@ -95,6 +97,7 @@ class DDPG:
         device="cpu",
         run_num=None,
         save_model=None,
+        load_model=None,
         save_interval=5000,
     ):
 
@@ -122,6 +125,7 @@ class DDPG:
         self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -164,7 +168,7 @@ class DDPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.run_num is not None:
+        if self.load_model is not None:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():

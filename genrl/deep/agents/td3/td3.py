@@ -51,6 +51,12 @@ class TD3:
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
+    :param run_num: model run number if it has already been trained
+    :param save_model: model save directory
+    :param load_model: model loading path
+    :type run_num: int
+    :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
@@ -79,6 +85,7 @@ class TD3:
         device="cpu",
         run_num=None,
         save_model=None,
+        load_model=None,
         save_interval=5000,
     ):
 
@@ -107,6 +114,7 @@ class TD3:
         self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -154,7 +162,7 @@ class TD3:
         self.ac.qf1.to(self.device)
         self.ac.qf2.to(self.device)
 
-        if self.run_num is not None:
+        if self.load_model is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.qf1.load_state_dict(self.checkpoint["q1_weights"])

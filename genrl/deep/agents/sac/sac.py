@@ -45,6 +45,7 @@ class SAC:
     :param device: device to use for tensor operations; ['cpu','cuda']
     :param run_num: model run number if it has already been trained
     :param save_model: model save directory
+    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type gamma: float
@@ -67,6 +68,7 @@ class SAC:
     :type device: string
     :type run_num: int
     :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
@@ -93,6 +95,7 @@ class SAC:
         device="cpu",
         run_num=None,
         save_model=None,
+        load_model=None,
         save_interval=5000,
     ):
 
@@ -118,6 +121,7 @@ class SAC:
         self.render = render
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
         self.evaluate = evaluate
@@ -169,7 +173,7 @@ class SAC:
             state_dim, action_dim, self.layers, disc, False, sac=True
         ).to(self.device)
 
-        if self.run_num is not None:
+        if self.load_model is not None:
             self.load(self)
             self.q1.load_state_dict(self.checkpoint["q1_weights"])
             self.q2.load_state_dict(self.checkpoint["q2_weights"])
@@ -449,6 +453,6 @@ class SAC:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env)
+    algo = SAC("mlp", env, save_model="checkpoints")
     algo.learn()
     algo.evaluate(algo)

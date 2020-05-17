@@ -35,7 +35,8 @@ class VPG:
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
     :param run_num: if model has already been trained
-    :param save_model: True if user wants to save model
+    :param save_model: True if user wants to save 
+    :param load_model: model loading path
     :type network_type: str
     :type env: Gym environment
     :type timesteps_per_actorbatch: int
@@ -51,6 +52,7 @@ class VPG:
     :type device: str
     :type run_num: bool
     :type save_model: bool
+    :type load_model: string
     """
 
     def __init__(
@@ -71,6 +73,7 @@ class VPG:
         device="cpu",
         run_num=None,
         save_model=None,
+        load_model=None,
         save_interval=50,
     ):
         self.network_type = network_type
@@ -90,6 +93,7 @@ class VPG:
         self.layers = layers
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -123,7 +127,7 @@ class VPG:
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.run_num is not None:
+        if self.load_model is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])

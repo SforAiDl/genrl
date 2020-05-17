@@ -56,6 +56,10 @@ class DQN:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param save_interval: Number of steps between saves of models
+    :param run_num: model run number if it has already been trained
+    :param save_model: model save directory
+    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type double_dqn: bool
@@ -74,6 +78,10 @@ class DQN:
     :type seed: int
     :type render: bool
     :type device: string
+    :type save_interval: int
+    :type run_num: int
+    :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
@@ -106,6 +114,7 @@ class DQN:
         save_interval=5000,
         run_num=None,
         save_model=None,
+        load_model=None,
         transform=None,
     ):
         self.env = env
@@ -135,6 +144,7 @@ class DQN:
         self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save_interval = save_interval
         self.save = save_params
         self.load = load_params
@@ -222,7 +232,7 @@ class DQN:
                 )
 
         # load paramaters if already trained
-        if self.run_num is not None:
+        if self.load_model is not None:
             self.load(self)
             self.model.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
