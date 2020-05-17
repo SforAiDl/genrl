@@ -10,6 +10,7 @@ from ...common import (
     evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
 )
 
@@ -50,6 +51,12 @@ class TD3:
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
+    :param run_num: model run number if it has already been trained
+    :param save_model: model save directory
+    :param load_model: model loading path
+    :type run_num: int
+    :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
@@ -68,7 +75,6 @@ class TD3:
         steps_per_epoch=4000,
         noise=None,
         noise_std=0.1,
-        pretrained=None,
         max_ep_len=1000,
         start_update=1000,
         update_interval=50,
@@ -79,6 +85,7 @@ class TD3:
         device="cpu",
         run_num=None,
         save_model=None,
+        load_model=None,
         save_interval=5000,
     ):
 
@@ -102,12 +109,12 @@ class TD3:
         self.save_interval = save_interval
         self.layers = layers
         self.tensorboard_log = tensorboard_log
-        self.pretrained = pretrained
         self.seed = seed
         self.render = render
         self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -132,7 +139,7 @@ class TD3:
         self.checkpoint = self.get_hyperparams()
 
     def create_model(self):
-        state_dim, action_dim, discrete = self.get_env_properties()
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
         if discrete == True: 
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
@@ -155,7 +162,7 @@ class TD3:
         self.ac.qf1.to(self.device)
         self.ac.qf2.to(self.device)
 
-        if self.pretrained is not None:
+        if self.load_model is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.qf1.load_state_dict(self.checkpoint["q1_weights"])
@@ -179,20 +186,6 @@ class TD3:
         self.optimizer_policy = torch.optim.Adam(
             self.ac.actor.parameters(), lr=self.lr_p
         )
-
-    def get_env_properties(self):
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc
 
     def select_action(self, state, deterministic=True):
         with torch.no_grad():

@@ -4,6 +4,7 @@ import random
 import torch
 import numpy as np
 import torch.nn as nn
+import gym
 
 
 def get_model(function_type, function_name):
@@ -141,9 +142,9 @@ def save_params(algo, timestep):
             os.makedirs(path)
             run_num = 0
         else:
-            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
-                -1
-            ].path
+            last_path = sorted(
+                os.scandir(path), key=lambda d: d.stat().st_mtime
+            )[-1].path
             run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
         algo.run_num = run_num
 
@@ -157,12 +158,39 @@ def load_params(algo):
     :param algo: The agent object
     :type algo: Object
     """
-    path = algo.pretrained
+    path = algo.load_model
 
     try:
         algo.checkpoint = torch.load(path)
     except FileNotFoundError:
         raise Exception("Invalid file name")
+
+
+def get_env_properties(env):
+    """
+    Finds important properties of environment
+
+    :param env: Environment that the agent is interacting with
+    :type env: Gym Environment
+
+    :returns: State space dimensions, Action space dimensions, \
+discreteness of action space and action limit (highest action value)
+    :rtype: int, float, ...; int, float, ...; bool; int, float, ...
+    """
+    state_dim = env.observation_space.shape[0]
+
+    if isinstance(env.action_space, gym.spaces.Discrete):
+        action_dim = env.action_space.n
+        discrete = True
+        action_lim = None
+    elif isinstance(env.action_space, gym.spaces.Box):
+        action_dim = env.action_space.shape[0]
+        action_lim = env.action_space.high[0]
+        discrete = False
+    else:
+        raise NotImplementedError
+
+    return state_dim, action_dim, discrete, action_lim
 
 
 def set_seeds(seed, env=None):

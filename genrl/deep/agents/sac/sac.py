@@ -38,14 +38,14 @@ class SAC:
     :param max_ep_len: Maximum number of steps per episode
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of step between updates
-    :layers: Neural network layer dimensions
-    :pretrained: if loading pretrained weights
+    :param layers: Neural network layer dimensions
     :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
     :param run_num: model run number if it has already been trained
     :param save_model: model save directory
+    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type gamma: float
@@ -62,13 +62,13 @@ class SAC:
     :type start_update: int
     :type update_interval: int
     :type layers: tuple
-    :type pretrained: string
     :type tensorboard_log: string
     :type seed: int
     :type render: bool
     :type device: string
     :type run_num: int
     :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
@@ -89,13 +89,13 @@ class SAC:
         start_update=256,
         update_interval=1,
         layers=(256, 256),
-        pretrained=None,
         tensorboard_log=None,
         seed=None,
         render=False,
         device="cpu",
         run_num=None,
         save_model=None,
+        load_model=None,
         save_interval=5000,
     ):
 
@@ -116,12 +116,12 @@ class SAC:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
-        self.pretrained = pretrained
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
         self.evaluate = evaluate
@@ -173,7 +173,7 @@ class SAC:
             state_dim, action_dim, self.layers, disc, False, sac=True
         ).to(self.device)
 
-        if self.pretrained is not None:
+        if self.load_model is not None:
             self.load(self)
             self.q1.load_state_dict(self.checkpoint["q1_weights"])
             self.q2.load_state_dict(self.checkpoint["q2_weights"])
@@ -453,6 +453,6 @@ class SAC:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env)
+    algo = SAC("mlp", env, save_model="checkpoints")
     algo.learn()
     algo.evaluate(algo)

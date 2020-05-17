@@ -16,6 +16,7 @@ from ...common import (
     evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
 )
 
@@ -55,6 +56,10 @@ class DQN:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param save_interval: Number of steps between saves of models
+    :param run_num: model run number if it has already been trained
+    :param save_model: model save directory
+    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type double_dqn: bool
@@ -73,6 +78,10 @@ class DQN:
     :type seed: int
     :type render: bool
     :type device: string
+    :type save_interval: int
+    :type run_num: int
+    :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
@@ -103,9 +112,9 @@ class DQN:
         render=False,
         device="cpu",
         save_interval=5000,
-        pretrained=None,
         run_num=None,
         save_model=None,
+        load_model=None,
         transform=None,
     ):
         self.env = env
@@ -135,10 +144,10 @@ class DQN:
         self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save_interval = save_interval
         self.save = save_params
         self.load = load_params
-        self.pretrained = pretrained
         self.network_type = network_type
         self.history_length = None
         self.transform = transform
@@ -167,7 +176,7 @@ class DQN:
         Initialize the model and target model for various variants of DQN. 
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, disc = self.get_env_properties()
+        state_dim, action_dim, _, _ = get_env_properties(self.env)
         if self.network_type == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(state_dim, action_dim)
@@ -223,7 +232,7 @@ class DQN:
                 )
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.load_model is not None:
             self.load(self)
             self.model.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
@@ -241,26 +250,6 @@ class DQN:
             self.replay_buffer = ReplayBuffer(self.replay_size)
 
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
-
-    def get_env_properties(self):
-        """
-        Helper function to extract the observation and action space
-
-        :returns: Observation space, Action Space and whether the action space is discrete or not 
-        :rtype: int, float, ... ; int, float, ... ; bool
-        """
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc
 
     def update_target_model(self):
         """
