@@ -7,6 +7,7 @@ from genrl import (
     PPO1,
     VPG,
     DQN,
+    A2C,
 )
 from genrl.deep.common import (
     OffPolicyTrainer,
@@ -106,6 +107,18 @@ class TestAlgos:
 
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
+
+    def test_a2c(self):
+        env = gym.make("CartPole-v0")
+
+        # A2C
+        algo = A2C("mlp", env)
+
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
         )
         trainer.train()
         shutil.rmtree("./logs")
