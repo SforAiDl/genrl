@@ -13,11 +13,6 @@ from genrl.deep.common import (
     set_seeds,
 )
 
-from genrl.deep.common import (  # noqa
-    OrnsteinUhlenbeckActionNoise,
-    NormalActionNoise
-)
-
 
 class A2C:
     """
