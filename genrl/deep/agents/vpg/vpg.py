@@ -29,7 +29,6 @@ class VPG:
     :param epochs: the optimizer's number of epochs
     :param lr_policy: policy network learning rate
     :param lr_value: value network learning rate
-    :param policy_copy_interval: number of optimizer before copying params from new policy to old policy
     :param save_interval: Number of episodes between saves of models
     :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
@@ -45,7 +44,6 @@ class VPG:
     :type epochs: int
     :type lr_policy: float
     :type lr_value: float
-    :type policy_copy_interval: int
     :type save_interval: int
     :type tensorboard_log: str
     :type seed: int
@@ -87,7 +85,6 @@ class VPG:
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
-        self.policy_copy_interval = policy_copy_interval
         self.evaluate = evaluate
         self.save_interval = save_interval
         self.layers = layers
@@ -202,14 +199,12 @@ class VPG:
         self.policy_hist = Variable(torch.Tensor()).to(self.device)
         self.value_hist = Variable(torch.Tensor()).to(self.device)
 
-    def update_policy(self, episode, copy_policy=False):
+    def update(self, episode):
         """
         Update the policy and take the step for the optimizer
 
         :param episode: Episode number 
-        :param copy_policy: Whether you want to copy the policy or not 
-        :type episode: int 
-        :type copy_policy: bool
+        :type episode: int
         """
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_loss_hist)
@@ -233,9 +228,6 @@ class VPG:
         self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
         self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
-        if copy_policy:
-            pass
-
     def learn(self):  # pragma: no cover
         # training loop
         for episode in range(self.epochs):
@@ -258,7 +250,7 @@ class VPG:
                 epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
                 self.get_traj_loss()
 
-            self.update_policy(episode)
+            self.update(episode)
 
             if episode % 20 == 0:
                 print("Episode: {}, reward: {}".format(episode, epoch_reward))

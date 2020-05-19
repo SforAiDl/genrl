@@ -501,9 +501,12 @@ class OnPolicyTrainer(Trainer):
                 )
                 self.agent.get_traj_loss()
 
-            self.agent.update_policy(
-                episode, episode % self.agent.policy_copy_interval == 0
-            )
+            if self.agent.__class__.__name__ == "PPO1":
+                self.agent.update(
+                    episode, episode % self.agent.policy_copy_interval == 0
+                )
+            else:
+                self.agent.update(episode)
 
             if episode % self.log_interval == 0:
                 self.logger.write(
@@ -518,5 +521,5 @@ class OnPolicyTrainer(Trainer):
                 self.checkpoint = self.agent.get_hyperparams()
                 self.save()
 
-            self.env.close()
-            self.logger.close()
+        self.env.close()
+        self.logger.close()
