@@ -5,11 +5,15 @@ from .utils import mlp
 class MlpPolicy(BasePolicy):
     """
     MLP Policy
-    :param state_dim: (int) state dimension of environment
-    :param action_dim: (int) action dimension of environment
-    :param hidden: (tuple or list) sizes of hidden layers
-    :param disc: (bool) discrete action space?
-    :param det: (bool) deterministic policy?
+
+    :param state_dim: State dimensions of the environment
+    :param action_dim: Action dimensions of the environment
+    :param hidden: Sizes of hidden layers
+    :param discrete: True if action space is discrete, else False
+    :type state_dim: int
+    :type action_dim: int
+    :type hidden: tuple or list
+    :type discrete: bool
     """
 
     def __init__(
@@ -27,6 +31,13 @@ policy_registry = {"mlp": MlpPolicy}
 
 
 def get_policy_from_name(name_):
+    """
+    Returns policy given the name of the policy
+
+    :param name_: Name of the policy needed
+    :type name_: str
+    :returns: Policy Function to be used
+    """
     if name_ in policy_registry:
         return policy_registry[name_]
     raise NotImplementedError
