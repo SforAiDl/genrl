@@ -14,27 +14,43 @@ from .logger import Logger
 class Trainer(ABC):
     """
     Base Trainer class. To be inherited specific usecases.
-    :param agent: (object) Algorithm object
-    :param env: (object) standard gym environment
-    :param log_mode: (list of str) which logging modes to use
-    :param buffer: (object) Buffer Object
-    :param off_policy: (bool) Is the algorithm off-policy?
-    :param save_interval:(int) Model to save in each of these many timesteps
-    :param render: (bool) Should the Environment render
-    :param max_ep_len: (int) Max Episode Length
-    :param distributed: (int) Should distributed training be enabled?
-                                (To be implemented)
-    :param ckpt_log_name: (string) Model checkpoint name
-    :param steps_per_epochs: (int) Steps to take per epoch?
-    :param epochs: (int) Total Epochs to train for
-    :param device: (string) Device to train model on
-    :param log_interval: (int) Log important params every these many steps
-    :param batch_size: (int) Size of batch
-    :param seed: (int) Set seed for reproducibility
-    :param deterministic_actions: (bool) Take deterministic actions during
-        training.
-    """
 
+    :param agent: Algorithm object
+    :param env: Standard gym environment
+    :param logger: Logger object
+    :param buffer: Buffer Object
+    :param off_policy: Is the algorithm off-policy?
+    :param save_interval: Model to save in each of these many timesteps
+    :param render: Should the Environment render
+    :param max_ep_len: Max Episode Length
+    :param distributed: True if distributed training is enabled, else \
+False (To be implemented)
+    :param ckpt_log_name: Model checkpoint name
+    :param steps_per_epochs: Steps to take per epoch?
+    :param epochs: Total Epochs to train for
+    :param device: Device to train model on
+    :param log_interval: Log important params every these many steps
+    :param batch_size: Size of batch
+    :param seed: Set seed for reproducibility
+    :param deterministic_actions: Take deterministic actions during training.
+    :type agent: object
+    :type env: object
+    :type logger: object
+    :type buffer: object
+    :type off_policy: bool
+    :type save_interval: int
+    :type render: bool
+    :type max_ep_len: int
+    :type distributed: int
+    :type ckpt_log_name: string
+    :type steps_per_epochs: int
+    :type epochs: int
+    :type device: string
+    :type log_interval: int
+    :type batch_size: int
+    :type seed: int
+    :type deterministic_actions: bool
+    """
     def __init__(
         self,
         agent,
@@ -96,8 +112,8 @@ class Trainer(ABC):
 
     def save(self):
         """
-        Save function. It calls `get_hyperparams` method of agent to
-            get important model hyperparams.
+        Save function. It calls `get_hyperparams` method of agent to \
+get important model hyperparams.
         Creates a checkpoint `{logger_dir}/{algo}_{env_name}/{ckpt_log_name}
         """
         saving_params = self.agent.get_hyperparams()
@@ -109,23 +125,23 @@ class Trainer(ABC):
         os.makedirs(save_dir, exist_ok=True)
         torch.save(saving_params, "{}/{}.pt".format(save_dir, self.ckpt_log_name))
 
-    def evaluate(self): 
-        '''
-        Evaluate function.  
-        '''
+    def evaluate(self):
+        """
+        Evaluate function
+        """
         ep, ep_r = 0, 0
         ep_rews = []
         state = self.env.reset()
-        while True: 
+        while True:
             if self.agent.__class__.__name__ == "DQN":
-                action = self.agent.select_action(state,explore=False)
+                action = self.agent.select_action(state, explore=False)
             else:
                 action = self.agent.select_action(state)
             next_state, reward, done, _ = self.env.step(action)
             ep_r += reward
             state = next_state
-            if done: 
-                ep+=1
+            if done:
+                ep += 1
                 ep_rews.append(ep_r)
                 state = self.env.reset()
                 ep_r = 0
@@ -137,38 +153,60 @@ class Trainer(ABC):
 
     @property
     def n_envs(self):
+        """
+        Number of environments
+        """
         return self.env.n_envs
 
 
 class OffPolicyTrainer(Trainer):
     """
-    Off-Policy Trainer class.
-    :param agent: (object) Algorithm object
-    :param env: (object) standard gym environment
-    :param logger: (object) Logger object
-    :param buffer: (object) Buffer Object. Cannot be None for Off-policy
-    :param off_policy: (bool) Is the algorithm off-policy?
-    :param save_interval:(int) Model to save in each of these many timesteps
-    :param render: (bool) Should the Environment render
-    :param max_ep_len: (int) Max Episode Length
-    :param distributed: (int) Should distributed training be enabled?
-                                (To be implemented)
-    :param ckpt_log_name: (string) Model checkpoint name
-    :param steps_per_epochs: (int) Steps to take per epoch?
-    :param epochs: (int) Total Epochs to train for
-    :param device: (string) Device to train model on
-    :param log_interval: (int) Log important params every these many steps
-    :param batch_size: (int) Size of batch
-    :param seed: (int) Set seed for reproducibility
-    :param deterministic_actions: (bool) Take deterministic actions
-        during training.
-    :param warmup_steps: (int) Observe the environment for these many steps
-        with randomly sampled actions to store in buffer.
-    :param start_update: (int) Starting updating the policy after these
-        many steps
-    :param update_interval: (int) Update model policies after number of steps.
-    """
+    Off-Policy Trainer class
 
+    :param agent: Algorithm object
+    :param env: Standard gym environment
+    :param logger: Logger object
+    :param buffer: Buffer Object. Cannot be None for Off-policy
+    :param off_policy: Is the algorithm off-policy?
+    :param save_interval: Model to save in each of these many timesteps
+    :param render: Should the Environment render
+    :param max_ep_len: Max Episode Length
+    :param distributed: Should distributed training be enabled? \
+(To be implemented)
+    :param ckpt_log_name: Model checkpoint name
+    :param steps_per_epochs: Steps to take per epoch?
+    :param epochs: Total Epochs to train for
+    :param device: Device to train model on
+    :param log_interval: Log important params every these many steps
+    :param batch_size: Size of batch
+    :param seed: Set seed for reproducibility
+    :param deterministic_actions: Take deterministic actions during training.
+    :param warmup_steps: Observe the environment for these many steps \
+with randomly sampled actions to store in buffer.
+    :param start_update: Starting updating the policy after these \
+many steps
+    :param update_interval: Update model policies after number of steps.
+    :type agent: object
+    :type env: object
+    :type logger: object
+    :type buffer: object
+    :type off_policy: bool
+    :type save_interval:int
+    :type render: bool
+    :type max_ep_len: int
+    :type distributed: int
+    :type ckpt_log_name: string
+    :type steps_per_epochs: int
+    :type epochs: int
+    :type device: string
+    :type log_interval: int
+    :type batch_size: int
+    :type seed: int
+    :type deterministic_actions: bool
+    :type warmup_steps: int
+    :type start_update: int
+    :type update_interval: int
+    """
     def __init__(
         self,
         agent,
@@ -350,27 +388,43 @@ class OffPolicyTrainer(Trainer):
 class OnPolicyTrainer(Trainer):
     """
     Base Trainer class. To be inherited specific usecases.
-    :param agent: (object) Algorithm object
-    :param env: (object) standard gym environment
-    :param logger: (object) Logger object
-    :param buffer: (object) Buffer Object
-    :param off_policy: (bool) Is the algorithm off-policy?
-    :param save_interval:(int) Model to save in each of these many timesteps
-    :param render: (bool) Should the Environment render
-    :param max_ep_len: (int) Max Episode Length
-    :param distributed: (int) Should distributed training be enabled?
-                                (To be implemented)
-    :param ckpt_log_name: (string) Model checkpoint name
-    :param steps_per_epochs: (int) Steps to take per epoch?
-    :param epochs: (int) Total Epochs to train for
-    :param device: (string) Device to train model on
-    :param log_interval: (int) Log important params every these many steps
-    :param batch_size: (int) Size of batch
-    :param seed: (int) Set seed for reproducibility
-    :param deterministic_actions: (bool) Take deterministic actions
-        during training.
-    """
 
+    :param agent: Algorithm object
+    :param env: Standard gym environment
+    :param logger: Logger Object
+    :param buffer: Buffer Object
+    :param off_policy: Is the algorithm off-policy?
+    :param save_interval: Model to save in each of these many timesteps
+    :param render: Should the Environment render
+    :param max_ep_len: Max Episode Length
+    :param distributed: Should distributed training be enabled? \
+(To be implemented)
+    :param ckpt_log_name: Model checkpoint name
+    :param steps_per_epochs: Steps to take per epoch?
+    :param epochs: Total Epochs to train for
+    :param device: Device to train model on
+    :param log_interval: Log important params every these many steps
+    :param batch_size: Size of batch
+    :param seed: Set seed for reproducibility
+    :param deterministic_actions: Take deterministic actions during training.
+    :type agent: object
+    :type env: object
+    :type logger: object
+    :type buffer: object
+    :type off_policy: bool
+    :type save_interval:int
+    :type render: bool
+    :type max_ep_len: int
+    :type distributed: int
+    :type ckpt_log_name: string
+    :type steps_per_epochs: int
+    :type epochs: int
+    :type device: string
+    :type log_interval: int
+    :type batch_size: int
+    :type seed: int
+    :type deterministic_actions: bool
+    """
     def __init__(
         self,
         agent,
