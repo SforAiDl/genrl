@@ -466,5 +466,5 @@ class OnPolicyTrainer(Trainer):
                 self.checkpoint = self.agent.get_hyperparams()
                 self.save()
 
-            self.env.close()
-            self.logger.close()
+        self.env.close()
+        self.logger.close()
