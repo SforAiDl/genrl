@@ -89,7 +89,7 @@ class EpsGreedyPolicy(BanditPolicy):
         self.Q[action] += (reward - self.Q[action]) / (self.counts[action] + 1)
         self.counts[action] += 1
 
-    
+
 class UCBPolicy(BanditPolicy):
     """
     Multi-Armed Bandit Solver with Upper Confidence Bound Based Action
@@ -149,7 +149,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         super(SoftmaxActionSelectionPolicy, self).__init__(bandit)
         self._temp = temp
         self._Q = np.zeros(bandit.arms)
-    
+
     @property
     def temp(self):
         return self._temp
@@ -287,7 +287,6 @@ class ThompsonSamplingPolicy(BanditPolicy):
         self.counts[action] += 1
 
 
-
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     from bandits import GaussianBandit, BernoulliBandit
@@ -302,7 +301,7 @@ if __name__ == "__main__":
         average_reward = np.zeros(timesteps)
         average_regret = np.zeros(timesteps)
         for i in range(iterations):
-            gaussian_bandit = GaussianBandit(arms) 
+            gaussian_bandit = GaussianBandit(arms)
             eps_greedy_gaussian = EpsGreedyPolicy(gaussian_bandit, eps)
             eps_greedy_gaussian.learn(timesteps)
             average_reward += np.array(eps_greedy_gaussian.reward_hist) / iterations
@@ -314,14 +313,13 @@ if __name__ == "__main__":
     # plt.show()
     plt.cla()
 
-
     print(f"\nRunning UCB Policy on Gaussian Bandit")
     for c in [0.5, 0.9, 1, 2]:
         print(f"Running for c = {c}")
         average_reward = np.zeros(timesteps)
         average_regret = np.zeros(timesteps)
         for i in range(iterations):
-            gaussian_bandit = GaussianBandit(arms) 
+            gaussian_bandit = GaussianBandit(arms)
             ucb_gaussian = UCBPolicy(gaussian_bandit, c)
             ucb_gaussian.learn(timesteps)
             average_reward += np.array(ucb_gaussian.reward_hist) / iterations
@@ -339,7 +337,7 @@ if __name__ == "__main__":
         average_reward = np.zeros(timesteps)
         average_regret = np.zeros(timesteps)
         for i in range(iterations):
-            gaussian_bandit = GaussianBandit(arms) 
+            gaussian_bandit = GaussianBandit(arms)
             softmax_gaussian = SoftmaxActionSelectionPolicy(gaussian_bandit, temp)
             softmax_gaussian.learn(timesteps)
             average_reward += np.array(softmax_gaussian.reward_hist) / iterations
@@ -351,14 +349,13 @@ if __name__ == "__main__":
     # plt.show()
     plt.cla()
 
-
     print(f"\nRunning Epsillon Greedy Policy on Bernoulli Bandit")
     for eps in [0, 0.01, 0.03, 0.1, 0.3]:
         print(f"Running for eps = {eps}")
         average_reward = np.zeros(timesteps)
         average_regret = np.zeros(timesteps)
         for i in range(iterations):
-            bernoulli_bandit = BernoulliBandit(arms) 
+            bernoulli_bandit = BernoulliBandit(arms)
             eps_greedy_bernoulli = EpsGreedyPolicy(bernoulli_bandit, eps)
             eps_greedy_bernoulli.learn(timesteps)
             average_reward += np.array(eps_greedy_bernoulli.reward_hist) / iterations
@@ -376,7 +373,7 @@ if __name__ == "__main__":
         average_reward = np.zeros(timesteps)
         average_regret = np.zeros(timesteps)
         for i in range(iterations):
-            bernoulli_bandit = BernoulliBandit(arms) 
+            bernoulli_bandit = BernoulliBandit(arms)
             ucb_bernoulli = UCBPolicy(bernoulli_bandit, c)
             ucb_bernoulli.learn(timesteps)
             average_reward += np.array(ucb_bernoulli.reward_hist) / iterations
@@ -392,7 +389,7 @@ if __name__ == "__main__":
     average_reward = np.zeros(timesteps)
     average_regret = np.zeros(timesteps)
     for i in range(iterations):
-        bernoulli_bandit = BernoulliBandit(arms) 
+        bernoulli_bandit = BernoulliBandit(arms)
         bayesian_ucb_bernoulli = BayesianUCBPolicy(bernoulli_bandit)
         bayesian_ucb_bernoulli.learn(timesteps)
         average_reward += np.array(bayesian_ucb_bernoulli.reward_hist) / iterations
@@ -403,12 +400,11 @@ if __name__ == "__main__":
     # plt.show()
     plt.cla()
 
-
     print(f"\nRunning Thompson Sampling Policy on Bernoulli Bandit")
     average_reward = np.zeros(timesteps)
     average_regret = np.zeros(timesteps)
     for i in range(iterations):
-        bernoulli_bandit = BernoulliBandit(arms) 
+        bernoulli_bandit = BernoulliBandit(arms)
         thompson_sampling_bernoulli = ThompsonSamplingPolicy(bernoulli_bandit)
         thompson_sampling_bernoulli.learn(timesteps)
         average_reward += np.array(thompson_sampling_bernoulli.reward_hist) / iterations

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Bandit(object):
     """
     Base Class for a Multi-armed Bandit
@@ -35,6 +36,7 @@ class GaussianBandit(Bandit):
         reward = np.random.normal(self.rewards[action])
         return reward
 
+
 class BernoulliBandit(Bandit):
     """
     Multi-Armed Bandits with Bernoulli probabilities.
@@ -48,11 +50,11 @@ class BernoulliBandit(Bandit):
             self._rewards_probs = reward_probs
         else:
             self._rewards_probs = np.random.normal(size=(arms))
-    
+
     @property
     def reward_probs(self):
         return self._rewards_probs
-    
+
     def step(self, action):
         if np.random.random() < self._rewards_probs[action]:
             return 1
