@@ -1,12 +1,13 @@
-from genrl.classical.bandit.bandit import (
+from genrl.classical.bandit.bandits import (
     Bandit,
-    GaussianBandits,
-    EpsGreedyGaussianBandit,
-    UCBGaussianBandit,
-    SoftmaxActionSelection,
-    BernoulliBandits,
-    EpsGreedyBernoulliBandit,
-    UCBBernoulliBandit,
-    BayesianUCBBernoulliBandit,
-    ThompsonSampling,
+    GaussianBandit,
+    BernoulliBandit,
+)
+from genrl.classical.bandit.policies import (
+    BanditPolicy,
+    EpsGreedyPolicy,
+    UCBPolicy,
+    SoftmaxActionSelectionPolicy,
+    BayesianUCBPolicy,
+    ThompsonSamplingPolicy,
 )
