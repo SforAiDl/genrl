@@ -11,16 +11,18 @@ class GymWrapper(BaseWrapper):
 
     :param env: Gym environment name
     :param n_envs: Number of environments. None if not vectorised
+    :param parallel: If vectorised, should environments be run through \
+serially or parallelly
     :type env: string
     :type n_envs: None, int
+    :type parallel: boolean
     """
-    def __init__(self, env, n_envs=None):
-        if n_envs is None:
-            self._vec = False
+    def __init__(self, env, n_envs=None, parallel=False):
+        super(GymWrapper, self).__init__(env, n_envs)
+        if self._vec:
             self.env = gym.make(env)
         else:
-            self._vec = True
-            self.env = venv(env, n_envs)
+            self.env = venv(env, n_envs, parallel=parallel)
 
     def __getattr__(self, name):
         """

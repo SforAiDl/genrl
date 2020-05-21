@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 class BaseWrapper(Wrapper):
     def __init__(self, env, n_envs=None):
-        pass
+        self._vec = n_envs is not None
 
     @property
     def batch_size(self):
@@ -12,6 +12,10 @@ class BaseWrapper(Wrapper):
         The number of batches trained per update
         """
         return None
+    
+    @property
+    def is_vec(self):
+        return self._vec
 
     @abstractmethod
     def observation_space(self):
