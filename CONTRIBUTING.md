@@ -1,5 +1,3 @@
-Follow details at https://github.com/SforAiDl/genrl/wiki/Contributing-Guidelines
-
 # Contributing to GenRL
 
 This project is a community effort, and everyone is welcome to contribute!
