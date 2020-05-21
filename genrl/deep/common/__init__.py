@@ -30,4 +30,3 @@ from genrl.deep.common.values import (
     CNNValue,
     get_value_from_name,
 )
-from genrl.deep.common.VecEnv import VecEnv, SerialVecEnv, SubProcessVecEnv, venv

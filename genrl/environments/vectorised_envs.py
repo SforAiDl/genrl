@@ -46,6 +46,8 @@ class VecEnv(ABC):
     def __init__(self, env, n_envs=2):
         self.envs = create_envs(env, n_envs)
         self._n_envs = len(self.envs)
+        self.observation_space = self.env.observation_space
+        self.action_space = self.env.action_space
 
     def __iter__(self):
         return (env for env in self.envs)
