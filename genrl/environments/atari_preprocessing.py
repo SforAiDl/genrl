@@ -52,7 +52,7 @@ E.g. frameskip=4 will mean 1 action will be taken for every 4 frames
             np.empty(env.observation_space.shape[:2], dtype=np.uint8)
         ]
 
-    #TODO(zeus3101) Add support for games with multiple lives, 
+    # TODO(zeus3101) Add support for games with multiple lives, 
 
     def step(self, action):
         """

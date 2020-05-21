@@ -1,11 +1,10 @@
 import gym
-import torch
 
 from genrl.environments import BaseWrapper
 from genrl.deep.common import venv
 
 
-class GymWrapper(BaseWrapper):
+class GymWrapper(BaseWrapper, gym.Wrapper):
     """
     Wrapper class for all Gym Environments
 
@@ -20,9 +19,11 @@ serially or parallelly
     def __init__(self, env, n_envs=None, parallel=False):
         super(GymWrapper, self).__init__(env, n_envs)
         if self._vec:
-            self.env = gym.make(env)
+            self.env = venv(env, n_envs, parallel)
         else:
-            self.env = venv(env, n_envs, parallel=parallel)
+            self.env = gym.make(env)
+        self.observation_space = self.env.observation_space
+        self.action_space = self.env.action_space
 
     def __getattr__(self, name):
         """
@@ -31,25 +32,7 @@ serially or parallelly
         env = super(GymWrapper, self).__getattribute__('env')
         return getattr(env, name)
 
-    def observation_space(self):
-        """
-        Returns observation space of environment
-        """
-        if self._vec:
-            raise NotImplementedError
-        else:
-            return self.env.observation_space
-
-    def action_space(self):
-        """
-        Return action space of environment
-        """
-        if self._vec:
-            raise NotImplementedError
-        else:
-            return self.env.action_space
-
-    #TODO(zeus3101) Get get_state, set_state, get_info, get_done methods
+    # TODO(zeus3101) Get get_state, set_state, get_info, get_done methods
 
     def render(self, mode="human"):
         """
@@ -61,7 +44,7 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         """
         self.env.render(mode=mode)
 
-    def seed(self, seed):
+    def seed(self, seed=None):
         """
         Set environment seed
 
@@ -77,13 +60,13 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         :param action: Action taken by agent
         :type action: NumPy array
         """
-        self.env.step(action)
+        return self.env.step(action)
 
     def reset(self):
         """
         Resets environment
         """
-        self.env.reset()
+        return self.env.reset()
     
     def close(self):
         """

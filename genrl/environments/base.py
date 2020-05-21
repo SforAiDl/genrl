@@ -1,5 +1,5 @@
 from gym import Wrapper
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 
 class BaseWrapper(Wrapper):
@@ -25,10 +25,10 @@ class BaseWrapper(Wrapper):
     def action_space(self):
         raise NotImplementedError
 
-    #TODO(zeus3101) Add get_state and set_state methods
+    # TODO(zeus3101) Add get_state and set_state methods
 
     @abstractmethod
-    def seed(self):
+    def seed(self, seed=None):
         raise NotImplementedError
 
     @abstractmethod
