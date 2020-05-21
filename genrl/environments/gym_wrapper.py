@@ -1,5 +1,3 @@
-import collections
-
 import gym
 import torch
 
@@ -19,16 +17,16 @@ class GymWrapper(BaseWrapper):
     def __init__(self, env, n_envs=None):
         if n_envs is None:
             self._vec = False
-            self._env = gym.make(env)
+            self.env = gym.make(env)
         else:
             self._vec = True
-            self._env = venv(env, n_envs)
+            self.env = venv(env, n_envs)
 
     def __getattr__(self, name):
         """
         All other calls would go to base env
         """
-        env = super(GymWrapper, self).__getattribute__('_env')
+        env = super(GymWrapper, self).__getattribute__('env')
         return getattr(env, name)
 
     def observation_space(self):
@@ -38,7 +36,7 @@ class GymWrapper(BaseWrapper):
         if self._vec:
             raise NotImplementedError
         else:
-            return self._env.observation_space
+            return self.env.observation_space
 
     def action_space(self):
         """
@@ -47,7 +45,7 @@ class GymWrapper(BaseWrapper):
         if self._vec:
             raise NotImplementedError
         else:
-            return self._env.action_space
+            return self.env.action_space
 
     #TODO(zeus3101) Get get_state, set_state, get_info, get_done methods
 
@@ -59,7 +57,7 @@ class GymWrapper(BaseWrapper):
 Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         :type mode: string
         """
-        self._env.render(mode=mode)
+        self.env.render(mode=mode)
 
     def seed(self, seed):
         """
@@ -68,7 +66,7 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         :param seed: Value of seed
         :type seed: int
         """
-        self._env.seed(seed)
+        self.env.seed(seed)
 
     def step(self, action):
         """
@@ -77,16 +75,16 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         :param action: Action taken by agent
         :type action: NumPy array
         """
-        self._env.step(action)
+        self.env.step(action)
 
     def reset(self):
         """
         Resets environment
         """
-        self._env.reset()
+        self.env.reset()
     
     def close(self):
         """
         Closes environment
         """
-        self._env.close()
+        self.env.close()

@@ -1,13 +1,8 @@
-import collections
+from gym import Wrapper
 from abc import ABC, abstractmethod
 
-import torch
-import gym
 
-from genrl.deep.common import VecEnv
-
-
-class BaseWrapper(ABC):
+class BaseWrapper(Wrapper):
     def __init__(self, env, n_envs=None):
         pass
 
@@ -54,7 +49,7 @@ class BaseWrapper(ABC):
         """
         return self
 
-    def __exit__(self):
+    def __exit__(self, exec_type, exec_value, exec_traceback):
         """
         Allows environment to be called using with statement
         """
