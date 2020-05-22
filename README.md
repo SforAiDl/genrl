@@ -38,9 +38,21 @@ If you intend to install the latest unreleased version of the library (i.e from 
     $ python setup.py install
 
 ## Usage
+To train a Soft Actor-Critic model from scratch on the `CartPole-v0` gym environment and log rewards on tensorboard
+```python
+from genrl.deep.common import OffPolicyTrainer
+from genrl import SAC
+import gym
+
+env = gym.make("CartPole-v0")
+agent = SAC('mlp', env)
+trainer = OffPolicyTrainer(agent, env, log_mode=['stdout', 'tensorboard'])
+trainer.train()
+```
+
 To train a Tabular Dyna-Q model from scratch on the `FrozenLake-v0` gym environment and plot rewards:
 ```python
-from genrl.classical import Trainer
+from genrl.classical.common import Trainer
 from genrl import QLearning
 import gym
 
