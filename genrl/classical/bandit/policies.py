@@ -7,16 +7,18 @@ class BanditPolicy(object):
     Base Class for Multi-armed Bandit solving Policy
 
     :param bandit: The Bandit to solve
+    :param requires_init_run: Indicated if initialisation of Q values is required
     :type bandit: Bandit type object 
     """
 
-    def __init__(self, bandit):
+    def __init__(self, bandit, requires_init_run=False):
         self._bandit = bandit
         self._regret = 0.0
         self._action_hist = []
         self._regret_hist = []
         self._reward_hist = []
         self._counts = np.zeros(self._bandit.arms)
+        self._requires_init_run = requires_init_run
 
     @property
     def action_hist(self):
@@ -94,16 +96,27 @@ class BanditPolicy(object):
         """
         raise NotImplementedError
 
-    def learn(self, n_timesteps=None):
+    def learn(self, n_timesteps=1000):
         """
         Learn to solve the environment over given number of timesteps
 
-        This method needs to be implemented in the specific policy.
+        Selects action, takes a step in the bandit and then updates
+        the parameters according to the reward received. If policy
+        requires an initial run, it takes each action once before starting
 
         :param n_timesteps: number of steps to learn for
         :type: int 
         """
-        raise NotImplementedError
+        if self._requires_init_run:
+            for action in range(self._bandit.arms):
+                reward = self._bandit.step(action)
+                self.update_params(action, reward)
+            n_timesteps -= self._bandit.arms
+
+        for t in range(n_timesteps):
+            action = self.select_action(t)
+            reward = self._bandit.step(action)
+            self.update_params(action, reward)
 
 
 class EpsGreedyPolicy(BanditPolicy):
@@ -143,22 +156,6 @@ class EpsGreedyPolicy(BanditPolicy):
         """
         return self._Q
 
-    def learn(self, n_timesteps=1000):
-        """
-        Learn to solve the environment over given number of timesteps
-
-        Selects action, takes a step in the bandit and then updates
-        the parameters according to the reward received.
-
-        :param n_timesteps: number of steps to learn for
-        :type: int 
-        """
-        for t in range(n_timesteps):
-            action = self.select_action(t)
-            reward = self._bandit.step(action)
-            self.update_params(action, reward)
-            self.reward_hist.append(reward)
-
     def select_action(self, t):
         """
         Select an action according to epsilon greedy startegy
@@ -192,6 +189,7 @@ class EpsGreedyPolicy(BanditPolicy):
         :type action: int
         :type reward: float
         """
+        self.reward_hist.append(reward)
         self._regret += max(self.Q) - self.Q[action]
         self.regret_hist.append(self.regret)
         self.Q[action] += (reward - self.Q[action]) / (self.counts[action] + 1)
@@ -212,7 +210,7 @@ class UCBPolicy(BanditPolicy):
     """
 
     def __init__(self, bandit, c=1):
-        super(UCBPolicy, self).__init__(bandit)
+        super(UCBPolicy, self).__init__(bandit, requires_init_run=True)
         self._c = c
         self._Q = np.zeros(bandit.arms)
 
@@ -236,22 +234,6 @@ class UCBPolicy(BanditPolicy):
         """
         return self._Q
 
-    def learn(self, n_timesteps=1000):
-        """
-        Learn to solve the environment over given number of timesteps
-
-        Selects action, takes a step in the bandit and then updates
-        the parameters according to the reward received.
-
-        :param n_timesteps: number of steps to learn for
-        :type: int 
-        """
-        self._initial_run()
-        for t in range(n_timesteps - self._bandit.arms):
-            action = self.select_action(t)
-            reward = self._bandit.step(action)
-            self.update_params(action, reward)
-
     def select_action(self, t):
         """
         Select an action according to upper confidence bound action selction
@@ -269,14 +251,6 @@ class UCBPolicy(BanditPolicy):
         )
         self.action_hist.append(action)
         return action
-
-    def _initial_run(self):
-        """
-        Takes each action once to initialise Q valuess
-        """
-        for action in range(self._bandit.arms):
-            reward = self._bandit.step(action)
-            self.update_params(action, reward)
 
     def update_params(self, action, reward):
         """
@@ -311,7 +285,9 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
     """
 
     def __init__(self, bandit, temp=0.01):
-        super(SoftmaxActionSelectionPolicy, self).__init__(bandit)
+        super(SoftmaxActionSelectionPolicy, self).__init__(
+            bandit, requires_init_run=True
+        )
         self._temp = temp
         self._Q = np.zeros(bandit.arms)
 
@@ -347,22 +323,6 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         total = np.sum(exp)
         return exp / total
 
-    def learn(self, n_timesteps=1000):
-        """
-        Learn to solve the environment over given number of timesteps
-
-        Selects action, takes a step in the bandit and then updates
-        the parameters according to the reward received.
-
-        :param n_timesteps: number of steps to learn for
-        :type: int 
-        """
-        self._initial_run()
-        for t in range(n_timesteps - self._bandit.arms):
-            action = self.select_action(t)
-            reward = self._bandit.step(action)
-            self.update_params(action, reward)
-
     def select_action(self, t):
         """
         Select an action according by softmax action selection strategy
@@ -379,14 +339,6 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         action = np.random.choice(range(self._bandit.arms), p=probabilities)
         self.action_hist.append(action)
         return action
-
-    def _initial_run(self):
-        """
-        Takes each action once to initialise Q valuess
-        """
-        for action in range(self._bandit.arms):
-            reward = self._bandit.step(action)
-            self.update_params(action, reward)
 
     def update_params(self, action, reward):
         """
@@ -425,11 +377,11 @@ class BayesianUCBPolicy(BanditPolicy):
     :type c: float 
     """
 
-    def __init__(self, bandit, a=1, b=1, c=3):
+    def __init__(self, bandit, alpha=1, beta=1, c=3):
         super(BayesianUCBPolicy, self).__init__(bandit)
         self._c = c
-        self._a = a * np.ones(self._bandit.arms)
-        self._b = b * np.ones(self._bandit.arms)
+        self._a = alpha * np.ones(self._bandit.arms)
+        self._b = beta * np.ones(self._bandit.arms)
 
     @property
     def Q(self):
@@ -470,21 +422,6 @@ class BayesianUCBPolicy(BanditPolicy):
         :rtype: float
         """
         return self._c
-
-    def learn(self, n_timesteps=1000):
-        """
-        Learn to solve the environment over given number of timesteps
-
-        Selects action, takes a step in the bandit and then updates
-        the parameters according to the reward received.
-
-        :param n_timesteps: number of steps to learn for
-        :type: int 
-        """
-        for t in range(n_timesteps):
-            action = self.select_action(t)
-            reward = self._bandit.step(action)
-            self.update_params(action, reward)
 
     def select_action(self, t):
         """
@@ -572,21 +509,6 @@ class ThompsonSamplingPolicy(BanditPolicy):
         """
         return self._b
 
-    def learn(self, n_timesteps=1000):
-        """
-        Learn to solve the environment over given number of timesteps
-
-        Selects action, takes a step in the bandit and then updates
-        the parameters according to the reward received.
-
-        :param n_timesteps: number of steps to learn for
-        :type: int 
-        """
-        for t in range(n_timesteps):
-            action = self.select_action(t)
-            reward = self._bandit.step(action)
-            self.update_params(action, reward)
-
     def select_action(self, t):
         """
         Select an action according to Thompson Sampling
@@ -628,164 +550,117 @@ class ThompsonSamplingPolicy(BanditPolicy):
 
 
 if __name__ == "__main__":
+
+    def demo_policy(
+        policy_type,
+        bandit_type,
+        policy_args_collection,
+        bandit_args,
+        timesteps,
+        iterations,
+    ):
+        """ Plots rewards and regrets of a given policy on given bandit """
+
+        print(f"\nRunning {policy_type.__name__} on {bandit_type.__name__}")
+        fig, axs = plt.subplots(1, 2, figsize=(10, 4))
+        for policy_args in policy_args_collection:
+            print(f"Running with policy parameters: = {policy_args}")
+            average_reward = np.zeros(timesteps)
+            average_regret = np.zeros(timesteps)
+            for i in range(iterations):
+                bandit = bandit_type(**bandit_args)
+                policy = policy_type(bandit, **policy_args)
+                policy.learn(timesteps)
+                average_reward += np.array(policy.reward_hist) / iterations
+                average_regret += np.array(policy.regret_hist) / iterations
+            axs[0].plot(average_reward, label=f"{policy_args}")
+            axs[1].plot(average_regret, label=f"{policy_args}")
+        axs[0].legend()
+        axs[1].legend()
+        axs[0].set_title(f"{policy_type.__name__} Rewards on {bandit_type.__name__}")
+        axs[1].set_title(f"{policy_type.__name__} Regrets on {bandit_type.__name__}")
+        plt.savefig(f"{policy_type.__name__}-on-{bandit_type.__name__}.png")
+        plt.cla()
+
     import matplotlib.pyplot as plt
     from bandits import GaussianBandit, BernoulliBandit
 
     timesteps = 1000
     iterations = 2000
     arms = 10
-    show = False
+    bandit_args = {"arms": arms}
 
-    print(f"\nRunning Epsillon Greedy Policy on Gaussian Bandit")
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    for eps in [0, 0.01, 0.03, 0.1, 0.3]:
-        print(f"Running for eps = {eps}")
-        average_reward = np.zeros(timesteps)
-        average_regret = np.zeros(timesteps)
-        for i in range(iterations):
-            gaussian_bandit = GaussianBandit(arms)
-            eps_greedy_gaussian = EpsGreedyPolicy(gaussian_bandit, eps)
-            eps_greedy_gaussian.learn(timesteps)
-            average_reward += np.array(eps_greedy_gaussian.reward_hist) / iterations
-            average_regret += np.array(eps_greedy_gaussian.regret_hist) / iterations
-        axs[0].plot(average_reward, label=f"{eps}")
-        axs[1].plot(average_regret, label=f"{eps}")
-    axs[0].legend()
-    axs[1].legend()
-    axs[0].set_title("Eps Greedy Rewards on Gaussian Bandit")
-    axs[1].set_title("Eps Greedy Regrets on Gaussian Bandit")
-    plt.savefig("GaussianEpsGreedyPolicy.png")
-    if show:
-        plt.show()
-    plt.cla()
+    eps_vals = [0, 0.01, 0.03, 0.1, 0.3]
+    policy_args_collection = [{"eps": i} for i in eps_vals]
+    demo_policy(
+        EpsGreedyPolicy,
+        GaussianBandit,
+        policy_args_collection,
+        bandit_args,
+        timesteps,
+        iterations,
+    )
 
-    print(f"\nRunning UCB Policy on Gaussian Bandit")
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    for c in [0.5, 0.9, 1, 2]:
-        print(f"Running for c = {c}")
-        average_reward = np.zeros(timesteps)
-        average_regret = np.zeros(timesteps)
-        for i in range(iterations):
-            gaussian_bandit = GaussianBandit(arms)
-            ucb_gaussian = UCBPolicy(gaussian_bandit, c)
-            ucb_gaussian.learn(timesteps)
-            average_reward += np.array(ucb_gaussian.reward_hist) / iterations
-            average_regret += np.array(ucb_gaussian.regret_hist) / iterations
-        axs[0].plot(average_reward, label=f"{c}")
-        axs[1].plot(average_regret, label=f"{c}")
-    axs[0].legend()
-    axs[1].legend()
-    axs[0].set_title("UCB Rewards on Gaussian Bandit")
-    axs[1].set_title("UCB Regrets on Gaussian Bandit")
-    plt.savefig("GaussianUCBPolicy.png")
-    if show:
-        plt.show()
-    plt.cla()
+    c_vals = [0.5, 0.9, 1, 2]
+    policy_args_collection = [{"c": i} for i in c_vals]
+    demo_policy(
+        UCBPolicy,
+        GaussianBandit,
+        policy_args_collection,
+        bandit_args,
+        timesteps,
+        iterations,
+    )
 
-    print(f"\nRunning Softmax Selection Policy on Gaussian Bandit")
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    for temp in [0.01, 0.03, 0.1]:
-        print(f"Running for temp = {temp}")
-        average_reward = np.zeros(timesteps)
-        average_regret = np.zeros(timesteps)
-        for i in range(iterations):
-            gaussian_bandit = GaussianBandit(arms)
-            softmax_gaussian = SoftmaxActionSelectionPolicy(gaussian_bandit, temp)
-            softmax_gaussian.learn(timesteps)
-            average_reward += np.array(softmax_gaussian.reward_hist) / iterations
-            average_regret += np.array(softmax_gaussian.regret_hist) / iterations
-        axs[0].plot(average_reward, label=f"{temp}")
-        axs[1].plot(average_regret, label=f"{temp}")
-    axs[0].legend()
-    axs[1].legend()
-    axs[0].set_title("Softmax Selection Rewards on Gaussian Bandit")
-    axs[1].set_title("Softmax Selection Regrets on Gaussian Bandit")
-    plt.savefig("GaussianSoftmaxPolicy.png")
-    if show:
-        plt.show()
-    plt.cla()
+    temp_vals = [0.01, 0.03, 0.1]
+    policy_args_collection = [{"temp": i} for i in c_vals]
+    demo_policy(
+        SoftmaxActionSelectionPolicy,
+        GaussianBandit,
+        policy_args_collection,
+        bandit_args,
+        timesteps,
+        iterations,
+    )
 
-    print(f"\nRunning Epsillon Greedy Policy on Bernoulli Bandit")
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    for eps in [0, 0.01, 0.03, 0.1, 0.3]:
-        print(f"Running for eps = {eps}")
-        average_reward = np.zeros(timesteps)
-        average_regret = np.zeros(timesteps)
-        for i in range(iterations):
-            bernoulli_bandit = BernoulliBandit(arms)
-            eps_greedy_bernoulli = EpsGreedyPolicy(bernoulli_bandit, eps)
-            eps_greedy_bernoulli.learn(timesteps)
-            average_reward += np.array(eps_greedy_bernoulli.reward_hist) / iterations
-            average_regret += np.array(eps_greedy_bernoulli.regret_hist) / iterations
-        axs[0].plot(average_reward, label=f"{eps}")
-        axs[1].plot(average_regret, label=f"{eps}")
-    axs[0].legend()
-    axs[1].legend()
-    axs[0].set_title("Eps Greedy Rewards on Bernoulli Bandit")
-    axs[1].set_title("Eps Greedy Regrets on Bernoulli Bandit")
-    plt.savefig("BernoulliEpsGreedyPolicy.png")
-    if show:
-        plt.show()
-    plt.cla()
+    eps_vals = [0, 0.01, 0.03, 0.1, 0.3]
+    policy_args_collection = [{"eps": i} for i in eps_vals]
+    demo_policy(
+        EpsGreedyPolicy,
+        BernoulliBandit,
+        policy_args_collection,
+        bandit_args,
+        timesteps,
+        iterations,
+    )
 
-    print(f"\nRunning UCB Policy on Bernoulli Bandit")
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    for c in [0.5, 0.9, 1, 2]:
-        print(f"Running for c = {c}")
-        average_reward = np.zeros(timesteps)
-        average_regret = np.zeros(timesteps)
-        for i in range(iterations):
-            bernoulli_bandit = BernoulliBandit(arms)
-            ucb_bernoulli = UCBPolicy(bernoulli_bandit, c)
-            ucb_bernoulli.learn(timesteps)
-            average_reward += np.array(ucb_bernoulli.reward_hist) / iterations
-            average_regret += np.array(ucb_bernoulli.regret_hist) / iterations
-        axs[0].plot(average_reward, label=f"{c}")
-        axs[1].plot(average_regret, label=f"{c}")
-    axs[0].legend()
-    axs[1].legend()
-    axs[0].set_title("UCB Rewards on Bernoulli Bandit")
-    axs[1].set_title("UCB Regrets on Bernoulli Bandit")
-    plt.savefig("BernoulliUCBPolicy.png")
-    if show:
-        plt.show()
-    plt.cla()
+    c_vals = [0.5, 0.9, 1, 2]
+    policy_args_collection = [{"c": i} for i in c_vals]
+    demo_policy(
+        UCBPolicy,
+        GaussianBandit,
+        policy_args_collection,
+        bandit_args,
+        timesteps,
+        iterations,
+    )
 
-    print(f"\nRunning Bayesian UCB Policy on Bernoulli Bandit")
-    average_reward = np.zeros(timesteps)
-    average_regret = np.zeros(timesteps)
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    for i in range(iterations):
-        bernoulli_bandit = BernoulliBandit(arms)
-        bayesian_ucb_bernoulli = BayesianUCBPolicy(bernoulli_bandit)
-        bayesian_ucb_bernoulli.learn(timesteps)
-        average_reward += np.array(bayesian_ucb_bernoulli.reward_hist) / iterations
-        average_regret += np.array(bayesian_ucb_bernoulli.regret_hist) / iterations
-    axs[0].plot(average_reward)
-    axs[0].set_title("Bayesian UCB Rewards on Bernoulli Bandit")
-    axs[1].plot(average_regret)
-    axs[1].set_title("Bayesian UCB Regrets on Bernoulli Bandit")
-    plt.savefig("BernoulliBayesianUCBPolicy.png")
-    if show:
-        plt.show()
-    plt.cla()
+    policy_args_collection = [{"alpha": 1, "beta": 1, "c": 3}]
+    demo_policy(
+        BayesianUCBPolicy,
+        BernoulliBandit,
+        policy_args_collection,
+        bandit_args,
+        timesteps,
+        iterations,
+    )
 
-    print(f"\nRunning Thompson Sampling Policy on Bernoulli Bandit")
-    average_reward = np.zeros(timesteps)
-    average_regret = np.zeros(timesteps)
-    fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-    for i in range(iterations):
-        bernoulli_bandit = BernoulliBandit(arms)
-        thompson_sampling_bernoulli = ThompsonSamplingPolicy(bernoulli_bandit)
-        thompson_sampling_bernoulli.learn(timesteps)
-        average_reward += np.array(thompson_sampling_bernoulli.reward_hist) / iterations
-        average_regret += np.array(thompson_sampling_bernoulli.regret_hist) / iterations
-    print(average_regret)
-    axs[0].plot(average_reward)
-    axs[0].set_title("Thompson Sampling Rewards on Bernoulli Bandit")
-    axs[1].plot(average_regret)
-    axs[1].set_title("Thompson Sampling Regrets on Bernoulli Bandit")
-    plt.savefig("BernoulliThompsonSamplingPolicy.png")
-    if show:
-        plt.show()
-    plt.cla()
+    policy_args_collection = [{"alpha": 1, "beta": 1}]
+    demo_policy(
+        ThompsonSamplingPolicy,
+        BernoulliBandit,
+        policy_args_collection,
+        bandit_args,
+        timesteps,
+        iterations,
+    )
