@@ -19,4 +19,5 @@ from genrl.deep.common import (  # noqa
     set_seeds,
     OffPolicyTrainer,
     OnPolicyTrainer,
+    RolloutBuffer,
 )

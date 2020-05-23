@@ -1,6 +1,7 @@
 import os
 import random
 
+import gym
 import torch
 import numpy as np
 import torch.nn as nn
@@ -105,3 +106,15 @@ def set_seeds(seed, env=None):
     random.seed(seed)
     if env is not None:
         env.seed(seed)
+
+
+def get_obs_action_shape(obs, action):
+    """
+    """
+    if isinstance(obs, gym.spaces.Discrete):
+        return 1, 1
+    elif isinstance(obs, gym.spaces.Box):
+        return obs.shape[0], int(np.prod(action.shape))
+    else:
+        raise NotImplementedError
+    

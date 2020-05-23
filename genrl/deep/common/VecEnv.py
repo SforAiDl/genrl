@@ -105,33 +105,36 @@ class SerialVecEnv(VecEnv):
 
     def __init__(self, envs, n_envs=2):
         super(SerialVecEnv, self).__init__(envs, n_envs)
+        self.states = np.zeros((self.n_envs, self.observation_space.shape[0]))
+        self.rewards = np.zeros((self.n_envs))
+        self.dones = np.zeros((self.n_envs))
+        self.infos = [{} for _ in range(self.n_envs)]
 
     def step(self, actions):
         """
         Steps through all envs serially
         :param actions: (iterable of ints/floats) Actions from the model
         """
-        states, rewards, dones, infos = [], [], [], []
+        # states, rewards, dones, infos = [], [], [], []
         for i, env in enumerate(self.envs):
             obs, reward, done, info = env.step(actions[i])
             if done:
               obs = env.reset()
-            states.append(obs)
-            rewards.append(reward)
-            dones.append(done)
-            infos.append(info)
+            self.states[i] = obs
+            self.rewards[i] = reward
+            self.dones[i] = done
+            self.infos[i] = info
 
-        return states, rewards, dones, infos
+        return self.states, self.rewards, self.dones, self.infos
 
     def reset(self):
         """
         Resets all envs
         """
-        states = []
-        for env in self.envs:
-            states.append(env.reset())
+        for i, env in enumerate(self.envs):
+            self.states[i] = env.reset()
 
-        return states
+        return self.states
 
     def close(self):
         """

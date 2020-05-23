@@ -32,3 +32,4 @@ from genrl.deep.common.trainer import (
     OffPolicyTrainer,
     OnPolicyTrainer,
 )
+from genrl.deep.common.rollout_storage import RolloutBuffer
