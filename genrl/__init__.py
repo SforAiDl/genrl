@@ -13,3 +13,4 @@ from genrl.classical import (
     SARSA,
     QLearning,
 )
+from genrl.environments import GymEnv, AtariEnv
