@@ -32,7 +32,8 @@ class A2C:
     :param layers: Number of neurons in hidden layers
     :param noise: Noise function to use
     :param noise_std: Standard deviation for action noise
-    :param tensorboard_log: The log location for Tensorboard(if None, no logging)
+    :param tensorboard_log: The log location for Tensorboard\
+(if None, no logging)
     :param seed: Seed for reproducing results
     :param render: True if environment is to be rendered, else False
     :param device: Device to use for Tensor operation ['cpu', 'cuda']
@@ -68,7 +69,7 @@ class A2C:
         lr_actor=0.01,
         lr_critic=0.1,
         num_episodes=100,
-        timesteps_per_actorbatch=4000, 
+        timesteps_per_actorbatch=4000,
         max_ep_len=1000,
         layers=(32, 32),
         noise=None,
@@ -113,11 +114,10 @@ class A2C:
         if seed is not None:
             set_seeds(seed, self.env)
 
-        # Setup tensorboard writer 
+        # Setup tensorboard writer
         self.writer = None
         if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
-            
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
@@ -135,7 +135,8 @@ class A2C:
 
         if self.noise is not None:
             self.noise = self.noise(
-                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+                np.zeros_like(action_dim),
+                self.noise_std * np.ones_like(action_dim)
             )
 
         self.ac = get_model("ac", self.network_type)(
@@ -180,8 +181,8 @@ class A2C:
         :param deterministic: Action selection type
         :type state: int, float, ...
         :type deterministic: bool
-        :returns: Action based on the state and epsilon value 
-        :rtype: int, float, ... 
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
         """
         state = torch.as_tensor(state).float().to(self.device)
 
@@ -205,7 +206,8 @@ class A2C:
 
     def get_traj_loss(self):
         """
-        Get trajectory of agent to calculate discounted rewards and calculate losses
+        Get trajectory of agent to calculate discounted rewards and \
+calculate losses
         """
         discounted_reward = 0
         returns = []
@@ -250,7 +252,7 @@ class A2C:
         if self.tensorboard_log:
             self.writer.add_scalar("loss/actor", self.actor_loss, episode)
             self.writer.add_scalar("loss/critic", self.actor_loss, episode)
-        
+
         self.actor_optimizer.zero_grad()
         actor_loss.backward()
         self.actor_optimizer.step()
@@ -279,16 +281,19 @@ class A2C:
 
                     if self.render:
                         self.env.render()
-                    
+
                     self.traj_reward.append(reward)
 
                     if done:
                         steps.append(t)
                         break
-                
-                episode_reward += np.sum(self.traj_reward) / self.actor_batch_size
+
+                episode_reward += (
+                    np.sum(self.traj_reward)
+                    / self.actor_batch_size
+                )
                 self.get_traj_loss()
-        
+
             self.update(episode)
 
             if episode % 5 == 0:
@@ -303,7 +308,7 @@ class A2C:
                     self.checkpoint = self.get_hyperparams()
                     self.save(self, episode)
                     print("Saved current model")
-        
+
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
@@ -312,7 +317,8 @@ class A2C:
         """
         Helper function to extract the observation and action space
 
-        :returns: Observation space, Action Space and whether the action space is discrete or not 
+        :returns: Observation space, Action Space and whether the action \
+space is discrete or not
         :rtype: int, float, ... ; int, float, ... ; bool
         """
         state_dim = self.env.observation_space.shape[0]

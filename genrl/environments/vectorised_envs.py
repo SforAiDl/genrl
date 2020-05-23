@@ -6,6 +6,16 @@ from abc import ABC, abstractmethod
 
 
 def worker(parent_conn, child_conn, env):
+    """
+    Worker class to facilitate multiprocessing
+
+    :param parent_conn: Parent connection of Pipe
+    :param child_conn: Child connection of Pipe
+    :param env: Gym environment we need multiprocessing for
+    :type parent_conn: Multiprocessing Pipe Connection
+    :type child_conn: Multiprocessing Pipe Connection
+    :type env: Gym Environment
+    """
     parent_conn.close()
     while True:
         cmd, data = child_conn.recv()
@@ -30,6 +40,16 @@ def worker(parent_conn, child_conn, env):
 
 
 def create_envs(env_name, n_envs):
+    """
+    Helper function to return list of environments
+
+    :param env_name: Name of environment to be vectorised
+    :param n_envs: Number of environments per VecEnv
+    :type env_name: string
+    :type n_envs: int
+    :returns: Multiple of the same gym environment
+    :rtype: list
+    """
     envs = []
     for i in range(n_envs):
         envs.append(gym.make(env_name))
@@ -39,8 +59,11 @@ def create_envs(env_name, n_envs):
 class VecEnv(ABC):
     """
     Constructs a wrapper for serial execution through envs.
-    :param env: (str)
-    :param n_envs: (int) Number of envs.
+
+    :param env: Gym environment to be vectorised
+    :param n_envs: Number of environments
+    :type env: Gym Environment
+    :type n_envs: int
     """
 
     def __init__(self, env, n_envs=2):
@@ -50,18 +73,33 @@ class VecEnv(ABC):
         self.action_space = self.env.action_space
 
     def __iter__(self):
+        """
+        Iterator object to iterate through each environment in vector
+        """
         return (env for env in self.envs)
 
     def sample(self):
+        """
+        Return samples of actions from each environment
+        """
         return [env.action_space.sample() for env in self.envs]
 
     def action_spaces(self):
+        """
+        Return action spaces of each environment
+        """
         return [env.action_space for env in self.envs]
 
     def __getitem__(self, index):
+        """
+        Return environment at the given index
+        """
         return self.envs[index]
 
     def seed(self, seed):
+        """
+        Set seed for reproducability in all environments
+        """
         [env.seed(seed) for env in self.envs]
 
     @abstractmethod
@@ -84,8 +122,11 @@ class VecEnv(ABC):
 class SerialVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
-    :param envs: (str)
-    :param n_envs: (int) Number of envs.
+
+    :param env: Gym environment to be vectorised
+    :param n_envs: Number of environments
+    :type env: Gym Environment
+    :type n_envs: int
     """
 
     def __init__(self, envs, n_envs=2):
@@ -94,7 +135,9 @@ class SerialVecEnv(VecEnv):
     def step(self, actions):
         """
         Steps through all envs serially
-        :param actions: (iterable of ints/floats) Actions from the model
+
+        :param actions: Actions from the model
+        :type actions: Iterable of ints/floats
         """
         states, rewards, dones, infos = [], [], [], []
         for i, env in enumerate(self.envs):
@@ -131,10 +174,11 @@ class SerialVecEnv(VecEnv):
 
     def render(self, mode="human"):
         """
-        Renders all envs in a tiles format similar to baselines.
-        :param mode: (str) Can either be 'human' or 'rgb_array'.
-            Displays tiled images in 'human'
-            and returns tiled images in 'rgb_array'
+        Renders all envs in a tiles format similar to baselines
+
+        :param mode: Can either be 'human' or 'rgb_array'. Displays tiled \
+images in 'human' and returns tiled images in 'rgb_array'
+        :type mode: string
         """
         images = np.asarray(self.images())
         N, H, W, C = images.shape
@@ -157,8 +201,11 @@ class SerialVecEnv(VecEnv):
 class SubProcessVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
-    :param env: (str) Environment Name. Should be registered with OpenAI Gym.
-    :param n_envs: (int) Number of envs.
+
+    :param env: Environment Name. Should be registered with OpenAI Gym.
+    :param n_envs: Number of environments
+    :type env: string
+    :type n_envs: int
     """
 
     def __init__(self, env, n_envs=2):
@@ -179,17 +226,28 @@ class SubProcessVecEnv(VecEnv):
             child_conn.close()
 
     def get_spaces(self):
+        """
+        Returns state and action spaces of environments
+        """
         self.parent_conns[0].send(("get_spaces", None))
         observation_space, action_space = self.parent_conns[0].recv()
         return (observation_space, action_space)
 
     def seed(self, seed=None):
+        """
+        Sets seed for reproducability
+        """
         for idx, parent_conn in enumerate(self.parent_conns):
             parent_conn.send(("seed", seed + idx))
 
         return [parent_conn.recv() for parent_conn in self.parent_conns]
 
     def reset(self):
+        """
+        Resets environments
+
+        :returns: States after environment reset
+        """
         for parent_conn in self.parent_conns:
             parent_conn.send(("reset", None))
 
@@ -197,6 +255,12 @@ class SubProcessVecEnv(VecEnv):
         return obs
 
     def step(self, actions):
+        """
+        Steps through environments serially
+
+        :param actions: Actions from the model
+        :type actions: Iterable of ints/floats
+        """
         for parent_conn, action in zip(self.parent_conns, actions):
             parent_conn.send(("step", action))
         self.waiting = True
@@ -211,6 +275,9 @@ class SubProcessVecEnv(VecEnv):
         return observations, rewards, dones, infos
 
     def close(self):
+        """
+        Closes all environments and processes
+        """
         if self.waiting:
             for parent_conn in self.parent_conns:
                 parent_conn.recv()
@@ -221,6 +288,16 @@ class SubProcessVecEnv(VecEnv):
 
 
 def venv(env, n_envs, parallel=False):
+    """
+    Chooses the kind of Vector Environment that is required
+
+    :param env: Gym environment to be vectorised
+    :param n_envs: Number of environments
+    :param parallel: True if we want environments to run parallely and \
+subprocesses, False if we want environments to run serially one after the other
+    :returns: Vector Environment
+    :rtype: VecEnv
+    """
     if parallel:
         return SubProcessVecEnv(env, n_envs)
     else:
