@@ -30,7 +30,7 @@ Can use LZ4 compression to optimizer memory usage.
         else:
             frames = self._frames
         
-        return np.concatenate(frames, axis=-1)
+        return np.stack(frames, axis=0)
 
     def __getitem__(self, index):
         return self.__array__()[index]
@@ -72,13 +72,15 @@ class FrameStack(Wrapper):
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
         self._frames.append(observation)
-        return self._get_state(), reward, done, info
+        return self._get_obs(), reward, done, info
 
     def reset(self):
         observation = self.env.reset()
         for _ in range(self.framestack):
             self._frames.append(observation)
-        return self._get_state()
+        return self._get_obs()
 
-    def _get_state(self):
-        return np.array(LazyFrames(list(self._frames)))
+    def _get_obs(self):
+        return np.array(
+            LazyFrames(list(self._frames))
+        )[np.newaxis, ...]

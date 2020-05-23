@@ -61,22 +61,22 @@ class CNNValue(BaseValue):
 
     :param state_dim: State dimension of environment
     :param action_dim: Action dimension of environment
-    :param history_length: Length of history of states
+    :param framestack: Number of previous frames to stack together
     :param val_type: Specifies type of value function: \
 "V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
     :param hidden: Sizes of hidden layers
     :type state_dim: int
     :type action_dim: int
-    :type history_length: int
+    :type framestack: int
     :type val_type: string
     :type hidden: tuple or list
     """
-    def __init__(self, action_dim, history_length=4, val_type="Qs", fc_layers=(256,)):
+    def __init__(self, action_dim, framestack=4, val_type="Qs", fc_layers=(256,)):
         super(CNNValue, self).__init__()
 
         self.action_dim = action_dim
 
-        self.conv, output_size = cnn((history_length, 16, 32))
+        self.conv, output_size = cnn((framestack, 16, 32))
 
         self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
 

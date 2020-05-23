@@ -5,8 +5,9 @@ class BaseWrapper(ABC):
     """
     Base class for all wrappers
     """
-    def __init__(self, env):
-        pass
+    def __init__(self, env, batch_size=None):
+        self.env = env
+        self._batch_size = batch_size
 
     # TODO(zeus3101) Add functionality for VecEnvs
 
@@ -15,7 +16,7 @@ class BaseWrapper(ABC):
         """
         The number of batches trained per update
         """
-        return None
+        return self._batch_size
 
     # TODO(zeus3101) Get get_state, set_state, get_info, get_done methods
 
