@@ -65,19 +65,19 @@ class DuelingDQNValueCNN(nn.Module):
     Class for Dueling DQN's CNN Value function 
 
     :param action_dim: Action space
-    :param history_length: History length that you want
+    :param framestack: Number of frames you're considering in your history
     :param fc_layers: no of units in fc layers 
     :type action_dim: int, float, ...
-    :type history_length: int
+    :type framestack: int
     :type fc_layers: tuple
     """
 
-    def __init__(self, action_dim, history_length=4, fc_layers=(256,)):
+    def __init__(self, action_dim, framestack=4, fc_layers=(256,)):
         super(DuelingDQNValueCNN, self).__init__()
 
         self.action_dim = action_dim
 
-        self.conv, output_size = cnn((history_length, 16, 32))
+        self.conv, output_size = cnn((framestack, 16, 32))
 
         self.advantage = mlp([output_size] + list(fc_layers) + [action_dim])
         self.value = mlp([output_size] + list(fc_layers) + [1])
@@ -200,21 +200,21 @@ class NoisyDQNValueCNN(nn.Module):
     Class for Dueling DQN's CNN Value function
 
     :param action_dim: Action space
-    :param history_length: History length that you want
+    :param framestack: Number of frames you're considering in your history
     :param fc_layers: no of units in fc layers
     :param noisy_layers: no of units in noisy layers
     :type action_dim: int, float, ...
-    :type history_length: int
+    :type framestack: int
     :type fc_layers: tuple  
     :type noisy_layers: tuple
     """
 
     def __init__(
-        self, action_dim, history_length=4, fc_layers=(128,), noisy_layers=(128, 128)
+        self, action_dim, framestack=4, fc_layers=(128,), noisy_layers=(128, 128)
     ):
         super(NoisyDQNValueCNN, self).__init__()
 
-        self.conv, output_size = cnn((history_length, 16, 32))
+        self.conv, output_size = cnn((framestack, 16, 32))
 
         self.model = noisy_mlp(
             [output_size] + list(fc_layers), list(noisy_layers) + [action_dim]
@@ -286,12 +286,12 @@ class CategoricalDQNValueCNN(nn.Module):
 
     :param action_dim: Action space
     :param num_atoms: Number of atoms in the Categorical network
-    :param history_length: History length that you want
+    :param framestack: Number of frames you're considering in your history
     :param fc_layers: no of units in fc layers
     :param noisy_layers: no of units in noisy layers
     :type action_dim: int, float, ...
     :type num_atoms: int
-    :type history_length: int
+    :type framestack: int
     :type fc_layers: tuple  
     :type noisy_layers: tuple
     """
@@ -300,7 +300,7 @@ class CategoricalDQNValueCNN(nn.Module):
         self,
         action_dim,
         num_atoms,
-        history_length=4,
+        framestack=4,
         fc_layers=(128, 128),
         noisy_layers=(128, 512),
     ):
@@ -309,7 +309,7 @@ class CategoricalDQNValueCNN(nn.Module):
         self.action_dim = action_dim
         self.num_atoms = num_atoms
 
-        self.conv, output_size = cnn((history_length, 16, 32))
+        self.conv, output_size = cnn((framestack, 16, 32))
         self.model = noisy_mlp(
             [output_size] + list(fc_layers),
             list(noisy_layers) + [self.action_dim * self.num_atoms],

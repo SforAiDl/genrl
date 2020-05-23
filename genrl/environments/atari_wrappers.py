@@ -33,7 +33,7 @@ action before starting the training process
 
 DEFAULT_ATARI_WRAPPERS = [AtariPreprocessing, FrameStack]
 
-def Atari(
+def AtariEnv(
     env_id,
     wrapper_list=DEFAULT_ATARI_WRAPPERS
 ):

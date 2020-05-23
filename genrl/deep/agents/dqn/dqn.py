@@ -29,7 +29,7 @@ from genrl.deep.agents.dqn.utils import (
     CategoricalDQNValueCNN,
 )
 
-from genrl.environments import Atari
+from genrl.environments import AtariEnv, GymEnv
 
 
 class DQN:
@@ -513,11 +513,6 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = Atari("Pong-v0")
-    algo = DQN("cnn", env, epochs=20)
-    import time
-    start = time.time()
+    env = GymEnv("CartPole-v0")
+    algo = DQN("mlp", env)
     algo.learn()
-    end = time.time()
-    print(end-start)
-

@@ -72,3 +72,16 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         Closes environment
         """
         self.env.close()
+
+
+def GymEnv(env_id):
+    """
+    Function to apply wrappers for all regular Gym envs by Trainer class
+
+    :param env: Environment Name
+    :type env: string
+    """
+    gym_env = gym.make(env_id)
+    env = GymWrapper(gym_env)
+
+    return env
