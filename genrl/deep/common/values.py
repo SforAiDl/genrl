@@ -5,6 +5,22 @@ from .utils import mlp, cnn
 def _get_val_model(
     arch, val_type, state_dim, hidden, action_dim=None,
 ):
+    """
+    Returns Neural Network given specifications
+
+    :param arch: Specifies type of architecture "mlp" for MLP layers
+    :param val_type: Specifies type of value function: \
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param state_dim: State dimensions of environment
+    :param action_dim: Action dimensions of environment
+    :param hidden: Sizes of hidden layers
+    :type arch: string
+    :type val_type: string
+    :type state_dim: string
+    :type action_dim: int
+    :type hidden: tuple or list
+    :returns: Neural Network model to be used for the Value function
+    """
     if val_type == "V":
         return arch([state_dim] + list(hidden) + [1])
     elif val_type == "Qsa":
@@ -17,12 +33,17 @@ def _get_val_model(
 
 class MlpValue(BaseValue):
     """
-    MLP Value Function
-    :param state_dim: (int) state dimension of environment
-    :param action_dim: (int) action dimension of environment
-    :param val_type: (str) type of value function.
-        'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
-    :param hidden: (tuple or list) sizes of hidden layers
+    MLP Value Function class
+
+    :param state_dim: State dimensions of environment
+    :param action_dim: Action dimensions of environment
+    :param val_type: Specifies type of value function: \
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param hidden: Sizes of hidden layers
+    :type state_dim: int
+    :type action_dim: int
+    :type val_type: string
+    :type hidden: tuple or list
     """
 
     def __init__(self, state_dim, action_dim=None, val_type="V", hidden=(32, 32)):
@@ -36,15 +57,20 @@ class MlpValue(BaseValue):
 
 class CNNValue(BaseValue):
     """
-    CNN Value
-        :param state_dim: (int) state dimension of environment
-        :param action_dim: (int) action dimension of environment
-        :param history_length: (int) length of history of states
-        :param val_type: (str) type of value function.
-            'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
-        :param hidden: (tuple or list) sizes of hidden layers
-    """
+    CNN Value Function class
 
+    :param state_dim: State dimension of environment
+    :param action_dim: Action dimension of environment
+    :param history_length: Length of history of states
+    :param val_type: Specifies type of value function: \
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param hidden: Sizes of hidden layers
+    :type state_dim: int
+    :type action_dim: int
+    :type history_length: int
+    :type val_type: string
+    :type hidden: tuple or list
+    """
     def __init__(self, action_dim, history_length=4, val_type="Qs", fc_layers=(256,)):
         super(CNNValue, self).__init__()
 
@@ -65,6 +91,13 @@ value_registry = {"mlp": MlpValue, "cnn": CNNValue}
 
 
 def get_value_from_name(name_):
+    """
+    Gets the value function given the name of the value function
+
+    :param name_: Name of the value function needed
+    :type name_: string
+    :returns: Value function
+    """
     if name_ in value_registry:
         return value_registry[name_]
     raise NotImplementedError
