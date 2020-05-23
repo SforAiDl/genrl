@@ -258,26 +258,6 @@ many steps
         self.start_update = start_update
         self.network_type = self.agent.network_type
 
-        if self.network_type == "cnn":
-            if self.transform is None:
-                self.transform = transforms.Compose(
-                    [
-                        transforms.ToPILImage(),
-                        transforms.Grayscale(),
-                        transforms.Resize((110, 84)),
-                        transforms.CenterCrop(84),
-                        transforms.ToTensor(),
-                    ]
-                )
-
-            self.state_history = deque(
-                [
-                    self.transform(self.env.observation_space.sample())
-                    for _ in range(self.history_length)
-                ],
-                maxlen=self.history_length,
-            )
-
     def train(self):
         """
         Run training
@@ -292,18 +272,11 @@ many steps
         if self.agent.__class__.__name__ == "DQN":
             self.agent.update_target_model()
 
-            if self.network_type == "cnn":
-                self.state_history.append(self.transform(state))
-                phi_state = torch.stack(list(self.state_history), dim=1)
-
         for t in range(total_steps):
             if self.agent.__class__.__name__ == "DQN":
                 self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
 
-                if self.network_type == "cnn":
-                    action = self.agent.select_action(phi_state)
-                else:
-                    action = self.agent.select_action(state)
+                action = self.agent.select_action(state)
 
             else:
                 if t < self.warmup_steps:
@@ -323,14 +296,8 @@ many steps
 
             done = False if episode_len == self.max_ep_len else done
 
-            if self.agent.__class__.__name__ == "DQN" and self.network_type == "cnn":
-                self.state_history.append(self.transform(next_state))
-                phi_next_state = torch.stack(list(self.state_history), dim=1)
-                self.buffer.push((phi_state, action, reward, phi_next_state, done))
-                phi_state = phi_next_state
-            else:
-                self.buffer.push((state, action, reward, next_state, done))
-                state = next_state
+            self.buffer.push((state, action, reward, next_state, done))
+            state = next_state
 
             if done or (episode_len == self.max_ep_len):
                 if "noise" in self.agent.__dict__ and self.agent.noise is not None:

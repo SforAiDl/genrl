@@ -124,7 +124,7 @@ class TestAlgos:
         shutil.rmtree("./logs")
 
     def test_dqn_cnn(self):
-        env = gym.make("Breakout-v0")
+        env = gym.make("Pong-v0")
 
         # DQN
         algo = DQN("cnn", env)
