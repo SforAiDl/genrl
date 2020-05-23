@@ -9,6 +9,13 @@ class LazyFrames(object):
     """
     Efficient data structure to save each frame only once. \
 Can use LZ4 compression to optimizer memory usage.
+
+    :param frames: List of frames that needs to converted \
+to a LazyFrames data structure
+    :param compress: True if we want to use LZ4 compression \
+to conserve memory usage
+    :type frames: collections.deque
+    :type compress: boolean
     """
     def __init__(self, frames, compress=False):
         if compress:
@@ -18,6 +25,9 @@ Can use LZ4 compression to optimizer memory usage.
         self.compress = compress
 
     def __array__(self):
+        """
+        Makes the LazyFrames object convertible to a NumPy array
+        """
         if self.compress:
             from lz4.block import decompress
             frames = [
@@ -33,22 +43,46 @@ Can use LZ4 compression to optimizer memory usage.
         return np.stack(frames, axis=0)
 
     def __getitem__(self, index):
+        """
+        Return frame at index
+        """
         return self.__array__()[index]
 
     def __len__(self):
+        """
+        Return length of data structure
+        """
         return len(self.__array__())
 
     def __eq__(self, other):
+        """
+        Compares if data structure is equivalent to another object
+
+        :param other: Other object for comparison
+        :type other: object
+        """
         return self.__array__() == other
 
     @property
     def shape(self):
+        """
+        Returns dimensions of other object
+        """
         return self.__array__().shape
 
 
 class FrameStack(Wrapper):
     """
-    Wrapper to stack the last 4 observations of agent efficiently
+    Wrapper to stack the last few(4 by default) observations of \
+agent efficiently
+
+    :param env: Environment to be wrapped
+    :param framestack: Number of frames to be stacked
+    :param compress: True if we want to use LZ4 compression \
+to conserve memory usage
+    :type env: Gym Environment
+    :type framestack: int
+    :type compress: bool
     """
     def __init__(self, env, framestack=4, compress=False):
         super(FrameStack, self).__init__(env)
@@ -70,17 +104,37 @@ class FrameStack(Wrapper):
         )
 
     def step(self, action):
+        """
+        Steps through environment
+
+        :param action: Action taken by agent
+        :type action: NumPy Array
+        :returns: Next state, reward, done, info
+        :rtype: NumPy Array, float, boolean, dict
+        """
         observation, reward, done, info = self.env.step(action)
         self._frames.append(observation)
         return self._get_obs(), reward, done, info
 
     def reset(self):
+        """
+        Resets environment
+
+        :returns: Initial state of environment
+        :rtype: NumPy Array
+        """
         observation = self.env.reset()
         for _ in range(self.framestack):
             self._frames.append(observation)
         return self._get_obs()
 
     def _get_obs(self):
+        """
+        Gets observation given deque of frames
+
+        :returns: Past few frames
+        :rtype: NumPy Array
+        """
         return np.array(
             LazyFrames(list(self._frames))
         )[np.newaxis, ...]

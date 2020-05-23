@@ -41,7 +41,9 @@ def AtariEnv(
     Function to apply wrappers for all Atari envs by Trainer class
 
     :param env: Environment Name
+    :param wrapper_list: List of wrappers to use on the environment
     :type env: string
+    :type wrapper_list: list or tuple
     """
     gym_env = gym.make(env_id)
 

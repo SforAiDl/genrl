@@ -72,5 +72,6 @@ class BaseWrapper(ABC):
     def __exit__(self, exec_type, exec_value, exec_traceback):
         """
         Allows environment to be called using with statement
+        Arguments are necessary to make the method callable
         """
         self.close()
