@@ -1,7 +1,6 @@
 import gym
 
 from genrl.environments import BaseWrapper
-from genrl.deep.common import venv
 
 
 class GymWrapper(BaseWrapper, gym.Wrapper):
@@ -16,20 +15,18 @@ serially or parallelly
     :type n_envs: None, int
     :type parallel: boolean
     """
-    def __init__(self, env, n_envs=None, parallel=False):
-        super(GymWrapper, self).__init__(env, n_envs)
-        if self._vec:
-            self.env = venv(env, n_envs, parallel)
-        else:
-            self.env = gym.make(env)
-        self.observation_space = self.env.observation_space
-        self.action_space = self.env.action_space
+    # TODO(zeus3101) Add functionality for VecEnvs
+    def __init__(self, env):
+        super(GymWrapper, self).__init__(env)
+        self._env = env
+        self.observation_space = self._env.observation_space
+        self.action_space = self._env.action_space
 
     def __getattr__(self, name):
         """
         All other calls would go to base env
         """
-        env = super(GymWrapper, self).__getattribute__('env')
+        env = super(GymWrapper, self).__getattribute__('_env')
         return getattr(env, name)
 
     # TODO(zeus3101) Get get_state, set_state, get_info, get_done methods
@@ -42,7 +39,7 @@ serially or parallelly
 Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         :type mode: string
         """
-        self.env.render(mode=mode)
+        self._env.render(mode=mode)
 
     def seed(self, seed=None):
         """
@@ -51,7 +48,7 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         :param seed: Value of seed
         :type seed: int
         """
-        self.env.seed(seed)
+        self._env.seed(seed)
 
     def step(self, action):
         """
@@ -60,16 +57,18 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         :param action: Action taken by agent
         :type action: NumPy array
         """
-        return self.env.step(action)
+        return self._env.step(action)
 
     def reset(self):
         """
         Resets environment
+
+        :returns: Initial state
         """
-        return self.env.reset()
-    
+        return self._env.reset()
+
     def close(self):
         """
         Closes environment
         """
-        self.env.close()
+        self._env.close()

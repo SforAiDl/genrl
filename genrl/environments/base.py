@@ -1,10 +1,14 @@
-from gym import Wrapper
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 
-class BaseWrapper(Wrapper):
-    def __init__(self, env, n_envs=None):
-        self._vec = n_envs is not None
+class BaseWrapper(ABC):
+    """
+    Base class for all wrappers
+    """
+    def __init__(self, env):
+        pass
+
+    # TODO(zeus3101) Add functionality for VecEnvs
 
     @property
     def batch_size(self):
@@ -12,39 +16,50 @@ class BaseWrapper(Wrapper):
         The number of batches trained per update
         """
         return None
-    
-    @property
-    def is_vec(self):
-        return self._vec
 
-    @abstractmethod
-    def observation_space(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def action_space(self):
-        raise NotImplementedError
-
-    # TODO(zeus3101) Add get_state and set_state methods
+    # TODO(zeus3101) Get get_state, set_state, get_info, get_done methods
 
     @abstractmethod
     def seed(self, seed=None):
+        """
+        Set seed for environment
+        """
         raise NotImplementedError
 
     @abstractmethod
     def render(self):
+        """
+        Render the environment
+        """
         raise NotImplementedError
-    
+
     @abstractmethod
     def step(self, action):
+        """
+        Step through the environment
+
+        Must be overriden by subclasses
+        """
         raise NotImplementedError
 
     @abstractmethod
     def reset(self):
+        """
+        Resets state of environment
+
+        Must be overriden by subclasses
+
+        :returns: Initial state
+        """
         raise NotImplementedError
 
     @abstractmethod
     def close(self):
+        """
+        Closes environment and performs any other cleanup
+
+        Must be overridden by subclasses
+        """
         raise NotImplementedError
 
     def __enter__(self):

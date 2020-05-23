@@ -9,7 +9,7 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 from copy import deepcopy
 
-from ...common import (
+from genrl.deep.common import (
     ReplayBuffer,
     PrioritizedBuffer,
     get_model,
@@ -20,7 +20,7 @@ from ...common import (
     set_seeds,
 )
 
-from .utils import (
+from genrl.deep.agents.dqn.utils import (
     DuelingDQNValueMlp,
     DuelingDQNValueCNN,
     NoisyDQNValue,
@@ -28,6 +28,8 @@ from .utils import (
     CategoricalDQNValue,
     CategoricalDQNValueCNN,
 )
+
+from genrl.environments import Atari
 
 
 class DQN:
@@ -539,6 +541,10 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = gym.make("Pong-v0")
-    algo = DQN("cnn", env)
+    env = Atari("Pong-v0")
+    algo = DQN("cnn", env, epochs=5)
+    
+    import time
+    start = time.time()
     algo.learn()
+    end = time.time()
