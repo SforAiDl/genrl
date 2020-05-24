@@ -151,7 +151,7 @@ class DDPG:
         for param in self.ac_target.parameters():
             param.requires_grad = False
 
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
@@ -171,7 +171,7 @@ class DDPG:
         )
 
     def get_q_loss(self, state, action, reward, next_state, done):
-        q = self.ac.critic.get_value(torch.cat([state, action], dim=-1)).unsqueeze(1)
+        q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
             q_pi_target = self.ac_target.get_value(
@@ -179,7 +179,7 @@ class DDPG:
                     [next_state, self.ac_target.get_action(next_state, True)[0]], dim=-1
                 )
             )
-            target = reward + self.gamma * (1 - done) * q_pi_target.unsqueeze(1)
+            target = reward + self.gamma * (1 - done) * q_pi_target
 
         return nn.MSELoss()(q, target)
 

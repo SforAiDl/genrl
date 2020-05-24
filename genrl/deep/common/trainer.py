@@ -253,11 +253,11 @@ class OffPolicyTrainer(Trainer):
                         )
                         if self.agent.__class__.__name__ == "TD3":
                             self.agent.update_params(
-                                states, actions, rewards.unsqueeze(1), next_states, dones, _
+                                states, actions, rewards, next_states, dones, _
                             )
                         elif self.agent.__class__.__name__ == "DDPG":
                             self.agent.update_params(
-                                states, actions, rewards.unsqueeze(1), next_states, dones, _
+                                states, actions, rewards, next_states, dones
                             )
                         else:
                             self.agent.update_params(
