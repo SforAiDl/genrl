@@ -64,7 +64,7 @@ class DQN:
         gamma=0.99,
         lr=0.001,
         batch_size=32,
-        replay_size=100,
+        replay_size=100000,
         prioritized_replay_alpha=0.6,
         max_epsilon=1.0,
         min_epsilon=0.01,
@@ -174,7 +174,7 @@ class DQN:
             )
 
         else:
-            self.replay_buffer = ReplayBuffer(self.replay_size)
+            self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def get_env_properties(self):
@@ -226,6 +226,12 @@ class DQN:
             state, action, reward, next_state, done = self.replay_buffer.sample(
                 self.batch_size
             )
+        
+        state = state.reshape(self.batch_size*self.env.n_envs, self.env.observation_space.shape[0])
+        action = action.reshape(self.batch_size*self.env.n_envs, 1)
+        reward = reward.reshape(-1, 1)
+        done = done.reshape(-1, 1)
+        next_state = next_state.reshape(self.batch_size*self.env.n_envs, self.env.observation_space.shape[0])
 
         state = Variable(torch.FloatTensor(np.float32(state)))
         next_state = Variable(torch.FloatTensor(np.float32(next_state)))
@@ -260,12 +266,13 @@ class DQN:
 
         else:
             q_values = self.model(state)
-            q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+            # print(action)
+            q_value = q_values.gather(1, action).squeeze(1)
 
             q_next_state_values = self.target_model(next_state)
             q_s_a_prime = q_next_state_values.max(1)[0]
             # print(reward.shape, q_s_a_prime.shape, done.shape)
-            expected_q_value = reward.unsqueeze(1) + self.gamma * q_s_a_prime.unsqueeze(1) * (1 - done)
+            expected_q_value = reward + self.gamma * q_s_a_prime.reshape(-1,1) * (1 - done)
 
         if self.prioritized_replay and (not self.categorical_dqn):
             loss = (q_value - expected_q_value.detach()).pow(2) * weights
