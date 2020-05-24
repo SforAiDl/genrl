@@ -5,18 +5,37 @@ import numpy as np
 
 
 class ReplayBuffer:
-    def __init__(self, size):
+    def __init__(self, size, env):
         self.size = size
-        self.memory = deque([], maxlen=size)
+        # self.memory = deque([], maxlen=size)
+        self.observations = np.zeros((size, env.n_envs, env.observation_space.shape[0]))
+        self.actions = np.zeros((size, env.n_envs, env.action_space.shape[0]))
+        self.rewards = np.zeros((size, env.n_envs))
+        self.dones = np.zeros((size, env.n_envs))
+        self.next_observations = np.zeros((size, env.n_envs, env.observation_space.shape[0]))
+        self.pos = 0
 
     def push(self, x):
-        self.memory.append(x)
+        # self.memory.append(x)
+        self.observations[self.pos] += np.array(x[0]).copy()
+        self.actions[self.pos] += np.array(x[1]).copy()
+        self.rewards[self.pos] += np.array(x[2]).copy()
+        self.next_observations[self.pos] += np.array(x[3]).copy()
+        self.dones[self.pos] += np.array(x[4]).copy()
+        self.pos += 1
 
     def sample(self, batch_size):
-        batch = random.sample(self.memory, batch_size)
-        state, action, reward, next_state, done = map(np.stack, zip(*batch))
+        indicies = np.random.randint(0, self.pos, size=batch_size)
+        state = self.observations[indicies,:]
+        action = self.actions[indicies,:]
+        reward = self.rewards[indicies,:]
+        next_state = self.next_observations[indicies,:]
+        done = self.dones[indicies,:]
+        # print(state.shape)
+        # batch = random.sample(self.memory, batch_size)
+        # state, action, reward, next_state, done = map(np.stack, zip(*batch))
         return (
-            torch.as_tensor(v, dtype=torch.float32)
+            torch.from_numpy(v).float()
             for v in [state, action, reward, next_state, done]
         )
 
@@ -24,8 +43,13 @@ class ReplayBuffer:
         return len(self.memory)
 
     def extend(self, x):
-        self.memory.extend(x)
-
+        for sample in x:
+            self.observations[self.pos] += np.array(sample[0]).copy()
+            self.actions[self.pos] += np.array(sample[1]).copy()
+            self.rewards[self.pos] += np.array(sample[2]).copy()
+            self.next_observations[self.pos] += np.array(sample[3]).copy()
+            self.dones[self.pos] += np.array(sample[4]).copy()
+            self.pos += 1
 
 class PrioritizedBuffer:
     def __init__(self, capacity, prob_alpha=0.6):
