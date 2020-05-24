@@ -139,13 +139,13 @@ class SAC:
 
         self.q1 = get_model("v", self.network_type)(
             state_dim, action_dim, "Qsa", self.layers
-        ).to(self.device)
+        ).to(self.device).float()
         self.q2 = get_model("v", self.network_type)(
             state_dim, action_dim, "Qsa", self.layers
-        ).to(self.device)
+        ).to(self.device).float()
         self.policy = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, disc, False, sac=True
-        )
+        ).float()
 
         if self.pretrained is not None:
             self.load(self)
@@ -158,8 +158,8 @@ class SAC:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.q1_targ = deepcopy(self.q1).to(self.device)
-        self.q2_targ = deepcopy(self.q2).to(self.device)
+        self.q1_targ = deepcopy(self.q1).to(self.device).float()
+        self.q2_targ = deepcopy(self.q2).to(self.device).float()
 
         # freeze target parameters
         for p in self.q1_targ.parameters():
@@ -179,7 +179,7 @@ class SAC:
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
 
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
 
         # set action scales
         if self.env.action_space is None:
@@ -210,17 +210,22 @@ class SAC:
         )
         log_pi = log_pi.sum(1, keepdim=True)
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
-        return action, log_pi, mean
+        return action.float(), log_pi, mean
 
     def select_action(self, state):
-        state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
+        state = torch.FloatTensor(state).to(self.device)
         action, _, _ = self.sample_action(state)
-        return action.detach().cpu().numpy()[0]
+        return action.detach().cpu().numpy()
 
     def update_params(self, state, action, reward, next_state, done):
-        reward = reward.unsqueeze(1)
-        done = done.unsqueeze(1)
+
         # compute targets
+        if self.env.n_envs == 1:
+            state, action, next_state = state.squeeze().float(), action.squeeze(1).float(), next_state.squeeze().float()
+        else:
+            state, action, next_state = state.reshape(-1, self.env.observation_space.shape[0]).float(), action.reshape(-1, self.env.action_space.shape[0]).float(), next_state.reshape(-1, self.env.observation_space.shape[0]).float()
+            reward, done = reward.reshape(-1, 1), done.reshape(-1, 1)
+
         with torch.no_grad():
             next_action, next_log_pi, _ = self.sample_action(next_state)
             next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
@@ -228,20 +233,18 @@ class SAC:
             next_q_targ = (
                 torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
             )
-            # print(reward.shape, done.shape, next_q_targ.shape)
-            next_q = reward + self.gamma * (1 - done.squeeze()) * next_q_targ
+            next_q = reward + self.gamma * (1 - done) * next_q_targ
 
         # compute losses
         q1 = self.q1(torch.cat([state, action], dim=-1))
         q2 = self.q2(torch.cat([state, action], dim=-1))
 
         q1_loss = nn.MSELoss()(q1, next_q)
-        # print(q1.shape, next_q.shape)
         q2_loss = nn.MSELoss()(q2, next_q)
 
         pi, log_pi, _ = self.sample_action(state)
-        q1_pi = self.q1(torch.cat([state, pi], dim=-1))
-        q2_pi = self.q2(torch.cat([state, pi], dim=-1))
+        q1_pi = self.q1(torch.cat([state, pi.float()], dim=-1).float())
+        q2_pi = self.q2(torch.cat([state, pi.float()], dim=-1).float())
         min_q_pi = torch.min(q1_pi, q2_pi)
         policy_loss = ((self.alpha * log_pi) - min_q_pi).mean()
 
@@ -305,7 +308,7 @@ class SAC:
             if (
                 i >= self.start_update
                 and i % self.update_interval == 0
-                and self.replay_buffer.get_len() > self.batch_size
+                and self.replay_buffer.pos > self.batch_size
             ):
                 # get losses
                 batch = self.replay_buffer.sample(self.batch_size)
