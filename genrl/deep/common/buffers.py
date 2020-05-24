@@ -1,3 +1,4 @@
+import gym
 import torch
 from collections import deque
 import random
@@ -9,23 +10,37 @@ class ReplayBuffer:
         self.size = size
         # self.memory = deque([], maxlen=size)
         self.observations = np.zeros((size, env.n_envs, env.observation_space.shape[0]))
-        self.actions = np.zeros((size, env.n_envs, env.action_space.shape[0]))
+        if isinstance(env.envs[0].unwrapped, gym.envs.classic_control.CartPoleEnv):
+            self.actions = np.zeros((size, env.n_envs, 1))
+        else:
+            self.actions = np.zeros((size, env.n_envs, env.action_space.shape[0]))
         self.rewards = np.zeros((size, env.n_envs))
         self.dones = np.zeros((size, env.n_envs))
         self.next_observations = np.zeros((size, env.n_envs, env.observation_space.shape[0]))
         self.pos = 0
 
     def push(self, x):
-        # self.memory.append(x)
-        self.observations[self.pos] += np.array(x[0]).copy()
-        self.actions[self.pos] += np.array(x[1]).copy()
-        self.rewards[self.pos] += np.array(x[2]).copy()
-        self.next_observations[self.pos] += np.array(x[3]).copy()
-        self.dones[self.pos] += np.array(x[4]).copy()
+        if self.pos >= self.size:
+            self.observations = np.roll(self.observations, -1, axis=0)
+            self.actions = np.roll(self.actions, -1, axis=0)
+            self.rewards = np.roll(self.rewards, -1, axis=0)
+            self.dones = np.roll(self.dones, -1, axis=0)
+            self.next_observations = np.roll(self.next_observations, -1, axis=0)
+            pos = self.size-1
+        else:
+            pos = self.pos
+        self.observations[pos] += np.array(x[0]).copy()
+        self.actions[pos] += np.array(x[1]).copy()
+        self.rewards[pos] += np.array(x[2]).copy()
+        self.next_observations[pos] += np.array(x[3]).copy()
+        self.dones[pos] += np.array(x[4]).copy()
         self.pos += 1
 
     def sample(self, batch_size):
-        indicies = np.random.randint(0, self.pos, size=batch_size)
+        if self.pos < self.size:
+            indicies = np.random.randint(0, self.pos, size=batch_size)
+        else:
+            indicies = np.random.randint(0, self.size, size=batch_size)
         state = self.observations[indicies,:]
         action = self.actions[indicies,:]
         reward = self.rewards[indicies,:]
@@ -40,15 +55,24 @@ class ReplayBuffer:
         )
 
     def get_len(self):
-        return len(self.memory)
+        return self.pos
 
     def extend(self, x):
         for sample in x:
-            self.observations[self.pos] += np.array(sample[0]).copy()
-            self.actions[self.pos] += np.array(sample[1]).copy()
-            self.rewards[self.pos] += np.array(sample[2]).copy()
-            self.next_observations[self.pos] += np.array(sample[3]).copy()
-            self.dones[self.pos] += np.array(sample[4]).copy()
+            if self.pos >= self.size:
+                self.observations = np.roll(self.observations, -1, axis=0)
+                self.actions = np.roll(self.actions, -1, axis=0)
+                self.rewards = np.roll(self.rewards, -1, axis=0)
+                self.dones = np.roll(self.dones, -1, axis=0)
+                self.next_observations = np.roll(self.next_observations, -1, axis=0)
+                pos = self.size-1
+            else:
+                pos = self.pos
+            self.observations[pos] += np.array(sample[0]).copy()
+            self.actions[pos] += np.array(sample[1]).copy()
+            self.rewards[pos] += np.array(sample[2]).copy()
+            self.next_observations[pos] += np.array(sample[3]).copy()
+            self.dones[pos] += np.array(sample[4]).copy()
             self.pos += 1
 
 class PrioritizedBuffer:
