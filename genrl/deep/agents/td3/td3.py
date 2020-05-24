@@ -164,7 +164,7 @@ class TD3:
         for param in self.ac_target.parameters():
             param.requires_grad = False
 
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
         self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
@@ -229,12 +229,10 @@ class TD3:
             )
             target_q = torch.min(target_q1, target_q2).unsqueeze(1)
 
-            # print(reward.shape, dne.shape, target_q.shape, q1.shape)
+            target = reward.squeeze(1) + self.gamma * (1 - done) * target_q.squeeze(1)
 
-            target = reward + self.gamma * (1 - done) * target_q
-
-        l1 = nn.MSELoss()(q1.unsqueeze(1), target)
-        l2 = nn.MSELoss()(q2.unsqueeze(1), target)
+        l1 = nn.MSELoss()(q1, target)
+        l2 = nn.MSELoss()(q2, target)
 
         return l1 + l2
 
@@ -296,7 +294,7 @@ class TD3:
 
             # dont set d to True if max_ep_len reached
             # done = self.env.n_envs*[False] if np.any(episode_len == self.max_ep_len) else done
-            done = [False if ep_len==self.max_ep_len else done for ep_len in episode_len]
+            done = np.array([False if episode_len[i]==self.max_ep_len else done[i] for i, ep_len in enumerate(episode_len)])
             
             self.replay_buffer.extend(zip(state, action, reward, next_state, done))
 
@@ -310,7 +308,8 @@ class TD3:
                     )
 
                 for i, d in enumerate(done):
-                    if d:
+                    # print(d)
+                    if d or episode_len[i] == self.max_ep_len:
                         episode_reward[i] = 0
                         episode_len[i] = 0
                         episode += 1
