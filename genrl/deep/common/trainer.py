@@ -143,7 +143,7 @@ class OffPolicyTrainer(Trainer):
         seed=0,
         deterministic_actions=False,
         warmup_steps=10000,
-        start_update=1000,
+        start_update=10000,
         update_interval=50,
     ):
         super(OffPolicyTrainer, self).__init__(
@@ -183,6 +183,8 @@ class OffPolicyTrainer(Trainer):
         if self.agent.__class__.__name__ == "DQN":
             self.agent.update_target_model()
 
+        assert self.update_interval%self.env.n_envs==0
+
         for t in range(0, total_steps, self.env.n_envs):
             if self.agent.__class__.__name__ == "DQN":
                 self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
@@ -190,25 +192,30 @@ class OffPolicyTrainer(Trainer):
 
             else:
                 if t < self.warmup_steps:
-                    action = self.env.sample()
+                    action = np.array(self.env.sample())
+                    # print("Observing")
+                    # print(len(action))
                 else:
                     if self.determinsitic_actions:
                         action = self.agent.select_action(state, deterministic=True)
                     else:
-                        action = self.agent.select_action(state)
+                        action = self.agent.select_action(state)                    
 
             next_state, reward, done, info = self.env.step(action)
+
             if self.render:
                 self.env.render()
 
             episode_reward += reward
             episode_len += 1
 
-            done = [False if ep_len==self.max_ep_len else done for ep_len in episode_len]
+            done = [False if episode_len[i]==self.max_ep_len else done[i] for i, ep_len in enumerate(episode_len)]
+
+            # print("s", state, "ns", next_state)
 
             self.buffer.extend(zip(state, action, reward, next_state, done))
 
-            state = next_state
+            state = next_state.copy()
 
             if np.any(done) or np.any(episode_len == self.max_ep_len):
                 if "noise" in self.agent.__dict__ and self.agent.noise is not None:
