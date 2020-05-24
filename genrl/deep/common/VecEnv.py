@@ -1,4 +1,5 @@
 import gym
+import copy
 import numpy as np
 import multiprocessing as mp
 
@@ -105,7 +106,7 @@ class SerialVecEnv(VecEnv):
 
     def __init__(self, envs, n_envs=2):
         super(SerialVecEnv, self).__init__(envs, n_envs)
-        self.states = np.zeros((self.n_envs, self.observation_space.shape[0]))
+        self.states = np.zeros((self.n_envs, self.observation_space.shape[0]), dtype=self.observation_space.dtype)
         self.rewards = np.zeros((self.n_envs))
         self.dones = np.zeros((self.n_envs))
         self.infos = [{} for _ in range(self.n_envs)]
@@ -125,7 +126,7 @@ class SerialVecEnv(VecEnv):
             self.dones[i] = done
             self.infos[i] = info
 
-        return self.states, self.rewards, self.dones, self.infos
+        return np.copy(self.states), self.rewards.copy(), self.dones.copy(), copy.deepcopy(self.infos)
 
     def reset(self):
         """
@@ -134,7 +135,7 @@ class SerialVecEnv(VecEnv):
         for i, env in enumerate(self.envs):
             self.states[i] = env.reset()
 
-        return self.states
+        return np.copy(self.states)
 
     def close(self):
         """
