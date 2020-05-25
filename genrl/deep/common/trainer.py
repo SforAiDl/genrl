@@ -11,7 +11,7 @@ from .utils import set_seeds
 from .logger import Logger
 from .VecEnv import venv
 from .buffers import ReplayBuffer, PrioritizedBuffer
-from typing import Tuple, Union, Type, List, Optional, Any
+from typing import Union, Type, List, Optional, Any
 
 
 class Trainer(ABC):
