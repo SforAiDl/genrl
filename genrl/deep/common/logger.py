@@ -2,7 +2,7 @@ import os
 import sys
 
 from torch.utils.tensorboard import SummaryWriter
-from typing import Tuple, List, Dict, Optional, Any
+from typing import List, Dict, Any
 
 class Logger:
     """
