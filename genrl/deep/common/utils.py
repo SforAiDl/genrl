@@ -35,7 +35,7 @@ Eg. "mlp" or "cnn"
     raise ValueError
 
 
-def mlp(sizes: Tuple, sac: bool=False) -> Type[nn.Module]:
+def mlp(sizes: Tuple, sac: bool=False):
     """
     Generates an MLP model given sizes of each layer
 
@@ -57,7 +57,7 @@ activation layers
 def cnn(channels: Tuple=(4, 16, 32), 
         kernel_sizes: Tuple=(8, 4),
         strides: Tuple=(4, 2), 
-        in_size: int=84) -> (Tuple[Type(nn.Module), int]):
+        in_size: int=84) -> (Tuple):
     """
     Generates a CNN model given input dimensions, channels, kernel_sizes and \
 strides
