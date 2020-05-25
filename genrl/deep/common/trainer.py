@@ -513,7 +513,7 @@ class OnPolicyTrainer(Trainer):
                 self.logger.write(
                     {
                         "Episode": episode,
-                        "Reward": epoch_reward,
+                        "Reward": np.around(epoch_reward, decimals=4),
                         "Timestep": (i * episode * self.agent.timesteps_per_actorbatch),
                     }
                 )
