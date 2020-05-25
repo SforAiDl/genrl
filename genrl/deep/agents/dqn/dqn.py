@@ -200,7 +200,7 @@ class DQN:
                 state = Variable(torch.FloatTensor(state).unsqueeze(0), volatile=True)
                 dist = self.model(state).data.cpu()
                 dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                action = dist.sum(2).max(1)[1].numpy()[0]
+                action = dist.sum(2).max(1)[1].numpy()#[0]
             else:
                 state = Variable(torch.FloatTensor(state))
                 q_value = self.model(state)
@@ -243,9 +243,9 @@ class DQN:
             proj_dist = self.projection_distribution(next_state, reward, done)
             dist = self.model(state)
             action = (
-                action.unsqueeze(1)
+                action
                 .unsqueeze(1)
-                .expand(self.batch_size, 1, self.num_atoms)
+                .expand(self.batch_size*self.env.n_envs, 1, self.num_atoms)
             )
             dist = dist.gather(1, action).squeeze(1)
             dist.data.clamp_(0.01, 0.99)
@@ -253,7 +253,7 @@ class DQN:
 
         elif self.double_dqn:
             q_values = self.model(state)
-            q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+            q_value = q_values.gather(1, action).squeeze(1)
 
             q_next_state_values = self.model(next_state)
             action_next = q_next_state_values.max(1)[1]
@@ -262,7 +262,7 @@ class DQN:
             q_target_s_a_prime = q_target_next_state_values.gather(
                 1, action_next.unsqueeze(1)
             ).squeeze(1)
-            expected_q_value = reward + self.gamma * q_target_s_a_prime * (1 - done)
+            expected_q_value = reward + self.gamma * q_target_s_a_prime.reshape(-1, 1) * (1 - done)
 
         else:
             q_values = self.model(state)
@@ -321,8 +321,8 @@ class DQN:
         )
         next_dist = next_dist.gather(1, next_action).squeeze(1)
 
-        rewards = rewards.unsqueeze(1).expand_as(next_dist)
-        dones = dones.unsqueeze(1).expand_as(next_dist)
+        rewards = rewards.expand_as(next_dist)
+        dones = dones.expand_as(next_dist)
         support = support.unsqueeze(0).expand_as(next_dist)
 
         Tz = rewards + (1 - dones) * 0.99 * support
@@ -335,7 +335,7 @@ class DQN:
             torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size)
             .long()
             .unsqueeze(1)
-            .expand(self.batch_size, self.num_atoms)
+            .expand(self.batch_size*self.env.n_envs, self.num_atoms)
         )
 
         proj_dist = torch.zeros(next_dist.size())
