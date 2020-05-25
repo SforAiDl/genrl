@@ -185,6 +185,8 @@ class OffPolicyTrainer(Trainer):
 
         assert self.update_interval%self.env.n_envs==0
 
+        rewards = []
+
         for t in range(0, total_steps, self.env.n_envs):
             if self.agent.__class__.__name__ == "DQN":
                 self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
@@ -226,12 +228,14 @@ class OffPolicyTrainer(Trainer):
                         {
                             "timestep": t,
                             "Episode": sum(episode),
-                            "Episode Reward": np.mean(episode_reward),
+                            "Episode Reward": np.mean(rewards),
                         }
                     )
+                    rewards = []
 
                 for i, d in enumerate(done):
                     if d:
+                        rewards.append(episode_reward[i])
                         episode_reward[i] = 0
                         episode_len[i] = 0
                         episode += 1
