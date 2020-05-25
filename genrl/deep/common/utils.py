@@ -9,7 +9,7 @@ from .VecEnv import venv
 from typing import Tuple, Union, Type, Any
 
 
-def get_model(type_: str, name_: str) -> Union[Type[MlpActorCritic]]:
+def get_model(type_: str, name_: str) -> Union:
     """
     Utility to get the class of required function
 
