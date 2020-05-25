@@ -2,7 +2,7 @@ import torch
 from collections import deque
 import random
 import numpy as np
-
+from typing import Tuple
 
 class ReplayBuffer:
     """
@@ -11,11 +11,13 @@ class ReplayBuffer:
     :param capacity: Size of the replay buffer
     :type capacity: int
     """
-    def __init__(self, capacity):
+    def __init__(self, 
+                 capacity: int):
         self.capacity = capacity
         self.memory = deque([], maxlen=capacity)
 
-    def push(self, x):
+    def push(self, 
+             x: Tuple) -> None:
         """
         Adds new experience to buffer
 
@@ -25,7 +27,12 @@ class ReplayBuffer:
         """
         self.memory.append(x)
 
-    def sample(self, batch_size):
+    def sample(self, 
+               batch_size: int) -> (Tuple[torch.Tensor,
+                                         torch.Tensor,
+                                         torch.Tensor,
+                                         torch.Tensor,
+                                         torch.Tensor]):
         """
         Returns randomly sampled experiences from replay memory
 
@@ -41,7 +48,7 @@ class ReplayBuffer:
             for v in [state, action, reward, next_state, done]
         )
 
-    def get_len(self):
+    def get_len(self) -> int:
         """
         Gives number of experiences in buffer currently
 
@@ -59,13 +66,16 @@ class PrioritizedBuffer:
     :type capacity: int
     :type alpha: int
     """
-    def __init__(self, capacity, alpha=0.6):
+    def __init__(self, 
+                 capacity: int, 
+                 alpha: float = 0.6):
         self.alpha = alpha
         self.capacity = capacity
         self.buffer = deque([], maxlen=capacity)
         self.priorities = deque([], maxlen=capacity)
 
-    def push(self, x):
+    def push(self, 
+             x: Tuple) -> None:
         """
         Adds new experience to buffer
 
@@ -78,7 +88,15 @@ class PrioritizedBuffer:
         self.buffer.append(x)
         self.priorities.append(max_priority)
 
-    def sample(self, batch_size, beta=0.4):
+    def sample(self, 
+               batch_size: int, 
+               beta: float = 0.4) -> (Tuple[torch.Tensor,
+                                            torch.Tensor,
+                                            torch.Tensor,
+                                            torch.Tensor,
+                                            torch.Tensor,
+                                            torch.Tensor,
+                                            torch.Tensor]):
         """
         Returns randomly sampled memories from replay memory along with their \
 respective indices and weights
@@ -120,7 +138,9 @@ Importance Sampling (IS) weights
             ]
         )
 
-    def update_priorities(self, batch_indices, batch_priorities):
+    def update_priorities(self, 
+                          batch_indices: Tuple, 
+                          batch_priorities: Tuple) -> None:
         """
         Updates list of priorities with new order of priorities
 
@@ -133,7 +153,7 @@ specific indices
         for idx, priority in zip(batch_indices, batch_priorities):
             self.priorities[int(idx)] = priority
 
-    def get_len(self):
+    def get_len(self) -> int:
         """
         Gives number of experiences in buffer currently
 
