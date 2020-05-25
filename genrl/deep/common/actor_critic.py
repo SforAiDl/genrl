@@ -2,6 +2,7 @@ from gym import spaces
 from .base import BaseActorCritic
 from .policies import MlpPolicy
 from .values import MlpValue
+from typing import Tuple
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -24,7 +25,7 @@ class MlpActorCritic(BaseActorCritic):
         self,
         state_dim: spaces.Space,
         action_dim: spaces.Space,
-        hidden: tuple = (32, 32),
+        hidden: Tuple = (32, 32),
         val_type: str = "V",
         discrete: bool =True,
         *args,

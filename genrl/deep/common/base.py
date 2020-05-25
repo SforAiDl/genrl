@@ -1,9 +1,8 @@
-import numpy as np
 import torch
 import torch.nn as nn
 from gym import spaces
 from torch.distributions import Categorical, Normal
-from typing import Tuple, List, Any 
+from typing import Tuple, Optional
 
 
 class BasePolicy(nn.Module):
