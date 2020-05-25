@@ -7,7 +7,7 @@ def _get_val_model(arch: str,
                    val_type: str, 
                    state_dim: str, 
                    hidden: Tuple, 
-                   action_dim: int=None) -> Type[nn.Module]:
+                   action_dim: int=None):
     """
     Returns Neural Network given specifications
 
