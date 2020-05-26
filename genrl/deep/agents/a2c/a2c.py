@@ -98,7 +98,6 @@ class A2C:
         self.save_model = None
         self.save = save_params
         self.load = load_params
-        self.evaluate = evaluate
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
