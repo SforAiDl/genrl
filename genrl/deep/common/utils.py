@@ -141,6 +141,8 @@ def save_params(algo, timestep):
         if not os.path.exists(path):
             os.makedirs(path)
             run_num = 0
+        elif list(os.scandir(path)) == []:
+            run_num = 0
         else:
             last_path = sorted(
                 os.scandir(path), key=lambda d: d.stat().st_mtime
@@ -148,7 +150,7 @@ def save_params(algo, timestep):
             run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
         algo.run_num = run_num
 
-    torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(path, run_num, timestep))
+    torch.save(algo.get_hyperparams(), "{}/{}-log-{}.pt".format(path, run_num, timestep))
 
 
 def load_params(algo):

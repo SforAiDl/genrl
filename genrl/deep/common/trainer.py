@@ -7,7 +7,7 @@ from collections import deque
 
 from abc import ABC
 
-from .utils import set_seeds
+from .utils import set_seeds, save_params
 from .logger import Logger
 
 
@@ -109,21 +109,6 @@ False (To be implemented)
         To be defined in inherited classes
         """
         raise NotImplementedError
-
-    def save(self):
-        """
-        Save function. It calls `get_hyperparams` method of agent to \
-get important model hyperparams.
-        Creates a checkpoint `{logger_dir}/{algo}_{env_name}/{ckpt_log_name}
-        """
-        saving_params = self.agent.get_hyperparams()
-        logdir = self.logger.logdir
-        algo = self.agent.__class__.__name__
-        env_name = self.env.envs[0].unwrapped.spec.id
-
-        save_dir = "{}/checkpoints/{}_{}".format(logdir, algo, env_name)
-        os.makedirs(save_dir, exist_ok=True)
-        torch.save(saving_params, "{}/{}.pt".format(save_dir, self.ckpt_log_name))
 
     def evaluate(self):
         """
@@ -379,7 +364,7 @@ many steps
                 and t % self.save_interval == 0
             ):
                 self.checkpoint = self.agent.get_hyperparams()
-                self.save()
+                save_params(self.agent, t)
 
         self.env.close()
         self.logger.close()
@@ -518,7 +503,7 @@ class OnPolicyTrainer(Trainer):
 
             if self.save_interval != 0 and episode % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
-                self.save()
+                save_params(self.agent, i * episode * self.agent.timesteps_per_actorbatch)
 
         self.env.close()
         self.logger.close()
