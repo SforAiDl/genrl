@@ -51,6 +51,7 @@ False (To be implemented)
     :type seed: int
     :type deterministic_actions: bool
     """
+
     def __init__(
         self,
         agent,
@@ -131,9 +132,11 @@ False (To be implemented)
                 state = self.env.reset()
                 ep_r = 0
                 if ep == self.evaluate_episodes:
-                    print("Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                        self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews)
-                    ))
+                    print(
+                        "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                            self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews)
+                        )
+                    )
                     break
 
     @property
@@ -192,6 +195,7 @@ many steps
     :type start_update: int
     :type update_interval: int
     """
+
     def __init__(
         self,
         agent,
@@ -410,6 +414,7 @@ class OnPolicyTrainer(Trainer):
     :type seed: int
     :type deterministic_actions: bool
     """
+
     def __init__(
         self,
         agent,
@@ -503,7 +508,9 @@ class OnPolicyTrainer(Trainer):
 
             if self.save_interval != 0 and episode % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
-                save_params(self.agent, i * episode * self.agent.timesteps_per_actorbatch)
+                save_params(
+                    self.agent, i * episode * self.agent.timesteps_per_actorbatch
+                )
 
         self.env.close()
         self.logger.close()
