@@ -11,6 +11,7 @@ class ReplayBuffer:
     :param capacity: Size of the replay buffer
     :type capacity: int
     """
+
     def __init__(self, capacity):
         self.capacity = capacity
         self.memory = deque([], maxlen=capacity)
@@ -59,6 +60,7 @@ class PrioritizedBuffer:
     :type capacity: int
     :type alpha: int
     """
+
     def __init__(self, capacity, alpha=0.6):
         self.alpha = alpha
         self.capacity = capacity
@@ -105,19 +107,11 @@ Importance Sampling (IS) weights
         weights = np.asarray(weights, dtype=np.float32)
 
         samples = np.asarray(self.buffer, dtype=deque)[indices]
-        (
-            states,
-            actions,
-            rewards,
-            next_states,
-            dones
-         ) = map(np.stack, zip(*samples))
+        (states, actions, rewards, next_states, dones) = map(np.stack, zip(*samples))
 
         return (
             torch.as_tensor(v, dtype=torch.float32)
-            for v in [
-                states, actions, rewards, next_states, dones, indices, weights
-            ]
+            for v in [states, actions, rewards, next_states, dones, indices, weights]
         )
 
     def update_priorities(self, batch_indices, batch_priorities):
