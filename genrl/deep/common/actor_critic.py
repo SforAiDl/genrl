@@ -19,6 +19,7 @@ class MlpActorCritic(BaseActorCritic):
     :type val_type: str
     :type discrete: bool
     """
+
     def __init__(
         self,
         state_dim,
@@ -31,9 +32,7 @@ class MlpActorCritic(BaseActorCritic):
     ):
         super(MlpActorCritic, self).__init__()
 
-        self.actor = MlpPolicy(
-            state_dim, action_dim, hidden, discrete, **kwargs
-        )
+        self.actor = MlpPolicy(state_dim, action_dim, hidden, discrete, **kwargs)
         self.critic = MlpValue(state_dim, action_dim, val_type, hidden)
 
 

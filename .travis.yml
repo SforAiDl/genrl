@@ -23,7 +23,10 @@ jobs:
         - python setup.py install
         - pip install codecov
         - pip install pytest-cov
+        - pip install black
       script:
+        - black --check genrl
+        - black --check tests
         - pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
       
       after_success:

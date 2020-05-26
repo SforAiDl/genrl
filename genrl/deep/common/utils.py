@@ -142,9 +142,9 @@ def save_params(algo, timestep):
             os.makedirs(path)
             run_num = 0
         else:
-            last_path = sorted(
-                os.scandir(path), key=lambda d: d.stat().st_mtime
-            )[-1].path
+            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
+                -1
+            ].path
             run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
         algo.run_num = run_num
 

@@ -258,7 +258,7 @@ class DQN:
         self.target_model.load_state_dict(self.model.state_dict())
 
     def select_action(self, state, explore=True):
-        '''
+        """
         Epsilon Greedy selection of action
 
         :param state: Observation state
@@ -267,25 +267,22 @@ class DQN:
         :type explore: bool
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
-        '''
+        """
         if explore == True:
-            if np.random.rand() <= self.epsilon: 
+            if np.random.rand() <= self.epsilon:
                 return self.env.action_space.sample()
-        
+
         if self.categorical_dqn:
             with torch.no_grad():
                 state = Variable(torch.FloatTensor(state))
                 dist = self.model(state).data.cpu()
-                dist = (
-                    dist
-                    * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                )
+                dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
                 action = dist.sum(2).max(1)[1].numpy()[0]
         else:
             state = Variable(torch.FloatTensor(state))
             q_value = self.model(state)
             action = np.argmax(q_value.detach().numpy())
-    
+
         return action
 
     def get_td_loss(self):
