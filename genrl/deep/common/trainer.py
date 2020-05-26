@@ -149,9 +149,9 @@ get important model hyperparams.
                 if ep == self.evaluate_episodes:
                     print(
                         "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                            self.evaluate_episodes, 
-                            np.around(np.mean(ep_rews), decimals=4), 
-                            np.around(np.std(ep_rews), decimals=4)
+                            self.evaluate_episodes,
+                            np.around(np.mean(ep_rews), decimals=4),
+                            np.around(np.std(ep_rews), decimals=4),
                         )
                     )
                     break

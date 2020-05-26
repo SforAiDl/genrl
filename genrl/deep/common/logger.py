@@ -78,14 +78,19 @@ class HumanOutputFormat:
         """
         with open(self.file, "a") as file:
             print("\n", file=file)
-            print("-"*25, file=sys.stdout)
+            print("-" * 25, file=sys.stdout)
             for key, value in kvs.items():
-                len1 = len(str(key))+3
+                len1 = len(str(key)) + 3
                 len2 = len(str(value))
                 final_len = 25 - len1 - len2
                 print("{}:{}".format(key, value), file=file)
-                print("| {}:{}".format(key, value), " "*(final_len-3), "|", file=sys.stdout)
-            print("-"*25, file=sys.stdout)
+                print(
+                    "| {}:{}".format(key, value),
+                    " " * (final_len - 3),
+                    "|",
+                    file=sys.stdout,
+                )
+            print("-" * 25, file=sys.stdout)
             print("\n", file=file)
 
     def close(self):
