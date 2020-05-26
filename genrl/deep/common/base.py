@@ -18,12 +18,15 @@ class BasePolicy(nn.Module):
     :type hidden: tuple or list
     :type discrete: bool
     """
-    def __init__(self,
-                 state_dim: spaces.Space,
-                 action_dim: spaces.Space, 
-                 hidden: Tuple, 
-                 discrete: bool, 
-                 **kwargs):
+
+    def __init__(
+        self,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
+        hidden: Tuple,
+        discrete: bool,
+        **kwargs
+    ):
         super(BasePolicy, self).__init__()
 
         self.state_dim = state_dim
@@ -31,12 +34,8 @@ class BasePolicy(nn.Module):
         self.hidden = hidden
         self.discrete = discrete
 
-        self.action_lim = (
-            kwargs["action_lim"] if "action_lim" in kwargs else 1.0
-        )
-        self.action_var = (
-            kwargs["action_var"] if "action_var" in kwargs else 0.1
-        )
+        self.action_lim = kwargs["action_lim"] if "action_lim" in kwargs else 1.0
+        self.action_var = kwargs["action_var"] if "action_var" in kwargs else 0.1
         self.sac = kwargs["sac"] if "sac" in kwargs else False
 
         if self.sac:
@@ -45,8 +44,9 @@ class BasePolicy(nn.Module):
 
         self.model = None
 
-    def forward(self, 
-                state: torch.Tensor) -> (Tuple[torch.Tensor, Optional[torch.Tensor]]):
+    def forward(
+        self, state: torch.Tensor
+    ) -> (Tuple[torch.Tensor, Optional[torch.Tensor]]):
         """
         Defines the computation performed at every call.
 
@@ -63,9 +63,9 @@ class BasePolicy(nn.Module):
 
         return state
 
-    def get_action(self, 
-                   state: torch.Tensor, 
-                   deterministic: bool = False) -> torch.Tensor:
+    def get_action(
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """
         Get action from policy based on input
 
@@ -99,13 +99,13 @@ class BaseValue(nn.Module):
     """
     Basic implementation of a general Value function
     """
+
     def __init__(self):
         super(BaseValue, self).__init__()
 
         self.model = None
 
-    def forward(self, 
-                x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Defines the computation performed at every call.
 
@@ -114,8 +114,7 @@ class BaseValue(nn.Module):
         """
         return self.model.forward(x)
 
-    def get_value(self, 
-                  x: torch.Tensor) -> torch.Tensor:
+    def get_value(self, x: torch.Tensor) -> torch.Tensor:
         """
         Get value from value function based on input
 
@@ -130,15 +129,16 @@ class BaseActorCritic(nn.Module):
     """
     Basic implementation of a general Actor Critic
     """
+
     def __init__(self):
         super(BaseActorCritic, self).__init__()
 
         self.actor = None
         self.critic = None
 
-    def get_action(self, 
-                   state: torch.Tensor, 
-                   deterministic: bool = False) -> torch.Tensor:
+    def get_action(
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """
         Get action from the Actor based on input
 
@@ -152,8 +152,7 @@ else False
         state = torch.as_tensor(state).float()
         return self.actor.get_action(state, deterministic=deterministic)
 
-    def get_value(self, 
-                  state: torch.Tensor) -> torch.Tensor:
+    def get_value(self, state: torch.Tensor) -> torch.Tensor:
         """
         Get value from the Critic based on input
 

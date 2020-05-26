@@ -140,11 +140,11 @@ class TD3:
 
     def create_model(self):
         state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete == True: 
+        if discrete == True:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
             )
-        
+
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)

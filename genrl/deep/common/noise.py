@@ -12,9 +12,8 @@ class ActionNoise(ABC):
     :type mean: float
     :type std: float
     """
-    def __init__(self, 
-                 mean: float, 
-                 std: float):
+
+    def __init__(self, mean: float, std: float):
         # super().__init__(mean, std)
         self._mean = mean
         self._std = std
@@ -47,9 +46,8 @@ class NormalActionNoise(ActionNoise):
     :type mean: float
     :type std: float
     """
-    def __init__(self, 
-                 mean: float, 
-                 std: float):
+
+    def __init__(self, mean: float, std: float):
         super(NormalActionNoise, self).__init__(mean, std)
 
     def __call__(self) -> float:
@@ -58,7 +56,7 @@ class NormalActionNoise(ActionNoise):
         """
         return np.random.normal(self._mean, self._std)
 
-    def reset(self) ->  None:
+    def reset(self) -> None:
         pass
 
 
@@ -77,12 +75,15 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
     :type dt: float
     :type initial_noise: Numpy array
     """
-    def __init__(self, 
-                 mean: float, 
-                 std: float, 
-                 theta: float=0.15, 
-                 dt: float=1e-2, 
-                 initial_noise: np.ndarray=None):
+
+    def __init__(
+        self,
+        mean: float,
+        std: float,
+        theta: float = 0.15,
+        dt: float = 1e-2,
+        initial_noise: np.ndarray = None,
+    ):
         super(OrnsteinUhlenbeckActionNoise, self).__init__(mean, std)
         self._theta = theta
         self._mean = mean
@@ -100,11 +101,7 @@ according to the Ornstein Uhlenbeck process
         noise = (
             self.noise_prev
             + self._theta * (self._mean - self.noise_prev) * self._dt
-            + (
-                self._std
-                * np.sqrt(self._dt)
-                * np.random.normal(size=self._mean.shape)
-            )
+            + (self._std * np.sqrt(self._dt) * np.random.normal(size=self._mean.shape))
         )
         self.noise_prev = noise
         return noise

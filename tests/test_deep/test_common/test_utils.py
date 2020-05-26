@@ -105,7 +105,7 @@ class TestUtils:
         assert state_dim == 4
         assert action_dim == 2
         assert discrete == True
-        
+
         env = gym.make("Pendulum-v0")
 
         state_dim, action_dim, discrete, action_lim = get_env_properties(env)
