@@ -29,7 +29,7 @@ from .utils import (
     CategoricalDQNValueCNN,
 )
 
-from typing import Union, Any, Optional, Tuple, Dict, List
+from typing import Union, Any, Optional, Dict, List
 
 
 class DQN:

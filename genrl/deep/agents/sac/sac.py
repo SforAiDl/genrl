@@ -118,7 +118,6 @@ class SAC:
         self.load_model = load_model
         self.save = save_params
         self.load = load_params
-        self.evaluate = evaluate
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():

@@ -6,7 +6,7 @@ import numpy as np
 import torch.nn as nn
 import gym
 from .VecEnv import venv
-from typing import Tuple, Union, Type, Any
+from typing import Tuple, Union, Any
 
 
 def get_model(type_: str, name_: str) -> Union:
