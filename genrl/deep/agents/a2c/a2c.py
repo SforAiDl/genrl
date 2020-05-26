@@ -5,13 +5,8 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from genrl.deep.common import (
-    get_model,
-    evaluate,
-    save_params,
-    load_params,
-    set_seeds,
-)
+from genrl.deep.common import get_model, save_params, load_params, set_seeds, venv
+from typing import Union, Tuple, Any, Optional
 
 
 class A2C:
@@ -63,25 +58,25 @@ class A2C:
 
     def __init__(
         self,
-        network_type,
-        env,
-        gamma=0.99,
-        actor_batch_size=64,
-        lr_actor=0.01,
-        lr_critic=0.1,
-        num_episodes=100,
-        timesteps_per_actorbatch=4000,
-        max_ep_len=1000,
-        layers=(32, 32),
-        noise=None,
-        noise_std=0.1,
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        save_interval=1000,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        gamma: float = 0.99,
+        actor_batch_size: int = 64,
+        lr_actor: float = 0.01,
+        lr_critic: float = 0.1,
+        num_episodes: int = 100,
+        timesteps_per_actorbatch: int = 4000,
+        max_ep_len: int = 1000,
+        layers: Tuple = (32, 32),
+        noise: Any = None,
+        noise_std: float = 0.1,
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        save_interval: int = 1000,
     ):
         self.network_type = network_type
         self.env = env
@@ -124,7 +119,7 @@ class A2C:
 
         self.create_model()
 
-    def create_model(self):
+    def create_model(self) -> None:
         """
         Creates actor critic model and initialises optimizers
         """
@@ -162,7 +157,9 @@ class A2C:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-    def select_action(self, state, deterministic=True):
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> np.ndarray:
         """
         Selection of action
 
@@ -189,7 +186,7 @@ class A2C:
 
         return action
 
-    def get_traj_loss(self):
+    def get_traj_loss(self) -> None:
         """
         Get trajectory of agent to calculate discounted rewards and \
 calculate losses
@@ -219,7 +216,7 @@ calculate losses
         self.actor_hist = torch.Tensor().to(self.device)
         self.critic_hist = torch.Tensor().to(self.device)
 
-    def update(self, episode):
+    def update(self, episode: int) -> None:
         """
         Updates actor and critic model parameters
 
@@ -288,7 +285,7 @@ calculate losses
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_env_properties(self, env):
+    def get_env_properties(self):
         """
         Helper function to extract the observation and action space
 
@@ -311,7 +308,7 @@ space is discrete or not
 
         return state_dim, action_dim, disc, action_lim
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         """
         Loads important hyperparameters that need to be loaded or saved
 
