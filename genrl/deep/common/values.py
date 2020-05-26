@@ -71,6 +71,7 @@ class CNNValue(BaseValue):
     :type val_type: string
     :type hidden: tuple or list
     """
+
     def __init__(self, action_dim, history_length=4, val_type="Qs", fc_layers=(256,)):
         super(CNNValue, self).__init__()
 

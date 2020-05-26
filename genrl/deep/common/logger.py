@@ -13,6 +13,7 @@ class Logger:
     :type logdir: string
     :type formats: list
     """
+
     def __init__(self, logdir=None, formats=["csv"]):
         if logdir is None:
             self._logdir = os.getcwd()
@@ -64,6 +65,7 @@ class HumanOutputFormat:
     :param logdir: Directory at which log is present
     :type logdir: string
     """
+
     def __init__(self, logdir):
         self.file = os.path.join(logdir, "train.log")
 
@@ -94,6 +96,7 @@ class TensorboardLogger:
     :param logdir: Directory to save log at
     :type logdir: string
     """
+
     def __init__(self, logdir):
         self.logdir = logdir
         os.makedirs(self.logdir, exist_ok=True)
@@ -123,6 +126,7 @@ class CSVLogger:
     :param logdir: Directory to save log at
     :type logdir: string
     """
+
     def __init__(self, logdir):
         self.logdir = logdir
         os.makedirs(self.logdir, exist_ok=True)
@@ -151,9 +155,7 @@ class CSVLogger:
                     "A new value '{}' cannot be added to CSVLogger".format(key)
                 )
             if i != self.keynames[key]:
-                raise Exception(
-                    "Value not at the same index as when initialized"
-                )
+                raise Exception("Value not at the same index as when initialized")
             self.file.write(str(value))
             self.file.write(",")
 

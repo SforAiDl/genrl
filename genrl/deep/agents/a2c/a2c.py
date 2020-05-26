@@ -60,6 +60,7 @@ class A2C:
     :type save_model: string
     :type save_interval: int
     """
+
     def __init__(
         self,
         network_type,
@@ -77,7 +78,7 @@ class A2C:
         tensorboard_log=None,
         seed=None,
         render=False,
-        device='cpu',
+        device="cpu",
         run_num=None,
         save_model=None,
         save_interval=1000,
@@ -118,6 +119,7 @@ class A2C:
         self.writer = None
         if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
+
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
@@ -126,35 +128,22 @@ class A2C:
         """
         Creates actor critic model and initialises optimizers
         """
-        (
-            state_dim,
-            action_dim,
-            discrete,
-            action_lim
-        ) = self.get_env_properties(self.env)
+        (state_dim, action_dim, discrete, action_lim) = self.get_env_properties(
+            self.env
+        )
 
         if self.noise is not None:
             self.noise = self.noise(
-                np.zeros_like(action_dim),
-                self.noise_std * np.ones_like(action_dim)
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
         self.ac = get_model("ac", self.network_type)(
-            state_dim,
-            action_dim,
-            self.layers,
-            "V",
-            discrete,
-            action_lim=action_lim
+            state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
-        self.actor_optimizer = opt.Adam(
-            self.ac.actor.parameters(), lr=self.lr_actor
-        )
+        self.actor_optimizer = opt.Adam(self.ac.actor.parameters(), lr=self.lr_actor)
 
-        self.critic_optimizer = opt.Adam(
-            self.ac.critic.parameters(), lr=self.lr_critic
-        )
+        self.critic_optimizer = opt.Adam(self.ac.critic.parameters(), lr=self.lr_critic)
 
         self.traj_reward = []
         self.actor_hist = torch.Tensor().to(self.device)
@@ -190,12 +179,8 @@ class A2C:
         log_prob = distribution.log_prob(action)
         value = self.ac.get_value(state)
 
-        self.actor_hist = torch.cat(
-            [self.actor_hist, log_prob.unsqueeze(0)]
-        )
-        self.critic_hist = torch.cat(
-            [self.critic_hist, value.unsqueeze(0)]
-        )
+        self.actor_hist = torch.cat([self.actor_hist, log_prob.unsqueeze(0)])
+        self.critic_hist = torch.cat([self.critic_hist, value.unsqueeze(0)])
 
         action = action.detach().cpu().numpy()
 
@@ -219,21 +204,16 @@ calculate losses
         returns = torch.FloatTensor(returns).to(self.device)
         advantages = Variable(returns) - Variable(self.critic_hist)
 
-        actor_loss = torch.mean(torch.mul(
-            advantages,
-            self.actor_hist.mul(-1)
-        ))
+        actor_loss = torch.mean(torch.mul(advantages, self.actor_hist.mul(-1)))
 
-        critic_loss = nn.MSELoss()(
-            self.critic_hist, Variable(returns)
+        critic_loss = nn.MSELoss()(self.critic_hist, Variable(returns))
+
+        self.actor_loss_hist = torch.cat(
+            [self.actor_loss_hist, actor_loss.unsqueeze(0)]
         )
-
-        self.actor_loss_hist = torch.cat([
-            self.actor_loss_hist, actor_loss.unsqueeze(0)
-        ])
-        self.critic_loss_hist = torch.cat([
-            self.critic_loss_hist, critic_loss.unsqueeze(0)
-        ])
+        self.critic_loss_hist = torch.cat(
+            [self.critic_loss_hist, critic_loss.unsqueeze(0)]
+        )
 
         self.traj_reward = []
         self.actor_hist = torch.Tensor().to(self.device)
@@ -288,18 +268,13 @@ calculate losses
                         steps.append(t)
                         break
 
-                episode_reward += (
-                    np.sum(self.traj_reward)
-                    / self.actor_batch_size
-                )
+                episode_reward += np.sum(self.traj_reward) / self.actor_batch_size
                 self.get_traj_loss()
 
             self.update(episode)
 
             if episode % 5 == 0:
-                print("Episode: {}, Reward: {}".format(
-                    episode, episode_reward
-                ))
+                print("Episode: {}, Reward: {}".format(episode, episode_reward))
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", episode_reward, episode)
 
