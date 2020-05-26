@@ -7,12 +7,14 @@ import gym
 
 from ...common import (
     get_model,
-    evaluate,
     save_params,
     load_params,
     get_env_properties,
     set_seeds,
+    venv,
 )
+
+from typing import Union, Any, Optional, Tuple, Dict
 
 
 class PPO1:
@@ -46,25 +48,25 @@ class PPO1:
 
     def __init__(
         self,
-        network_type,
-        env,
-        timesteps_per_actorbatch=256,
-        gamma=0.99,
-        clip_param=0.2,
-        actor_batch_size=64,
-        epochs=1000,
-        lr_policy=0.001,
-        lr_value=0.001,
-        layers=(64, 64),
-        policy_copy_interval=20,
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        load_model=None,
-        save_interval=50,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        timesteps_per_actorbatch: int = 256,
+        gamma: float = 0.99,
+        clip_param: float = 0.2,
+        actor_batch_size: int = 64,
+        epochs: int = 1000,
+        lr_policy: float = 0.001,
+        lr_value: float = 0.001,
+        layers: Tuple = (64, 64),
+        policy_copy_interval: int = 20,
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        save_interval: int = 50,
     ):
         self.network_type = network_type
         self.env = env
@@ -80,7 +82,6 @@ class PPO1:
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
-        self.evaluate = evaluate
         self.save_interval = save_interval
         self.run_num = run_num
         self.save_model = save_model
@@ -106,7 +107,7 @@ class PPO1:
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
         self.create_model()
 
-    def create_model(self):
+    def create_model(self) -> None:
         # Instantiate networks and optimizers
         state_dim, action_dim, disc, action_lim = get_env_properties(self.env)
 
@@ -150,7 +151,7 @@ class PPO1:
         self.policy_new.loss_hist = Variable(torch.Tensor()).to(self.device)
         self.value_fn.loss_hist = Variable(torch.Tensor()).to(self.device)
 
-    def select_action(self, state):
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on policy_old output
@@ -181,7 +182,7 @@ class PPO1:
         return action
 
     # get clipped loss for single trajectory (episode)
-    def get_traj_loss(self):
+    def get_traj_loss(self) -> None:
         discounted_reward = 0
         returns = []
 
@@ -221,7 +222,7 @@ class PPO1:
         self.policy_new.policy_hist = Variable(torch.Tensor()).to(self.device)
         self.value_fn.value_hist = Variable(torch.Tensor()).to(self.device)
 
-    def update(self, episode, copy_policy=True):
+    def update(self, episode: int, copy_policy: bool = True) -> None:
         # mean of all traj losses in single epoch
         loss_policy = torch.mean(self.policy_new.loss_hist)
         loss_value = torch.mean(self.value_fn.loss_hist)
@@ -247,7 +248,7 @@ class PPO1:
         if copy_policy:
             self.policy_old.load_state_dict(self.policy_new.state_dict())
 
-    def learn(self):  # pragma: no cover
+    def learn(self) -> None:  # pragma: no cover
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
@@ -289,7 +290,7 @@ class PPO1:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
             "timesteps_per_actorbatch": self.timesteps_per_actorbatch,

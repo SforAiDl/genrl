@@ -7,14 +7,8 @@ from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from ...common import (
-    get_model,
-    ReplayBuffer,
-    save_params,
-    load_params,
-    evaluate,
-    set_seeds,
-)
+from ...common import get_model, ReplayBuffer, save_params, load_params, set_seeds, venv
+from typing import Union, Tuple, Any, Optional, Dict
 
 
 class SAC:
@@ -73,30 +67,30 @@ class SAC:
 
     def __init__(
         self,
-        network_type,
-        env,
-        gamma=0.99,
-        replay_size=1000000,
-        batch_size=256,
-        lr=3e-4,
-        alpha=0.01,
-        polyak=0.995,
-        entropy_tuning=True,
-        epochs=1000,
-        start_steps=0,
-        steps_per_epoch=1000,
-        max_ep_len=1000,
-        start_update=256,
-        update_interval=1,
-        layers=(256, 256),
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        load_model=None,
-        save_interval=5000,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        gamma: float = 0.99,
+        replay_size: int = 1000000,
+        batch_size: int = 256,
+        lr: float = 3e-4,
+        alpha: float = 0.01,
+        polyak: float = 0.995,
+        entropy_tuning: bool = True,
+        epochs: int = 1000,
+        start_steps: int = 0,
+        steps_per_epoch: int = 1000,
+        max_ep_len: int = 1000,
+        start_update: int = 256,
+        update_interval: int = 1,
+        layers: Tuple = (256, 256),
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -145,7 +139,7 @@ class SAC:
 
         self.create_model()
 
-    def create_model(self):
+    def create_model(self) -> None:
         """
         Initialize the model
         Initializes optimizer and replay buffers as well.
@@ -219,7 +213,7 @@ class SAC:
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             ).to(self.device)
 
-    def sample_action(self, state):
+    def sample_action(self, state: np.ndarray) -> np.ndarray:
         """
         sample action normal distribution parameterized by policy network
         
@@ -250,7 +244,7 @@ class SAC:
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
         return action, log_pi, mean
 
-    def select_action(self, state):
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         """
         select action given a state
 
@@ -263,7 +257,14 @@ class SAC:
         action, _, _ = self.sample_action(state)
         return action.detach().cpu().numpy()[0]
 
-    def update_params(self, state, action, reward, next_state, done):
+    def update_params(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        next_state: np.ndarray,
+        done: float,
+    ) -> (Tuple[float]):
         """
         Computes loss and takes optimizer step
 
@@ -351,7 +352,7 @@ class SAC:
 
         return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
-    def learn(self):  # pragma: no cover
+    def learn(self) -> None:  # pragma: no cover
         if self.tensorboard_log:
             writer = SummaryWriter(self.tensorboard_log)
 
@@ -434,7 +435,7 @@ class SAC:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
             "gamma": self.gamma,
