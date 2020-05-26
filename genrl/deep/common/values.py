@@ -3,11 +3,10 @@ from .utils import mlp, cnn
 from typing import Tuple, Union, Type
 import numpy as np
 
-def _get_val_model(arch: str, 
-                   val_type: str, 
-                   state_dim: str, 
-                   hidden: Tuple, 
-                   action_dim: int=None):
+
+def _get_val_model(
+    arch: str, val_type: str, state_dim: str, hidden: Tuple, action_dim: int = None
+):
     """
     Returns Neural Network given specifications
 
@@ -49,11 +48,13 @@ class MlpValue(BaseValue):
     :type hidden: tuple or list
     """
 
-    def __init__(self, 
-                 state_dim: int, 
-                 action_dim: int=None, 
-                 val_type: str="V", 
-                 hidden: Tuple=(32, 32)):
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int = None,
+        val_type: str = "V",
+        hidden: Tuple = (32, 32),
+    ):
         super(MlpValue, self).__init__()
 
         self.state_dim = state_dim
@@ -78,16 +79,14 @@ class CNNValue(BaseValue):
     :type val_type: string
     :type hidden: tuple or list
     """
-<<<<<<< HEAD
-    def __init__(self, 
-                 action_dim: int, 
-                 history_length: int=4, 
-                 val_type: str="Qs", 
-                 fc_layers: Tuple=(256,)):
-=======
 
-    def __init__(self, action_dim, history_length=4, val_type="Qs", fc_layers=(256,)):
->>>>>>> 9c3a177d54a7d2d228bbe5b4ec184bd130f29d8f
+    def __init__(
+        self,
+        action_dim: int,
+        history_length: int = 4,
+        val_type: str = "Qs",
+        fc_layers: Tuple = (256,),
+    ):
         super(CNNValue, self).__init__()
 
         self.action_dim = action_dim
@@ -96,8 +95,7 @@ class CNNValue(BaseValue):
 
         self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
 
-    def forward(self, 
-                state: np.ndarray) -> np.ndarray:
+    def forward(self, state: np.ndarray) -> np.ndarray:
         state = self.conv(state)
         state = state.view(state.size(0), -1)
         state = self.fc(state)
