@@ -149,7 +149,9 @@ get important model hyperparams.
                 if ep == self.evaluate_episodes:
                     print(
                         "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                            self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews)
+                            self.evaluate_episodes,
+                            np.around(np.mean(ep_rews), decimals=4),
+                            np.around(np.std(ep_rews), decimals=4),
                         )
                     )
                     break
@@ -345,7 +347,7 @@ many steps
                         {
                             "timestep": t,
                             "Episode": episode,
-                            "Episode Reward": episode_reward,
+                            "Episode Reward": np.around(episode_reward, decimals=4),
                         }
                     )
 
@@ -516,7 +518,7 @@ class OnPolicyTrainer(Trainer):
                 self.logger.write(
                     {
                         "Episode": episode,
-                        "Reward": epoch_reward,
+                        "Reward": np.around(epoch_reward, decimals=4),
                         "Timestep": (i * episode * self.agent.timesteps_per_actorbatch),
                     }
                 )
