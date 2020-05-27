@@ -4,6 +4,7 @@ import sys
 from torch.utils.tensorboard import SummaryWriter
 from typing import List, Dict, Any
 
+
 class Logger:
     """
     Logger class to log important information
@@ -13,9 +14,8 @@ class Logger:
     :type logdir: string
     :type formats: list
     """
-    def __init__(self, 
-                 logdir: str=None, 
-                 formats: List[str]=["csv"]):
+
+    def __init__(self, logdir: str = None, formats: List[str] = ["csv"]):
         if logdir is None:
             self._logdir = os.getcwd()
         else:
@@ -27,8 +27,7 @@ class Logger:
         for format in self.formats:
             self.writers.append(get_logger_by_name(format)(self.logdir))
 
-    def write(self, 
-              kvs: Dict[str, Any]) -> None:
+    def write(self, kvs: Dict[str, Any]) -> None:
         """
         Add entry to logger
 
@@ -67,12 +66,11 @@ class HumanOutputFormat:
     :param logdir: Directory at which log is present
     :type logdir: string
     """
-    def __init__(self, 
-                 logdir: str):
+
+    def __init__(self, logdir: str):
         self.file = os.path.join(logdir, "train.log")
 
-    def write(self, 
-              kvs: Dict[str, Any]) -> None:
+    def write(self, kvs: Dict[str, Any]) -> None:
         """
         Log the entry out in human readable format
 
@@ -99,14 +97,13 @@ class TensorboardLogger:
     :param logdir: Directory to save log at
     :type logdir: string
     """
-    def __init__(self, 
-                 logdir: str):
+
+    def __init__(self, logdir: str):
         self.logdir = logdir
         os.makedirs(self.logdir, exist_ok=True)
         self.writer = SummaryWriter(logdir)
 
-    def write(self,
-              kvs: Dict[str, Any]) -> None:
+    def write(self, kvs: Dict[str, Any]) -> None:
         """
         Add entry to logger
 
@@ -130,16 +127,15 @@ class CSVLogger:
     :param logdir: Directory to save log at
     :type logdir: string
     """
-    def __init__(self, 
-                 logdir: str):
+
+    def __init__(self, logdir: str):
         self.logdir = logdir
         os.makedirs(self.logdir, exist_ok=True)
         self.file = open("{}/train.csv".format(logdir), "w")
         self.first = True
         self.keynames = {}
 
-    def write(self, 
-              kvs: Dict[str, Any]) -> None:
+    def write(self, kvs: Dict[str, Any]) -> None:
         """
         Add entry to logger
 

@@ -35,7 +35,7 @@ Eg. "mlp" or "cnn"
     raise ValueError
 
 
-def mlp(sizes: Tuple, sac: bool=False):
+def mlp(sizes: Tuple, sac: bool = False):
     """
     Generates an MLP model given sizes of each layer
 
@@ -54,10 +54,12 @@ activation layers
     return nn.Sequential(*layers)
 
 
-def cnn(channels: Tuple=(4, 16, 32), 
-        kernel_sizes: Tuple=(8, 4),
-        strides: Tuple=(4, 2), 
-        in_size: int=84) -> (Tuple):
+def cnn(
+    channels: Tuple = (4, 16, 32),
+    kernel_sizes: Tuple = (8, 4),
+    strides: Tuple = (4, 2),
+    in_size: int = 84,
+) -> (Tuple):
     """
     Generates a CNN model given input dimensions, channels, kernel_sizes and \
 strides
@@ -87,6 +89,7 @@ activation layers
     cnn_layers = nn.Sequential(*cnn_layers)
     output_size = int(out_channels * (output_size ** 2))
     return cnn_layers, output_size
+
 
 def save_params(algo: Any, timestep: int) -> None:
     """
@@ -160,7 +163,7 @@ discreteness of action space and action limit (highest action value)
     return state_dim, action_dim, discrete, action_lim
 
 
-def set_seeds(seed: int, env: Union[gym.Env, venv]=None) -> None:
+def set_seeds(seed: int, env: Union[gym.Env, venv] = None) -> None:
     """
     Sets seeds for reproducibility
 

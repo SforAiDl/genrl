@@ -28,7 +28,7 @@ class MlpActorCritic(BaseActorCritic):
         action_dim: spaces.Space,
         hidden: Tuple = (32, 32),
         val_type: str = "V",
-        discrete: bool =True,
+        discrete: bool = True,
         *args,
         **kwargs
     ):
