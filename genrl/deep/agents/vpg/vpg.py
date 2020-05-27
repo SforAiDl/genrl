@@ -7,12 +7,13 @@ import gym
 
 from ...common import (
     get_model,
-    evaluate,
     save_params,
     load_params,
     get_env_properties,
     set_seeds,
+    venv,
 )
+from typing import Tuple, Union, Optional, Any, Dict
 
 
 class VPG:
@@ -55,24 +56,24 @@ class VPG:
 
     def __init__(
         self,
-        network_type,
-        env,
-        timesteps_per_actorbatch=1000,
-        gamma=0.99,
-        actor_batch_size=4,
-        epochs=1000,
-        lr_policy=0.01,
-        lr_value=0.0005,
-        policy_copy_interval=20,
-        layers=(32, 32),
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        load_model=None,
-        save_interval=50,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        timesteps_per_actorbatch: int = 1000,
+        gamma: float = 0.99,
+        actor_batch_size: int = 4,
+        epochs: int = 1000,
+        lr_policy: float = 0.01,
+        lr_value: float = 0.0005,
+        policy_copy_interval: int = 20,
+        layers: Tuple = (32, 32),
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        save_interval: int = 50,
     ):
         self.network_type = network_type
         self.env = env
@@ -85,7 +86,6 @@ class VPG:
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
-        self.evaluate = evaluate
         self.save_interval = save_interval
         self.layers = layers
         self.run_num = run_num
@@ -113,7 +113,7 @@ class VPG:
 
         self.create_model()
 
-    def create_model(self):
+    def create_model(self) -> None:
         """
         Initialize the actor and critic networks 
         """
@@ -143,7 +143,9 @@ class VPG:
         self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
         self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
-    def select_action(self, state, deterministic=False):
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
         """
         Select action for the given state 
 
@@ -167,7 +169,7 @@ class VPG:
 
         return a
 
-    def get_traj_loss(self):
+    def get_traj_loss(self) -> None:
         """
         Calculates the loss for the trajectory 
         """
@@ -199,7 +201,7 @@ class VPG:
         self.policy_hist = Variable(torch.Tensor()).to(self.device)
         self.value_hist = Variable(torch.Tensor()).to(self.device)
 
-    def update(self, episode):
+    def update(self, episode: int) -> None:
         """
         Update the policy and take the step for the optimizer
 
@@ -228,7 +230,7 @@ class VPG:
         self.policy_loss_hist = Variable(torch.Tensor()).to(self.device)
         self.value_loss_hist = Variable(torch.Tensor()).to(self.device)
 
-    def learn(self):  # pragma: no cover
+    def learn(self) -> None:  # pragma: no cover
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
@@ -267,7 +269,7 @@ class VPG:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
             "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
