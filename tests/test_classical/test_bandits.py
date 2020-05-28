@@ -8,6 +8,7 @@ from genrl import (
     ThompsonSamplingPolicy,
 )
 
+
 class TestBandit:
     def test_eps_greedy_gaussian(self):
         bandit = GaussianBandit(arms=10)
@@ -18,12 +19,12 @@ class TestBandit:
         bandit = GaussianBandit(arms=10)
         policy = UCBPolicy(bandit)
         policy.learn(10)
-    
+
     def test_softmax_gaussian(self):
         bandit = GaussianBandit(arms=10)
         policy = SoftmaxActionSelectionPolicy(bandit)
         policy.learn(10)
-    
+
     def test_eps_greedy_bernoulli(self):
         bandit = BernoulliBandit(arms=10)
         policy = EpsGreedyPolicy(bandit)
