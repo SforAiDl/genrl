@@ -279,17 +279,31 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
     Refer to Section 2.8 of Reinforcement Learning: An Introduction.
 
     :param bandit: The Bandit to solve
+    :param alpha: The step size parameter for gradient based update
     :param temp: Temperature for softmax distribution over Q values of actions
     :type bandit: Bandit type object 
+    :type alpha: float
     :type temp: float 
     """
 
-    def __init__(self, bandit, temp=0.01):
+    def __init__(self, bandit, alpha=0.1, temp=0.01):
         super(SoftmaxActionSelectionPolicy, self).__init__(
-            bandit, requires_init_run=True
+            bandit, requires_init_run=False
         )
+        self._alpha = alpha
         self._temp = temp
         self._Q = np.zeros(bandit.arms)
+        self._probability_hist = []
+
+    @property
+    def alpha(self):
+        """
+        Get the step size parameter for gradient based update of policy
+        
+        :returns: Step size which controls rate of learning for policy
+        :rtype: float
+        """
+        return self._alpha
 
     @property
     def temp(self):
@@ -311,6 +325,16 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         """
         return self._Q
 
+    @property
+    def probability_hist(self):
+        """
+        Get the history of probabilty values assigned to each action for each timestep 
+
+        :returns: Numpy array of probability values for all actions
+        :rtype: numpy.ndarray
+        """
+        return self._probability_hist
+
     def _softmax(self, x):
         r"""
         Softmax with temperature
@@ -321,7 +345,8 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         """
         exp = np.exp(x / self.temp)
         total = np.sum(exp)
-        return exp / total
+        p = exp / total
+        return p
 
     def select_action(self, t):
         """
@@ -336,17 +361,17 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         :rtype: int
         """
         probabilities = self._softmax(self.Q)
-        action = np.random.choice(range(self._bandit.arms), p=probabilities)
+        action = np.random.choice(self._bandit.arms, 1, p=probabilities)[0]
         self.action_hist.append(action)
+        self.probability_hist.append(probabilities)
         return action
 
     def update_params(self, action, reward):
         """
         Update parmeters for the policy
 
-        Updates the regret as the difference between max Q value and 
-        that of the action. Updates the Q values according to the
-        reward recieved in this step.
+        Updates the regret as the difference between max Q value and that 
+        of the action. Updates the Q values through a gradient ascent step
 
         :param action: action taken for the step
         :param reward: reward obtained for the step
@@ -356,8 +381,26 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         self.reward_hist.append(reward)
         self._regret += max(self.Q) - self.Q[action]
         self.regret_hist.append(self.regret)
-        self.Q[action] += (reward - self.Q[action]) / (self.counts[action] + 1)
-        self.counts[action] += 1
+
+        # compute reward baseline by taking mean of all rewards till t-1
+        if len(self.reward_hist) <= 1:
+            reward_baseline = 0.0
+        else:
+            reward_baseline = np.mean(self.reward_hist[:-1])
+
+        current_probailities = self.probability_hist[-1]
+
+        # update Q values for the action taken and those not taken seperately
+        self.Q[action] += (
+            self.alpha * (reward - reward_baseline) * (1 - current_probailities[action])
+        )
+        actions_not_taken = np.arange(self._bandit.arms) != action
+        self.Q[actions_not_taken] += (
+            -1
+            * self.alpha
+            * (reward - reward_baseline)
+            * current_probailities[actions_not_taken]
+        )
 
 
 class BayesianUCBPolicy(BanditPolicy):
@@ -586,7 +629,7 @@ if __name__ == "__main__":
     from bandits import GaussianBandit, BernoulliBandit
 
     timesteps = 1000
-    iterations = 2000
+    iterations = 50
     arms = 10
     bandit_args = {"arms": arms}
 
@@ -612,8 +655,11 @@ if __name__ == "__main__":
         iterations,
     )
 
-    temp_vals = [0.01, 0.03, 0.1]
-    policy_args_collection = [{"temp": i} for i in c_vals]
+    alpha_vals = [0.1, 0.3]
+    temp_vals = [0.01, 0.1, 1]
+    policy_args_collection = [
+        {"alpha": i, "temp": j} for i, j in zip(alpha_vals, temp_vals)
+    ]
     demo_policy(
         SoftmaxActionSelectionPolicy,
         GaussianBandit,
