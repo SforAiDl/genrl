@@ -1,4 +1,6 @@
 import numpy as np
+import gym
+from typing import Tuple
 
 
 class SARSA:
@@ -19,7 +21,14 @@ class SARSA:
     :type lr: float
     """
 
-    def __init__(self, env, epsilon=0.9, lmbda=0.9, gamma=0.95, lr=0.01):
+    def __init__(
+        self,
+        env: gym.Env,
+        epsilon: float = 0.9,
+        lmbda: float = 0.9,
+        gamma: float = 0.95,
+        lr: float = 0.01,
+    ):
         self.env = env
         self.epsilon = epsilon
         self.lmbda = lmbda
@@ -30,7 +39,7 @@ class SARSA:
 
         self.e = np.zeros((self.env.observation_space.n, self.env.action_space.n))
 
-    def get_action(self, s, explore=True):
+    def get_action(self, s: np.ndarray, explore: bool = True) -> np.ndarray:
         """
         Epsilon greedy selection of epsilon in the explore phase 
 
@@ -46,7 +55,7 @@ class SARSA:
                 return self.env.action_space.sample()
         return np.argmax(self.Q[s, :])
 
-    def update(self, transition):
+    def update(self, transition: Tuple) -> None:
         """
         Update the Q table and e values
 
