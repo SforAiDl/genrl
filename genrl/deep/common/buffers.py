@@ -3,20 +3,21 @@ import torch
 from collections import deque
 import random
 import numpy as np
+from .utils import get_obs_shape, get_action_dim
 
 
 class ReplayBuffer:
     def __init__(self, size, env):
-        self.size = size
-        # self.memory = deque([], maxlen=size)
-        self.observations = np.zeros((size, env.n_envs, env.observation_space.shape[0]))
-        if isinstance(env.envs[0].unwrapped, gym.envs.classic_control.CartPoleEnv):
-            self.actions = np.zeros((size, env.n_envs, 1))
-        else:
-            self.actions = np.zeros((size, env.n_envs, env.action_space.shape[0]))
-        self.rewards = np.zeros((size, env.n_envs))
-        self.dones = np.zeros((size, env.n_envs))
-        self.next_observations = np.zeros((size, env.n_envs, env.observation_space.shape[0]))
+        self.obs_shape = get_obs_shape(env.observation_space)
+        self.action_dim = get_action_dim(env.action_space)
+        self.buffer_size = size
+        self.n_envs = env.n_envs
+        
+        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
+        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
+        self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
         self.pos = 0
 
     def push(self, x):
@@ -26,7 +27,7 @@ class ReplayBuffer:
             self.rewards = np.roll(self.rewards, -1, axis=0)
             self.dones = np.roll(self.dones, -1, axis=0)
             self.next_observations = np.roll(self.next_observations, -1, axis=0)
-            pos = self.size-1
+            pos = self.buffer_size-1
         else:
             pos = self.pos
         self.observations[pos] += np.array(x[0]).copy()
@@ -65,7 +66,7 @@ class ReplayBuffer:
                 self.rewards = np.roll(self.rewards, -1, axis=0)
                 self.dones = np.roll(self.dones, -1, axis=0)
                 self.next_observations = np.roll(self.next_observations, -1, axis=0)
-                pos = self.size-1
+                pos = self.buffer_size-1
             else:
                 pos = self.pos
             self.observations[pos] += np.array(sample[0]).copy()

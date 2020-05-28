@@ -5,6 +5,7 @@ import gym
 import torch
 import numpy as np
 import torch.nn as nn
+from gym import spaces
 
 
 def get_model(type_, name_):
@@ -118,3 +119,32 @@ def get_obs_action_shape(obs, action):
     else:
         raise NotImplementedError
     
+def get_obs_shape(observation_space):
+    """
+    Get the shape of the observation.
+    :param observation_space: Observation space 
+    :type observation_space: spaces.Space
+    :returns: The observation space's shape
+    :rtype: (Tuple[int, ...])
+    """
+    if isinstance(observation_space, spaces.Box):
+        return observation_space.shape
+    elif isinstance(observation_space, spaces.Discrete):
+        return 1,
+    else:
+        raise NotImplementedError()
+
+def get_action_dim(action_space):
+    """
+    Get the dimension of the action space.
+    :param action_space: Action space
+    :type action_space: spaces.Space
+    :returns: Action space's shape
+    :rtype: int
+    """
+    if isinstance(action_space, spaces.Box):
+        return int(np.prod(action_space.shape))
+    elif isinstance(action_space, spaces.Discrete):
+        return 1
+    else:
+        raise NotImplementedError()
