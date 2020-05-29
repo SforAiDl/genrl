@@ -136,7 +136,6 @@ class PPO1:
 
     def select_action(self, state):
         state = torch.as_tensor(state).float().to(self.device)
-
         # create distribution based on policy output
         action, c_new = self.policy_new.get_action(state, deterministic=False)
         val = self.value_fn.get_value(state)
@@ -190,46 +189,52 @@ class PPO1:
             torch.nn.utils.clip_grad_norm_(self.value_fn.parameters(), 0.5)
             self.optimizer_value.step()
 
+    def collect_rollouts(self, initial_state):
+
+        state = initial_state
+
+        for i in range(2048):
+            
+            with torch.no_grad():
+                action, values, old_log_probs = self.select_action(state)
+                
+            next_state, reward, done, _ = self.env.step(np.array(action))
+            self.epoch_reward += reward
+
+            if self.render:
+                self.env.render()
+
+            self.rollout.add(state, action.reshape(self.env.n_envs,1), reward, done, values, old_log_probs)
+
+            state = next_state
+
+            for i, d in enumerate(done):
+                if d:
+                    self.rewards.append(self.epoch_reward[i])
+                    self.epoch_reward[i] = 0
+
+        return values, done
 
     def learn(self): #pragma: no cover
         # training loop
         state = self.env.reset()
-        for episode in range(self.epochs):
-            epoch_reward = np.zeros(self.env.n_envs)
+        for epoch in range(self.epochs):
+            self.epoch_reward = np.zeros(self.env.n_envs)
 
             self.rollout.reset()
             self.rewards = []
 
-            # Collect Rollouts
-            for i in range(2048):
-                
-                with torch.no_grad():
-                    action, values, old_log_probs = self.select_action(state)
-                    
-                next_state, reward, done, _ = self.env.step(np.array(action))
-                epoch_reward += reward
-
-                if self.render:
-                    self.env.render()
-
-                self.rollout.add(state, action.reshape(self.env.n_envs,1), reward, done, values, old_log_probs)
-
-                state = next_state
-
-                for i, d in enumerate(done):
-                    if d:
-                        self.rewards.append(epoch_reward[i])
-                        epoch_reward[i] = 0
+            values, done = self.collect_rollouts(state)
             
             self.get_traj_loss(values.cpu().numpy(), done)
 
             self.update_policy(copy_policy=True)
 
-            if episode % 1 == 0:
-                print("Episode: {}, reward: {}".format(episode, np.mean(self.rewards)))
+            if epoch % 1 == 0:
+                print("Episode: {}, reward: {}".format(epoch, np.mean(self.rewards)))
                 self.rewards = []
                 if self.tensorboard_log:
-                    self.writer.add_scalar("reward", epoch_reward, episode)
+                    self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
 
             # if self.save_model is not None:
