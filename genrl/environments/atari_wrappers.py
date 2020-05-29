@@ -147,14 +147,3 @@ def AtariEnv(
             env = wrapper(env)
 
     return env
-
-
-if __name__ == "__main__":
-    env = AtariEnv(
-        "PongNoFrameskip-v0",
-        wrapper_list=[AtariPreprocessing, FrameStack],
-        lz4_compress=True
-    )
-    env.reset()
-    env.step(1)
-
