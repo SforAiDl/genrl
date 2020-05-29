@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
+from gym import spaces
 from torch.distributions import Categorical, Normal
+from typing import Tuple, Optional
 
 
 class BasePolicy(nn.Module):
@@ -17,7 +19,14 @@ class BasePolicy(nn.Module):
     :type discrete: bool
     """
 
-    def __init__(self, state_dim, action_dim, hidden, discrete, **kwargs):
+    def __init__(
+        self,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
+        hidden: Tuple,
+        discrete: bool,
+        **kwargs
+    ):
         super(BasePolicy, self).__init__()
 
         self.state_dim = state_dim
@@ -35,7 +44,9 @@ class BasePolicy(nn.Module):
 
         self.model = None
 
-    def forward(self, state):
+    def forward(
+        self, state: torch.Tensor
+    ) -> (Tuple[torch.Tensor, Optional[torch.Tensor]]):
         """
         Defines the computation performed at every call.
 
@@ -52,7 +63,9 @@ class BasePolicy(nn.Module):
 
         return state
 
-    def get_action(self, state, deterministic=False):
+    def get_action(
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """
         Get action from policy based on input
 
@@ -92,7 +105,7 @@ class BaseValue(nn.Module):
 
         self.model = None
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
         Defines the computation performed at every call.
 
@@ -101,7 +114,7 @@ class BaseValue(nn.Module):
         """
         return self.model.forward(x)
 
-    def get_value(self, x):
+    def get_value(self, x: torch.Tensor) -> torch.Tensor:
         """
         Get value from value function based on input
 
@@ -123,7 +136,9 @@ class BaseActorCritic(nn.Module):
         self.actor = None
         self.critic = None
 
-    def get_action(self, state, deterministic=False):
+    def get_action(
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """
         Get action from the Actor based on input
 
@@ -137,7 +152,7 @@ else False
         state = torch.as_tensor(state).float()
         return self.actor.get_action(state, deterministic=deterministic)
 
-    def get_value(self, state):
+    def get_value(self, state: torch.Tensor) -> torch.Tensor:
         """
         Get value from the Critic based on input
 

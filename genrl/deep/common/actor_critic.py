@@ -1,6 +1,8 @@
+from gym import spaces
 from .base import BaseActorCritic
 from .policies import MlpPolicy
 from .values import MlpValue
+from typing import Tuple
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -22,11 +24,11 @@ class MlpActorCritic(BaseActorCritic):
 
     def __init__(
         self,
-        state_dim,
-        action_dim,
-        hidden=(32, 32),
-        val_type="V",
-        discrete=True,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
+        hidden: Tuple = (32, 32),
+        val_type: str = "V",
+        discrete: bool = True,
         *args,
         **kwargs
     ):
@@ -39,7 +41,7 @@ class MlpActorCritic(BaseActorCritic):
 actor_critic_registry = {"mlp": MlpActorCritic}
 
 
-def get_actor_critic_from_name(name_):
+def get_actor_critic_from_name(name_: str):
     """
     Returns Actor Critic given the type of the Actor Critic
 

@@ -1,5 +1,6 @@
 from .base import BasePolicy
 from .utils import mlp
+from typing import Tuple
 
 
 class MlpPolicy(BasePolicy):
@@ -17,7 +18,13 @@ class MlpPolicy(BasePolicy):
     """
 
     def __init__(
-        self, state_dim, action_dim, hidden=(32, 32), disc=True, *args, **kwargs
+        self,
+        state_dim: int,
+        action_dim: int,
+        hidden: Tuple = (32, 32),
+        disc: bool = True,
+        *args,
+        **kwargs
     ):
         super(MlpPolicy, self).__init__(state_dim, action_dim, hidden, disc, **kwargs)
 
@@ -30,7 +37,7 @@ class MlpPolicy(BasePolicy):
 policy_registry = {"mlp": MlpPolicy}
 
 
-def get_policy_from_name(name_):
+def get_policy_from_name(name_: str):
     """
     Returns policy given the name of the policy
 

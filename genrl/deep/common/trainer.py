@@ -4,11 +4,14 @@ import torch
 from torchvision import transforms
 import numpy as np
 from collections import deque
-
+import gym
 from abc import ABC
 
 from .utils import set_seeds
 from .logger import Logger
+from .VecEnv import venv
+from .buffers import ReplayBuffer, PrioritizedBuffer
+from typing import Union, Type, List, Optional, Any
 
 
 class Trainer(ABC):
@@ -41,7 +44,7 @@ False (To be implemented)
     :type save_interval: int
     :type render: bool
     :type max_ep_len: int
-    :type distributed: int
+    :type distributed: bool
     :type ckpt_log_name: string
     :type steps_per_epochs: int
     :type epochs: int
@@ -54,27 +57,27 @@ False (To be implemented)
 
     def __init__(
         self,
-        agent,
-        env,
-        log_mode=["stdout"],
-        buffer=None,
-        off_policy=False,
-        save_interval=0,
-        render=False,
-        max_ep_len=1000,
-        distributed=False,
-        ckpt_log_name="experiment",
-        steps_per_epoch=4000,
-        epochs=10,
-        device="cpu",
-        log_interval=10,
-        evaluate_episodes=500,
-        logdir="logs",
-        batch_size=50,
-        seed=None,
-        deterministic_actions=False,
-        transform=None,
-        history_length=4,
+        agent: Any,
+        env: Union[gym.Env, Type[venv]],
+        log_mode: List[str] = ["stdout"],
+        buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
+        off_policy: bool = False,
+        save_interval: int = 0,
+        render: bool = False,
+        max_ep_len: int = 1000,
+        distributed: bool = False,
+        ckpt_log_name: str = "experiment",
+        steps_per_epoch: int = 4000,
+        epochs: int = 10,
+        device: Union[torch.device, str] = "cpu",
+        log_interval: int = 10,
+        evaluate_episodes: int = 500,
+        logdir: str = "logs",
+        batch_size: int = 50,
+        seed: Optional[int] = None,
+        deterministic_actions: bool = False,
+        transform: bool = None,
+        history_length: int = 4,
     ):
         self.agent = agent
         self.env = env
@@ -105,7 +108,7 @@ False (To be implemented)
 
         self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
-    def train(self):
+    def train(self) -> None:
         """
         To be defined in inherited classes
         """
@@ -126,7 +129,7 @@ get important model hyperparams.
         os.makedirs(save_dir, exist_ok=True)
         torch.save(saving_params, "{}/{}.pt".format(save_dir, self.ckpt_log_name))
 
-    def evaluate(self):
+    def evaluate(self) -> None:
         """
         Evaluate function
         """
@@ -157,7 +160,7 @@ get important model hyperparams.
                     break
 
     @property
-    def n_envs(self):
+    def n_envs(self) -> int:
         """
         Number of environments
         """
@@ -215,28 +218,28 @@ many steps
 
     def __init__(
         self,
-        agent,
-        env,
-        log_mode=["stdout"],
-        buffer=None,
-        off_policy=True,
-        save_interval=0,
-        render=False,
-        max_ep_len=1000,
-        distributed=False,
-        ckpt_log_name="experiment",
-        steps_per_epoch=4000,
-        epochs=10,
-        device="cpu",
-        log_interval=10,
-        evaluate_episodes=500,
-        logdir="logs",
-        batch_size=50,
-        seed=0,
-        deterministic_actions=False,
-        warmup_steps=10000,
-        start_update=1000,
-        update_interval=50,
+        agent: Any,
+        env: Union[gym.Env, venv],
+        log_mode: List[str] = ["stdout"],
+        buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
+        off_policy: bool = True,
+        save_interval: int = 0,
+        render: bool = False,
+        max_ep_len: int = 1000,
+        distributed: bool = False,
+        ckpt_log_name: str = "experiment",
+        steps_per_epoch: int = 4000,
+        epochs: int = 10,
+        device: Union[torch.device, str] = "cpu",
+        log_interval: int = 10,
+        evaluate_episodes: int = 500,
+        logdir: str = "logs",
+        batch_size: int = 50,
+        seed: Optional[int] = 0,
+        deterministic_actions: bool = False,
+        warmup_steps: int = 10000,
+        start_update: int = 1000,
+        update_interval: int = 50,
     ):
         super(OffPolicyTrainer, self).__init__(
             agent,
@@ -284,7 +287,7 @@ many steps
                 maxlen=self.history_length,
             )
 
-    def train(self):
+    def train(self) -> None:
         """
         Run training
         """
@@ -434,23 +437,23 @@ class OnPolicyTrainer(Trainer):
 
     def __init__(
         self,
-        agent,
-        env,
-        log_mode=["stdout"],
-        save_interval=0,
-        render=False,
-        max_ep_len=1000,
-        distributed=False,
-        ckpt_log_name="experiment",
-        steps_per_epoch=4000,
-        epochs=10,
-        device="cpu",
-        log_interval=10,
-        evaluate_episodes=500,
-        logdir="logs",
-        batch_size=50,
-        seed=None,
-        deterministic_actions=False,
+        agent: Any,
+        env: Union[gym.Env, venv],
+        log_mode: List[str] = ["stdout"],
+        save_interval: int = 0,
+        render: bool = False,
+        max_ep_len: int = 1000,
+        distributed: bool = False,
+        ckpt_log_name: str = "experiment",
+        steps_per_epoch: int = 4000,
+        epochs: int = 10,
+        device: Union[torch.device, str] = "cpu",
+        log_interval: int = 10,
+        evaluate_episodes: int = 500,
+        logdir: str = "logs",
+        batch_size: int = 50,
+        seed: Optional[int] = None,
+        deterministic_actions: bool = False,
     ):
         super(OnPolicyTrainer, self).__init__(
             agent,
@@ -474,7 +477,7 @@ class OnPolicyTrainer(Trainer):
             deterministic_actions=deterministic_actions,
         )
 
-    def train(self):
+    def train(self) -> None:
         """
         Run training.
         """
