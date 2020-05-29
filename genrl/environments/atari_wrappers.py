@@ -3,7 +3,9 @@ import numpy as np
 import gym
 from gym.core import Wrapper
 
-from genrl.environments import GymWrapper, AtariPreprocessing, FrameStack
+from genrl.environments import (
+    GymWrapper, AtariPreprocessing, FrameStack
+)
 
 
 class NoopReset(Wrapper):
@@ -26,19 +28,20 @@ a random number of some empty (noop) action to introduce some stochasticity.
     def reset(self):
         """
         Resets state of environment. Performs the noop action a \
-random number of times to introduce stochasticity 
+random number of times to introduce stochasticity
 
         :returns: Initial state
         :rtype: NumPy array
         """
         self.env.reset()
+
         noops = np.random.randint(1, self.max_noops+1)
         for _ in range(noops):
             obs, _, done, _ = self.env.step(self.noop_action)
             if done:
                 obs = self.env.reset()
         return obs
-    
+
     def step(self, action):
         """
         Step through underlying Atari environment for given action
@@ -60,22 +63,33 @@ action before starting the training process
     :param env: Atari environment
     :type env: Gym Environment
     """
-    def __init__(self):
+    def __init__(self, env):
         super(FireReset, self).__init__(env)
         self.env = env
-        assert env.unwrapped.get_action_meanings()[1] == 'FIRE'
-        assert len(env.unwrapped.get_action_meanings()) >= 3
-    
+
     def reset(self):
+        """
+        Resets state of environment. Performs the noop action a \
+random number of times to introduce stochasticity
 
+        :returns: Initial state
+        :rtype: NumPy array
+        """
+        observation = self.env.reset()
 
+        action_meanings = env.unwrapped.get_action_meanings()
 
-DEFAULT_ATARI_WRAPPERS = [AtariPreprocessing, FrameStack]
-ALL_ATARI_WRAPPERS = [AtariPreprocessing, NoopReset, FireReset, FrameStack]
+        if action_meanings[1] == "FIRE" and len(action_meanings) >= 3:
+            self.env.step(1)
+            observation, _, _, _ = self.env.step(2)
+
+        return observation
+
 
 def AtariEnv(
     env_id,
-    wrapper_list=ALL_ATARI_WRAPPERS
+    wrapper_list=None,
+    **kwargs
 ):
     """
     Function to apply wrappers for all Atari envs by Trainer class
@@ -85,16 +99,62 @@ def AtariEnv(
     :type env: string
     :type wrapper_list: list or tuple
     """
-    gym_env = gym.make(env_id)
+    DEFAULT_ATARI_WRAPPERS = [AtariPreprocessing, FrameStack]
+    DEFAULT_ARGS = {
+        "frameskip": (2, 5),
+        "grayscale": True,
+        "screen_size": 84,
+        "max_noops": 25,
+        "framestack": 4,
+        "lz4_compress": False
+    }
+    for key in DEFAULT_ARGS:
+        if key not in kwargs:
+            kwargs[key] = DEFAULT_ARGS[key]
+
+    if wrapper_list is None:
+        wrapper_list = DEFAULT_ATARI_WRAPPERS
+
+    if "NoFrameskip" in env_id:
+        kwargs['frameskip'] = 1
+    elif "Deterministic" in env_id:
+        kwargs['frameskip'] = 4
+
+    env = gym.make(env_id)
+    env = GymWrapper(env)
 
     if NoopReset in wrapper_list:
-        assert 'NOOP' in gym_env.unwrapped.get_action_meanings()
+        assert 'NOOP' in env.unwrapped.get_action_meanings()
     if FireReset in wrapper_list:
-        assert 'FIRE' in gym_env.unwrapped.get_action_meanings()
+        assert 'FIRE' in env.unwrapped.get_action_meanings()
 
     for wrapper in wrapper_list:
-        gym_env = wrapper(gym_env)
-
-    env = GymWrapper(gym_env)
+        if wrapper is AtariPreprocessing:
+            env = wrapper(
+                env, kwargs['frameskip'],
+                kwargs['grayscale'], kwargs['screen_size']
+            )
+        elif wrapper is NoopReset:
+            env = wrapper(
+                env, kwargs['max_noops']
+            )
+        elif wrapper is FrameStack:
+            if kwargs['framestack'] > 1:
+                env = wrapper(
+                    env, kwargs['framestack'], kwargs['lz4_compress']
+                )
+        else:
+            env = wrapper(env)
 
     return env
+
+
+if __name__ == "__main__":
+    env = AtariEnv(
+        "PongNoFrameskip-v0",
+        wrapper_list=[AtariPreprocessing, FrameStack],
+        lz4_compress=True
+    )
+    env.reset()
+    env.step(1)
+

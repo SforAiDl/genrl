@@ -119,7 +119,7 @@ get important model hyperparams.
         saving_params = self.agent.get_hyperparams()
         logdir = self.logger.logdir
         algo = self.agent.__class__.__name__
-        env_name = self.env.envs[0].unwrapped.spec.id
+        env_name = self.env.unwrapped.spec.id
 
         save_dir = "{}/checkpoints/{}_{}".format(logdir, algo, env_name)
         os.makedirs(save_dir, exist_ok=True)

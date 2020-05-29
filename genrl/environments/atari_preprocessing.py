@@ -11,16 +11,17 @@ class AtariPreprocessing(Wrapper):
 
     :param env: Atari environment
     :param frameskip: Number of steps between actions. \
-E.g. frameskip=4 will mean 1 action will be taken for every 4 frames
+E.g. frameskip=4 will mean 1 action will be taken for every 4 frames. It'll be a tuple \
+if non-deterministic and a random number will be chosen from (2, 5)
     :param grayscale: Whether or not the output should be converted to grayscale
     :param screen_size: Size of the output screen (square output)
     :type env: Gym Environment
-    :type frameskip: int
+    :type frameskip: tuple or int
     :type grayscale: boolean
     :type screen_size: int
     """
     def __init__(
-        self, env, frameskip=4, grayscale=True, screen_size=84
+        self, env, frameskip=(2, 5), grayscale=True, screen_size=84
     ):
         super(AtariPreprocessing, self).__init__(env)
 
@@ -43,12 +44,13 @@ E.g. frameskip=4 will mean 1 action will be taken for every 4 frames
             )
 
         # Observation buffer to hold last two observations for max pooling
-        self._obs_buffer = [
-            np.empty(self.env.observation_space.shape[:2], dtype=np.uint8),
-            np.empty(self.env.observation_space.shape[:2], dtype=np.uint8)
-        ]
+        if self.frameskip != 1:
+            self._obs_buffer = [
+                np.empty(self.env.observation_space.shape[:2], dtype=np.uint8),
+                np.empty(self.env.observation_space.shape[:2], dtype=np.uint8)
+            ]
 
-    # TODO(zeus3101) Add support for games with multiple lives, 
+    # TODO(zeus3101) Add support for games with multiple lives
 
     def step(self, action):
         """
@@ -59,21 +61,29 @@ E.g. frameskip=4 will mean 1 action will be taken for every 4 frames
         :returns: Current state, reward(for frameskip number of actions), \
 done, info
         """
-        total_reward = 0
+        if isinstance(self.frameskip, tuple):
+            frameskip = np.random.choice(range(*self.frameskip))
+        else:
+            frameskip = self.frameskip
 
-        for timestep in range(self.frameskip):
-            _, reward, done, info = self.env.step(action)
-            total_reward += reward
-            
-            if done:
-                break
+        if frameskip != 1:
+            reward = 0
+            for timestep in range(frameskip):
+                _, step_reward, done, info = self.env.step(action)
+                reward += step_reward
 
-            if timestep == self.frameskip - 2:
-                self._get_screen(0)
-            elif timestep == self.frameskip - 1:
-                self._get_screen(1)
+                if done:
+                    break
 
-        return self._get_obs(), total_reward, done, info
+                if timestep == frameskip - 2:
+                    self._get_screen(0)
+                elif timestep == frameskip - 1:
+                    self._get_screen(1)
+            observation = self._get_obs()
+        else:
+            observation, reward, done, info = self.env.step(action)
+
+        return observation, reward, done, info
 
     def reset(self):
         """
@@ -82,12 +92,15 @@ done, info
         :returns: Initial state
         :rtype: NumPy array
         """
-        self.env.reset()
+        if self.frameskip == 1:
+            observation = self.env.reset()
+        else:
+            self.env.reset()
+            self._get_screen(0)
+            self._obs_buffer[1].fill(0)
+            observation = self._get_obs()
 
-        self._get_screen(0)
-        self._obs_buffer[1].fill(0)
-
-        return self._get_obs()
+        return observation
 
     def _get_screen(self, index):
         """
@@ -109,7 +122,7 @@ resizes output to appropriate screen size.
         :returns: Output observation in required format
         :rtype: NumPy array
         """
-        if self.frameskip > 1:
+        if self.frameskip != 1:
             np.maximum(
                 self._obs_buffer[0],
                 self._obs_buffer[1],

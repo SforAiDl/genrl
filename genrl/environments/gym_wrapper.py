@@ -29,8 +29,6 @@ serially or parallelly
         env = super(GymWrapper, self).__getattribute__('env')
         return getattr(env, name)
 
-    # TODO(zeus3101) Get get_state, set_state, get_info, get_done methods
-
     def render(self, mode="human"):
         """
         Renders all envs in a tiles format similar to baselines.

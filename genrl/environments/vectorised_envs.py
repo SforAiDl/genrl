@@ -287,7 +287,7 @@ class SubProcessVecEnv(VecEnv):
             proc.join()
 
 
-def venv(env, n_envs, parallel=False):
+def ParallelEnv(env, n_envs, parallel=False):
     """
     Chooses the kind of Vector Environment that is required
 
@@ -302,11 +302,3 @@ subprocesses, False if we want environments to run serially one after the other
         return SubProcessVecEnv(env, n_envs)
     else:
         return SerialVecEnv(env, n_envs)
-
-
-if __name__ == "__main__":
-    env = venv("CartPole-v1", 32, parallel=False)
-    env.seed(0)
-    print(env.reset())
-    env.step(env.sample())
-    print(env.action_spaces())
