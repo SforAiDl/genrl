@@ -109,16 +109,9 @@ class PPO1:
     def create_model(self):
         # Instantiate networks and optimizers
         state_dim, action_dim, disc, action_lim = self.get_env_properties(self.env)
-        self.policy_new, self.policy_old = (
-            get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
-            ),
-            get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
-            ),
-        )
+        self.policy_new = get_model("p", self.network_type)(
+                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim)
         self.policy_new = self.policy_new.to(self.device)
-        self.policy_old = self.policy_old.to(self.device)
 
         self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
             self.device
@@ -134,37 +127,25 @@ class PPO1:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.policy_old.load_state_dict(self.policy_new.state_dict())
-
         self.optimizer_policy = opt.Adam(
-            list(self.policy_new.parameters())+list(self.value_fn.parameters()), lr=self.lr_policy
+            self.policy_new.parameters(), lr=self.lr_policy
         )
-        # self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
-
-        # self.traj_reward = []
-        # self.policy_old.policy_hist = Variable(torch.Tensor())
-        # self.policy_new.policy_hist = Variable(torch.Tensor())
-        # self.value_fn.value_hist = Variable(torch.Tensor())
-
-        # self.policy_new.loss_hist = Variable(torch.Tensor())
-        # self.value_fn.loss_hist = Variable(torch.Tensor())
+        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
         self.rollout = RolloutBuffer(2048, self.env.observation_space, self.env.action_space, n_envs=self.env.n_envs)
 
     def select_action(self, state):
         state = torch.as_tensor(state).float().to(self.device)
 
-        # create distribution based on policy_old output
+        # create distribution based on policy output
         action, c_new = self.policy_new.get_action(state, deterministic=False)
-        _, c_old = self.policy_old.get_action(state, deterministic=False)
         val = self.value_fn.get_value(state)
 
         return action.detach().cpu().numpy(), val, c_new.log_prob(action)
 
     def evaluate_actions(self, obs, old_actions):
         val = self.value_fn.get_value(obs)
-        print(val.shape)
-        _, dist = self.policy_old.get_action(obs)
+        _, dist = self.policy_new.get_action(obs)
         return val, dist.log_prob(old_actions), dist.entropy()
 
     # get clipped loss for single trajectory (episode)
@@ -172,30 +153,6 @@ class PPO1:
         self.rollout.compute_returns_and_advantage(values, dones, use_gae=True)
 
     def update_policy(self, copy_policy=True):
-        # mean of all traj losses in single epoch
-        # loss_policy = torch.mean(self.policy_new.loss_hist)
-        # loss_value = torch.mean(self.value_fn.loss_hist)
-
-        # # tensorboard book-keeping
-        # if self.tensorboard_log:
-        #     self.writer.add_scalar("loss/policy", loss_policy, episode)
-        #     self.writer.add_scalar("loss/value", loss_value, episode)
-
-        # # take gradient step
-        # self.optimizer_policy.zero_grad()
-        # loss_policy.backward()
-        # self.optimizer_policy.step()
-
-        # self.optimizer_value.zero_grad()
-        # loss_value.backward()
-        # self.optimizer_value.step()
-
-        # # clear loss history for epoch
-        # self.policy_new.loss_hist = Variable(torch.Tensor())
-        # self.value_fn.loss_hist = Variable(torch.Tensor())
-        # for epoch in range(10):
-        # if copy_policy:
-        #     self.policy_old.load_state_dict(self.policy_new.state_dict())
 
         for rollout in self.rollout.get(256):
             actions = rollout.actions
@@ -215,21 +172,24 @@ class PPO1:
             policy_loss_2 = advantages * torch.clamp(ratio, 1 - 0.2, 1 + 0.2)
             policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
 
-            # values = values.flatten()
+            values = values.flatten()
 
-            value_loss = F.mse_loss(rollout.returns, values)#values)
+            value_loss = F.mse_loss(rollout.returns, values)
 
             entropy_loss = -torch.mean(entropy) #Change this to entropy
 
-            loss = policy_loss + self.ent_coef * entropy_loss + self.vf_coef * value_loss
+            loss = policy_loss + self.ent_coef * entropy_loss# + self.vf_coef * value_loss
 
             self.optimizer_policy.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(list(self.policy_new.parameters())+list(self.value_fn.parameters()), 0.5)
+            torch.nn.utils.clip_grad_norm_(self.policy_new.parameters(), 0.5)
             self.optimizer_policy.step()
 
-        # if copy_policy:
-        #     self.policy_old.load_state_dict(self.policy_new.state_dict())
+            self.optimizer_value.zero_grad()
+            value_loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.value_fn.parameters(), 0.5)
+            self.optimizer_value.step()
+
 
     def learn(self): #pragma: no cover
         # training loop
@@ -242,8 +202,6 @@ class PPO1:
 
             # Collect Rollouts
             for i in range(2048):
-                # 
-                # done = False
                 
                 with torch.no_grad():
                     action, values, old_log_probs = self.select_action(state)
@@ -262,21 +220,17 @@ class PPO1:
                     if d:
                         self.rewards.append(epoch_reward[i])
                         epoch_reward[i] = 0
-
-                # epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
             
             self.get_traj_loss(values.cpu().numpy(), done)
 
             self.update_policy(copy_policy=True)
 
-            if episode % 5 == 0:
+            if episode % 1 == 0:
                 print("Episode: {}, reward: {}".format(episode, np.mean(self.rewards)))
                 self.rewards = []
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", epoch_reward, episode)
 
-            if episode % self.policy_copy_interval == 0:
-                self.policy_old.load_state_dict(self.policy_new.state_dict())
 
             # if self.save_model is not None:
             #     if episode % self.save_interval == 0:
