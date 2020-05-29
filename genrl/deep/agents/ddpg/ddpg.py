@@ -8,12 +8,13 @@ from copy import deepcopy
 from ...common import (
     ReplayBuffer,
     get_model,
-    evaluate,
     save_params,
     load_params,
     get_env_properties,
     set_seeds,
+    venv,
 )
+from typing import Optional, Any, Tuple, Union, Dict
 
 
 class DDPG:
@@ -74,31 +75,31 @@ class DDPG:
 
     def __init__(
         self,
-        network_type,
-        env,
-        gamma=0.99,
-        replay_size=1000000,
-        batch_size=100,
-        lr_p=0.0001,
-        lr_q=0.001,
-        polyak=0.995,
-        epochs=100,
-        start_steps=10000,
-        steps_per_epoch=4000,
-        noise=None,
-        noise_std=0.1,
-        max_ep_len=1000,
-        start_update=1000,
-        update_interval=50,
-        layers=(32, 32),
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        load_model=None,
-        save_interval=5000,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        gamma: float = 0.99,
+        replay_size: int = 1000000,
+        batch_size: int = 100,
+        lr_p: float = 0.0001,
+        lr_q: float = 0.001,
+        polyak: float = 0.995,
+        epochs: int = 100,
+        start_steps: int = 10000,
+        steps_per_epoch: int = 4000,
+        noise: Optional[Any] = None,
+        noise_std: float = 0.1,
+        max_ep_len: int = 1000,
+        start_update: int = 1000,
+        update_interval: int = 50,
+        layers: Tuple = (32, 32),
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -122,7 +123,6 @@ class DDPG:
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
-        self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
         self.load_model = load_model
@@ -148,7 +148,7 @@ class DDPG:
 
         self.create_model()
 
-    def create_model(self):
+    def create_model(self) -> None:
         """
         Initialize the model
         Initializes optimizer and replay buffers as well.
@@ -186,7 +186,9 @@ class DDPG:
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
-    def select_action(self, state, deterministic=True):
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> np.ndarray:
         """
         Selection of action
 
@@ -212,7 +214,14 @@ class DDPG:
             action, self.env.action_space.low[0], self.env.action_space.high[0]
         )
 
-    def get_q_loss(self, state, action, reward, next_state, done):
+    def get_q_loss(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        next_state: np.ndarray,
+        done: bool,
+    ) -> torch.Tensor:
         """
         Computes loss for Q-Network
 
@@ -241,7 +250,7 @@ class DDPG:
 
         return nn.MSELoss()(q, target)
 
-    def get_p_loss(self, state):
+    def get_p_loss(self, state: np.ndarray) -> torch.Tensor:
         """
         Computes policy loss
 
@@ -255,7 +264,14 @@ class DDPG:
         )
         return -torch.mean(q_pi)
 
-    def update_params(self, state, action, reward, next_state, done):
+    def update_params(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        next_state: np.ndarray,
+        done: bool,
+    ) -> None:
         """
         Takes the step for optimizer.
         """
@@ -285,7 +301,7 @@ class DDPG:
                 param_target.data.mul_(self.polyak)
                 param_target.data.add_((1 - self.polyak) * param.data)
 
-    def learn(self):  # pragma: no cover
+    def learn(self) -> None:  # pragma: no cover
         state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
         total_steps = self.steps_per_epoch * self.epochs
 
@@ -348,7 +364,7 @@ class DDPG:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
             "gamma": self.gamma,

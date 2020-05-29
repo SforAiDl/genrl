@@ -18,7 +18,6 @@ from genrl.deep.common.utils import (
     get_model,
     mlp,
     cnn,
-    evaluate,
     save_params,
     load_params,
     get_env_properties,

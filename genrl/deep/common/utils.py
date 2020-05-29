@@ -5,9 +5,11 @@ import torch
 import numpy as np
 import torch.nn as nn
 import gym
+from .VecEnv import venv
+from typing import Tuple, Union, Any
 
 
-def get_model(type_, name_):
+def get_model(type_: str, name_: str) -> Union:
     """
     Utility to get the class of required function
 
@@ -33,7 +35,7 @@ Eg. "mlp" or "cnn"
     raise ValueError
 
 
-def mlp(sizes, sac=False):
+def mlp(sizes: Tuple, sac: bool = False):
     """
     Generates an MLP model given sizes of each layer
 
@@ -52,7 +54,12 @@ activation layers
     return nn.Sequential(*layers)
 
 
-def cnn(channels=(4, 16, 32), kernel_sizes=(8, 4), strides=(4, 2), in_size=84):
+def cnn(
+    channels: Tuple = (4, 16, 32),
+    kernel_sizes: Tuple = (8, 4),
+    strides: Tuple = (4, 2),
+    in_size: int = 84,
+) -> (Tuple):
     """
     Generates a CNN model given input dimensions, channels, kernel_sizes and \
 strides
@@ -84,44 +91,7 @@ activation layers
     return cnn_layers, output_size
 
 
-def evaluate(algo, num_timesteps=1000):
-    """
-    Function to evaluate the performance of a given agent
-
-    :param algo: The agent object
-    :param num_timesteps: Number of timesteps to evaluate agent over
-    :type algo: Object
-    :type num_timesteps: int
-    """
-    state = algo.env.reset()
-    episode, episode_reward, episode_t = 0, 0, 0
-    total_reward = 0
-
-    print("\nEvaluating...")
-    for _ in range(num_timesteps):
-        action = algo.select_action(state)
-        next_state, reward, done, _ = algo.env.step(action.item())
-        episode_reward += reward
-        total_reward += reward
-        episode_t += 1
-
-        if done:
-            episode += 1
-            print(
-                "Episode: {}, Reward: {}, Timestep: {}".format(
-                    episode, episode_reward, episode_t
-                )
-            )
-            state = algo.env.reset()
-            episode_reward, episode_t = 0, 0
-        else:
-            state = next_state
-
-    algo.env.close()
-    print("Average Reward: {}".format(total_reward / num_timesteps))
-
-
-def save_params(algo, timestep):
+def save_params(algo: Any, timestep: int) -> None:
     """
     Function to save all parameters of a given agent
 
@@ -142,16 +112,16 @@ def save_params(algo, timestep):
             os.makedirs(path)
             run_num = 0
         else:
-            last_path = sorted(
-                os.scandir(path), key=lambda d: d.stat().st_mtime
-            )[-1].path
+            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
+                -1
+            ].path
             run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
         algo.run_num = run_num
 
     torch.save(algo.checkpoint, "{}/{}-log-{}.pt".format(path, run_num, timestep))
 
 
-def load_params(algo):
+def load_params(algo: Any) -> None:
     """
     Function load parameters for an algorithm from a given checkpoint file
 
@@ -166,7 +136,7 @@ def load_params(algo):
         raise Exception("Invalid file name")
 
 
-def get_env_properties(env):
+def get_env_properties(env: Union[gym.Env, venv]) -> (Tuple[int]):
     """
     Finds important properties of environment
 
@@ -193,7 +163,7 @@ discreteness of action space and action limit (highest action value)
     return state_dim, action_dim, discrete, action_lim
 
 
-def set_seeds(seed, env=None):
+def set_seeds(seed: int, env: Union[gym.Env, venv] = None) -> None:
     """
     Sets seeds for reproducibility
 

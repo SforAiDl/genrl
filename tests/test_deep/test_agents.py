@@ -33,7 +33,9 @@ class TestAlgos:
         env = gym.make("Pendulum-v0")
         algo = TD3("mlp", env, noise=OrnsteinUhlenbeckActionNoise, layers=[1, 1])
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
+        )
         trainer.train()
         trainer.evaluate()
         shutil.rmtree("./logs")
@@ -42,7 +44,9 @@ class TestAlgos:
         env = gym.make("Pendulum-v0")
         algo = PPO1("mlp", env, layers=[1, 1])
 
-        trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
+        )
         trainer.train()
         trainer.evaluate()
         shutil.rmtree("./logs")
@@ -51,7 +55,9 @@ class TestAlgos:
         env = gym.make("Pendulum-v0")
         algo = VPG("mlp", env, layers=[1, 1])
 
-        trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
+        )
         trainer.train()
         trainer.evaluate()
         shutil.rmtree("./logs")
@@ -60,7 +66,9 @@ class TestAlgos:
         env = gym.make("Pendulum-v0")
         algo = DDPG("mlp", env, noise=NormalActionNoise, layers=[1, 1])
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
+        )
         trainer.train()
         trainer.evaluate()
         shutil.rmtree("./logs")
@@ -70,7 +78,9 @@ class TestAlgos:
         # DQN
         algo = DQN("mlp", env)
 
-        trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
+        )
         trainer.train()
         trainer.evaluate()
         shutil.rmtree("./logs")

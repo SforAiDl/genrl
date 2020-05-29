@@ -2,6 +2,7 @@ import os
 import sys
 
 from torch.utils.tensorboard import SummaryWriter
+from typing import List, Dict, Any
 
 
 class Logger:
@@ -13,7 +14,8 @@ class Logger:
     :type logdir: string
     :type formats: list
     """
-    def __init__(self, logdir=None, formats=["csv"]):
+
+    def __init__(self, logdir: str = None, formats: List[str] = ["csv"]):
         if logdir is None:
             self._logdir = os.getcwd()
         else:
@@ -25,7 +27,7 @@ class Logger:
         for format in self.formats:
             self.writers.append(get_logger_by_name(format)(self.logdir))
 
-    def write(self, kvs):
+    def write(self, kvs: Dict[str, Any]) -> None:
         """
         Add entry to logger
 
@@ -35,7 +37,7 @@ class Logger:
         for writer in self.writers:
             writer.write(kvs)
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the logger
         """
@@ -43,14 +45,14 @@ class Logger:
             writer.close()
 
     @property
-    def logdir(self):
+    def logdir(self) -> str:
         """
         Return log directory
         """
         return self._logdir
 
     @property
-    def formats(self):
+    def formats(self) -> List[str]:
         """
         Return save format(s)
         """
@@ -64,10 +66,11 @@ class HumanOutputFormat:
     :param logdir: Directory at which log is present
     :type logdir: string
     """
-    def __init__(self, logdir):
+
+    def __init__(self, logdir: str):
         self.file = os.path.join(logdir, "train.log")
 
-    def write(self, kvs):
+    def write(self, kvs: Dict[str, Any]) -> None:
         """
         Log the entry out in human readable format
 
@@ -76,14 +79,22 @@ class HumanOutputFormat:
         """
         with open(self.file, "a") as file:
             print("\n", file=file)
-            print("\n", file=sys.stdout)
+            print("-" * 25, file=sys.stdout)
             for key, value in kvs.items():
+                len1 = len(str(key)) + 3
+                len2 = len(str(value))
+                final_len = 25 - len1 - len2
                 print("{}:{}".format(key, value), file=file)
-                print("{}:{}".format(key, value), file=sys.stdout)
+                print(
+                    "| {}:{}".format(key, value),
+                    " " * (final_len - 3),
+                    "|",
+                    file=sys.stdout,
+                )
+            print("-" * 25, file=sys.stdout)
             print("\n", file=file)
-            print("\n", file=sys.stdout)
 
-    def close(self):
+    def close(self) -> None:
         pass
 
 
@@ -94,12 +105,13 @@ class TensorboardLogger:
     :param logdir: Directory to save log at
     :type logdir: string
     """
-    def __init__(self, logdir):
+
+    def __init__(self, logdir: str):
         self.logdir = logdir
         os.makedirs(self.logdir, exist_ok=True)
         self.writer = SummaryWriter(logdir)
 
-    def write(self, kvs):
+    def write(self, kvs: Dict[str, Any]) -> None:
         """
         Add entry to logger
 
@@ -109,7 +121,7 @@ class TensorboardLogger:
         for key, value in kvs.items():
             self.writer.add_scalar(key, value, kvs["timestep"])
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the logger
         """
@@ -123,14 +135,15 @@ class CSVLogger:
     :param logdir: Directory to save log at
     :type logdir: string
     """
-    def __init__(self, logdir):
+
+    def __init__(self, logdir: str):
         self.logdir = logdir
         os.makedirs(self.logdir, exist_ok=True)
         self.file = open("{}/train.csv".format(logdir), "w")
         self.first = True
         self.keynames = {}
 
-    def write(self, kvs):
+    def write(self, kvs: Dict[str, Any]) -> None:
         """
         Add entry to logger
 
@@ -151,15 +164,13 @@ class CSVLogger:
                     "A new value '{}' cannot be added to CSVLogger".format(key)
                 )
             if i != self.keynames[key]:
-                raise Exception(
-                    "Value not at the same index as when initialized"
-                )
+                raise Exception("Value not at the same index as when initialized")
             self.file.write(str(value))
             self.file.write(",")
 
         self.file.write("\n")
 
-    def close(self):
+    def close(self) -> None:
         """
         Close the logger
         """
@@ -173,7 +184,7 @@ logger_registry = {
 }
 
 
-def get_logger_by_name(name):
+def get_logger_by_name(name: str):
     """
     Gets the logger given the type of logger
 
