@@ -1,5 +1,7 @@
 import numpy as np
 from scipy import stats
+from typing import List, Dict, Any
+from .bandits import Bandit
 
 
 class BanditPolicy(object):
@@ -11,7 +13,7 @@ class BanditPolicy(object):
     :type bandit: Bandit type object 
     """
 
-    def __init__(self, bandit, requires_init_run=False):
+    def __init__(self, bandit: Bandit, requires_init_run: bool = False):
         self._bandit = bandit
         self._regret = 0.0
         self._action_hist = []
@@ -21,7 +23,7 @@ class BanditPolicy(object):
         self._requires_init_run = requires_init_run
 
     @property
-    def action_hist(self):
+    def action_hist(self) -> List[int]:
         """
         Get the history of actions taken
 
@@ -31,7 +33,7 @@ class BanditPolicy(object):
         return self._action_hist
 
     @property
-    def regret_hist(self):
+    def regret_hist(self) -> List[float]:
         """
         Get the history of regrets computed for each step
 
@@ -41,7 +43,7 @@ class BanditPolicy(object):
         return self._regret_hist
 
     @property
-    def regret(self):
+    def regret(self) -> float:
         """
         Get the current regret
 
@@ -51,7 +53,7 @@ class BanditPolicy(object):
         return self._regret
 
     @property
-    def reward_hist(self):
+    def reward_hist(self) -> List[float]:
         """
         Get the history of rewards received for each step
 
@@ -61,7 +63,7 @@ class BanditPolicy(object):
         return self._reward_hist
 
     @property
-    def counts(self):
+    def counts(self) -> np.ndarray:
         """
         Get the number of times each action has been taken
 
@@ -70,7 +72,7 @@ class BanditPolicy(object):
         """
         return self._counts
 
-    def select_action(self, t):
+    def select_action(self, t: int) -> int:
         """
         Select an action
 
@@ -83,7 +85,7 @@ class BanditPolicy(object):
         """
         raise NotImplementedError
 
-    def update_params(self, action, reward):
+    def update_params(self, action: int, reward: float) -> None:
         """
         Update parmeters for the policy
 
@@ -96,7 +98,7 @@ class BanditPolicy(object):
         """
         raise NotImplementedError
 
-    def learn(self, n_timesteps=1000):
+    def learn(self, n_timesteps: int = 1000) -> None:
         """
         Learn to solve the environment over given number of timesteps
 
@@ -131,13 +133,13 @@ class EpsGreedyPolicy(BanditPolicy):
     :type eps: float 
     """
 
-    def __init__(self, bandit, eps=0.05):
+    def __init__(self, bandit: Bandit, eps: float = 0.05):
         super(EpsGreedyPolicy, self).__init__(bandit)
         self._eps = eps
         self._Q = np.zeros(bandit.arms)
 
     @property
-    def eps(self):
+    def eps(self) -> float:
         """
         Get the asscoiated epsilon for the policy 
 
@@ -147,7 +149,7 @@ class EpsGreedyPolicy(BanditPolicy):
         return self._eps
 
     @property
-    def Q(self):
+    def Q(self) -> np.ndarray:
         """
         Get the q values assigned by the policy to all actions
 
@@ -156,7 +158,7 @@ class EpsGreedyPolicy(BanditPolicy):
         """
         return self._Q
 
-    def select_action(self, t):
+    def select_action(self, t: int) -> int:
         """
         Select an action according to epsilon greedy startegy
 
@@ -176,7 +178,7 @@ class EpsGreedyPolicy(BanditPolicy):
         self.action_hist.append(action)
         return action
 
-    def update_params(self, action, reward):
+    def update_params(self, action: int, reward: float) -> None:
         """
         Update parmeters for the policy
 
@@ -209,13 +211,13 @@ class UCBPolicy(BanditPolicy):
     :type c: float 
     """
 
-    def __init__(self, bandit, c=1):
+    def __init__(self, bandit: Bandit, c: float = 1.0):
         super(UCBPolicy, self).__init__(bandit, requires_init_run=True)
         self._c = c
         self._Q = np.zeros(bandit.arms)
 
     @property
-    def c(self):
+    def c(self) -> float:
         """
         Get the confidence level which weights the exploration term 
         
@@ -225,7 +227,7 @@ class UCBPolicy(BanditPolicy):
         return self._c
 
     @property
-    def Q(self):
+    def Q(self) -> np.ndarray:
         """
         Get the q values assigned by the policy to all actions
 
@@ -234,7 +236,7 @@ class UCBPolicy(BanditPolicy):
         """
         return self._Q
 
-    def select_action(self, t):
+    def select_action(self, t: int) -> int:
         """
         Select an action according to upper confidence bound action selction
 
@@ -252,7 +254,7 @@ class UCBPolicy(BanditPolicy):
         self.action_hist.append(action)
         return action
 
-    def update_params(self, action, reward):
+    def update_params(self, action: int, reward: float) -> None:
         """
         Update parmeters for the policy
 
@@ -296,7 +298,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         self._probability_hist = []
 
     @property
-    def alpha(self):
+    def alpha(self) -> float:
         """
         Get the step size parameter for gradient based update of policy
         
@@ -306,7 +308,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         return self._alpha
 
     @property
-    def temp(self):
+    def temp(self) -> float:
         """
         Get the temperature for softmax distribution over Q values of actions
         
@@ -316,7 +318,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         return self._temp
 
     @property
-    def Q(self):
+    def Q(self) -> np.ndarray:
         """
         Get the q values assigned by the policy to all actions
 
@@ -326,7 +328,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         return self._Q
 
     @property
-    def probability_hist(self):
+    def probability_hist(self) -> np.ndarray:
         """
         Get the history of probabilty values assigned to each action for each timestep 
 
@@ -335,20 +337,22 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         """
         return self._probability_hist
 
-    def _softmax(self, x):
+    def _softmax(self, x: np.ndarray) -> np.ndarray:
         r"""
         Softmax with temperature
         :math:`\text{Softmax}(x_{i}) = \frac{\exp(x_i / temp)}{\sum_j \exp(x_j / temp)}`
 
         :param x: Set of values to compute softmax over
         :type x: numpy.ndarray
+        :returns: Computed softmax over given values
+        :rtype: numpy.ndarray
         """
         exp = np.exp(x / self.temp)
         total = np.sum(exp)
         p = exp / total
         return p
 
-    def select_action(self, t):
+    def select_action(self, t: int) -> int:
         """
         Select an action according by softmax action selection strategy
 
@@ -366,7 +370,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         self.probability_hist.append(probabilities)
         return action
 
-    def update_params(self, action, reward):
+    def update_params(self, action: int, reward: float) -> None:
         """
         Update parmeters for the policy
 
@@ -420,14 +424,16 @@ class BayesianUCBPolicy(BanditPolicy):
     :type c: float 
     """
 
-    def __init__(self, bandit, alpha=1, beta=1, c=3):
+    def __init__(
+        self, bandit: Bandit, alpha: float = 1.0, beta: float = 1.0, c: float = 3.0,
+    ):
         super(BayesianUCBPolicy, self).__init__(bandit)
         self._c = c
         self._a = alpha * np.ones(self._bandit.arms)
         self._b = beta * np.ones(self._bandit.arms)
 
     @property
-    def Q(self):
+    def Q(self) -> np.ndarray:
         """
         Compute the q values for all the actions for alpha, beta and c
 
@@ -437,27 +443,27 @@ class BayesianUCBPolicy(BanditPolicy):
         return self.a / (self.a + self.b)
 
     @property
-    def a(self):
+    def a(self) -> np.ndarray:
         """
         Get the alpha value of beta distribution associated with the policy
 
         :returns: alpha values of the beta distribution
-        :rtype: np.ndarray 
+        :rtype: numpy.ndarray 
         """
         return self._a
 
     @property
-    def b(self):
+    def b(self) -> np.ndarray:
         """
         Get the beta value of beta distribution associated with the policy
 
         :returns: beta values of the beta distribution
-        :rtype: np.ndarray 
+        :rtype: numpy.ndarray 
         """
         return self._b
 
     @property
-    def c(self):
+    def c(self) -> float:
         """
         Get the confidence level which weights the exploration term 
         
@@ -466,7 +472,7 @@ class BayesianUCBPolicy(BanditPolicy):
         """
         return self._c
 
-    def select_action(self, t):
+    def select_action(self, t: int) -> int:
         """
         Select an action according to bayesian upper confidence bound
 
@@ -483,7 +489,7 @@ class BayesianUCBPolicy(BanditPolicy):
         self.action_hist.append(action)
         return action
 
-    def update_params(self, action, reward):
+    def update_params(self, action: int, reward: float) -> None:
         """
         Update parmeters for the policy
 
@@ -517,13 +523,13 @@ class ThompsonSamplingPolicy(BanditPolicy):
     :type b: float
     """
 
-    def __init__(self, bandit, alpha=1, beta=1):
+    def __init__(self, bandit: Bandit, alpha: float = 1.0, beta: float = 1.0):
         super(ThompsonSamplingPolicy, self).__init__(bandit)
         self._a = alpha * np.ones(self._bandit.arms)
         self._b = beta * np.ones(self._bandit.arms)
 
     @property
-    def Q(self):
+    def Q(self) -> np.ndarray:
         """
         Compute the q values for all the actions for alpha, beta and c
 
@@ -533,26 +539,26 @@ class ThompsonSamplingPolicy(BanditPolicy):
         return self.a / (self.a + self.b)
 
     @property
-    def a(self):
+    def a(self) -> np.ndarray:
         """
         Get the alpha value of beta distribution associated with the policy
 
         :returns: alpha values of the beta distribution
-        :rtype: np.ndarray 
+        :rtype: numpy.ndarray 
         """
         return self._a
 
     @property
-    def b(self):
+    def b(self) -> np.ndarray:
         """
         Get the alpha value of beta distribution associated with the policy
 
         :returns: alpha values of the beta distribution
-        :rtype: np.ndarray 
+        :rtype: numpy.ndarray 
         """
         return self._b
 
-    def select_action(self, t):
+    def select_action(self, t: int) -> int:
         """
         Select an action according to Thompson Sampling
 
@@ -570,7 +576,7 @@ class ThompsonSamplingPolicy(BanditPolicy):
         self.action_hist.append(action)
         return action
 
-    def update_params(self, action, reward):
+    def update_params(self, action: int, reward: float) -> None:
         """
         Update parmeters for the policy
 
@@ -595,12 +601,12 @@ class ThompsonSamplingPolicy(BanditPolicy):
 if __name__ == "__main__":
 
     def demo_policy(
-        policy_type,
-        bandit_type,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
+        policy_type: BanditPolicy,
+        bandit_type: Bandit,
+        policy_args_collection: Dict[str, Any],
+        bandit_args: Dict[str, Any],
+        timesteps: int,
+        iterations: int,
     ):
         """ Plots rewards and regrets of a given policy on given bandit """
 
@@ -626,14 +632,14 @@ if __name__ == "__main__":
         plt.cla()
 
     import matplotlib.pyplot as plt
-    from bandits import GaussianBandit, BernoulliBandit
+    from .bandits import GaussianBandit, BernoulliBandit
 
     timesteps = 1000
-    iterations = 50
+    iterations = 2
     arms = 10
     bandit_args = {"arms": arms}
 
-    eps_vals = [0, 0.01, 0.03, 0.1, 0.3]
+    eps_vals = [0.0, 0.01, 0.03, 0.1, 0.3]
     policy_args_collection = [{"eps": i} for i in eps_vals]
     demo_policy(
         EpsGreedyPolicy,
@@ -644,7 +650,7 @@ if __name__ == "__main__":
         iterations,
     )
 
-    c_vals = [0.5, 0.9, 1, 2]
+    c_vals = [0.5, 0.9, 1.0, 2.0]
     policy_args_collection = [{"c": i} for i in c_vals]
     demo_policy(
         UCBPolicy,
@@ -656,7 +662,7 @@ if __name__ == "__main__":
     )
 
     alpha_vals = [0.1, 0.3]
-    temp_vals = [0.01, 0.1, 1]
+    temp_vals = [0.01, 0.1, 1.0]
     policy_args_collection = [
         {"alpha": i, "temp": j} for i, j in zip(alpha_vals, temp_vals)
     ]
@@ -669,7 +675,7 @@ if __name__ == "__main__":
         iterations,
     )
 
-    eps_vals = [0, 0.01, 0.03, 0.1, 0.3]
+    eps_vals = [0.0, 0.01, 0.03, 0.1, 0.3]
     policy_args_collection = [{"eps": i} for i in eps_vals]
     demo_policy(
         EpsGreedyPolicy,
@@ -680,7 +686,7 @@ if __name__ == "__main__":
         iterations,
     )
 
-    c_vals = [0.5, 0.9, 1, 2]
+    c_vals = [0.5, 0.9, 1.0, 2.0]
     policy_args_collection = [{"c": i} for i in c_vals]
     demo_policy(
         UCBPolicy,
@@ -691,7 +697,7 @@ if __name__ == "__main__":
         iterations,
     )
 
-    policy_args_collection = [{"alpha": 1, "beta": 1, "c": 3}]
+    policy_args_collection = [{"alpha": 1.0, "beta": 1.0, "c": 3.0}]
     demo_policy(
         BayesianUCBPolicy,
         BernoulliBandit,
@@ -701,7 +707,7 @@ if __name__ == "__main__":
         iterations,
     )
 
-    policy_args_collection = [{"alpha": 1, "beta": 1}]
+    policy_args_collection = [{"alpha": 1.0, "beta": 1.0}]
     demo_policy(
         ThompsonSamplingPolicy,
         BernoulliBandit,

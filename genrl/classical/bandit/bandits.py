@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Union
 
 
 class Bandit(object):
@@ -9,11 +10,11 @@ class Bandit(object):
     :type arms: int
     """
 
-    def __init__(self, arms=1):
+    def __init__(self, arms: int = 1):
         self._narms = arms
 
     @property
-    def arms(self):
+    def arms(self) -> int:
         """
         Get the number of arms in the bandit
 
@@ -22,7 +23,7 @@ class Bandit(object):
         """
         return self._narms
 
-    def step(self, action):
+    def step(self, action: int) -> Union[int, float]:
         """
         Takes an action in the bandit and returns the sampled reward
 
@@ -46,7 +47,7 @@ class GaussianBandit(Bandit):
     :type rewards: numpy.ndarray
     """
 
-    def __init__(self, arms=1, rewards=None):
+    def __init__(self, arms: int = 1, rewards: np.ndarray = None):
         super(GaussianBandit, self).__init__(arms)
         if rewards:
             self._rewards = rewards
@@ -54,7 +55,7 @@ class GaussianBandit(Bandit):
             self._rewards = np.random.normal(size=arms)
 
     @property
-    def rewards(self):
+    def rewards(self) -> np.ndarray:
         """
         Get the mean rewards for each action
 
@@ -63,7 +64,7 @@ class GaussianBandit(Bandit):
         """
         return self._rewards
 
-    def step(self, action):
+    def step(self, action: int) -> float:
         """
         Takes an action in the bandit and returns the sampled reward
 
@@ -88,7 +89,7 @@ class BernoulliBandit(Bandit):
     :type rewards: numpy.ndarray
     """
 
-    def __init__(self, arms=1, reward_probs=None):
+    def __init__(self, arms: int = 1, reward_probs: np.ndarray = None):
         super(BernoulliBandit, self).__init__(arms)
         if reward_probs:
             self._rewards_probs = reward_probs
@@ -96,7 +97,7 @@ class BernoulliBandit(Bandit):
             self._rewards_probs = np.random.normal(size=(arms))
 
     @property
-    def reward_probs(self):
+    def reward_probs(self) -> np.ndarray:
         """
         Get the probability of reward for each action
 
@@ -105,7 +106,7 @@ class BernoulliBandit(Bandit):
         """
         return self._rewards_probs
 
-    def step(self, action):
+    def step(self, action: int) -> int:
         """
         Takes an action in the bandit and returns the sampled reward
 
