@@ -151,7 +151,7 @@ class PPO1:
     def get_traj_loss(self, values, dones):
         self.rollout.compute_returns_and_advantage(values, dones, use_gae=True)
 
-    def update_policy(self, copy_policy=True):
+    def update_policy(self):
 
         for rollout in self.rollout.get(256):
             actions = rollout.actions
