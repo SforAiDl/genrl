@@ -120,23 +120,21 @@ class VPG:
         """
         state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
         # Instantiate networks and optimizers
-        self.ac = get_model("ac", self.network_type)(
+        self.actor = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained
         if self.load_model is not None:
             self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
-            self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
+            self.actor.load_state_dict(self.checkpoint["policy_weights"])
 
             for key, item in self.checkpoint.items():
                 if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(self.actor.parameters(), lr=self.lr_policy)
 
         self.rollout = RolloutBuffer(
             2048,
@@ -161,16 +159,13 @@ class VPG:
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
-        a, c = self.ac.get_action(state, deterministic=False)
-        val = self.ac.get_value(state).unsqueeze(0)
+        a, c = self.actor.get_action(state, deterministic=False)
 
-        return a, val, c.log_prob(a)
+        return a, c.log_prob(a)
 
     def get_value_log_probs(self, state, action):
-        a, c = self.ac.get_action(state, deterministic=False)
-        val = self.ac.get_value(state)
-
-        return val, c.log_prob(action)
+        a, c = self.actor.get_action(state, deterministic=False)
+        return c.log_prob(action)
 
     def get_traj_loss(self, value, done) -> None:
         """
@@ -187,25 +182,18 @@ class VPG:
             if isinstance(self.env.action_space, gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
-            vals, log_prob = self.get_value_log_probs(rollout.observations, actions)
+            log_prob = self.get_value_log_probs(rollout.observations, actions)
 
-            policy_loss = rollout.advantages * log_prob
+            policy_loss = rollout.returns * log_prob
 
             policy_loss = -torch.sum(policy_loss)
-
-            value_loss = F.mse_loss(rollout.returns, vals)
 
             loss = policy_loss
 
             self.optimizer_policy.zero_grad()
             loss.backward()
-            # torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
+            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
             self.optimizer_policy.step()
-
-            self.optimizer_value.zero_grad()
-            value_loss.backward()
-            # torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
-            self.optimizer_value.step()
 
     def collect_rollouts(self, initial_state):
 
@@ -213,8 +201,7 @@ class VPG:
 
         for i in range(2048):
 
-            # with torch.no_grad():
-            action, values, old_log_probs = self.select_action(state)
+            action, old_log_probs = self.select_action(state)
 
             next_state, reward, done, _ = self.env.step(np.array(action))
             self.epoch_reward += reward
@@ -227,7 +214,7 @@ class VPG:
                 action.reshape(self.env.n_envs, 1),
                 reward,
                 done,
-                values.detach(),
+                torch.Tensor([0]*self.env.n_envs),
                 old_log_probs.detach(),
             )
 
@@ -238,7 +225,7 @@ class VPG:
                     self.rewards.append(self.epoch_reward[i])
                     self.epoch_reward[i] = 0
 
-        return values, done
+        return torch.Tensor([0]*self.env.n_envs), done
 
     def learn(self) -> None:  # pragma: no cover
         # training loop
