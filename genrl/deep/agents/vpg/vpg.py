@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.optim as opt
 from torch.autograd import Variable
 import gym
@@ -119,6 +118,7 @@ class VPG:
         Initialize the actor and critic networks 
         """
         state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
+        print(state_dim, action_dim, discrete)
         # Instantiate networks and optimizers
         self.actor = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
@@ -203,7 +203,7 @@ class VPG:
 
             action, old_log_probs = self.select_action(state)
 
-            next_state, reward, done, _ = self.env.step(np.array(action))
+            next_state, reward, done, _ = self.env.step(action.numpy())
             self.epoch_reward += reward
 
             if self.render:
