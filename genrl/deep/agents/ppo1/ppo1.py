@@ -1,9 +1,7 @@
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
-from torch.autograd import Variable
 import gym
 
 from ...common import (
@@ -114,7 +112,7 @@ class PPO1:
 
     def create_model(self) -> None:
         # Instantiate networks and optimizers
-        state_dim, action_dim, disc, action_lim = self.get_env_properties(self.env)
+        state_dim, action_dim, disc, action_lim = get_env_properties(self.env)
         self.policy_new = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
         )

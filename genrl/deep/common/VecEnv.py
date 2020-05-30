@@ -5,8 +5,6 @@ import multiprocessing as mp
 
 from abc import ABC, abstractmethod
 
-from torchvision.utils import make_grid
-
 
 def worker(parent_conn, child_conn, env):
     """
@@ -84,12 +82,6 @@ class VecEnv(ABC):
         Return samples of actions from each environment
         """
         return [env.action_space.sample() for env in self.envs]
-
-    def action_spaces(self):
-        """
-        Return action spaces of each environment
-        """
-        return [env.action_space for env in self.envs]
 
     def __getitem__(self, index):
         """

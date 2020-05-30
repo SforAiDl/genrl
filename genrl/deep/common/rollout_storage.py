@@ -2,18 +2,11 @@ from typing import (
     Union,
     Optional,
     Generator,
-    Dict,
-    Any,
     NamedTuple,
-    List,
-    Callable,
-    Tuple,
 )
 
 import torch
 import numpy as np
-from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
-
 from genrl.deep.common.utils import get_obs_action_shape
 from gym import spaces
 
@@ -230,7 +223,10 @@ class RolloutBuffer(BaseBuffer):
             or normal advantage for advantage computation.
         """
         # convert to numpy
-        last_value = last_value.flatten()
+        try:
+            last_value = last_value.flatten().detach().numpy()
+        except:
+            last_value = last_value.flatten()
 
         if use_gae:
             last_gae_lam = 0

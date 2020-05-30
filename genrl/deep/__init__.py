@@ -9,7 +9,6 @@ from genrl.deep.common import (  # noqa
     get_model,
     save_params,
     load_params,
-    evaluate,
     venv,
     SerialVecEnv,
     SubProcessVecEnv,

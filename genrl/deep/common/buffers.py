@@ -28,7 +28,7 @@ class ReplayBuffer:
         self.pos = 0
 
     def push(self, x):
-        if self.pos >= self.size:
+        if self.pos >= self.buffer_size:
             self.observations = np.roll(self.observations, -1, axis=0)
             self.actions = np.roll(self.actions, -1, axis=0)
             self.rewards = np.roll(self.rewards, -1, axis=0)
@@ -45,10 +45,10 @@ class ReplayBuffer:
         self.pos += 1
 
     def sample(self, batch_size):
-        if self.pos < self.size:
+        if self.pos < self.buffer_size:
             indicies = np.random.randint(0, self.pos, size=batch_size)
         else:
-            indicies = np.random.randint(0, self.size, size=batch_size)
+            indicies = np.random.randint(0, self.buffer_size, size=batch_size)
         state = self.observations[indicies, :]
         action = self.actions[indicies, :]
         reward = self.rewards[indicies, :]
@@ -61,7 +61,7 @@ class ReplayBuffer:
 
     def extend(self, x):
         for sample in x:
-            if self.pos >= self.size:
+            if self.pos >= self.buffer_size:
                 self.observations = np.roll(self.observations, -1, axis=0)
                 self.actions = np.roll(self.actions, -1, axis=0)
                 self.rewards = np.roll(self.rewards, -1, axis=0)

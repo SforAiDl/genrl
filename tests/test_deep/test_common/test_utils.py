@@ -5,12 +5,7 @@ import gym
 import os
 from shutil import rmtree
 
-from genrl.deep.common import (
-    MlpActorCritic,
-    MlpPolicy,
-    MlpValue,
-    CNNValue,
-)
+from genrl.deep.common import MlpActorCritic, MlpPolicy, MlpValue, CNNValue, venv
 from genrl.deep.common.utils import *
 from genrl import PPO1
 
@@ -69,7 +64,7 @@ class TestUtils:
         """
         test saving algorithm state dict
         """
-        env = gym.make("CartPole-v0")
+        env = venv("CartPole-v0", 1)
         algo = PPO1("mlp", env, epochs=1, save_model="test_ckpt")
         algo.learn()
 
@@ -79,7 +74,7 @@ class TestUtils:
         """
         test loading algorithm parameters
         """
-        env = gym.make("CartPole-v0")
+        env = venv("CartPole-v0", 1)
         algo = PPO1(
             "mlp", env, epochs=1, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
         )
@@ -90,14 +85,14 @@ class TestUtils:
         """
         test getting environment properties
         """
-        env = gym.make("CartPole-v0")
+        env = venv("CartPole-v0", 1)
 
         state_dim, action_dim, discrete, _ = get_env_properties(env)
         assert state_dim == 4
         assert action_dim == 2
         assert discrete == True
 
-        env = gym.make("Pendulum-v0")
+        env = venv("Pendulum-v0", 1)
 
         state_dim, action_dim, discrete, action_lim = get_env_properties(env)
         assert state_dim == 3
