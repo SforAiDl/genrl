@@ -222,11 +222,7 @@ class RolloutBuffer(BaseBuffer):
         :param use_gae: (bool) Whether to use Generalized Advantage Estimation
             or normal advantage for advantage computation.
         """
-        # convert to numpy
-        try:
-            last_value = last_value.flatten().detach().numpy()
-        except:
-            last_value = last_value.flatten()
+        last_value = last_value.flatten()
 
         if use_gae:
             last_gae_lam = 0

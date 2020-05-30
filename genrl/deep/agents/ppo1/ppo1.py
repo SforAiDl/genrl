@@ -159,7 +159,9 @@ class PPO1:
 
     # get clipped loss for single trajectory (episode)
     def get_traj_loss(self, values, dones):
-        self.rollout.compute_returns_and_advantage(values, dones, use_gae=True)
+        self.rollout.compute_returns_and_advantage(
+            values.detach().cpu().numpy(), dones, use_gae=True
+        )
 
     def update_policy(self):
 
