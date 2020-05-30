@@ -6,7 +6,14 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from genrl.deep.common import get_model, save_params, load_params, set_seeds, venv, RolloutBuffer
+from genrl.deep.common import (
+    get_model,
+    save_params,
+    load_params,
+    set_seeds,
+    venv,
+    RolloutBuffer,
+)
 from typing import Union, Tuple, Any, Optional, Dict
 
 
@@ -162,7 +169,8 @@ class A2C:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-    def select_action(self, state: np.ndarray, deterministic: bool = False
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
 
         state = Variable(torch.as_tensor(state).float().to(self.device))
@@ -185,7 +193,7 @@ class A2C:
 calculate losses
         """
         self.rollout.compute_returns_and_advantage(value.detach().cpu().numpy(), done)
-        
+
     def get_value_log_probs(self, state, action):
         a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state)
