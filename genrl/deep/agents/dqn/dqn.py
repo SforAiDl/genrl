@@ -367,22 +367,8 @@ class DQN:
                 1 - done
             )
 
-        # Commenting this conflict, as I'm not sure what is to be done here.
-        # <<<<<<< vecenvs
-        #        if self.prioritized_replay and (not self.categorical_dqn):
-        #            loss = (q_value - expected_q_value.detach()).pow(2) * weights
-        #            priorities = loss + 1e-5
-        #             loss = loss.mean()
-        #             self.replay_buffer.update_priorities(indices, priorities.data.cpu().numpy())
-
-        #         elif (not self.prioritized_replay) and (not self.categorical_dqn):
-        #             loss = (q_value.unsqueeze(1) - expected_q_value.detach()).pow(2).mean()
-        #         # loss = F.smooth_l1_loss(q_value,expected_q_value)
-        #
-        # =======
         if self.categorical_dqn:
             loss = -(Variable(projection_dist) * dist.log()).sum(1).mean()
-        # >>>>>>> master
         else:
             if self.prioritized_replay:
                 loss = (q_value - expected_q_value.detach()).pow(2) * weights
