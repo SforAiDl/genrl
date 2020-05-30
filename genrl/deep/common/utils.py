@@ -191,7 +191,8 @@ def get_obs_action_shape(obs, action):
         return obs.shape[0], int(np.prod(action.shape))
     else:
         raise NotImplementedError
-    
+
+
 def get_obs_shape(observation_space):
     """
     Get the shape of the observation.
@@ -203,9 +204,10 @@ def get_obs_shape(observation_space):
     if isinstance(observation_space, spaces.Box):
         return observation_space.shape
     elif isinstance(observation_space, spaces.Discrete):
-        return 1,
+        return (1,)
     else:
         raise NotImplementedError()
+
 
 def get_action_dim(action_space):
     """

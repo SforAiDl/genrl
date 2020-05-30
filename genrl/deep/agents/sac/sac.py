@@ -155,19 +155,25 @@ class SAC:
         else:
             raise NotImplementedError
 
-        self.q1 = get_model("v", self.network_type)(
-            state_dim, action_dim, "Qsa", self.layers
-        ).to(self.device).float()
-        
-        self.q2 = get_model("v", self.network_type)(
-            state_dim, action_dim, "Qsa", self.layers
-        ).to(self.device).float()
-        
-        self.policy = get_model("p", self.network_type)(
-            state_dim, action_dim, self.layers, disc, False, sac=True
-        ).float()
-        ).to(self.device)
+        self.q1 = (
+            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+            .to(self.device)
+            .float()
+        )
 
+        self.q2 = (
+            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+            .to(self.device)
+            .float()
+        )
+
+        self.policy = (
+            get_model("p", self.network_type)(
+                state_dim, action_dim, self.layers, disc, False, sac=True
+            )
+            .to(self.device)
+            .float()
+        )
 
         if self.load_model is not None:
             self.load(self)
@@ -291,9 +297,17 @@ class SAC:
         """
         # compute targets
         if self.env.n_envs == 1:
-            state, action, next_state = state.squeeze().float(), action.squeeze(1).float(), next_state.squeeze().float()
+            state, action, next_state = (
+                state.squeeze().float(),
+                action.squeeze(1).float(),
+                next_state.squeeze().float(),
+            )
         else:
-            state, action, next_state = state.reshape(-1, self.env.observation_space.shape[0]).float(), action.reshape(-1, self.env.action_space.shape[0]).float(), next_state.reshape(-1, self.env.observation_space.shape[0]).float()
+            state, action, next_state = (
+                state.reshape(-1, self.env.observation_space.shape[0]).float(),
+                action.reshape(-1, self.env.action_space.shape[0]).float(),
+                next_state.reshape(-1, self.env.observation_space.shape[0]).float(),
+            )
             reward, done = reward.reshape(-1, 1), done.reshape(-1, 1)
 
         with torch.no_grad():
@@ -364,13 +378,16 @@ class SAC:
 
         total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
-        episode_reward, episode_len = np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
+        episode_reward, episode_len = (
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+        )
         state = self.env.reset()
         for i in range(0, total_steps, self.env.n_envs):
             # done = [False] * self.env.n_envs
 
             # while not done:
-                # sample action
+            # sample action
             if i > self.start_steps:
                 action = self.select_action(state)
             else:
@@ -410,8 +427,10 @@ class SAC:
             next_state, reward, done, _ = self.env.step(action)
             if self.render:
                 self.env.render()
-            
-            done = [False if ep_len==self.max_ep_len else done for ep_len in episode_len]
+
+            done = [
+                False if ep_len == self.max_ep_len else done for ep_len in episode_len
+            ]
 
             if np.any(done) or np.any(episode_len == self.max_ep_len):
                 for i, d in enumerate(done):
@@ -429,7 +448,7 @@ class SAC:
             if self.tensorboard_log:
                 writer.add_scalar("reward/episode_reward", episode_reward, timestep)
 
-            if sum(episode_len) % (5*self.env.n_envs) == 0 and sum(episode_len) != 0:
+            if sum(episode_len) % (5 * self.env.n_envs) == 0 and sum(episode_len) != 0:
                 print(
                     "Episode: {}, total numsteps: {}, reward: {}".format(
                         sum(episode_len), i, episode_reward

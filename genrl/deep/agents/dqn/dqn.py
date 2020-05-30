@@ -273,12 +273,12 @@ class DQN:
             if np.random.rand() <= self.epsilon:
                 return self.env.action_space.sample()
 
-        if self.categorical_dqn:
-            with torch.no_grad():
+        if np.random.rand() > self.epsilon:
+            if self.categorical_dqn:
                 state = Variable(torch.FloatTensor(state))
                 dist = self.model(state).data.cpu()
                 dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                action = dist.sum(2).max(1)[1].numpy()#[0]
+                action = dist.sum(2).max(1)[1].numpy()  # [0]
             else:
                 state = Variable(torch.FloatTensor(state))
                 q_value = self.model(state)
@@ -310,12 +310,16 @@ class DQN:
             (state, action, reward, next_state, done) = self.replay_buffer.sample(
                 self.batch_size
             )
-        
-        state = state.reshape(self.batch_size*self.env.n_envs, self.env.observation_space.shape[0])
-        action = action.reshape(self.batch_size*self.env.n_envs, 1)
+
+        state = state.reshape(
+            self.batch_size * self.env.n_envs, self.env.observation_space.shape[0]
+        )
+        action = action.reshape(self.batch_size * self.env.n_envs, 1)
         reward = reward.reshape(-1, 1)
         done = done.reshape(-1, 1)
-        next_state = next_state.reshape(self.batch_size*self.env.n_envs, self.env.observation_space.shape[0])
+        next_state = next_state.reshape(
+            self.batch_size * self.env.n_envs, self.env.observation_space.shape[0]
+        )
 
         state = Variable(torch.FloatTensor(np.float32(state)))
         next_state = Variable(torch.FloatTensor(np.float32(next_state)))
@@ -330,10 +334,8 @@ class DQN:
         if self.categorical_dqn:
             projection_dist = self.projection_distribution(next_state, reward, done)
             dist = self.model(state)
-            action = (
-                action
-                .unsqueeze(1)
-                .expand(self.batch_size*self.env.n_envs, 1, self.num_atoms)
+            action = action.unsqueeze(1).expand(
+                self.batch_size * self.env.n_envs, 1, self.num_atoms
             )
             dist = dist.gather(1, action).squeeze(1)
             dist.data.clamp_(0.01, 0.99)
@@ -349,7 +351,9 @@ class DQN:
             q_target_s_a_prime = q_target_next_state_values.gather(
                 1, action_next.unsqueeze(1)
             ).squeeze(1)
-            expected_q_value = reward + self.gamma * q_target_s_a_prime.reshape(-1, 1) * (1 - done)
+            expected_q_value = reward + self.gamma * q_target_s_a_prime.reshape(
+                -1, 1
+            ) * (1 - done)
 
         else:
             q_values = self.model(state)
@@ -359,24 +363,26 @@ class DQN:
             q_next_state_values = self.target_model(next_state)
             q_s_a_prime = q_next_state_values.max(1)[0]
             # print(reward.shape, q_s_a_prime.shape, done.shape)
-            expected_q_value = reward + self.gamma * q_s_a_prime.reshape(-1,1) * (1 - done)
+            expected_q_value = reward + self.gamma * q_s_a_prime.reshape(-1, 1) * (
+                1 - done
+            )
 
-#Commenting this conflict, as I'm not sure what is to be done here.
-#<<<<<<< vecenvs
-#        if self.prioritized_replay and (not self.categorical_dqn):
-#            loss = (q_value - expected_q_value.detach()).pow(2) * weights
-#            priorities = loss + 1e-5
-#             loss = loss.mean()
-#             self.replay_buffer.update_priorities(indices, priorities.data.cpu().numpy())
+        # Commenting this conflict, as I'm not sure what is to be done here.
+        # <<<<<<< vecenvs
+        #        if self.prioritized_replay and (not self.categorical_dqn):
+        #            loss = (q_value - expected_q_value.detach()).pow(2) * weights
+        #            priorities = loss + 1e-5
+        #             loss = loss.mean()
+        #             self.replay_buffer.update_priorities(indices, priorities.data.cpu().numpy())
 
-#         elif (not self.prioritized_replay) and (not self.categorical_dqn):
-#             loss = (q_value.unsqueeze(1) - expected_q_value.detach()).pow(2).mean()
-#         # loss = F.smooth_l1_loss(q_value,expected_q_value)
-# 
-# =======
+        #         elif (not self.prioritized_replay) and (not self.categorical_dqn):
+        #             loss = (q_value.unsqueeze(1) - expected_q_value.detach()).pow(2).mean()
+        #         # loss = F.smooth_l1_loss(q_value,expected_q_value)
+        #
+        # =======
         if self.categorical_dqn:
             loss = -(Variable(projection_dist) * dist.log()).sum(1).mean()
-# >>>>>>> master
+        # >>>>>>> master
         else:
             if self.prioritized_replay:
                 loss = (q_value - expected_q_value.detach()).pow(2) * weights
@@ -461,7 +467,7 @@ class DQN:
             torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size)
             .long()
             .unsqueeze(1)
-            .expand(self.batch_size*self.env.n_envs, self.num_atoms)
+            .expand(self.batch_size * self.env.n_envs, self.num_atoms)
         )
 
         projection_dist = torch.zeros(next_dist.size())

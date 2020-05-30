@@ -13,12 +13,18 @@ class ReplayBuffer:
         self.action_dim = get_action_dim(env.action_space)
         self.buffer_size = size
         self.n_envs = env.n_envs
-        
-        self.observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
+
+        self.observations = np.zeros(
+            (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32
+        )
+        self.actions = np.zeros(
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32
+        )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-        self.next_observations = np.zeros((self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32)
+        self.next_observations = np.zeros(
+            (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32
+        )
         self.pos = 0
 
     def push(self, x):
@@ -28,7 +34,7 @@ class ReplayBuffer:
             self.rewards = np.roll(self.rewards, -1, axis=0)
             self.dones = np.roll(self.dones, -1, axis=0)
             self.next_observations = np.roll(self.next_observations, -1, axis=0)
-            pos = self.buffer_size-1
+            pos = self.buffer_size - 1
         else:
             pos = self.pos
         self.observations[pos] += np.array(x[0]).copy()
@@ -43,16 +49,16 @@ class ReplayBuffer:
             indicies = np.random.randint(0, self.pos, size=batch_size)
         else:
             indicies = np.random.randint(0, self.size, size=batch_size)
-        state = self.observations[indicies,:]
-        action = self.actions[indicies,:]
-        reward = self.rewards[indicies,:]
-        next_state = self.next_observations[indicies,:]
-        done = self.dones[indicies,:]
+        state = self.observations[indicies, :]
+        action = self.actions[indicies, :]
+        reward = self.rewards[indicies, :]
+        next_state = self.next_observations[indicies, :]
+        done = self.dones[indicies, :]
         return (
             torch.from_numpy(v).float()
             for v in [state, action, reward, next_state, done]
         )
-      
+
     def extend(self, x):
         for sample in x:
             if self.pos >= self.size:
@@ -61,7 +67,7 @@ class ReplayBuffer:
                 self.rewards = np.roll(self.rewards, -1, axis=0)
                 self.dones = np.roll(self.dones, -1, axis=0)
                 self.next_observations = np.roll(self.next_observations, -1, axis=0)
-                pos = self.buffer_size-1
+                pos = self.buffer_size - 1
             else:
                 pos = self.pos
             self.observations[pos] += np.array(sample[0]).copy()
@@ -70,7 +76,7 @@ class ReplayBuffer:
             self.next_observations[pos] += np.array(sample[3]).copy()
             self.dones[pos] += np.array(sample[4]).copy()
             self.pos += 1
-            
+
 
 class PushReplayBuffer:
     """

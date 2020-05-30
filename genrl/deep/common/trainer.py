@@ -292,7 +292,12 @@ many steps
         """
         Run training
         """
-        state, episode_reward, episode_len, episode = self.env.reset(), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
+        state, episode_reward, episode_len, episode = (
+            self.env.reset(),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+        )
         total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
         # self.agent.learn()
 
@@ -302,7 +307,7 @@ many steps
         if self.agent.__class__.__name__ == "DQN":
             self.agent.update_target_model()
 
-        assert self.update_interval%self.env.n_envs==0
+        assert self.update_interval % self.env.n_envs == 0
 
         self.rewards = []
 
@@ -328,7 +333,7 @@ many steps
                     if self.deterministic_actions:
                         action = self.agent.select_action(state, deterministic=True)
                     else:
-                        action = self.agent.select_action(state)                    
+                        action = self.agent.select_action(state)
 
             next_state, reward, done, info = self.env.step(action)
 
@@ -338,7 +343,10 @@ many steps
             episode_reward += reward
             episode_len += 1
 
-            done = [False if episode_len[i]==self.max_ep_len else done[i] for i, ep_len in enumerate(episode_len)]
+            done = [
+                False if episode_len[i] == self.max_ep_len else done[i]
+                for i, ep_len in enumerate(episode_len)
+            ]
 
             if self.agent.__class__.__name__ == "DQN" and self.network_type == "cnn":
                 self.state_history.append(self.transform(next_state))
@@ -358,7 +366,9 @@ many steps
                         {
                             "timestep": t,
                             "Episode": sum(episode),
-                            "Episode Reward": np.around(np.mean(self.rewards), decimals=4),
+                            "Episode Reward": np.around(
+                                np.mean(self.rewards), decimals=4
+                            ),
                         }
                     )
                     self.rewards = [0]
@@ -506,7 +516,7 @@ class OnPolicyTrainer(Trainer):
             self.agent.rewards = []
 
             values, done = self.agent.collect_rollouts(state)
-            
+
             self.agent.get_traj_loss(values, done)
 
             self.agent.update_policy()
@@ -523,7 +533,6 @@ class OnPolicyTrainer(Trainer):
                         "Episode": epoch,
                         "Reward": np.mean(self.agent.rewards),
                         "Timestep": epoch * 2048,
-
                     }
                 )
 

@@ -116,7 +116,8 @@ class PPO1:
         # Instantiate networks and optimizers
         state_dim, action_dim, disc, action_lim = self.get_env_properties(self.env)
         self.policy_new = get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim)
+            state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
+        )
         self.policy_new = self.policy_new.to(self.device)
 
         self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
@@ -138,7 +139,12 @@ class PPO1:
         )
         self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(2048, self.env.observation_space, self.env.action_space, n_envs=self.env.n_envs)
+        self.rollout = RolloutBuffer(
+            2048,
+            self.env.observation_space,
+            self.env.action_space,
+            n_envs=self.env.n_envs,
+        )
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
@@ -166,7 +172,9 @@ class PPO1:
                 actions = actions.long().flatten()
 
             # with torch.no_grad():
-            values, log_prob, entropy = self.evaluate_actions(rollout.observations, actions)
+            values, log_prob, entropy = self.evaluate_actions(
+                rollout.observations, actions
+            )
 
             advantages = rollout.advantages
             advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
@@ -181,9 +189,11 @@ class PPO1:
 
             value_loss = F.mse_loss(rollout.returns, values)
 
-            entropy_loss = -torch.mean(entropy) #Change this to entropy
+            entropy_loss = -torch.mean(entropy)  # Change this to entropy
 
-            loss = policy_loss + self.ent_coef * entropy_loss# + self.vf_coef * value_loss
+            loss = (
+                policy_loss + self.ent_coef * entropy_loss
+            )  # + self.vf_coef * value_loss
 
             self.optimizer_policy.zero_grad()
             loss.backward()
@@ -200,17 +210,24 @@ class PPO1:
         state = initial_state
 
         for i in range(2048):
-            
+
             with torch.no_grad():
                 action, values, old_log_probs = self.select_action(state)
-                
+
             next_state, reward, done, _ = self.env.step(np.array(action))
             self.epoch_reward += reward
 
             if self.render:
                 self.env.render()
 
-            self.rollout.add(state, action.reshape(self.env.n_envs,1), reward, done, values, old_log_probs)
+            self.rollout.add(
+                state,
+                action.reshape(self.env.n_envs, 1),
+                reward,
+                done,
+                values,
+                old_log_probs,
+            )
 
             state = next_state
 
@@ -221,7 +238,7 @@ class PPO1:
 
         return values, done
 
-    def learn(self): #pragma: no cover
+    def learn(self):  # pragma: no cover
         # training loop
         state = self.env.reset()
         for epoch in range(self.epochs):
@@ -231,7 +248,7 @@ class PPO1:
             self.rewards = []
 
             values, done = self.collect_rollouts(state)
-            
+
             self.get_traj_loss(values.cpu().numpy(), done)
 
             self.update_policy()
@@ -241,7 +258,6 @@ class PPO1:
                 self.rewards = []
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", self.epoch_reward, epoch)
-
 
             # if self.save_model is not None:
             #     if episode % self.save_interval == 0:

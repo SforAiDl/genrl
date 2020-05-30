@@ -139,7 +139,12 @@ class VPG:
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(2048, self.env.observation_space, self.env.action_space, n_envs=self.env.n_envs)
+        self.rollout = RolloutBuffer(
+            2048,
+            self.env.observation_space,
+            self.env.action_space,
+            n_envs=self.env.n_envs,
+        )
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
@@ -204,21 +209,28 @@ class VPG:
             self.optimizer_value.step()
 
     def collect_rollouts(self, initial_state):
-      
+
         state = initial_state
 
         for i in range(2048):
-            
+
             # with torch.no_grad():
             action, values, old_log_probs = self.select_action(state)
-                
+
             next_state, reward, done, _ = self.env.step(np.array(action))
             self.epoch_reward += reward
 
             if self.render:
                 self.env.render()
 
-            self.rollout.add(state, action.reshape(self.env.n_envs,1), reward, done, values.detach(), old_log_probs.detach())
+            self.rollout.add(
+                state,
+                action.reshape(self.env.n_envs, 1),
+                reward,
+                done,
+                values.detach(),
+                old_log_probs.detach(),
+            )
 
             state = next_state
 

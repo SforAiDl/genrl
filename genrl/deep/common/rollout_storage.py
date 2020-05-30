@@ -1,4 +1,14 @@
-from typing import Union, Optional, Generator, Dict, Any, NamedTuple, List, Callable, Tuple
+from typing import (
+    Union,
+    Optional,
+    Generator,
+    Dict,
+    Any,
+    NamedTuple,
+    List,
+    Callable,
+    Tuple,
+)
 
 import torch
 import numpy as np
@@ -6,7 +16,6 @@ from torch.utils.data.sampler import BatchSampler, SubsetRandomSampler
 
 from genrl.deep.common.utils import get_obs_action_shape
 from gym import spaces
-
 
 
 class RolloutBufferSamples(NamedTuple):
@@ -43,17 +52,22 @@ class BaseBuffer(object):
         to which the values will be converted
     :param n_envs: (int) Number of parallel environments
     """
-    def __init__(self,
-                 buffer_size: int,
-                 observation_space: spaces.Space,
-                 action_space: spaces.Space,
-                 device: Union[torch.device, str] = 'cpu',
-                 n_envs: int = 1):
+
+    def __init__(
+        self,
+        buffer_size: int,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        device: Union[torch.device, str] = "cpu",
+        n_envs: int = 1,
+    ):
         super(BaseBuffer, self).__init__()
         self.buffer_size = buffer_size
         self.observation_space = observation_space
         self.action_space = action_space
-        self.obs_shape, self.action_dim = get_obs_action_shape(observation_space, action_space)
+        self.obs_shape, self.action_dim = get_obs_action_shape(
+            observation_space, action_space
+        )
         self.pos = 0
         self.full = False
         self.device = device
@@ -102,9 +116,9 @@ class BaseBuffer(object):
         self.pos = 0
         self.full = False
 
-    def sample(self,
-               batch_size: int,
-               ):
+    def sample(
+        self, batch_size: int,
+    ):
         """
         :param batch_size: (int) Number of element to sample
         :return: (Union[RolloutBufferSamples, ReplayBufferSamples])
@@ -113,9 +127,9 @@ class BaseBuffer(object):
         batch_inds = np.random.randint(0, upper_bound, size=batch_size)
         return self._get_samples(batch_inds, env=env)
 
-    def _get_samples(self,
-                     batch_inds: np.ndarray,
-                     ):
+    def _get_samples(
+        self, batch_inds: np.ndarray,
+    ):
         """
         :param batch_inds: (torch.Tensor)
         :return: (Union[RolloutBufferSamples, ReplayBufferSamples])
@@ -161,27 +175,39 @@ class RolloutBuffer(BaseBuffer):
     :param n_envs: (int) Number of parallel environments
     """
 
-    def __init__(self,
-                 buffer_size: int,
-                 observation_space: spaces.Space,
-                 action_space: spaces.Space,
-                 device: Union[torch.device, str] = 'cpu',
-                 gae_lambda: float = 1,
-                 gamma: float = 0.99,
-                 n_envs: int = 1):
+    def __init__(
+        self,
+        buffer_size: int,
+        observation_space: spaces.Space,
+        action_space: spaces.Space,
+        device: Union[torch.device, str] = "cpu",
+        gae_lambda: float = 1,
+        gamma: float = 0.99,
+        n_envs: int = 1,
+    ):
 
-        super(RolloutBuffer, self).__init__(buffer_size, observation_space,
-                                            action_space, device, n_envs=n_envs)
+        super(RolloutBuffer, self).__init__(
+            buffer_size, observation_space, action_space, device, n_envs=n_envs
+        )
         self.gae_lambda = gae_lambda
         self.gamma = gamma
-        self.observations, self.actions, self.rewards, self.advantages = None, None, None, None
+        self.observations, self.actions, self.rewards, self.advantages = (
+            None,
+            None,
+            None,
+            None,
+        )
         self.returns, self.dones, self.values, self.log_probs = None, None, None, None
         self.generator_ready = False
         self.reset()
 
     def reset(self) -> None:
-        self.observations = np.zeros((self.buffer_size, self.n_envs,) + (self.obs_shape,), dtype=np.float32)
-        self.actions = np.zeros((self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32)
+        self.observations = np.zeros(
+            (self.buffer_size, self.n_envs,) + (self.obs_shape,), dtype=np.float32
+        )
+        self.actions = np.zeros(
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32
+        )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
@@ -191,10 +217,9 @@ class RolloutBuffer(BaseBuffer):
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
-    def compute_returns_and_advantage(self,
-                                      last_value: torch.Tensor,
-                                      dones: np.ndarray,
-                                      use_gae: bool = False) -> None:
+    def compute_returns_and_advantage(
+        self, last_value: torch.Tensor, dones: np.ndarray, use_gae: bool = False
+    ) -> None:
         """
         Post-processing step: compute the returns (sum of discounted rewards)
         and advantage (A(s) = R - V(S)).
@@ -216,8 +241,15 @@ class RolloutBuffer(BaseBuffer):
                 else:
                     next_non_terminal = 1.0 - self.dones[step + 1]
                     next_value = self.values[step + 1]
-                delta = self.rewards[step] + self.gamma * next_value * next_non_terminal - self.values[step]
-                last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+                delta = (
+                    self.rewards[step]
+                    + self.gamma * next_value * next_non_terminal
+                    - self.values[step]
+                )
+                last_gae_lam = (
+                    delta
+                    + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+                )
                 self.advantages[step] = last_gae_lam
             self.returns = self.advantages + self.values
         else:
@@ -232,17 +264,22 @@ class RolloutBuffer(BaseBuffer):
                     last_return = self.rewards[step] + next_non_terminal * next_value
                 else:
                     next_non_terminal = 1.0 - self.dones[step + 1]
-                    last_return = self.rewards[step] + self.gamma * last_return * next_non_terminal
+                    last_return = (
+                        self.rewards[step]
+                        + self.gamma * last_return * next_non_terminal
+                    )
                 self.returns[step] = last_return
             self.advantages = self.returns - self.values
 
-    def add(self,
-            obs: np.ndarray,
-            action: np.ndarray,
-            reward: np.ndarray,
-            done: np.ndarray,
-            value: torch.Tensor,
-            log_prob: torch.Tensor) -> None:
+    def add(
+        self,
+        obs: np.ndarray,
+        action: np.ndarray,
+        reward: np.ndarray,
+        done: np.ndarray,
+        value: torch.Tensor,
+        log_prob: torch.Tensor,
+    ) -> None:
         """
         :param obs: (np.ndarray) Observation
         :param action: (np.ndarray) Action
@@ -267,13 +304,21 @@ class RolloutBuffer(BaseBuffer):
         if self.pos == self.buffer_size:
             self.full = True
 
-    def get(self, batch_size: Optional[int] = None) -> Generator[RolloutBufferSamples, None, None]:
-        assert self.full, ''
+    def get(
+        self, batch_size: Optional[int] = None
+    ) -> Generator[RolloutBufferSamples, None, None]:
+        assert self.full, ""
         indices = np.random.permutation(self.buffer_size * self.n_envs)
         # Prepare the data
         if not self.generator_ready:
-            for tensor in ['observations', 'actions', 'values',
-                           'log_probs', 'advantages', 'returns']:
+            for tensor in [
+                "observations",
+                "actions",
+                "values",
+                "log_probs",
+                "advantages",
+                "returns",
+            ]:
                 self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
             self.generator_ready = True
 
@@ -283,14 +328,16 @@ class RolloutBuffer(BaseBuffer):
 
         start_idx = 0
         while start_idx < self.buffer_size * self.n_envs:
-            yield self._get_samples(indices[start_idx:start_idx + batch_size])
+            yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
     def _get_samples(self, batch_inds: np.ndarray) -> RolloutBufferSamples:
-        data = (self.observations[batch_inds],
-                self.actions[batch_inds],
-                self.values[batch_inds].flatten(),
-                self.log_probs[batch_inds].flatten(),
-                self.advantages[batch_inds].flatten(),
-                self.returns[batch_inds].flatten())
+        data = (
+            self.observations[batch_inds],
+            self.actions[batch_inds],
+            self.values[batch_inds].flatten(),
+            self.log_probs[batch_inds].flatten(),
+            self.advantages[batch_inds].flatten(),
+            self.returns[batch_inds].flatten(),
+        )
         return RolloutBufferSamples(*tuple(map(self.to_torch, data)))

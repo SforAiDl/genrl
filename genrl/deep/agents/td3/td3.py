@@ -286,8 +286,13 @@ class TD3:
                     param_target.data.mul_(self.polyak)
                     param_target.data.add_((1 - self.polyak) * param.data)
 
-    def learn(self) -> None: #pragma: no cover
-        state, episode_reward, episode_len, episode = self.env.reset(), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
+    def learn(self) -> None:  # pragma: no cover
+        state, episode_reward, episode_len, episode = (
+            self.env.reset(),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+        )
         total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
         if self.noise is not None:
@@ -308,8 +313,13 @@ class TD3:
 
             # dont set d to True if max_ep_len reached
             # done = self.env.n_envs*[False] if np.any(episode_len == self.max_ep_len) else done
-            done = np.array([False if episode_len[i]==self.max_ep_len else done[i] for i, ep_len in enumerate(episode_len)])
-            
+            done = np.array(
+                [
+                    False if episode_len[i] == self.max_ep_len else done[i]
+                    for i, ep_len in enumerate(episode_len)
+                ]
+            )
+
             self.replay_buffer.extend(zip(state, action, reward, next_state, done))
 
             state = next_state
@@ -318,7 +328,9 @@ class TD3:
 
                 if sum(episode) % 20 == 0:
                     print(
-                        "Ep: {}, reward: {}, t: {}".format(sum(episode), np.mean(episode_reward), t)
+                        "Ep: {}, reward: {}, t: {}".format(
+                            sum(episode), np.mean(episode_reward), t
+                        )
                     )
 
                 for i, d in enumerate(done):
@@ -327,7 +339,7 @@ class TD3:
                         episode_reward[i] = 0
                         episode_len[i] = 0
                         episode += 1
-                
+
                 # if self.noise is not None:
                 #     self.noise.reset()
 
@@ -345,7 +357,9 @@ class TD3:
                         x.to(self.device) for x in batch
                     )
                     # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
-                    self.update_params(states, actions, rewards.unsqueeze(1), next_states, dones, t)
+                    self.update_params(
+                        states, actions, rewards.unsqueeze(1), next_states, dones, t
+                    )
 
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:
