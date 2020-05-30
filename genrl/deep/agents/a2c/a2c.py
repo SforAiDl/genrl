@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as opt
 from torch.autograd import Variable
@@ -267,25 +266,25 @@ calculate losses
         for episode in range(self.num_episodes):
             episode_reward = 0
             steps = []
-            for i in range(self.actor_batch_size):
-                state = self.env.reset()
-                done = False
+            # for i in range(self.actor_batch_size):
+            #     state = self.env.reset()
+            #     done = False
 
-                for t in range(self.timesteps_per_actorbatch):
-                    action = self.select_action(state)
-                    state, reward, done, _ = self.env.step(action)
+            #     for t in range(self.timesteps_per_actorbatch):
+            #         action = self.select_action(state)
+            #         state, reward, done, _ = self.env.step(action)
 
-                    if self.render:
-                        self.env.render()
+            #         if self.render:
+            #             self.env.render()
 
-                    self.traj_reward.append(reward)
+            #         self.traj_reward.append(reward)
 
-                    if done:
-                        steps.append(t)
-                        break
+            #         if done:
+            #             steps.append(t)
+            #             break
 
-                episode_reward += np.sum(self.traj_reward) / self.actor_batch_size
-                self.get_traj_loss()
+            #     episode_reward += np.sum(self.traj_reward) / self.actor_batch_size
+            #     self.get_traj_loss()
 
             self.update(episode)
 
