@@ -1,4 +1,3 @@
-import gym
 import torch
 from collections import deque
 import random
