@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as opt
 from torch.autograd import Variable
 import gym
@@ -11,6 +12,7 @@ from genrl.deep.common import (
     save_params,
     load_params,
     set_seeds,
+    RolloutBuffer,
 )
 
 
@@ -133,11 +135,7 @@ class VPG:
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.policy_hist = Variable(torch.Tensor())
-        self.value_hist = Variable(torch.Tensor())
-        self.traj_reward = []
-        self.policy_loss_hist = Variable(torch.Tensor())
-        self.value_loss_hist = Variable(torch.Tensor())
+        self.rollout = RolloutBuffer(2048, self.env.observation_space, self.env.action_space, n_envs=self.env.n_envs)
 
     def select_action(self, state, deterministic=False):
         state = Variable(torch.as_tensor(state).float().to(self.device))
@@ -146,89 +144,145 @@ class VPG:
         a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state).unsqueeze(0)
 
-        # store policy probs and value function for current traj
-        self.policy_hist = torch.cat([self.policy_hist, c.log_prob(a).unsqueeze(0)])
+        return a, val, c.log_prob(a)
 
-        self.value_hist = torch.cat([self.value_hist, val])
+    def get_value_log_probs(self, state, action):
+        a, c = self.ac.get_action(state, deterministic=False)
+        val = self.ac.get_value(state)
 
-        return a
+        return val, c.log_prob(action)
 
-    def get_traj_loss(self):
-        disc_R = 0
-        returns = []
+    def get_traj_loss(self, value, done):
 
-        # calculate discounted return
-        for reward in self.traj_reward[::-1]:
-            disc_R = reward + self.gamma * disc_R
-            returns.insert(0, disc_R)
+        self.rollout.compute_returns_and_advantage(value.detach().cpu().numpy(), done)
+        # pass
+        # disc_R = 0
+        # returns = []
 
-        # advantage estimation
-        returns = torch.FloatTensor(returns).to(self.device)
-        advantage = Variable(returns) - Variable(self.value_hist)
+        # # calculate discounted return
+        # for reward in self.traj_reward[::-1]:
+        #     disc_R = reward + self.gamma * disc_R
+        #     returns.insert(0, disc_R)
 
-        # compute policy and value loss
-        loss_policy = torch.sum(
-            torch.mul(self.policy_hist, advantage).mul(-1), -1
-        ).unsqueeze(0)
+        # # advantage estimation
+        # returns = torch.FloatTensor(returns).to(self.device)
+        # advantage = Variable(returns) - Variable(self.value_hist)
 
-        loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
+        # # compute policy and value loss
+        # loss_policy = torch.sum(
+        #     torch.mul(self.policy_hist, advantage).mul(-1), -1
+        # ).unsqueeze(0)
 
-        # store traj loss values in epoch loss tensors
-        self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
-        self.value_loss_hist = torch.cat([self.value_loss_hist, loss_value])
+        # loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
 
-        # clear traj history
-        self.traj_reward = []
-        self.policy_hist = Variable(torch.Tensor())
-        self.value_hist = Variable(torch.Tensor())
+        # # store traj loss values in epoch loss tensors
+        # self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
+        # self.value_loss_hist = torch.cat([self.value_loss_hist, loss_value])
 
-    def update_policy(self, episode, copy_policy=False):
+        # # clear traj history
+        # self.traj_reward = []
+        # self.policy_hist = Variable(torch.Tensor())
+        # self.value_hist = Variable(torch.Tensor())
+
+    def update_policy(self):
+
+        for rollout in self.rollout.get(256):
+
+            actions = rollout.actions
+
+            if isinstance(self.env.action_space, gym.spaces.Discrete):
+                actions = actions.long().flatten()
+
+            vals, log_prob = self.get_value_log_probs(rollout.observations, actions)
+
+            policy_loss = rollout.advantages * log_prob
+
+            policy_loss = -torch.sum(policy_loss)
+
+            value_loss = F.mse_loss(rollout.returns, vals)
+
+            loss = policy_loss
+
+            self.optimizer_policy.zero_grad()
+            loss.backward()
+            # torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
+            self.optimizer_policy.step()
+
+            self.optimizer_value.zero_grad()
+            value_loss.backward()
+            # torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
+            self.optimizer_value.step()
+
+            # print(list(self.ac.actor.parameters())[0])#[0].weight)
+            # print(list(self.ac.critic.parameters())[0])
         # mean of all traj losses in single epoch
-        loss_policy = torch.mean(self.policy_loss_hist)
-        loss_value = torch.mean(self.value_loss_hist)
+        # loss_policy = torch.mean(self.policy_loss_hist)
+        # loss_value = torch.mean(self.value_loss_hist)
 
-        # tensorboard book-keeping
-        if self.tensorboard_log:
-            self.writer.add_scalar("loss/policy", loss_policy, episode)
-            self.writer.add_scalar("loss/value", loss_value, episode)
+        # # tensorboard book-keeping
+        # if self.tensorboard_log:
+        #     self.writer.add_scalar("loss/policy", loss_policy, episode)
+        #     self.writer.add_scalar("loss/value", loss_value, episode)
 
-        # take gradient step
-        self.optimizer_policy.zero_grad()
-        loss_policy.backward()  # B
-        self.optimizer_policy.step()
+        # # take gradient step
+        # self.optimizer_policy.zero_grad()
+        # loss_policy.backward()  # B
+        # self.optimizer_policy.step()
 
-        self.optimizer_value.zero_grad()
-        loss_value.backward()
-        self.optimizer_value.step()
+        # self.optimizer_value.zero_grad()
+        # loss_value.backward()
+        # self.optimizer_value.step()
 
-        # clear loss history for epoch
-        self.policy_loss_hist = Variable(torch.Tensor())
-        self.value_loss_hist = Variable(torch.Tensor())
+        # # clear loss history for epoch
+        # self.policy_loss_hist = Variable(torch.Tensor())
+        # self.value_loss_hist = Variable(torch.Tensor())
 
-        if copy_policy:
-            pass
+    def collect_rollouts(self, initial_state):
+        state = initial_state
+
+        for i in range(2048):
+            
+            # with torch.no_grad():
+            action, values, old_log_probs = self.select_action(state)
+                
+            next_state, reward, done, _ = self.env.step(np.array(action))
+            self.epoch_reward += reward
+
+            if self.render:
+                self.env.render()
+
+            self.rollout.add(state, action.reshape(self.env.n_envs,1), reward, done, values.detach(), old_log_probs.detach())
+
+            state = next_state
+
+            for i, d in enumerate(done):
+                if d:
+                    self.rewards.append(self.epoch_reward[i])
+                    self.epoch_reward[i] = 0
+
+        return values, done
 
     def learn(self): #pragma: no cover
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
-            for i in range(self.actor_batch_size):
-                state = self.env.reset()
-                done = False
-                for t in range(self.timesteps_per_actorbatch):
-                    action = Variable(self.select_action(state, deterministic=False))
-                    state, reward, done, _ = self.env.step(action.item())
+            # for i in range(self.actor_batch_size):
+            #     state = self.env.reset()
+            #     done = False
+            #     for t in range(self.timesteps_per_actorbatch):
+            #         action = Variable(self.select_action(state, deterministic=False))
+            #         state, reward, done, _ = self.env.step(action.item())
 
-                    if self.render:
-                        self.env.render()
+            #         if self.render:
+            #             self.env.render()
 
-                    self.traj_reward.append(reward)
+            #         self.traj_reward.append(reward)
 
-                    if done:
-                        break
+            #         if done:
+            #             break
 
-                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
-                self.get_traj_loss()
+            #     epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
+            #     self.get_traj_loss()
 
             self.update_policy(episode)
 
