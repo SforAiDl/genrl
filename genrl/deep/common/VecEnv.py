@@ -101,7 +101,7 @@ class VecEnv(ABC):
         """
         Set seed for reproducability in all environments
         """
-        [env.seed(seed+idx) for idx, env in enumerate(self.envs)]
+        [env.seed(seed + idx) for idx, env in enumerate(self.envs)]
 
     @abstractmethod
     def step(self, actions):
@@ -135,6 +135,7 @@ class VecEnv(ABC):
     def action_spaces(self):
         return [i.action_space for i in self.envs]
 
+
 class SerialVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
@@ -147,7 +148,10 @@ class SerialVecEnv(VecEnv):
 
     def __init__(self, envs, n_envs=2):
         super(SerialVecEnv, self).__init__(envs, n_envs)
-        self.states = np.zeros((self.n_envs, self.observation_space.shape[0]), dtype=self.observation_space.dtype)
+        self.states = np.zeros(
+            (self.n_envs, self.observation_space.shape[0]),
+            dtype=self.observation_space.dtype,
+        )
         self.rewards = np.zeros((self.n_envs))
         self.dones = np.zeros((self.n_envs))
         self.infos = [{} for _ in range(self.n_envs)]
@@ -163,13 +167,18 @@ class SerialVecEnv(VecEnv):
         for i, env in enumerate(self.envs):
             obs, reward, done, info = env.step(actions[i])
             if done:
-              obs = env.reset()
+                obs = env.reset()
             self.states[i] = obs
             self.rewards[i] = reward
             self.dones[i] = done
             self.infos[i] = info
 
-        return np.copy(self.states), self.rewards.copy(), self.dones.copy(), copy.deepcopy(self.infos)
+        return (
+            np.copy(self.states),
+            self.rewards.copy(),
+            self.dones.copy(),
+            copy.deepcopy(self.infos),
+        )
 
     def reset(self):
         """
