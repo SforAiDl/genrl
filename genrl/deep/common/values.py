@@ -1,10 +1,28 @@
-from genrl.deep.common.base import BaseValue
-from genrl.deep.common.utils import mlp
+from .base import BaseValue
+from .utils import mlp, cnn
+from typing import Tuple, Union, Type
+import numpy as np
 
 
 def _get_val_model(
-    arch, val_type, state_dim, hidden, action_dim=None,
+    arch: str, val_type: str, state_dim: str, hidden: Tuple, action_dim: int = None
 ):
+    """
+    Returns Neural Network given specifications
+
+    :param arch: Specifies type of architecture "mlp" for MLP layers
+    :param val_type: Specifies type of value function: \
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param state_dim: State dimensions of environment
+    :param action_dim: Action dimensions of environment
+    :param hidden: Sizes of hidden layers
+    :type arch: string
+    :type val_type: string
+    :type state_dim: string
+    :type action_dim: int
+    :type hidden: tuple or list
+    :returns: Neural Network model to be used for the Value function
+    """
     if val_type == "V":
         return arch([state_dim] + list(hidden) + [1])
     elif val_type == "Qsa":
@@ -17,15 +35,26 @@ def _get_val_model(
 
 class MlpValue(BaseValue):
     """
-    MLP Value Function
-    :param state_dim: (int) state dimension of environment
-    :param action_dim: (int) action dimension of environment
-    :param val_type: (str) type of value function.
-        'V' for V(s), 'Qs' for Q(s), 'Qsa' for Q(s,a)
-    :param hidden: (tuple or list) sizes of hidden layers
+    MLP Value Function class
+
+    :param state_dim: State dimensions of environment
+    :param action_dim: Action dimensions of environment
+    :param val_type: Specifies type of value function: \
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param hidden: Sizes of hidden layers
+    :type state_dim: int
+    :type action_dim: int
+    :type val_type: string
+    :type hidden: tuple or list
     """
 
-    def __init__(self, state_dim, action_dim=None, val_type="V", hidden=(32, 32)):
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int = None,
+        val_type: str = "V",
+        hidden: Tuple = (32, 32),
+    ):
         super(MlpValue, self).__init__()
 
         self.state_dim = state_dim
@@ -34,10 +63,56 @@ class MlpValue(BaseValue):
         self.model = _get_val_model(mlp, val_type, state_dim, hidden, action_dim)
 
 
-value_registry = {"mlp": MlpValue}
+class CNNValue(BaseValue):
+    """
+    CNN Value Function class
+
+    :param state_dim: State dimension of environment
+    :param action_dim: Action dimension of environment
+    :param history_length: Length of history of states
+    :param val_type: Specifies type of value function: \
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param hidden: Sizes of hidden layers
+    :type state_dim: int
+    :type action_dim: int
+    :type history_length: int
+    :type val_type: string
+    :type hidden: tuple or list
+    """
+
+    def __init__(
+        self,
+        action_dim: int,
+        history_length: int = 4,
+        val_type: str = "Qs",
+        fc_layers: Tuple = (256,),
+    ):
+        super(CNNValue, self).__init__()
+
+        self.action_dim = action_dim
+
+        self.conv, output_size = cnn((history_length, 16, 32))
+
+        self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
+
+    def forward(self, state: np.ndarray) -> np.ndarray:
+        state = self.conv(state)
+        state = state.view(state.size(0), -1)
+        state = self.fc(state)
+        return state
 
 
-def get_value_from_name(name_):
+value_registry = {"mlp": MlpValue, "cnn": CNNValue}
+
+
+def get_value_from_name(name_: str) -> Union[Type[MlpValue], Type[CNNValue]]:
+    """
+    Gets the value function given the name of the value function
+
+    :param name_: Name of the value function needed
+    :type name_: string
+    :returns: Value function
+    """
     if name_ in value_registry:
         return value_registry[name_]
     raise NotImplementedError

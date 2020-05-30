@@ -2,35 +2,47 @@ import numpy as np
 import gym
 import matplotlib.pyplot as plt
 
-from genrl.classical.common.models import get_model_from_name
+from .models import get_model_from_name
+from typing import Any, Optional, Tuple, List
 
 
 class Trainer:
     """
     Global trainer class for classical RL algorithms
-    :param agent: (object) Algorithm object to train
-    :param env: (gym environment) standard gym environment to train on
-    :param mode: (str) mode of value function update ['learn', 'plan', 'dyna']
-    :param model: (str) model to use for planning ['tabular']
-    :param n_episodes: (int) number of training episodes
-    :param plan_n_steps: (int) number of planning step per environment interaction
-    :param start_steps: (int) number of initial exploration timesteps
-    :param seed: (int) seed for random number generator
-    :param render: (bool) render gym environment
+
+    :param agent: Algorithm object to train
+    :param env: standard gym environment to train on
+    :param mode: mode of value function update ['learn', 'plan', 'dyna']
+    :param model: model to use for planning ['tabular']
+    :param n_episodes: number of training episodes
+    :param plan_n_steps: number of planning step per environment interaction
+    :param start_steps: number of initial exploration timesteps
+    :param seed: seed for random number generator
+    :param render: render gym environment
+    :type agent: object
+    :type env: Gym environment
+    :type mode: str
+    :type model: str
+    :type n_episodes: int
+    :type plan_n_steps: int
+    :type start_steps: int
+    :type seed: int
+    :type render: bool
     """
 
     def __init__(
         self,
-        agent,
-        env,
-        mode="learn",
-        model=None,
-        n_episodes=30000,
-        plan_n_steps=3,
-        start_steps=5000,
-        start_plan=50,
-        seed=None,
-        render=False,
+        agent: Any,
+        env: gym.Env,
+        mode: str = "learn",
+        model: str = None,
+        n_episodes: int = 30000,
+        plan_n_steps: int = 3,
+        start_steps: int = 5000,
+        start_plan: int = 50,
+        evaluate_frequency: int = 500,
+        seed: Optional[int] = None,
+        render: bool = False,
     ):
         self.agent = agent
         self.env = env
@@ -38,6 +50,7 @@ class Trainer:
         self.plan_n_steps = plan_n_steps
         self.start_steps = start_steps
         self.start_plan = start_plan
+        self.evaluate_frequency = evaluate_frequency
         self.render = render
 
         if mode == "learn":
@@ -58,14 +71,16 @@ class Trainer:
                 self.env.observation_space.n, self.env.action_space.n
             )
 
-    def learn(self, transitions):
+    def learn(self, transitions: Tuple) -> None:
         """
         learn from transition tuples
-        :param transitions: (tuple) s, a, r, s' transition
+
+        :param transitions: s, a, r, s' transition
+        :type transitions: tuple
         """
         self.agent.update(transitions)
 
-    def plan(self):
+    def plan(self) -> None:
         """
         plans on samples drawn from model
         """
@@ -74,7 +89,7 @@ class Trainer:
             r, s_ = self.model.step(s, a)
             self.agent.update((s, a, r, s_))
 
-    def train(self):
+    def train(self) -> List[float]:
         """
         general training loop for classical RL
         """
@@ -106,12 +121,9 @@ class Trainer:
             state = next_state
             if done == True:
                 ep_rews.append(ep_rew)
-                if ep % 100 == 0:
-                    print(
-                        "Episode: {}, Reward: {}, timestep: {}".format(
-                            ep, ep_rew, timestep
-                        )
-                    )
+                if ep % self.evaluate_frequency == 0:
+                    print("Evaluating at the episode number: {}".format(ep))
+                    self.evaluate()
 
                 if ep == self.n_episodes:
                     break
@@ -125,11 +137,42 @@ class Trainer:
 
         return ep_rews
 
-    def plot(self, results, window_size=100):
+    def evaluate(self, eval_ep: int = 100) -> None:
+        """
+        Evaluate function.
+
+        :param eval_ep: Number of episodes you want to evaluate for
+        :type eval_ep: int
+        """
+        ep = 0
+        ep_rew = 0
+        ep_rews = []
+        state = self.env.reset()
+
+        while True:
+            action = self.agent.get_action(state, False)
+            next_state, reward, done, _ = self.env.step(action)
+
+            state = next_state
+            ep_rew += reward
+            if done == True:
+                ep_rews.append(ep_rew)
+                ep += 1
+                if ep == 100:
+                    print(
+                        "Evaluating on {} episodes, Mean Reward: {} and Std Deviation for the reward: {}".format(
+                            eval_ep, np.mean(ep_rews), np.std(ep_rews)
+                        )
+                    )
+                    break
+
+    def plot(self, results: List[float], window_size: int = 100) -> None:
         """
         plot model rewards
-        :param results: (list) rewards for each episode
-        :param window_size: (int) size of moving average filter
+        :param results: rewards for each episode
+        :param window_size: size of moving average filter
+        :type results: int
+        :type window_size: int
         """
         avgd_results = [0] * len(results)
         for i in range(window_size, len(results)):
@@ -144,9 +187,19 @@ class Trainer:
 
 if __name__ == "__main__":
     env = gym.make("FrozenLake-v0")
-    agent = QLearning(env)
+    agent = QLearning(env, epsilon=0.6, lr=0.1)
     trainer = Trainer(
-        agent, env, mode="dyna", model="tabular", seed=42, n_episodes=50, start_steps=0
+        agent,
+        env,
+        mode="dyna",
+        model="tabular",
+        seed=42,
+        n_episodes=1000,
+        start_steps=0,
+        evaluate_frequency=500,
     )
     ep_rs = trainer.train()
+    print("-" * 82)
+    print("Evaluating the learned model")
+    trainer.evaluate()
     trainer.plot(ep_rs)

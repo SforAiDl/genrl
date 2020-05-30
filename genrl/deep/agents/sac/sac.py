@@ -7,75 +7,90 @@ from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from genrl.deep.common import (
-    get_model,
-    ReplayBuffer,
-    save_params,
-    load_params,
-    evaluate,
-    set_seeds,
-)
+from ...common import get_model, ReplayBuffer, save_params, load_params, set_seeds, venv
+from typing import Union, Tuple, Any, Optional, Dict
 
 
 class SAC:
     """
     Soft Actor Critic algorithm (SAC)
+    
     Paper: https://arxiv.org/abs/1812.05905
-    :param network_type: (str) The deep neural network layer types ['mlp']
-    :param env: (Gym environment) The environment to learn from
-    :param gamma: (float) discount factor
-    :param replay_size: (int) Replay memory size
-    :param batch_size: (int) Update batch size
-    :param lr: (float) network learning rate
-    :param alpha: (float) entropy weight
-    :param polyak: (float) Polyak averaging weight to update target network
-    :param epochs: (int) Number of epochs
-    :param start_steps: (int) Number of exploratory steps at start
-    :param steps_per_epoch: (int) Number of steps per epoch
-    :param max_ep_len: (int) Maximum steps per episode
-    :param start_update: (int) Number of steps before first parameter update
-    :param update_interval: (int) Number of steps between parameter updates
-    :param save_interval: (int) Number of steps between saves of models
-    :param layers: (tuple or list) Number of neurons in hidden layers
-    :param tensorboard_log: (str) the log location for tensorboard (if None,
-        no logging)
-    :param seed (int): seed for torch and gym
-    :param render (boolean): if environment is to be rendered
-    :param device (str): device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
-    :param run_num: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
+
+    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param env: The environment to learn from
+    :param gamma: discount factor
+    :param replay_size: Replay memory size
+    :param batch_size: Update batch size
+    :param lr: learning rate for optimizers
+    :param alpha: entropy coefficient
+    :param polyak: polyak averaging weight for target network update
+    :param entropy_tuning: if alpha should be a learned parameter
+    :param epochs: Number of epochs to train on
+    :param start_steps: Number of initial exploratory steps
+    :param steps_per_epoch: Number of parameter updates per epoch
+    :param max_ep_len: Maximum number of steps per episode
+    :param start_update: Number of steps before first parameter update
+    :param update_interval: Number of step between updates
+    :param layers: Neural network layer dimensions
+    :param tensorboard_log: the log location for tensorboard
+    :param seed: seed for torch and gym
+    :param render: if environment is to be rendered
+    :param device: device to use for tensor operations; ['cpu','cuda']
+    :param run_num: model run number if it has already been trained
+    :param save_model: model save directory
+    :param load_model: model loading path
+    :type network_type: string
+    :type env: Gym environment
+    :type gamma: float
+    :type replay_size: int
+    :type batch_size: int
+    :type lr: float
+    :type alpha: float
+    :type polyak: float
+    :type entropy_tuning: bool
+    :type epochs: int
+    :type start_steps: int
+    :type steps_per_epoch: int
+    :type max_ep_len: int
+    :type start_update: int
+    :type update_interval: int
+    :type layers: tuple
+    :type tensorboard_log: string
+    :type seed: int
+    :type render: bool
+    :type device: string
+    :type run_num: int
+    :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
         self,
-        network_type,
-        env,
-        gamma=0.99,
-        replay_size=1000000,
-        batch_size=256,
-        lr=3e-4,
-        alpha=0.01,
-        polyak=0.995,
-        entropy_tuning=True,
-        epochs=1000,
-        start_steps=0,
-        steps_per_epoch=1000,
-        max_ep_len=1000,
-        start_update=256,
-        update_interval=1,
-        layers=(256, 256),
-        pretrained=None,
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        save_interval=5000,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        gamma: float = 0.99,
+        replay_size: int = 1000000,
+        batch_size: int = 256,
+        lr: float = 3e-4,
+        alpha: float = 0.01,
+        polyak: float = 0.995,
+        entropy_tuning: bool = True,
+        epochs: int = 1000,
+        start_steps: int = 0,
+        steps_per_epoch: int = 1000,
+        max_ep_len: int = 1000,
+        start_update: int = 256,
+        update_interval: int = 1,
+        layers: Tuple = (256, 256),
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -95,15 +110,14 @@ class SAC:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
-        self.pretrained = pretrained
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
-        self.evaluate = evaluate
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -117,14 +131,18 @@ class SAC:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
-    def create_model(self):
+    def create_model(self) -> None:
+        """
+        Initialize the model
+        Initializes optimizer and replay buffers as well.
+        """
         state_dim = self.env.observation_space.shape[0]
 
         # initialize models
@@ -140,14 +158,18 @@ class SAC:
         self.q1 = get_model("v", self.network_type)(
             state_dim, action_dim, "Qsa", self.layers
         ).to(self.device).float()
+        
         self.q2 = get_model("v", self.network_type)(
             state_dim, action_dim, "Qsa", self.layers
         ).to(self.device).float()
+        
         self.policy = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, disc, False, sac=True
         ).float()
+        ).to(self.device)
 
-        if self.pretrained is not None:
+
+        if self.load_model is not None:
             self.load(self)
             self.q1.load_state_dict(self.checkpoint["q1_weights"])
             self.q2.load_state_dict(self.checkpoint["q2_weights"])
@@ -183,17 +205,29 @@ class SAC:
 
         # set action scales
         if self.env.action_space is None:
-            self.action_scale = torch.tensor(1.0)
-            self.action_bias = torch.tensor(0.0)
+            self.action_scale = torch.tensor(1.0).to(self.device)
+            self.action_bias = torch.tensor(0.0).to(self.device)
         else:
             self.action_scale = torch.FloatTensor(
                 (self.env.action_space.high - self.env.action_space.low) / 2.0
-            )
+            ).to(self.device)
             self.action_bias = torch.FloatTensor(
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
-            )
+            ).to(self.device)
 
-    def sample_action(self, state):
+    def sample_action(self, state: np.ndarray) -> np.ndarray:
+        """
+        sample action normal distribution parameterized by policy network
+        
+        :param state: Observation state
+        :type: int, float, ...
+        :returns: action
+        :returns: log likelihood of policy
+        :returns: scaled mean of normal distribution
+        :rtype: int, float, ...
+        :rtype: float
+        :rtype: float
+        """
         mean, log_std = self.policy.forward(state)
         std = log_std.exp()
 
@@ -213,12 +247,48 @@ class SAC:
         return action.float(), log_pi, mean
 
     def select_action(self, state):
+        """
+        select action given a state
+
+        :param state: Environment state
+        :type state: int, float, ...
+        :returns: action
+        :rtype: int, float, ...
+        """
         state = torch.FloatTensor(state).to(self.device)
         action, _, _ = self.sample_action(state)
         return action.detach().cpu().numpy()
 
-    def update_params(self, state, action, reward, next_state, done):
+    def update_params(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        next_state: np.ndarray,
+        done: float,
+    ) -> (Tuple[float]):
+        """
+        Computes loss and takes optimizer step
 
+        :param state: environment observation
+        :param action: agent action
+        :param: reward: environment reward
+        :param next_state: environment next observation
+        :param done: if episode is over
+        :type state: int, float, ...
+        :type action: float
+        :type: reward: float
+        :type next_state: int, float, ...
+        :type done: bool
+        :returns: Q1-loss
+        :rtype: float
+        :returns: Q2-loss
+        :rtype: float
+        :returns: policy loss
+        :rtype: float
+        :returns: entropy coefficient loss
+        :rtype: float
+        """
         # compute targets
         if self.env.n_envs == 1:
             state, action, next_state = state.squeeze().float(), action.squeeze(1).float(), next_state.squeeze().float()
@@ -280,6 +350,7 @@ class SAC:
             target_param.data.copy_(
                 target_param.data * self.polyak + param.data * (1 - self.polyak)
             )
+
         for target_param, param in zip(self.q2_targ.parameters(), self.q2.parameters()):
             target_param.data.copy_(
                 target_param.data * self.polyak + param.data * (1 - self.polyak)
@@ -287,7 +358,7 @@ class SAC:
 
         return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
-    def learn(self): #pragma: no cover
+    def learn(self) -> None:  # pragma: no cover
         if self.tensorboard_log:
             writer = SummaryWriter(self.tensorboard_log)
 
@@ -327,9 +398,12 @@ class SAC:
                     writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
                 if self.save_model is not None:
-                    if i >= self.start_update and i % self.save_interval == 0:
+                    if (
+                        timestep >= self.start_update
+                        and timestep % self.save_interval == 0
+                    ):
                         self.checkpoint = self.get_hyperparams()
-                        self.save(self, i)
+                        self.save(self, timestep)
                         print("Saved current model")
 
                 # prepare transition for replay memory push
@@ -348,12 +422,12 @@ class SAC:
             self.replay_buffer.extend(zip(state, action, reward, next_state, done))
             state = next_state
 
-            if i > total_steps:
+            if timestep > total_steps:
                 break
 
             # write episode reward to tensorboard logs
             if self.tensorboard_log:
-                writer.add_scalar("reward/episode_reward", episode_reward, i)
+                writer.add_scalar("reward/episode_reward", episode_reward, timestep)
 
             if sum(episode_len) % (5*self.env.n_envs) == 0 and sum(episode_len) != 0:
                 print(
@@ -367,7 +441,7 @@ class SAC:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
             "gamma": self.gamma,
@@ -386,6 +460,6 @@ class SAC:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env, seed=0)
+    algo = SAC("mlp", env, save_model="checkpoints")
     algo.learn()
     algo.evaluate(algo)

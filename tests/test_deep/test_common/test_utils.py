@@ -5,13 +5,14 @@ import gym
 import os
 from shutil import rmtree
 
-from genrl import (
+from genrl.deep.common import (
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
-    PPO1,
+    CNNValue,
 )
 from genrl.deep.common.utils import *
+from genrl import PPO1
 
 
 class TestUtils:
@@ -22,10 +23,12 @@ class TestUtils:
         ac = get_model("ac", "mlp")
         p = get_model("p", "mlp")
         v = get_model("v", "mlp")
+        v_ = get_model("v", "cnn")
 
         assert ac == MlpActorCritic
         assert p == MlpPolicy
         assert v == MlpValue
+        assert v_ == CNNValue
 
     def test_mlp(self):
         """
@@ -44,14 +47,23 @@ class TestUtils:
         assert mlp_nn(inp).shape == (2,)
         assert mlp_nn_sac(inp).shape == (3,)
 
-    def test_evaluate(self):
+    def test_cnn(self):
         """
-        test evaluating trained algorithm
+        test getting CNN layers
         """
-        env = gym.make("CartPole-v0")
-        algo = PPO1("mlp", env, epochs=1)
-        algo.learn()
-        evaluate(algo, num_timesteps=10)
+        channels = [1, 2, 4]
+        kernels = [4, 1]
+        strides = [2, 2]
+        input_size = 84
+
+        cnn_nn, output_size = cnn(channels, kernels, strides, input_size)
+
+        assert len(cnn_nn) == 2 * (len(channels) - 1)
+        assert all(isinstance(cnn_nn[i], nn.Conv2d) for i in range(0, len(channels), 2))
+        assert all(
+            isinstance(cnn_nn[i], nn.ReLU) for i in range(1, len(channels) + 1, 2)
+        )
+        assert output_size == 1764
 
     def test_save_params(self):
         """
@@ -69,10 +81,29 @@ class TestUtils:
         """
         env = gym.make("CartPole-v0")
         algo = PPO1(
-            "mlp", env, epochs=1, pretrained="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
+            "mlp", env, epochs=1, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
         )
 
         rmtree("test_ckpt")
+
+    def test_get_env_properties(self):
+        """
+        test getting environment properties
+        """
+        env = gym.make("CartPole-v0")
+
+        state_dim, action_dim, discrete, _ = get_env_properties(env)
+        assert state_dim == 4
+        assert action_dim == 2
+        assert discrete == True
+
+        env = gym.make("Pendulum-v0")
+
+        state_dim, action_dim, discrete, action_lim = get_env_properties(env)
+        assert state_dim == 3
+        assert action_dim == 1
+        assert discrete == False
+        assert action_lim == 2.0
 
     def test_set_seeds(self):
         set_seeds(42)

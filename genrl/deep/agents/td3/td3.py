@@ -4,21 +4,24 @@ import torch.nn as nn
 import gym
 from copy import deepcopy
 
-from genrl.deep.common import (
+from ...common import (
     ReplayBuffer,
     get_model,
-    evaluate,
     save_params,
     load_params,
-    OrnsteinUhlenbeckActionNoise,
+    get_env_properties,
     set_seeds,
+    venv,
 )
+from typing import Tuple, Union, Dict, Optional, Any
 
 
 class TD3:
     """
     Twin Delayed DDPG
+
     Paper: https://arxiv.org/abs/1509.02971
+    
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
@@ -49,36 +52,42 @@ class TD3:
         pretrained)
     :param save_version: (int) model save version (if None, model hasn't been
         pretrained)
+    :param run_num: model run number if it has already been trained
+    :param save_model: model save directory
+    :param load_model: model loading path
+    :type run_num: int
+    :type save_model: string
+    :type load_model: string
     """
 
     def __init__(
         self,
-        network_type,
-        env,
-        gamma=0.99,
-        replay_size=1000000,
-        batch_size=100,
-        lr_p=0.001,
-        lr_q=0.001,
-        polyak=0.995,
-        policy_frequency=2,
-        epochs=100,
-        start_steps=10000,
-        steps_per_epoch=4000,
-        noise=None,
-        noise_std=0.1,
-        pretrained=None,
-        max_ep_len=1000,
-        start_update=1000,
-        update_interval=50,
-        layers=(256, 256),
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        save_interval=5000,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        gamma: float = 0.99,
+        replay_size: int = 1000000,
+        batch_size: int = 100,
+        lr_p: float = 0.001,
+        lr_q: float = 0.001,
+        polyak: float = 0.995,
+        policy_frequency: int = 2,
+        epochs: int = 100,
+        start_steps: int = 10000,
+        steps_per_epoch: int = 4000,
+        noise: Optional[Any] = None,
+        noise_std: float = 0.1,
+        max_ep_len: int = 1000,
+        start_update: int = 1000,
+        update_interval: int = 50,
+        layers: Tuple = (256, 256),
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -101,12 +110,11 @@ class TD3:
         self.save_interval = save_interval
         self.layers = layers
         self.tensorboard_log = tensorboard_log
-        self.pretrained = pretrained
         self.seed = seed
         self.render = render
-        self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -122,7 +130,7 @@ class TD3:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
@@ -130,9 +138,12 @@ class TD3:
         self.create_model()
         self.checkpoint = self.get_hyperparams()
 
-    def create_model(self):
-        state_dim, action_dim, disc = self.get_env_properties()
-        print("State dim {} Action dim {}".format(state_dim, action_dim))
+    def create_model(self) -> None:
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        if discrete == True:
+            raise Exception(
+                "Discrete Environments not supported for {}.".format(__class__.__name__)
+            )
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
@@ -147,7 +158,10 @@ class TD3:
             state_dim, action_dim, hidden=self.layers, val_type="Qsa"
         )
 
-        if self.pretrained is not None:
+        self.ac.qf1.to(self.device)
+        self.ac.qf2.to(self.device)
+
+        if self.load_model is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.qf1.load_state_dict(self.checkpoint["q1_weights"])
@@ -172,39 +186,31 @@ class TD3:
             self.ac.actor.parameters(), lr=self.lr_p
         )
 
-    def get_env_properties(self):
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc
-
-    def select_action(self, state, deterministic=True):
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> np.ndarray:
         with torch.no_grad():
             action = self.ac_target.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=True,
+                deterministic=deterministic,
             )[0].numpy()
 
         # add noise to output from policy network
         if self.noise is not None:
-            # action += self.noise_std * np.random.randn(
-            #     self.env.action_space.shape[0]
-            # )
             action += self.noise()
 
         return np.clip(
             action, -self.env.action_space.high[0], self.env.action_space.high[0]
         )
 
-    def get_q_loss(self, state, action, reward, next_state, done):
+    def get_q_loss(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        next_state: np.ndarray,
+        done: bool,
+    ) -> torch.Tensor:
         q1 = self.ac.qf1.get_value(torch.cat([state, action], dim=-1))
         q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
 
@@ -236,13 +242,21 @@ class TD3:
 
         return l1 + l2
 
-    def get_p_loss(self, state):
+    def get_p_loss(self, state: np.array) -> torch.Tensor:
         q_pi = self.ac.get_value(
             torch.cat([state, self.ac.get_action(state, deterministic=True)[0]], dim=-1)
         )
         return -torch.mean(q_pi)
 
-    def update_params(self, state, action, reward, next_state, done, timestep):
+    def update_params(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        next_state: np.ndarray,
+        done: bool,
+        timestep: int,
+    ) -> None:
         self.optimizer_q.zero_grad()
         # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
@@ -272,7 +286,7 @@ class TD3:
                     param_target.data.mul_(self.polyak)
                     param_target.data.add_((1 - self.polyak) * param.data)
 
-    def learn(self): #pragma: no cover
+    def learn(self) -> None: #pragma: no cover
         state, episode_reward, episode_len, episode = self.env.reset(), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
         total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
@@ -343,7 +357,7 @@ class TD3:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
             "gamma": self.gamma,
@@ -362,5 +376,5 @@ class TD3:
 
 if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
-    algo = TD3("mlp", env, render=True, noise=OrnsteinUhlenbeckActionNoise)
+    algo = TD3("mlp", env)
     algo.learn()

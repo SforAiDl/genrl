@@ -6,61 +6,76 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from genrl.deep.common import (
+from ...common import (
     get_model,
-    evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
     RolloutBuffer,
+    venv,
 )
+from typing import Tuple, Union, Optional, Any, Dict
 
 
 class VPG:
     """
     Vanilla Policy Gradient algorithm
-    Paper:
-    https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
-    :param network_type: (str) The deep neural network layer types ['mlp']
-    :param env: (Gym environment) The environment to learn from
-    :param timesteps_per_actorbatch: (int) timesteps per actor per update
-    :param gamma: (float) discount factor
-    :param actor_batchsize: (int) trajectories per optimizer epoch
-    :param epochs: (int) the optimizer's number of epochs
-    :param lr_policy: (float) policy network learning rate
-    :param lr_value: (float) value network learning rate
-    :param policy_copy_interval: (int) number of optimizer before copying
-        params from new policy to old policy
-    :param save_interval: (int) Number of episodes between saves of models
-    :param tensorboard_log: (str) the log location for tensorboard (if None,
-        no logging)
-    :param seed (int): seed for torch and gym
-    :param device (str): device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
-    :param run_num: (boolean) if model has already been trained
-    :param save_model: (boolean) True if user wants to save model
+    
+    Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
+    
+    :param network_type: The deep neural network layer types ['mlp']
+    :param env: The environment to learn from
+    :param timesteps_per_actorbatch: timesteps per actor per update
+    :param gamma: discount factor
+    :param actor_batchsize: trajectories per optimizer epoch
+    :param epochs: the optimizer's number of epochs
+    :param lr_policy: policy network learning rate
+    :param lr_value: value network learning rate
+    :param save_interval: Number of episodes between saves of models
+    :param tensorboard_log: the log location for tensorboard
+    :param seed: seed for torch and gym
+    :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param run_num: if model has already been trained
+    :param save_model: True if user wants to save 
+    :param load_model: model loading path
+    :type network_type: str
+    :type env: Gym environment
+    :type timesteps_per_actorbatch: int
+    :type gamma: float
+    :type actor_batchsize: int
+    :type epochs: int
+    :type lr_policy: float
+    :type lr_value: float
+    :type save_interval: int
+    :type tensorboard_log: str
+    :type seed: int
+    :type device: str
+    :type run_num: bool
+    :type save_model: bool
+    :type load_model: string
     """
 
     def __init__(
         self,
-        network_type,
-        env,
-        timesteps_per_actorbatch=1000,
-        gamma=0.99,
-        actor_batch_size=4,
-        epochs=1000,
-        lr_policy=0.01,
-        lr_value=0.0005,
-        policy_copy_interval=20,
-        pretrained=None,
-        layers=(32, 32),
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        save_interval=50,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        timesteps_per_actorbatch: int = 1000,
+        gamma: float = 0.99,
+        actor_batch_size: int = 4,
+        epochs: int = 1000,
+        lr_policy: float = 0.01,
+        lr_value: float = 0.0005,
+        policy_copy_interval: int = 20,
+        layers: Tuple = (32, 32),
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        save_interval: int = 50,
     ):
         self.network_type = network_type
         self.env = env
@@ -73,13 +88,11 @@ class VPG:
         self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
-        self.policy_copy_interval = policy_copy_interval
-        self.evaluate = evaluate
         self.save_interval = save_interval
-        self.pretrained = pretrained
         self.layers = layers
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -95,34 +108,25 @@ class VPG:
 
         # init writer if tensorboard
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
-    def create_model(self):
-        s_dim = self.env.observation_space.shape[0]
-
-        a_lim = None
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            a_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            a_dim = self.env.action_space.shape[0]
-            a_lim = self.env.action_space.high[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
+    def create_model(self) -> None:
+        """
+        Initialize the actor and critic networks 
+        """
+        state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
         # Instantiate networks and optimizers
         self.ac = get_model("ac", self.network_type)(
-            s_dim, a_dim, self.layers, "V", disc, action_lim=a_lim
+            state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.load_model is not None:
             self.load(self)
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
@@ -137,7 +141,19 @@ class VPG:
 
         self.rollout = RolloutBuffer(2048, self.env.observation_space, self.env.action_space, n_envs=self.env.n_envs)
 
-    def select_action(self, state, deterministic=False):
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
+        """
+        Select action for the given state 
+
+        :param state: State for which action has to be sampled
+        :param deterministic: Whether the action is deterministic or not 
+        :type state: int, float, ...
+        :type deterministic: bool
+        :returns: The action 
+        :rtype: int, float, ...
+        """
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
@@ -152,39 +168,13 @@ class VPG:
 
         return val, c.log_prob(action)
 
-    def get_traj_loss(self, value, done):
-
+    def get_traj_loss(self, value, done) -> None:
+        """
+        Calculates the loss for the trajectory 
+        """
         self.rollout.compute_returns_and_advantage(value.detach().cpu().numpy(), done)
-        # pass
-        # disc_R = 0
-        # returns = []
 
-        # # calculate discounted return
-        # for reward in self.traj_reward[::-1]:
-        #     disc_R = reward + self.gamma * disc_R
-        #     returns.insert(0, disc_R)
-
-        # # advantage estimation
-        # returns = torch.FloatTensor(returns).to(self.device)
-        # advantage = Variable(returns) - Variable(self.value_hist)
-
-        # # compute policy and value loss
-        # loss_policy = torch.sum(
-        #     torch.mul(self.policy_hist, advantage).mul(-1), -1
-        # ).unsqueeze(0)
-
-        # loss_value = nn.MSELoss()(self.value_hist, Variable(returns)).unsqueeze(0)
-
-        # # store traj loss values in epoch loss tensors
-        # self.policy_loss_hist = torch.cat([self.policy_loss_hist, loss_policy])
-        # self.value_loss_hist = torch.cat([self.value_loss_hist, loss_value])
-
-        # # clear traj history
-        # self.traj_reward = []
-        # self.policy_hist = Variable(torch.Tensor())
-        # self.value_hist = Variable(torch.Tensor())
-
-    def update_policy(self):
+    def update_policy(self) -> None:
 
         for rollout in self.rollout.get(256):
 
@@ -213,31 +203,8 @@ class VPG:
             # torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.optimizer_value.step()
 
-            # print(list(self.ac.actor.parameters())[0])#[0].weight)
-            # print(list(self.ac.critic.parameters())[0])
-        # mean of all traj losses in single epoch
-        # loss_policy = torch.mean(self.policy_loss_hist)
-        # loss_value = torch.mean(self.value_loss_hist)
-
-        # # tensorboard book-keeping
-        # if self.tensorboard_log:
-        #     self.writer.add_scalar("loss/policy", loss_policy, episode)
-        #     self.writer.add_scalar("loss/value", loss_value, episode)
-
-        # # take gradient step
-        # self.optimizer_policy.zero_grad()
-        # loss_policy.backward()  # B
-        # self.optimizer_policy.step()
-
-        # self.optimizer_value.zero_grad()
-        # loss_value.backward()
-        # self.optimizer_value.step()
-
-        # # clear loss history for epoch
-        # self.policy_loss_hist = Variable(torch.Tensor())
-        # self.value_loss_hist = Variable(torch.Tensor())
-
     def collect_rollouts(self, initial_state):
+      
         state = initial_state
 
         for i in range(2048):
@@ -262,7 +229,7 @@ class VPG:
 
         return values, done
 
-    def learn(self): #pragma: no cover
+    def learn(self) -> None:  # pragma: no cover
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
@@ -284,7 +251,7 @@ class VPG:
             #     epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
             #     self.get_traj_loss()
 
-            self.update_policy(episode)
+            self.update(episode)
 
             if episode % 20 == 0:
                 print("Episode: {}, reward: {}".format(episode, epoch_reward))
@@ -301,7 +268,7 @@ class VPG:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
             "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
@@ -317,6 +284,6 @@ class VPG:
 
 if __name__ == "__main__":
     env = gym.make("CartPole-v0")
-    algo = VPG("mlp", env, save_model="checkpoints")
+    algo = VPG("mlp", env)
     algo.learn()
     algo.evaluate(algo)

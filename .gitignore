@@ -10,3 +10,4 @@ checkpoints/
 *.csv
 *.log
 htmlcov
+logs/

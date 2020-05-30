@@ -6,20 +6,25 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from genrl.deep.common import (
+from ...common import (
     get_model,
-    evaluate,
     save_params,
     load_params,
+    get_env_properties,
     set_seeds,
     RolloutBuffer,
+    venv,
 )
+
+from typing import Union, Any, Optional, Tuple, Dict
 
 
 class PPO1:
     """
     Proximal Policy Optimization algorithm (Clipped policy).
+
     Paper: https://arxiv.org/abs/1707.06347
+    
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param timesteps_per_actorbatch: (int) timesteps per actor per update
@@ -39,29 +44,31 @@ class PPO1:
         and 'cuda' for gpu
     :param run_num: (boolean) if model has already been trained
     :param save_model: (string) directory the user wants to save models to
+    :param load_model: model loading path
+    :type load_model: string
     """
 
     def __init__(
         self,
-        network_type,
-        env,
-        timesteps_per_actorbatch=256,
-        gamma=0.99,
-        clip_param=0.2,
-        actor_batch_size=64,
-        epochs=1000,
-        lr_policy=0.001,
-        lr_value=0.001,
-        layers=(64, 64),
-        policy_copy_interval=5,
-        pretrained=None,
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        run_num=None,
-        save_model=None,
-        save_interval=50,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        timesteps_per_actorbatch: int = 256,
+        gamma: float = 0.99,
+        clip_param: float = 0.2,
+        actor_batch_size: int = 64,
+        epochs: int = 1000,
+        lr_policy: float = 0.001,
+        lr_value: float = 0.001,
+        layers: Tuple = (64, 64),
+        policy_copy_interval: int = 20,
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        save_interval: int = 50,
     ):
         self.network_type = network_type
         self.env = env
@@ -77,11 +84,10 @@ class PPO1:
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
-        self.evaluate = evaluate
         self.save_interval = save_interval
-        self.pretrained = pretrained
         self.run_num = run_num
         self.save_model = save_model
+        self.load_model = load_model
         self.save = save_params
         self.load = load_params
 
@@ -100,13 +106,13 @@ class PPO1:
 
         # init writer if tensorboard
         self.writer = None
-        if self.tensorboard_log is not None: #pragma: no cover
+        if self.tensorboard_log is not None:  # pragma: no cover
             from torch.utils.tensorboard import SummaryWriter
 
             self.writer = SummaryWriter(log_dir=self.tensorboard_log)
         self.create_model()
 
-    def create_model(self):
+    def create_model(self) -> None:
         # Instantiate networks and optimizers
         state_dim, action_dim, disc, action_lim = self.get_env_properties(self.env)
         self.policy_new = get_model("p", self.network_type)(
@@ -118,7 +124,7 @@ class PPO1:
         )
 
         # load paramaters if already trained
-        if self.pretrained is not None:
+        if self.load_model is not None:
             self.load(self)
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
@@ -134,7 +140,7 @@ class PPO1:
 
         self.rollout = RolloutBuffer(2048, self.env.observation_space, self.env.action_space, n_envs=self.env.n_envs)
 
-    def select_action(self, state):
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
         # create distribution based on policy output
         action, c_new = self.policy_new.get_action(state, deterministic=False)
@@ -228,7 +234,7 @@ class PPO1:
             
             self.get_traj_loss(values.cpu().numpy(), done)
 
-            self.update_policy(copy_policy=True)
+            self.update_policy()
 
             if epoch % 1 == 0:
                 print("Episode: {}, reward: {}".format(epoch, np.mean(self.rewards)))
@@ -247,23 +253,7 @@ class PPO1:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_env_properties(self, env):
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-            action_lim = None
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc, action_lim
-
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
             "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
@@ -282,5 +272,5 @@ class PPO1:
 if __name__ == "__main__":
 
     env = gym.make("CartPole-v0")
-    algo = PPO1("mlp", env, save_model="checkpoints", render=True)
+    algo = PPO1("mlp", env)
     algo.learn()

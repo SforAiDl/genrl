@@ -1,35 +1,33 @@
-from genrl.deep.common.policies import MlpPolicy, get_policy_from_name  # noqa
-from genrl.deep.common.values import MlpValue, get_value_from_name  # noqa
-from genrl.deep.common.actor_critic import (  # noqa
-    MlpActorCritic,
-    get_actor_critic_from_name,
-)  # noqa
-from genrl.deep.common.base import (
-    BasePolicy,
-    BaseValue,
-    BaseActorCritic,
-)  # noqa
-from genrl.deep.common.buffers import ReplayBuffer, PrioritizedBuffer  # noqa
-from genrl.deep.common.utils import (  # noqa
-    mlp,
-    get_model,
-    evaluate,
-    save_params,
-    load_params,
-    set_seeds,
+from genrl.deep.common.actor_critic import MlpActorCritic, get_actor_critic_from_name
+from genrl.deep.common.buffers import ReplayBuffer, PrioritizedBuffer
+from genrl.deep.common.logger import (
+    Logger,
+    HumanOutputFormat,
+    TensorboardLogger,
+    CSVLogger,
+    get_logger_by_name,
 )
-from genrl.deep.common.VecEnv import (
-    SerialVecEnv,
-    SubProcessVecEnv,
-    venv,
-)  # noqa
-from genrl.deep.common.noise import (  # noqa
+from genrl.deep.common.noise import (
+    ActionNoise,
     NormalActionNoise,
     OrnsteinUhlenbeckActionNoise,
 )
-from genrl.deep.common.logger import Logger
-from genrl.deep.common.trainer import (
-    OffPolicyTrainer,
-    OnPolicyTrainer,
+from genrl.deep.common.policies import MlpPolicy, get_policy_from_name
+from genrl.deep.common.trainer import Trainer, OffPolicyTrainer, OnPolicyTrainer
+from genrl.deep.common.utils import (
+    get_model,
+    mlp,
+    cnn,
+    save_params,
+    load_params,
+    get_env_properties,
+    set_seeds,
+)
+from genrl.deep.common.values import (
+    _get_val_model,
+    MlpValue,
+    CNNValue,
+    get_value_from_name,
 )
 from genrl.deep.common.rollout_storage import RolloutBuffer
+from genrl.deep.common.VecEnv import VecEnv, SerialVecEnv, SubProcessVecEnv, venv

@@ -1,21 +1,32 @@
-from genrl.deep.common.base import BasePolicy
-from genrl.deep.common.utils import mlp
+from .base import BasePolicy
+from .utils import mlp
+from typing import Tuple
 
 
 class MlpPolicy(BasePolicy):
     """
     MLP Policy
-    :param state_dim: (int) state dimension of environment
-    :param action_dim: (int) action dimension of environment
-    :param hidden: (tuple or list) sizes of hidden layers
-    :param disc: (bool) discrete action space?
-    :param det: (bool) deterministic policy?
+
+    :param state_dim: State dimensions of the environment
+    :param action_dim: Action dimensions of the environment
+    :param hidden: Sizes of hidden layers
+    :param discrete: True if action space is discrete, else False
+    :type state_dim: int
+    :type action_dim: int
+    :type hidden: tuple or list
+    :type discrete: bool
     """
 
     def __init__(
-        self, state_dim, action_dim, hidden=(32, 32), disc=True, *args, **kwargs
+        self,
+        state_dim: int,
+        action_dim: int,
+        hidden: Tuple = (32, 32),
+        disc: bool = True,
+        *args,
+        **kwargs
     ):
-        super(MlpPolicy, self).__init__(disc, state_dim, action_dim, hidden, **kwargs)
+        super(MlpPolicy, self).__init__(state_dim, action_dim, hidden, disc, **kwargs)
 
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -26,7 +37,14 @@ class MlpPolicy(BasePolicy):
 policy_registry = {"mlp": MlpPolicy}
 
 
-def get_policy_from_name(name_):
+def get_policy_from_name(name_: str):
+    """
+    Returns policy given the name of the policy
+
+    :param name_: Name of the policy needed
+    :type name_: str
+    :returns: Policy Function to be used
+    """
     if name_ in policy_registry:
         return policy_registry[name_]
     raise NotImplementedError
