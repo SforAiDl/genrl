@@ -3,7 +3,6 @@ import os
 import torch
 from torchvision import transforms
 import numpy as np
-from genrl.deep.common import set_seeds, Logger, venv
 from collections import deque
 import gym
 from abc import ABC
