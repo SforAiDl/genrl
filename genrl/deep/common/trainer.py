@@ -344,54 +344,40 @@ class OnPolicyTrainer(Trainer):
         """
         Run training.
         """
-        for episode in range(self.epochs):
+        state = self.env.reset()
+        for epoch in range(self.epochs):
+            self.agent.epoch_reward = np.zeros(self.env.n_envs)
 
-            epoch_reward = 0
+            self.agent.rollout.reset()
+            self.agent.rewards = []
 
-            for i in range(self.agent.actor_batch_size):
+            values, done = self.agent.collect_rollouts(state)
+            
+            self.agent.get_traj_loss(values, done)
 
-                state = self.env.reset()
-                done = False
+            self.agent.update_policy()
 
-                for t in range(self.agent.timesteps_per_actorbatch):
-                    if self.determinsitic_actions:
-                        action = self.agent.select_action(state, deterministic=True)
-                    else:
-                        action = self.agent.select_action(state)
-                    state, reward, done, _ = self.env.step(np.array(action))
+            # if epoch % 1 == 0:
+            #     print("Episode: {}, reward: {}".format(epoch, np.mean(self.agent.rewards)))
+            #     self.agent.rewards = []
+            #     if self.tensorboard_log:
+            #         self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
-                    if self.render:
-                        self.env.render()
-
-                    self.agent.traj_reward.append(reward)
-
-                    if done:
-                        break
-
-                epoch_reward += (
-                    np.sum(self.agent.traj_reward) / self.agent.actor_batch_size
-                )
-                self.agent.get_traj_loss()
-
-            self.agent.update_policy(
-                episode, episode % self.agent.policy_copy_interval == 0
-            )
-
-            if episode % self.log_interval == 0:
+            if epoch % self.log_interval == 0:
                 self.logger.write(
                     {
-                        "Episode": episode,
-                        "Reward": epoch_reward,
-                        "Timestep": i * episode * self.agent.timesteps_per_actorbatch,
+                        "Episode": epoch,
+                        "Reward": np.mean(self.agent.rewards),
+                        "Timestep": epoch * 2048,
                     }
                 )
 
-            if self.save_interval != 0 and episode % self.save_interval == 0:
+            if self.save_interval != 0 and epoch % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
                 self.save()
 
-            self.env.close()
-            self.logger.close()
+        self.env.close()
+        self.logger.close()
 
 
 if __name__ == "__main__":
