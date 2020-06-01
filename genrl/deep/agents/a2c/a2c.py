@@ -151,13 +151,6 @@ class A2C:
             n_envs=self.env.n_envs,
         )
 
-        # self.traj_reward = []
-        # self.actor_hist = torch.Tensor().to(self.device)
-        # self.critic_hist = torch.Tensor().to(self.device)
-
-        # self.actor_loss_hist = torch.Tensor().to(self.device)
-        # self.critic_loss_hist = torch.Tensor().to(self.device)
-
         # load paramaters if already trained
         if self.run_num is not None:
             self.load(self)
@@ -171,7 +164,16 @@ class A2C:
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
+        '''
+        Selection of action 
 
+        :param state: Observation state
+        :param deterministic: Action selection type
+        :type state: int, float, ...
+        :type deterministic: bool
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
+        '''
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
@@ -179,12 +181,6 @@ class A2C:
         val = self.ac.get_value(state).unsqueeze(0)
 
         return a, val, c.log_prob(a)
-        # action = action.detach().cpu().numpy()
-
-        # if self.noise is not None:
-        #     action += self.noise()
-
-        # return action
 
     def get_traj_loss(self, value, done) -> None:
         """
@@ -266,25 +262,6 @@ calculate losses
         for episode in range(self.num_episodes):
             episode_reward = 0
             steps = []
-            # for i in range(self.actor_batch_size):
-            #     state = self.env.reset()
-            #     done = False
-
-            #     for t in range(self.timesteps_per_actorbatch):
-            #         action = self.select_action(state)
-            #         state, reward, done, _ = self.env.step(action)
-
-            #         if self.render:
-            #             self.env.render()
-
-            #         self.traj_reward.append(reward)
-
-            #         if done:
-            #             steps.append(t)
-            #             break
-
-            #     episode_reward += np.sum(self.traj_reward) / self.actor_batch_size
-            #     self.get_traj_loss()
 
             self.update(episode)
 
