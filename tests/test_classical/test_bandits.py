@@ -1,39 +1,46 @@
 from genrl import (
-    SoftmaxActionSelection,
-    UCBBernoulliBandit,
-    UCBGaussianBandit,
-    EpsGreedyBernoulliBandit,
-    EpsGreedyGaussianBandit,
-    ThompsonSampling,
-    BayesianUCBBernoulliBandit,
+    GaussianBandit,
+    BernoulliBandit,
+    EpsGreedyPolicy,
+    UCBPolicy,
+    SoftmaxActionSelectionPolicy,
+    BayesianUCBPolicy,
+    ThompsonSamplingPolicy,
 )
 
 
 class TestBandit:
-    def test_softmax(self):
-        softmaxBandit = SoftmaxActionSelection(1, 10)
-        softmaxBandit.learn(10)
+    def test_eps_greedy_gaussian(self) -> None:
+        bandit = GaussianBandit(arms=10)
+        policy = EpsGreedyPolicy(bandit)
+        policy.learn(10)
 
-    def test_ucb_gaussian(self):
-        ucbBandit = UCBGaussianBandit(1, 10)
-        ucbBandit.learn(10)
+    def test_ucb_gaussian(self) -> None:
+        bandit = GaussianBandit(arms=10)
+        policy = UCBPolicy(bandit)
+        policy.learn(10)
 
-    def test_eps_gaussian(self):
-        epsGreedyBandit = EpsGreedyGaussianBandit(1, 10, 0.05)
-        epsGreedyBandit.learn(10)
+    def test_softmax_gaussian(self) -> None:
+        bandit = GaussianBandit(arms=10)
+        policy = SoftmaxActionSelectionPolicy(bandit)
+        policy.learn(10)
 
-    def test_eps_bernoulli(self):
-        epsbernoulli = EpsGreedyBernoulliBandit(1, 10, 0.05)
-        epsbernoulli.learn(10)
+    def test_eps_greedy_bernoulli(self) -> None:
+        bandit = BernoulliBandit(arms=10)
+        policy = EpsGreedyPolicy(bandit)
+        policy.learn(10)
 
-    def test_ucb_bernoulli(self):
-        ucbbernoulli = UCBBernoulliBandit(1, 10)
-        ucbbernoulli.learn(10)
+    def test_ucb_bernoulli(self) -> None:
+        bandit = BernoulliBandit(arms=10)
+        policy = UCBPolicy(bandit)
+        policy.learn(10)
 
-    def test_thompson(self):
-        thsampling = ThompsonSampling(1, 10)
-        thsampling.learn(10)
+    def test_bayesian_ucb_bernoulli(self) -> None:
+        bandit = BernoulliBandit(arms=10)
+        policy = BayesianUCBPolicy(bandit)
+        policy.learn(10)
 
-    def test_bayesian(self):
-        bayesianbandit = BayesianUCBBernoulliBandit(1, 10)
-        bayesianbandit.learn(10)
+    def test_thompson_sampling_bernoulli(self) -> None:
+        bandit = BernoulliBandit(arms=10)
+        policy = ThompsonSamplingPolicy(bandit)
+        policy.learn(10)
