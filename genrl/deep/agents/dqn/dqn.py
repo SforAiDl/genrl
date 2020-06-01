@@ -13,11 +13,11 @@ from ...common import (
     ReplayBuffer,
     PrioritizedBuffer,
     get_model,
-    evaluate,
     save_params,
     load_params,
     get_env_properties,
     set_seeds,
+    venv,
 )
 
 from .utils import (
@@ -28,6 +28,8 @@ from .utils import (
     CategoricalDQNValue,
     CategoricalDQNValueCNN,
 )
+
+from typing import Union, Any, Optional, Dict, List
 
 
 class DQN:
@@ -86,36 +88,36 @@ class DQN:
 
     def __init__(
         self,
-        network_type,
-        env,
-        double_dqn=False,
-        dueling_dqn=False,
-        noisy_dqn=False,
-        categorical_dqn=False,
-        prioritized_replay=False,
-        epochs=100,
-        max_iterations_per_epoch=100,
-        max_ep_len=1000,
-        gamma=0.99,
-        lr=0.001,
-        batch_size=32,
-        replay_size=100,
-        prioritized_replay_alpha=0.6,
-        max_epsilon=1.0,
-        min_epsilon=0.01,
-        epsilon_decay=1000,
-        num_atoms=51,
-        Vmin=-10,
-        Vmax=10,
-        tensorboard_log=None,
-        seed=None,
-        render=False,
-        device="cpu",
-        save_interval=5000,
-        run_num=None,
-        save_model=None,
-        load_model=None,
-        transform=None,
+        network_type: str,
+        env: Union[gym.Env, venv],
+        double_dqn: bool = False,
+        dueling_dqn: bool = False,
+        noisy_dqn: bool = False,
+        categorical_dqn: bool = False,
+        prioritized_replay: bool = False,
+        epochs: int = 100,
+        max_iterations_per_epoch: int = 100,
+        max_ep_len: int = 1000,
+        gamma: float = 0.99,
+        lr: float = 0.001,
+        batch_size: int = 32,
+        replay_size: int = 100,
+        prioritized_replay_alpha: float = 0.6,
+        max_epsilon: float = 1.0,
+        min_epsilon: float = 0.01,
+        epsilon_decay: int = 1000,
+        num_atoms: int = 51,
+        Vmin: int = -10,
+        Vmax: int = 10,
+        tensorboard_log: str = None,
+        seed: Optional[int] = None,
+        render: bool = False,
+        device: Union[torch.device, str] = "cpu",
+        save_interval: int = 5000,
+        run_num: int = None,
+        save_model: str = None,
+        load_model: str = None,
+        transform: Any = None,
     ):
         self.env = env
         self.double_dqn = double_dqn
@@ -141,7 +143,6 @@ class DQN:
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
-        self.evaluate = evaluate
         self.run_num = run_num
         self.save_model = save_model
         self.load_model = load_model
@@ -171,7 +172,7 @@ class DQN:
 
         self.create_model()
 
-    def create_model(self):
+    def create_model(self) -> None:
         """
         Initialize the model and target model for various variants of DQN. 
         Initializes optimizer and replay buffers as well.
@@ -251,14 +252,14 @@ class DQN:
 
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
-    def update_target_model(self):
+    def update_target_model(self) -> None:
         """
         Copy the target model weights with the model
         """
         self.target_model.load_state_dict(self.model.state_dict())
 
-    def select_action(self, state, explore=True):
-        '''
+    def select_action(self, state: np.ndarray, explore: bool = True) -> np.ndarray:
+        """
         Epsilon Greedy selection of action
 
         :param state: Observation state
@@ -267,28 +268,25 @@ class DQN:
         :type explore: bool
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
-        '''
+        """
         if explore == True:
-            if np.random.rand() <= self.epsilon: 
+            if np.random.rand() <= self.epsilon:
                 return self.env.action_space.sample()
-        
+
         if self.categorical_dqn:
             with torch.no_grad():
                 state = Variable(torch.FloatTensor(state))
                 dist = self.model(state).data.cpu()
-                dist = (
-                    dist
-                    * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                )
+                dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
                 action = dist.sum(2).max(1)[1].numpy()[0]
         else:
             state = Variable(torch.FloatTensor(state))
             q_value = self.model(state)
             action = np.argmax(q_value.detach().numpy())
-    
+
         return action
 
-    def get_td_loss(self):
+    def get_td_loss(self) -> torch.Tensor:
         """
         Computes loss for various variants 
 
@@ -370,7 +368,7 @@ class DQN:
 
         return loss
 
-    def update_params(self):
+    def update_params(self) -> None:
         """
         Takes the step for optimizer. This internally call get_td_loss(), so no need to call the function explicitly.
         """
@@ -383,7 +381,7 @@ class DQN:
             self.model.reset_noise()
             self.target_model.reset_noise()
 
-    def calculate_epsilon_by_frame(self, frame_idx):
+    def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
         """
         A helper function to calculate the value of epsilon after every step. 
 
@@ -396,7 +394,9 @@ class DQN:
             -1.0 * frame_idx / self.epsilon_decay
         )
 
-    def projection_distribution(self, next_state, rewards, dones):
+    def projection_distribution(
+        self, next_state: np.ndarray, rewards: List[float], dones: List[bool]
+    ):
         """
         A helper function used for categorical DQN
 
@@ -450,7 +450,7 @@ class DQN:
 
         return projection_dist
 
-    def learn(self):  # pragma: no cover
+    def learn(self) -> None:  # pragma: no cover
         total_steps = self.max_epochs * self.max_iterations_per_epoch
         state, episode_reward, episode, episode_len = self.env.reset(), 0, 0, 0
 
@@ -520,7 +520,7 @@ class DQN:
         if self.tensorboard_log:
             self.writer.close()
 
-    def get_hyperparams(self):
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "gamma": self.gamma,
             "batch_size": self.batch_size,

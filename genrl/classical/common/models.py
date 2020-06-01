@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Tuple
 
 
 class TabularModel:
@@ -11,14 +12,14 @@ class TabularModel:
     :type a_dim: int
     """
 
-    def __init__(self, s_dim, a_dim):
+    def __init__(self, s_dim: int, a_dim: int):
         self.s_dim = s_dim
         self.a_dim = a_dim
 
         self.s_model = np.zeros((s_dim, a_dim), dtype=np.uint8)
         self.r_model = np.zeros((s_dim, a_dim))
 
-    def add(self, s, a, r, s_):
+    def add(self, s: np.ndarray, a: np.ndarray, r: float, s_: np.ndarray) -> None:
         """
         add transition to model
         :param s: state
@@ -33,7 +34,7 @@ class TabularModel:
         self.s_model[s, a] = s_
         self.r_model[s, a] = r
 
-    def sample(self):
+    def sample(self) -> Tuple:
         """
         sample state action pair from model
 
@@ -46,7 +47,7 @@ class TabularModel:
         a = np.random.choice(np.where(self.s_model[s] > 0)[0])
         return s, a
 
-    def step(self, s, a):
+    def step(self, s: np.ndarray, a: np.ndarray) -> Tuple:
         """
         return consequence of action at state
 
@@ -57,7 +58,7 @@ class TabularModel:
         s_ = self.s_model[s, a]
         return r, s_
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         """
         Check if the model has been updated or not 
 
@@ -70,7 +71,7 @@ class TabularModel:
 model_registry = {"tabular": TabularModel}
 
 
-def get_model_from_name(name_):
+def get_model_from_name(name_: str):
     """
     get model object from name
 
