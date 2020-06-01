@@ -17,9 +17,11 @@ to conserve memory usage
     :type frames: collections.deque
     :type compress: boolean
     """
+
     def __init__(self, frames, compress=False):
         if compress:
             from lz4.block import compress
+
             frames = [compress(frame) for frame in frames]
         self._frames = frames
         self.compress = compress
@@ -30,16 +32,16 @@ to conserve memory usage
         """
         if self.compress:
             from lz4.block import decompress
+
             frames = [
-                np.frombuffer(
-                    decompress(frame),
-                    dtype=self._frames[0].dtype
-                ).reshape(self._frames[0].shape)
+                np.frombuffer(decompress(frame), dtype=self._frames[0].dtype).reshape(
+                    self._frames[0].shape
+                )
                 for frame in self._frames
             ]
         else:
             frames = self._frames
-        
+
         return np.stack(frames, axis=0)
 
     def __getitem__(self, index):
@@ -84,6 +86,7 @@ to conserve memory usage
     :type framestack: int
     :type compress: bool
     """
+
     def __init__(self, env, framestack=4, compress=False):
         super(FrameStack, self).__init__(env)
 
@@ -92,12 +95,10 @@ to conserve memory usage
         self.framestack = framestack
 
         low = np.repeat(
-            np.expand_dims(self.env.observation_space.low, axis=0),
-            framestack, axis=0
+            np.expand_dims(self.env.observation_space.low, axis=0), framestack, axis=0
         )
         high = np.repeat(
-            np.expand_dims(self.env.observation_space.high, axis=0),
-            framestack, axis=0
+            np.expand_dims(self.env.observation_space.high, axis=0), framestack, axis=0
         )
         self.observation_space = Box(
             low=low, high=high, dtype=self.env.observation_space.dtype
@@ -135,6 +136,4 @@ to conserve memory usage
         :returns: Past few frames
         :rtype: NumPy Array
         """
-        return np.array(
-            LazyFrames(list(self._frames))
-        )[np.newaxis, ...]
+        return np.array(LazyFrames(list(self._frames)))[np.newaxis, ...]

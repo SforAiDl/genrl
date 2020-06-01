@@ -193,13 +193,9 @@ class DQN:
 
         elif self.network_type == "cnn":
             if self.dueling_dqn:
-                self.model = DuelingDQNValueCNN(
-                    action_dim, self.framestack
-                )
+                self.model = DuelingDQNValueCNN(action_dim, self.framestack)
             elif self.noisy_dqn:
-                self.model = NoisyDQNValueCNN(
-                    action_dim, self.framestack
-                )
+                self.model = NoisyDQNValueCNN(action_dim, self.framestack)
             elif self.categorical_dqn:
                 self.model = CategoricalDQNValueCNN(
                     action_dim, self.num_atoms, self.framestack
@@ -295,12 +291,16 @@ class DQN:
         if self.network_type == "cnn":
             if self.framestack is not None:
                 state = state.view(
-                    self.batch_size, self.framestack,
-                    self.env.screen_size, self.env.screen_size
+                    self.batch_size,
+                    self.framestack,
+                    self.env.screen_size,
+                    self.env.screen_size,
                 )
                 next_state = next_state.view(
-                    self.batch_size, self.framestack,
-                    self.env.screen_size, self.env.screen_size
+                    self.batch_size,
+                    self.framestack,
+                    self.env.screen_size,
+                    self.env.screen_size,
                 )
 
         if self.categorical_dqn:

@@ -15,6 +15,7 @@ serially or parallelly
     :type n_envs: None, int
     :type parallel: boolean
     """
+
     # TODO(zeus3101) Add functionality for VecEnvs
     def __init__(self, env):
         super(GymWrapper, self).__init__(env)
@@ -26,7 +27,7 @@ serially or parallelly
         """
         All other calls would go to base env
         """
-        env = super(GymWrapper, self).__getattribute__('env')
+        env = super(GymWrapper, self).__getattribute__("env")
         return getattr(env, name)
 
     def render(self, mode="human"):

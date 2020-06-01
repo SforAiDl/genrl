@@ -73,9 +73,7 @@ class DuelingDQNValueCNN(nn.Module):
     :type fc_layers: tuple
     """
 
-    def __init__(
-        self, action_dim: int, framestack: int = 4, fc_layers: Tuple = (256,)
-    ):
+    def __init__(self, action_dim: int, framestack: int = 4, fc_layers: Tuple = (256,)):
         super(DuelingDQNValueCNN, self).__init__()
 
         self.action_dim = action_dim

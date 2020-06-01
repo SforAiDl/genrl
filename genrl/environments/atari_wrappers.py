@@ -3,9 +3,7 @@ import numpy as np
 import gym
 from gym.core import Wrapper
 
-from genrl.environments import (
-    GymWrapper, AtariPreprocessing, FrameStack
-)
+from genrl.environments import GymWrapper, AtariPreprocessing, FrameStack
 
 
 class NoopReset(Wrapper):
@@ -18,12 +16,13 @@ a random number of some empty (noop) action to introduce some stochasticity.
     :type env: Gym Environment
     :type max_noops: int
     """
+
     def __init__(self, env, max_noops=25):
         super(NoopReset, self).__init__(env)
         self.env = env
         self.max_noops = max_noops
         self.noop_action = 0
-        assert env.unwrapped.get_action_meanings()[0] == 'NOOP'
+        assert env.unwrapped.get_action_meanings()[0] == "NOOP"
 
     def reset(self):
         """
@@ -35,7 +34,7 @@ random number of times to introduce stochasticity
         """
         self.env.reset()
 
-        noops = np.random.randint(1, self.max_noops+1)
+        noops = np.random.randint(1, self.max_noops + 1)
         for _ in range(noops):
             obs, _, done, _ = self.env.step(self.noop_action)
             if done:
@@ -63,6 +62,7 @@ action before starting the training process
     :param env: Atari environment
     :type env: Gym Environment
     """
+
     def __init__(self, env):
         super(FireReset, self).__init__(env)
         self.env = env
@@ -86,11 +86,7 @@ random number of times to introduce stochasticity
         return observation
 
 
-def AtariEnv(
-    env_id,
-    wrapper_list=None,
-    **kwargs
-):
+def AtariEnv(env_id, wrapper_list=None, **kwargs):
     """
     Function to apply wrappers for all Atari envs by Trainer class
 
@@ -106,7 +102,7 @@ def AtariEnv(
         "screen_size": 84,
         "max_noops": 25,
         "framestack": 4,
-        "lz4_compress": False
+        "lz4_compress": False,
     }
     for key in DEFAULT_ARGS:
         if key not in kwargs:
@@ -116,33 +112,28 @@ def AtariEnv(
         wrapper_list = DEFAULT_ATARI_WRAPPERS
 
     if "NoFrameskip" in env_id:
-        kwargs['frameskip'] = 1
+        kwargs["frameskip"] = 1
     elif "Deterministic" in env_id:
-        kwargs['frameskip'] = 4
+        kwargs["frameskip"] = 4
 
     env = gym.make(env_id)
     env = GymWrapper(env)
 
     if NoopReset in wrapper_list:
-        assert 'NOOP' in env.unwrapped.get_action_meanings()
+        assert "NOOP" in env.unwrapped.get_action_meanings()
     if FireReset in wrapper_list:
-        assert 'FIRE' in env.unwrapped.get_action_meanings()
+        assert "FIRE" in env.unwrapped.get_action_meanings()
 
     for wrapper in wrapper_list:
         if wrapper is AtariPreprocessing:
             env = wrapper(
-                env, kwargs['frameskip'],
-                kwargs['grayscale'], kwargs['screen_size']
+                env, kwargs["frameskip"], kwargs["grayscale"], kwargs["screen_size"]
             )
         elif wrapper is NoopReset:
-            env = wrapper(
-                env, kwargs['max_noops']
-            )
+            env = wrapper(env, kwargs["max_noops"])
         elif wrapper is FrameStack:
-            if kwargs['framestack'] > 1:
-                env = wrapper(
-                    env, kwargs['framestack'], kwargs['lz4_compress']
-                )
+            if kwargs["framestack"] > 1:
+                env = wrapper(env, kwargs["framestack"], kwargs["lz4_compress"])
         else:
             env = wrapper(env)
 

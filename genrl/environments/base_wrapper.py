@@ -5,6 +5,7 @@ class BaseWrapper(ABC):
     """
     Base class for all wrappers
     """
+
     def __init__(self, env, batch_size=None):
         self.env = env
         self._batch_size = batch_size
