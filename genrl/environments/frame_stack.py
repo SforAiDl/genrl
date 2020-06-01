@@ -4,6 +4,10 @@ import numpy as np
 from gym.spaces import Box
 from gym.core import Wrapper
 
+from ..environments import GymEnv, AtariEnv
+
+from typing import Union, List, Tuple
+
 
 class LazyFrames(object):
     """
@@ -18,7 +22,7 @@ to conserve memory usage
     :type compress: boolean
     """
 
-    def __init__(self, frames, compress=False):
+    def __init__(self, frames: List, compress: bool = False):
         if compress:
             from lz4.block import compress
 
@@ -26,7 +30,7 @@ to conserve memory usage
         self._frames = frames
         self.compress = compress
 
-    def __array__(self):
+    def __array__(self) -> np.ndarray:
         """
         Makes the LazyFrames object convertible to a NumPy array
         """
@@ -44,19 +48,19 @@ to conserve memory usage
 
         return np.stack(frames, axis=0)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> np.ndarray:
         """
         Return frame at index
         """
         return self.__array__()[index]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Return length of data structure
         """
         return len(self.__array__())
 
-    def __eq__(self, other):
+    def __eq__(self, other: np.ndarray) -> bool:
         """
         Compares if data structure is equivalent to another object
 
@@ -66,7 +70,7 @@ to conserve memory usage
         return self.__array__() == other
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple:
         """
         Returns dimensions of other object
         """
@@ -87,7 +91,12 @@ to conserve memory usage
     :type compress: bool
     """
 
-    def __init__(self, env, framestack=4, compress=False):
+    def __init__(
+        self,
+        env: Union[GymEnv, AtariEnv],
+        framestack: int = 4,
+        compress: bool = False
+    ):
         super(FrameStack, self).__init__(env)
 
         self.env = env
@@ -95,16 +104,18 @@ to conserve memory usage
         self.framestack = framestack
 
         low = np.repeat(
-            np.expand_dims(self.env.observation_space.low, axis=0), framestack, axis=0
+            np.expand_dims(self.env.observation_space.low, axis=0),
+            framestack, axis=0
         )
         high = np.repeat(
-            np.expand_dims(self.env.observation_space.high, axis=0), framestack, axis=0
+            np.expand_dims(self.env.observation_space.high, axis=0),
+            framestack, axis=0
         )
         self.observation_space = Box(
             low=low, high=high, dtype=self.env.observation_space.dtype
         )
 
-    def step(self, action):
+    def step(self, action: np.ndarray) -> np.ndarray:
         """
         Steps through environment
 
@@ -117,7 +128,7 @@ to conserve memory usage
         self._frames.append(observation)
         return self._get_obs(), reward, done, info
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         """
         Resets environment
 
@@ -129,7 +140,7 @@ to conserve memory usage
             self._frames.append(observation)
         return self._get_obs()
 
-    def _get_obs(self):
+    def _get_obs(self) -> np.ndarray:
         """
         Gets observation given deque of frames
 

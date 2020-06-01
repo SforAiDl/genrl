@@ -3,6 +3,10 @@ import cv2
 from gym.spaces import Box
 from gym.core import Wrapper
 
+from ..environments import AtariEnv, GymEnv
+
+from typing import Union, Tuple
+
 
 class AtariPreprocessing(Wrapper):
     """
@@ -11,9 +15,11 @@ class AtariPreprocessing(Wrapper):
 
     :param env: Atari environment
     :param frameskip: Number of steps between actions. \
-E.g. frameskip=4 will mean 1 action will be taken for every 4 frames. It'll be a tuple \
+E.g. frameskip=4 will mean 1 action will be taken for every 4 frames. It'll be\
+ a tuple
 if non-deterministic and a random number will be chosen from (2, 5)
-    :param grayscale: Whether or not the output should be converted to grayscale
+    :param grayscale: Whether or not the output should be converted to \
+grayscale
     :param screen_size: Size of the output screen (square output)
     :type env: Gym Environment
     :type frameskip: tuple or int
@@ -21,7 +27,13 @@ if non-deterministic and a random number will be chosen from (2, 5)
     :type screen_size: int
     """
 
-    def __init__(self, env, frameskip=(2, 5), grayscale=True, screen_size=84):
+    def __init__(
+        self,
+        env: Union[GymEnv, AtariEnv],
+        frameskip: Union[Tuple, int] = (2, 5),
+        grayscale: bool = True,
+        screen_size: int = 84
+    ):
         super(AtariPreprocessing, self).__init__(env)
 
         self.env = env
@@ -33,11 +45,13 @@ if non-deterministic and a random number will be chosen from (2, 5)
         # Redefine observation space for Atari environments
         if grayscale:
             self.observation_space = Box(
-                low=0, high=255, shape=(screen_size, screen_size), dtype=np.uint8
+                low=0, high=255,
+                shape=(screen_size, screen_size), dtype=np.uint8
             )
         else:
             self.observation_space = Box(
-                low=0, high=255, shape=(screen_size, screen_size, 3), dtype=np.uint8
+                low=0, high=255,
+                shape=(screen_size, screen_size, 3), dtype=np.uint8
             )
 
         # Observation buffer to hold last two observations for max pooling
@@ -49,7 +63,7 @@ if non-deterministic and a random number will be chosen from (2, 5)
 
     # TODO(zeus3101) Add support for games with multiple lives
 
-    def step(self, action):
+    def step(self, action: np.ndarray) -> np.ndarray:
         """
         Step through Atari environment for given action
 
@@ -82,7 +96,7 @@ done, info
 
         return observation, reward, done, info
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         """
         Resets state of environment
 
@@ -99,7 +113,7 @@ done, info
 
         return observation
 
-    def _get_screen(self, index):
+    def _get_screen(self, index: int) -> None:
         """
         Get the screen input given empty numpy array (from observation buffer)
 
@@ -111,7 +125,7 @@ done, info
         else:
             self.ale.getScreenRGB2(self._obs_buffer[index])
 
-    def _get_obs(self):
+    def _get_obs(self) -> np.ndarray:
         """
         Performs max pooling on both states in observation buffer and \
 resizes output to appropriate screen size.

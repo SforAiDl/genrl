@@ -1,6 +1,9 @@
+import numpy as np
 import gym
 
-from genrl.environments import BaseWrapper
+from ..environments import BaseWrapper, GymEnv, AtariEnv
+
+from typing import Union, Any
 
 
 class GymWrapper(BaseWrapper, gym.Wrapper):
@@ -17,20 +20,20 @@ serially or parallelly
     """
 
     # TODO(zeus3101) Add functionality for VecEnvs
-    def __init__(self, env):
+    def __init__(self, env: Union[GymEnv, AtariEnv]):
         super(GymWrapper, self).__init__(env)
         self.env = env
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """
         All other calls would go to base env
         """
         env = super(GymWrapper, self).__getattribute__("env")
         return getattr(env, name)
 
-    def render(self, mode="human"):
+    def render(self, mode: str = "human") -> None:
         """
         Renders all envs in a tiles format similar to baselines.
 
@@ -40,7 +43,7 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         """
         self.env.render(mode=mode)
 
-    def seed(self, seed=None):
+    def seed(self, seed: int = None) -> None:
         """
         Set environment seed
 
@@ -49,7 +52,7 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         """
         self.env.seed(seed)
 
-    def step(self, action):
+    def step(self, action: np.ndarray) -> np.ndarray:
         """
         Steps the env through given action
 
@@ -58,7 +61,7 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         """
         return self.env.step(action)
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         """
         Resets environment
 
@@ -66,21 +69,8 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
         """
         return self.env.reset()
 
-    def close(self):
+    def close(self) -> None:
         """
         Closes environment
         """
         self.env.close()
-
-
-def GymEnv(env_id):
-    """
-    Function to apply wrappers for all regular Gym envs by Trainer class
-
-    :param env: Environment Name
-    :type env: string
-    """
-    gym_env = gym.make(env_id)
-    env = GymWrapper(gym_env)
-
-    return env

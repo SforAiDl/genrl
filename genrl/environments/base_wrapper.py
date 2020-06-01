@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+import numpy as np
+
+from typing import Any
 
 
 class BaseWrapper(ABC):
@@ -6,37 +9,35 @@ class BaseWrapper(ABC):
     Base class for all wrappers
     """
 
-    def __init__(self, env, batch_size=None):
+    def __init__(self, env: Any, batch_size: int = None):
         self.env = env
         self._batch_size = batch_size
 
     # TODO(zeus3101) Add functionality for VecEnvs
 
     @property
-    def batch_size(self):
+    def batch_size(self) -> int:
         """
         The number of batches trained per update
         """
         return self._batch_size
 
-    # TODO(zeus3101) Get get_state, set_state, get_info, get_done methods
-
     @abstractmethod
-    def seed(self, seed=None):
+    def seed(self, seed: int = None) -> None:
         """
         Set seed for environment
         """
         raise NotImplementedError
 
     @abstractmethod
-    def render(self):
+    def render(self) -> None:
         """
         Render the environment
         """
         raise NotImplementedError
 
     @abstractmethod
-    def step(self, action):
+    def step(self, action: np.ndarray) -> None:
         """
         Step through the environment
 
@@ -45,7 +46,7 @@ class BaseWrapper(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def reset(self):
+    def reset(self) -> None:
         """
         Resets state of environment
 
@@ -56,7 +57,7 @@ class BaseWrapper(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def close(self):
+    def close(self) -> None:
         """
         Closes environment and performs any other cleanup
 
@@ -64,7 +65,7 @@ class BaseWrapper(ABC):
         """
         raise NotImplementedError
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         """
         Allows environment to be called using with statement
         """
