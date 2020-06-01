@@ -52,7 +52,7 @@ def create_envs(env_name, n_envs):
     """
     envs = []
     for i in range(n_envs):
-        envs.append(gym.make(env_name))
+        envs.append(env)
     return envs
 
 
@@ -287,7 +287,7 @@ class SubProcessVecEnv(VecEnv):
             proc.join()
 
 
-def ParallelEnv(env, n_envs, parallel=False):
+def venv(env, n_envs, parallel=False):
     """
     Chooses the kind of Vector Environment that is required
 

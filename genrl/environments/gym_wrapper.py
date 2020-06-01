@@ -1,9 +1,9 @@
 import numpy as np
 import gym
 
-from ..environments import BaseWrapper, GymEnv, AtariEnv
+from ..environments import BaseWrapper
 
-from typing import Union, Any
+from typing import Any
 
 
 class GymWrapper(BaseWrapper, gym.Wrapper):
@@ -20,7 +20,7 @@ serially or parallelly
     """
 
     # TODO(zeus3101) Add functionality for VecEnvs
-    def __init__(self, env: Union[GymEnv, AtariEnv]):
+    def __init__(self, env: gym.Env):
         super(GymWrapper, self).__init__(env)
         self.env = env
         self.observation_space = self.env.observation_space

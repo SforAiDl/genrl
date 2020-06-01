@@ -4,7 +4,7 @@ from ..environments import (
     GymWrapper, AtariPreprocessing, FrameStack, NoopReset, FireReset
 )
 
-from typing import Union, List
+from typing import List
 
 
 def GymEnv(env_id: str) -> gym.Env:
@@ -46,9 +46,9 @@ def AtariEnv(env_id: str, wrapper_list: List = None, **kwargs) -> gym.Env:
         wrapper_list = DEFAULT_ATARI_WRAPPERS
 
     if "NoFrameskip" in env_id:
-        kwargs["frameskip"] = (1, 2)
+        kwargs["frameskip"] = 1
     elif "Deterministic" in env_id:
-        kwargs["frameskip"] = (4, 5)
+        kwargs["frameskip"] = 4
 
     env = gym.make(env_id)
     env = GymWrapper(env)
@@ -68,7 +68,9 @@ def AtariEnv(env_id: str, wrapper_list: List = None, **kwargs) -> gym.Env:
             env = wrapper(env, kwargs["max_noops"])
         elif wrapper is FrameStack:
             if kwargs["framestack"] > 1:
-                env = wrapper(env, kwargs["framestack"], kwargs["lz4_compress"])
+                env = wrapper(
+                    env, kwargs["framestack"], kwargs["lz4_compress"]
+                )
         else:
             env = wrapper(env)
 

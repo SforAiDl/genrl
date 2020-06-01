@@ -1,4 +1,6 @@
-from genrl.deep.common.actor_critic import MlpActorCritic, get_actor_critic_from_name
+from genrl.deep.common.actor_critic import (
+    MlpActorCritic, get_actor_critic_from_name
+)
 from genrl.deep.common.buffers import ReplayBuffer, PrioritizedBuffer
 from genrl.deep.common.logger import (
     Logger,
@@ -29,3 +31,4 @@ from genrl.deep.common.values import (
     CNNValue,
     get_value_from_name,
 )
+from genrl.deep.common.VecEnv import venv

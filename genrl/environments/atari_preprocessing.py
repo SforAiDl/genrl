@@ -1,9 +1,8 @@
 import numpy as np
 import cv2
+import gym
 from gym.spaces import Box
 from gym.core import Wrapper
-
-from ..environments import AtariEnv, GymEnv
 
 from typing import Union, Tuple
 
@@ -29,7 +28,7 @@ grayscale
 
     def __init__(
         self,
-        env: Union[GymEnv, AtariEnv],
+        env: gym.Env,
         frameskip: Union[Tuple, int] = (2, 5),
         grayscale: bool = True,
         screen_size: int = 84
@@ -55,11 +54,10 @@ grayscale
             )
 
         # Observation buffer to hold last two observations for max pooling
-        if self.frameskip != 1:
-            self._obs_buffer = [
-                np.empty(self.env.observation_space.shape[:2], dtype=np.uint8),
-                np.empty(self.env.observation_space.shape[:2], dtype=np.uint8),
-            ]
+        self._obs_buffer = [
+            np.empty(self.env.observation_space.shape[:2], dtype=np.uint8),
+            np.empty(self.env.observation_space.shape[:2], dtype=np.uint8),
+        ]
 
     # TODO(zeus3101) Add support for games with multiple lives
 
@@ -77,22 +75,19 @@ done, info
         else:
             frameskip = self.frameskip
 
-        if frameskip != 1:
-            reward = 0
-            for timestep in range(frameskip):
-                _, step_reward, done, info = self.env.step(action)
-                reward += step_reward
+        reward = 0
+        for timestep in range(frameskip):
+            _, step_reward, done, info = self.env.step(action)
+            reward += step_reward
 
-                if done:
-                    break
+            if done:
+                break
 
-                if timestep == frameskip - 2:
-                    self._get_screen(0)
-                elif timestep == frameskip - 1:
-                    self._get_screen(1)
-            observation = self._get_obs()
-        else:
-            observation, reward, done, info = self.env.step(action)
+            if timestep == frameskip - 2:
+                self._get_screen(0)
+            elif timestep == frameskip - 1:
+                self._get_screen(1)
+        observation = self._get_obs()
 
         return observation, reward, done, info
 
@@ -103,13 +98,10 @@ done, info
         :returns: Initial state
         :rtype: NumPy array
         """
-        if self.frameskip == 1:
-            observation = self.env.reset()
-        else:
-            self.env.reset()
-            self._get_screen(0)
-            self._obs_buffer[1].fill(0)
-            observation = self._get_obs()
+        self.env.reset()
+        self._get_screen(0)
+        self._obs_buffer[1].fill(0)
+        observation = self._get_obs()
 
         return observation
 
@@ -133,10 +125,9 @@ resizes output to appropriate screen size.
         :returns: Output observation in required format
         :rtype: NumPy array
         """
-        if self.frameskip != 1:
-            np.maximum(
-                self._obs_buffer[0], self._obs_buffer[1], out=self._obs_buffer[0]
-            )
+        np.maximum(
+            self._obs_buffer[0], self._obs_buffer[1], out=self._obs_buffer[0]
+        )
 
         obs = cv2.resize(
             self._obs_buffer[0],

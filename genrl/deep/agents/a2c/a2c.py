@@ -5,7 +5,7 @@ import torch.optim as opt
 from torch.autograd import Variable
 import gym
 
-from ..common import get_model, save_params, load_params, set_seeds, venv
+from ...common import get_model, save_params, load_params, set_seeds, venv
 from typing import Union, Tuple, Any, Optional, Dict
 
 

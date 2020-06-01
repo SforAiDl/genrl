@@ -1,12 +1,10 @@
 from collections import deque
 import numpy as np
-
+import gym
 from gym.spaces import Box
 from gym.core import Wrapper
 
-from ..environments import GymEnv, AtariEnv
-
-from typing import Union, List, Tuple
+from typing import List, Tuple
 
 
 class LazyFrames(object):
@@ -93,7 +91,7 @@ to conserve memory usage
 
     def __init__(
         self,
-        env: Union[GymEnv, AtariEnv],
+        env: gym.Env,
         framestack: int = 4,
         compress: bool = False
     ):

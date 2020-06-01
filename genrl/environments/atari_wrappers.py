@@ -1,9 +1,6 @@
 import numpy as np
+import gym
 from gym.core import Wrapper
-
-from .environments import GymEnv, AtariEnv
-
-from typing import Union, Tuple
 
 
 class NoopReset(Wrapper):
@@ -17,7 +14,7 @@ a random number of some empty (noop) action to introduce some stochasticity.
     :type max_noops: int
     """
 
-    def __init__(self, env: Union[GymEnv, AtariEnv], max_noops: int = 25):
+    def __init__(self, env: gym.Env, max_noops: int = 25):
         super(NoopReset, self).__init__(env)
         self.env = env
         self.max_noops = max_noops
@@ -63,7 +60,7 @@ action before starting the training process
     :type env: Gym Environment
     """
 
-    def __init__(self, env: Union[GymEnv, AtariEnv]):
+    def __init__(self, env: gym.Env):
         super(FireReset, self).__init__(env)
         self.env = env
 
