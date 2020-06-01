@@ -35,7 +35,6 @@ grayscale
     ):
         super(AtariPreprocessing, self).__init__(env)
 
-        self.env = env
         self.frameskip = frameskip
         self.grayscale = grayscale
         self.screen_size = screen_size

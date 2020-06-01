@@ -16,7 +16,6 @@ a random number of some empty (noop) action to introduce some stochasticity.
 
     def __init__(self, env: gym.Env, max_noops: int = 25):
         super(NoopReset, self).__init__(env)
-        self.env = env
         self.max_noops = max_noops
         self.noop_action = 0
         assert env.unwrapped.get_action_meanings()[0] == "NOOP"
@@ -62,7 +61,6 @@ action before starting the training process
 
     def __init__(self, env: gym.Env):
         super(FireReset, self).__init__(env)
-        self.env = env
 
     def reset(self) -> np.ndarray:
         """

@@ -25,6 +25,11 @@ serially or parallelly
         self.env = env
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
+        self.state = None
+        self.action = None
+        self.reward = None
+        self.done = False
+        self.info = {}
 
     def __getattr__(self, name: str) -> Any:
         """
@@ -58,8 +63,11 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
 
         :param action: Action taken by agent
         :type action: NumPy array
+        :returns: Next observation, reward, game status and debugging info
         """
-        return self.env.step(action)
+        self.state, self.reward, self.done, self.info = self.env.step(action)
+        self.action = action
+        return self.state, self.reward, self.done, self.info
 
     def reset(self) -> np.ndarray:
         """
@@ -67,7 +75,8 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
 
         :returns: Initial state
         """
-        return self.env.reset()
+        self.state = self.env.reset()
+        return self.state
 
     def close(self) -> None:
         """
