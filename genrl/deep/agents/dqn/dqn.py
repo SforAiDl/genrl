@@ -1,15 +1,12 @@
-from collections import deque
-
 import gym
 import numpy as np
 
 import torch
 import torch.optim as opt
-import torchvision.transforms as transforms
 from torch.autograd import Variable
 from copy import deepcopy
 
-from genrl.deep.common import (
+from ...common import (
     ReplayBuffer,
     PrioritizedBuffer,
     get_model,
@@ -20,7 +17,7 @@ from genrl.deep.common import (
     venv,
 )
 
-from genrl.deep.agents.dqn.utils import (
+from .utils import (
     DuelingDQNValueMlp,
     DuelingDQNValueCNN,
     NoisyDQNValue,
@@ -29,7 +26,6 @@ from genrl.deep.agents.dqn.utils import (
     CategoricalDQNValueCNN,
 )
 
-from genrl.environments import AtariEnv, GymEnv
 from typing import Union, Any, Optional, Dict, List
 
 
@@ -38,7 +34,7 @@ class DQN:
     Deep Q Networks
 
     Paper (DQN) https://arxiv.org/pdf/1312.5602.pdf
-    
+
     Paper (Double DQN) https://arxiv.org/abs/1509.06461
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
@@ -67,9 +63,9 @@ class DQN:
     :type env: Gym environment
     :type double_dqn: bool
     :type dueling_dqn: bool
-    :type noisy_dqn: bool 
-    :type categorical_dqn: bool 
-    :type parameterized_replay: bool 
+    :type noisy_dqn: bool
+    :type categorical_dqn: bool
+    :type parameterized_replay: bool
     :type epochs: int
     :type max_iterations_per_epoch: int
     :type max_ep_len: int
@@ -179,7 +175,7 @@ class DQN:
 
     def create_model(self) -> None:
         """
-        Initialize the model and target model for various variants of DQN. 
+        Initialize the model and target model for various variants of DQN.
         Initializes optimizer and replay buffers as well.
         """
         state_dim, action_dim, _, _ = get_env_properties(self.env)
@@ -247,8 +243,8 @@ class DQN:
         :type state: int, float, ...
         :param explore: randomness in action selection
         :type explore: bool
-        :returns: Action based on the state and epsilon value 
-        :rtype: int, float, ... 
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
         """
         if explore == True:
             if np.random.rand() <= self.epsilon:
@@ -269,7 +265,7 @@ class DQN:
 
     def get_td_loss(self) -> torch.Tensor:
         """
-        Computes loss for various variants 
+        Computes loss for various variants
 
         :returns: the TD loss depending upon the variant
         :rtype: float
@@ -371,12 +367,12 @@ class DQN:
 
     def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
         """
-        A helper function to calculate the value of epsilon after every step. 
+        A helper function to calculate the value of epsilon after every step.
 
-        :param frame_idx: Current step 
+        :param frame_idx: Current step
         :type frame_idx: int
         :returns: epsilon value for the step
-        :rtype: float 
+        :rtype: float
         """
         return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
             -1.0 * frame_idx / self.epsilon_decay
@@ -390,12 +386,12 @@ class DQN:
 
         :param next_state: next observation state
         :param rewards: rewards collected
-        :param dones: dones 
+        :param dones: dones
         :type next_state: int, float, ...
-        :type rewards: list 
+        :type rewards: list
         :type dones: list
-        :returns: projection distribution 
-        :rtype: float 
+        :returns: projection distribution
+        :rtype: float
         """
         batch_size = next_state.size(0)
 
@@ -512,6 +508,6 @@ class DQN:
 
 
 if __name__ == "__main__":
-    env = GymEnv("CartPole-v0")
+    env = gym.make("CartPole-v0")
     algo = DQN("mlp", env)
     algo.learn()
