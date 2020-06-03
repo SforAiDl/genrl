@@ -13,3 +13,4 @@ from genrl.classical import (
     QLearning,
 )
 from genrl.environments import GymEnv, AtariEnv
+from genrl.deep import OffPolicyTrainer, OnPolicyTrainer
