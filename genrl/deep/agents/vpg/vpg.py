@@ -214,7 +214,7 @@ class VPG:
                 action.reshape(self.env.n_envs, 1),
                 reward,
                 done,
-                torch.Tensor([0]*self.env.n_envs),
+                torch.Tensor([0] * self.env.n_envs),
                 old_log_probs.detach(),
             )
 
@@ -225,7 +225,7 @@ class VPG:
                     self.rewards.append(self.epoch_reward[i])
                     self.epoch_reward[i] = 0
 
-        return torch.Tensor([0]*self.env.n_envs), done
+        return torch.Tensor([0] * self.env.n_envs), done
 
     def learn(self) -> None:  # pragma: no cover
         # training loop

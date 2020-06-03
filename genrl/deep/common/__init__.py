@@ -1,5 +1,5 @@
 from genrl.deep.common.actor_critic import MlpActorCritic, get_actor_critic_from_name
-from genrl.deep.common.buffers import ReplayBuffer, PrioritizedBuffer
+from genrl.deep.common.buffers import ReplayBuffer, PushReplayBuffer, PrioritizedBuffer
 from genrl.deep.common.logger import (
     Logger,
     HumanOutputFormat,

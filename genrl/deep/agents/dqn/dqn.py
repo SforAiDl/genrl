@@ -11,6 +11,7 @@ from copy import deepcopy
 
 from ...common import (
     ReplayBuffer,
+    PushReplayBuffer,
     PrioritizedBuffer,
     get_model,
     save_params,
@@ -269,9 +270,9 @@ class DQN:
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
         """
-        if explore == True:
-            if np.random.rand() <= self.epsilon:
-                return self.env.action_space.sample()
+        # if explore == True:
+        #     if np.random.rand() <= self.epsilon:
+        #         return self.env.action_space.sample()
 
         if np.random.rand() > self.epsilon:
             if self.categorical_dqn:
@@ -284,7 +285,7 @@ class DQN:
                 q_value = self.model(state)
                 action = np.argmax(q_value.detach().numpy(), axis=-1)
         else:
-            action = self.env.sample()
+            action = np.asarray(self.env.sample())  # .reshape(1,-1)
 
         return action
 
@@ -311,14 +312,15 @@ class DQN:
                 self.batch_size
             )
 
+        print(state.shape)
         state = state.reshape(
-            self.batch_size * self.env.n_envs, self.env.observation_space.shape[0]
+            self.batch_size * self.env.n_envs, *self.env.observation_space.shape
         )
         action = action.reshape(self.batch_size * self.env.n_envs, 1)
         reward = reward.reshape(-1, 1)
         done = done.reshape(-1, 1)
         next_state = next_state.reshape(
-            self.batch_size * self.env.n_envs, self.env.observation_space.shape[0]
+            self.batch_size * self.env.n_envs, *self.env.observation_space.shape
         )
 
         state = Variable(torch.FloatTensor(np.float32(state)))

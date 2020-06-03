@@ -7,10 +7,12 @@ from collections import deque
 import gym
 from abc import ABC
 
-from .utils import set_seeds
-from .logger import Logger
-from .VecEnv import venv
-from .buffers import ReplayBuffer, PrioritizedBuffer
+from genrl.deep.common.utils import set_seeds
+
+# from genrl.deep.common.utils import set_seeds
+from genrl.deep.common.logger import Logger
+from genrl.deep.common.VecEnv import venv
+from genrl.deep.common.buffers import ReplayBuffer, PrioritizedBuffer
 from typing import Union, Type, List, Optional, Any
 
 
@@ -381,7 +383,7 @@ many steps
 
             # update params for DQN
             if self.agent.__class__.__name__ == "DQN":
-                if self.agent.replay_buffer.get_len() > self.agent.batch_size:
+                if self.agent.replay_buffer.pos > self.agent.batch_size:
                     self.agent.update_params()
 
                 if t % self.update_interval == 0:

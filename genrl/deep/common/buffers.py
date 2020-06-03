@@ -69,11 +69,11 @@ class ReplayBuffer:
                 pos = self.buffer_size - 1
             else:
                 pos = self.pos
-            self.observations[pos] += np.array(sample[0]).copy()
-            self.actions[pos] += np.array(sample[1]).copy()
-            self.rewards[pos] += np.array(sample[2]).copy()
-            self.next_observations[pos] += np.array(sample[3]).copy()
-            self.dones[pos] += np.array(sample[4]).copy()
+            self.observations[pos] = np.array(sample[0]).copy()
+            self.actions[pos] = np.array(sample[1]).copy()
+            self.rewards[pos] = np.array(sample[2]).copy()
+            self.next_observations[pos] = np.array(sample[3]).copy()
+            self.dones[pos] = np.array(sample[4]).copy()
             self.pos += 1
 
 
@@ -99,6 +99,9 @@ class PushReplayBuffer:
         """
         self.memory.append(x)
 
+    def extend(self, x):
+        self.memory.extend(x)
+
     def sample(
         self, batch_size: int
     ) -> (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -112,6 +115,7 @@ class PushReplayBuffer:
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
+        print(state.shape)
         return (
             torch.from_numpy(v).float()
             for v in [state, action, reward, next_state, done]

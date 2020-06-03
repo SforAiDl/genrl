@@ -164,7 +164,7 @@ class A2C:
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
-        '''
+        """
         Selection of action 
 
         :param state: Observation state
@@ -173,7 +173,7 @@ class A2C:
         :type deterministic: bool
         :returns: Action based on the state and epsilon value
         :rtype: int, float, ...
-        '''
+        """
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
