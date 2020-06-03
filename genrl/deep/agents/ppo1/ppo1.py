@@ -249,7 +249,7 @@ class PPO1:
 
             values, done = self.collect_rollouts(state)
 
-            self.get_traj_loss(values.cpu().numpy(), done)
+            self.get_traj_loss(values, done)
 
             self.update_policy()
 
