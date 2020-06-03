@@ -5,7 +5,14 @@ import gym
 import os
 from shutil import rmtree
 
-from genrl.deep.common import MlpActorCritic, MlpPolicy, MlpValue, CNNValue, venv, OnPolicyTrainer
+from genrl.deep.common import (
+    MlpActorCritic,
+    MlpPolicy,
+    MlpValue,
+    CNNValue,
+    venv,
+    OnPolicyTrainer,
+)
 from genrl.deep.common.utils import *
 from genrl import PPO1
 
@@ -67,7 +74,7 @@ class TestUtils:
         env = venv("CartPole-v0", 1)
         algo = PPO1("mlp", env, epochs=1, save_model="test_ckpt")
         # algo.learn()
-        trainer = OnPolicyTrainer(algo, env, ['stdout'], save_interval=1, epochs=1)
+        trainer = OnPolicyTrainer(algo, env, ["stdout"], save_interval=1, epochs=1)
         trainer.train()
 
         assert len(os.listdir("logs/checkpoints/PPO1_CartPole-v0")) != 0
@@ -78,7 +85,10 @@ class TestUtils:
         """
         env = venv("CartPole-v0", 1)
         algo = PPO1(
-            "mlp", env, epochs=1, load_model="logs/checkpoints/PPO1_CartPole-v0/experiment.pt"
+            "mlp",
+            env,
+            epochs=1,
+            load_model="logs/checkpoints/PPO1_CartPole-v0/experiment.pt",
         )
 
         rmtree("logs")
