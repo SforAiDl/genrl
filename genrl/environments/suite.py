@@ -67,11 +67,9 @@ def AtariEnv(env_id: str, wrapper_list: List = None, **kwargs) -> gym.Env:
         elif wrapper is NoopReset:
             env = wrapper(env, kwargs["max_noops"])
         elif wrapper is FrameStack:
-            if kwargs["framestack"] > 1:
-                env = wrapper(
-                    env, kwargs["framestack"], kwargs["lz4_compress"]
-                )
+            env = wrapper(
+                env, kwargs["framestack"], kwargs["lz4_compress"]
+            )
         else:
             env = wrapper(env)
-
     return env

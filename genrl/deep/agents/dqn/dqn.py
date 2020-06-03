@@ -149,11 +149,6 @@ class DQN:
         self.network_type = network_type
         self.transform = transform
 
-        if "NoFrameSkip" in env.spec.id:
-            self.framestack = None
-        else:
-            self.framestack = 4
-
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
@@ -192,6 +187,8 @@ class DQN:
                 )
 
         elif self.network_type == "cnn":
+            self.framestack = self.env.framestack
+
             if self.dueling_dqn:
                 self.model = DuelingDQNValueCNN(action_dim, self.framestack)
             elif self.noisy_dqn:
@@ -242,7 +239,7 @@ class DQN:
         :returns: Action based on the state and epsilon value
         :rtype: int, float, ...
         """
-        if explore == True:
+        if explore:
             if np.random.rand() <= self.epsilon:
                 return self.env.action_space.sample()
 
