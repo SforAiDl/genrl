@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 from genrl.deep.common.utils import get_env_properties
 from genrl.deep.common.buffers import HindsightMemory
 
-class FNN(nn.Module):
+class MLP(nn.Module):
     
     def __init__(self,state_size,num_actions):
-        super(FNN, self).__init__()
+        super(MLP, self).__init__()
         self.ln1 = nn.Linear(state_size,256)
         self.ln2 = nn.Linear(256,num_actions)
         
@@ -58,9 +58,9 @@ class DQNwithHER():
 
         self.memory = HindsightMemory(int(mem_cap))
         if dueling==False:
-            self.Q_network=FNN(state_size,num_actions)
+            self.Q_network=MLP(state_size,num_actions)
             self.Q_network=self.Q_network.to(self.device)
-            self.target_network=FNN(state_size,num_actions)
+            self.target_network=MLP(state_size,num_actions)
             self.target_network=self.target_network.to(self.device)
         else:
             self.Q_network=DuelingMLP(state_size,num_actions)
