@@ -9,7 +9,7 @@ from genrl import (
     GaussianCB,
     BernoulliCB,
     EpsGreedyCBPolicy,
-    UCBCBPolicy
+    UCBCBPolicy,
 )
 
 

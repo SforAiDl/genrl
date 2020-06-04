@@ -106,7 +106,6 @@ class CBPolicy(object):
             self.update_params(context, action, reward)
 
 
-
 class EpsGreedyCBPolicy(CBPolicy):
     """
     Contextual Bandit Policy with Epsilon Greedy Action Selection Strategy.
@@ -124,7 +123,6 @@ class EpsGreedyCBPolicy(CBPolicy):
         self._eps = eps
         self._Q = np.zeros(shape=(bandit.bandits, bandit.arms))
         self._counts = np.zeros(shape=(bandit.bandits, bandit.arms))
-
 
     @property
     def eps(self) -> float:
@@ -196,8 +194,11 @@ class EpsGreedyCBPolicy(CBPolicy):
         self.reward_hist.append(reward)
         self._regret += max(self.Q[context]) - self.Q[context, action]
         self.regret_hist.append(self.regret)
-        self.Q[context, action] += (reward - self.Q[context, action]) / (self.counts[context, action] + 1)
+        self.Q[context, action] += (reward - self.Q[context, action]) / (
+            self.counts[context, action] + 1
+        )
         self.counts[context, action] += 1
+
 
 class UCBCBPolicy(CBPolicy):
     """
@@ -217,7 +218,6 @@ class UCBCBPolicy(CBPolicy):
         self._c = c
         self._Q = np.zeros(shape=(bandit.bandits, bandit.arms))
         self._counts = np.zeros(shape=(bandit.bandits, bandit.arms))
-
 
     @property
     def c(self) -> float:
@@ -264,7 +264,8 @@ class UCBCBPolicy(CBPolicy):
         :rtype: int
         """
         action = np.argmax(
-            self.Q[context] + self.c * np.sqrt(2 * np.log(t + 1) / (self.counts[context] + 1))
+            self.Q[context]
+            + self.c * np.sqrt(2 * np.log(t + 1) / (self.counts[context] + 1))
         )
         self.action_hist.append(action)
         return action
@@ -287,8 +288,11 @@ class UCBCBPolicy(CBPolicy):
         self.reward_hist.append(reward)
         self._regret += max(self.Q[context]) - self.Q[context, action]
         self.regret_hist.append(self.regret)
-        self.Q[context, action] += (reward - self.Q[context, action]) / (self.counts[context, action] + 1)
+        self.Q[context, action] += (reward - self.Q[context, action]) / (
+            self.counts[context, action] + 1
+        )
         self.counts[context, action] += 1
+
 
 if __name__ == "__main__":
 
@@ -332,7 +336,7 @@ if __name__ == "__main__":
     arms = 10
     bandit_args = {"bandits": bandits, "arms": arms}
 
-    eps_vals = [0.3] #[0.0, 0.01, 0.03, 0.1, 0.3]
+    eps_vals = [0.3]  # [0.0, 0.01, 0.03, 0.1, 0.3]
     policy_args_collection = [{"eps": i} for i in eps_vals]
     demo_policy(
         EpsGreedyCBPolicy,
@@ -343,7 +347,7 @@ if __name__ == "__main__":
         iterations,
     )
 
-    c_vals = [0.5] #, 0.9, 1.0, 2.0]
+    c_vals = [0.5]  # , 0.9, 1.0, 2.0]
     policy_args_collection = [{"c": i} for i in c_vals]
     demo_policy(
         UCBCBPolicy,
@@ -354,7 +358,7 @@ if __name__ == "__main__":
         iterations,
     )
 
-    eps_vals = [0.3] #[0.0, 0.01, 0.03, 0.1, 0.3]
+    eps_vals = [0.3]  # [0.0, 0.01, 0.03, 0.1, 0.3]
     policy_args_collection = [{"eps": i} for i in eps_vals]
     demo_policy(
         EpsGreedyCBPolicy,
@@ -365,7 +369,7 @@ if __name__ == "__main__":
         iterations,
     )
 
-    c_vals = [0.5] #, 0.9, 1.0, 2.0]
+    c_vals = [0.5]  # , 0.9, 1.0, 2.0]
     policy_args_collection = [{"c": i} for i in c_vals]
     demo_policy(
         UCBCBPolicy,

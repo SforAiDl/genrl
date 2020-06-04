@@ -11,7 +11,7 @@ class ContextualBandit(object):
     :type bandits: int
     :type arms: int
     """
-    
+
     def __init__(self, bandits: int = 1, arms: int = 1):
         self._nbandits = bandits
         self._narms = arms
@@ -37,7 +37,6 @@ class ContextualBandit(object):
         :rtype: int
         """
         return self._nbandits
-
 
     def reset(self):
         """
@@ -74,14 +73,16 @@ class BernoulliCB(ContextualBandit):
     :type arms: int
     :type reward_probs: numpy.ndarray
     """
-    
-    def __init__(self, bandits: int = 1, arms: int = 1, reward_probs: np.ndarray = None):
+
+    def __init__(
+        self, bandits: int = 1, arms: int = 1, reward_probs: np.ndarray = None
+    ):
         super(BernoulliCB, self).__init__(bandits, arms)
         if reward_probs is not None:
             self.reward_probs = reward_probs
         else:
             self.reward_probs = np.random.random(size=(bandits, arms))
-        
+
     def step(self, action: int) -> int:
         """
         Takes an action in the bandit and returns the sampled reward
@@ -110,14 +111,16 @@ class GaussianCB(ContextualBandit):
     :type arms: int
     :type reward_means: numpy.ndarray
     """
-    
-    def __init__(self, bandits: int = 1, arms: int = 1, reward_means: np.ndarray = None):
+
+    def __init__(
+        self, bandits: int = 1, arms: int = 1, reward_means: np.ndarray = None
+    ):
         super(GaussianCB, self).__init__(bandits, arms)
         if reward_means is not None:
             self.reward_means = reward_means
         else:
             self.reward_means = np.random.random(size=(bandits, arms))
-        
+
     def step(self, action: int) -> float:
         """
         Takes an action in the bandit and returns the sampled reward
@@ -133,5 +136,3 @@ class GaussianCB(ContextualBandit):
         reward = np.random.normal(reward_mean)
         self.reset()
         return self.curr_bandit, reward
-
-
