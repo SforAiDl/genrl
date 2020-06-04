@@ -85,10 +85,7 @@ class TestUtils:
         """
         env = venv("CartPole-v0", 1)
         algo = PPO1(
-            "mlp",
-            env,
-            epochs=1,
-            load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",
+            "mlp", env, epochs=1, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",
         )
 
         rmtree("logs")
