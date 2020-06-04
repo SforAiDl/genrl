@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 from genrl.deep.common.utils import get_env_properties
-from genrl.deep.common.buffer import HindsightMemory
+from genrl.deep.common.buffers import HindsightMemory
 
 class HERTrainer():
   def __init__(self,agent):
