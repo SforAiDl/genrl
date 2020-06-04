@@ -3,6 +3,7 @@ from genrl.classical.bandit.bandits import (
     GaussianBandit,
     BernoulliBandit,
 )
+
 from genrl.classical.bandit.policies import (
     BanditPolicy,
     EpsGreedyPolicy,
@@ -10,4 +11,16 @@ from genrl.classical.bandit.policies import (
     SoftmaxActionSelectionPolicy,
     BayesianUCBPolicy,
     ThompsonSamplingPolicy,
+)
+
+from genrl.classical.bandit.contextual_bandits import (
+    ContextualBandit,
+    GaussianCB,
+    BernoulliCB,
+)
+
+from genrl.classical.bandit.contextual_policies import (
+    CBPolicy,
+    EpsGreedyCBPolicy,
+    UCBCBPolicy,
 )

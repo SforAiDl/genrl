@@ -9,6 +9,12 @@ from genrl.classical import (
     SoftmaxActionSelectionPolicy,
     BayesianUCBPolicy,
     ThompsonSamplingPolicy,
+    ContextualBandit,
+    GaussianCB,
+    BernoulliCB,
+    CBPolicy,
+    EpsGreedyCBPolicy,
+    UCBCBPolicy,
     SARSA,
     QLearning,
 )

@@ -8,6 +8,12 @@ from genrl.classical.bandit import (
     SoftmaxActionSelectionPolicy,
     BayesianUCBPolicy,
     ThompsonSamplingPolicy,
+    ContextualBandit,
+    GaussianCB,
+    BernoulliCB,
+    CBPolicy,
+    EpsGreedyCBPolicy,
+    UCBCBPolicy,
 )
 from genrl.classical.sarsa import SARSA
 from genrl.classical.qlearning import QLearning
