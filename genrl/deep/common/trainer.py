@@ -292,7 +292,7 @@ many steps
 
         assert self.update_interval % self.env.n_envs == 0
 
-        self.rewards = []
+        self.rewards = [0]
 
         for t in range(0, total_steps, self.env.n_envs):
             if self.network_type == "cnn":
@@ -345,6 +345,7 @@ many steps
                     self.agent.noise.reset()
 
                 if sum(episode) % self.log_interval == 0:
+                    # print(self.rewards)
                     self.logger.write(
                         {
                             "timestep": t,
