@@ -523,7 +523,7 @@ class OnPolicyTrainer(Trainer):
             if self.save_interval != 0 and epoch % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
                 save_params(
-                    self.agent, i * episode * self.agent.timesteps_per_actorbatch
+                    self.agent, epoch * self.agent.timesteps_per_actorbatch
                 )
 
         self.env.close()

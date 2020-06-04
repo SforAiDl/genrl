@@ -77,7 +77,7 @@ class TestUtils:
         trainer = OnPolicyTrainer(algo, env, ["stdout"], save_interval=1, epochs=1)
         trainer.train()
 
-        assert len(os.listdir("logs/checkpoints/PPO1_CartPole-v0")) != 0
+        assert len(os.listdir("test_ckpt/PPO1_CartPole-v0")) != 0
 
     def test_load_params(self):
         """
@@ -88,7 +88,7 @@ class TestUtils:
             "mlp",
             env,
             epochs=1,
-            load_model="logs/checkpoints/PPO1_CartPole-v0/experiment.pt",
+            load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",
         )
 
         rmtree("logs")

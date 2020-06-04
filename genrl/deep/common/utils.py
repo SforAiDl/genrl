@@ -5,7 +5,7 @@ import torch
 import numpy as np
 import torch.nn as nn
 from gym import spaces
-from .VecEnv import venv
+from .VecEnv import venv, VecEnv
 from typing import Tuple, Union, Any
 
 
@@ -101,7 +101,10 @@ def save_params(algo: Any, timestep: int) -> None:
     :type timestep: int
     """
     algo_name = algo.__class__.__name__
-    env_name = algo.env.unwrapped.spec.id
+    if isinstance(algo.env, VecEnv):
+        env_name = algo.env.envs[0].unwrapped.spec.id
+    else:
+        env_name = algo.env.unwrapped.spec.id
     directory = algo.save_model
     path = "{}/{}_{}".format(directory, algo_name, env_name)
 
