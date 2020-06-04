@@ -261,7 +261,6 @@ calculate losses
         """
         for episode in range(self.num_episodes):
             episode_reward = 0
-            steps = []
 
             self.update(episode)
 

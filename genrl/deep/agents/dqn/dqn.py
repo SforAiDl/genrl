@@ -11,7 +11,6 @@ from copy import deepcopy
 
 from ...common import (
     ReplayBuffer,
-    PushReplayBuffer,
     PrioritizedBuffer,
     get_model,
     save_params,
