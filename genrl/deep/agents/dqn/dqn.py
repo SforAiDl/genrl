@@ -312,7 +312,6 @@ class DQN:
                 self.batch_size
             )
 
-        print(state.shape)
         state = state.reshape(
             self.batch_size * self.env.n_envs, *self.env.observation_space.shape
         )
