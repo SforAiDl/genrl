@@ -13,9 +13,7 @@ class BaseValue:
     """
 
     def __init__(
-        self,
-        state_dim: int,
-        action_dim: int,
+        self, state_dim: int, action_dim: int,
     ):
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -50,7 +48,7 @@ class BaseValue:
 value_registry = {}
 
 
-def get_value_from_name(name_: str) -> Union[]:
+def get_value_from_name(name_: str) -> None:
     """
     Gets the value function given the name of the value function
 
