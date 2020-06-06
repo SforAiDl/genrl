@@ -113,7 +113,7 @@ False (To be implemented)
         """
         raise NotImplementedError
 
-    def evaluate(self): 
+    def evaluate(self):
         """
         Evaluate function
         """
