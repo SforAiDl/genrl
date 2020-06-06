@@ -55,6 +55,31 @@ class TD3:
     :param run_num: model run number if it has already been trained
     :param save_model: model save directory
     :param load_model: model loading path
+    :type network_type: str
+    :type env: Gym environment
+    :type gamma: float
+    :type replay_size: int
+    :type batch_size: int
+    :type lr_p: float
+    :type lr_q: float
+    :type polyak: float
+    :type policy_frequency: int
+    :type epochs: int
+    :type start_steps: int
+    :type steps_per_epoch: int
+    :type noise_std: float
+    :type max_ep_len: int
+    :type start_update: int
+    :type update_interval: int
+    :type save_interval: int
+    :type layers: tuple or list
+    :type tensorboard_log: str
+    :type seed: int
+    :type render: boolean
+    :type device: str
+    :type run_num: boolean
+    :type save_name: str
+    :type save_version: int
     :type run_num: int
     :type save_model: string
     :type load_model: string
@@ -340,14 +365,14 @@ class TD3:
                         episode_len[i] = 0
                         episode += 1
 
-                # if self.noise is not None:
-                #     self.noise.reset()
+                if self.noise is not None:
+                    self.noise.reset()
 
-                # if self.tensorboard_log:
-                #     self.writer.add_scalar("episode_reward", np.mean(episode_reward), t)
+                if self.tensorboard_log:
+                    self.writer.add_scalar("episode_reward", np.mean(episode_reward), t)
 
-                # state, episode_reward, episode_len = self.env.reset(), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
-                # episode += 1
+                state, episode_reward, episode_len = self.env.reset(), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
+                episode += 1
 
             # update params
             if t >= self.start_update and t % self.update_interval == 0:
@@ -356,7 +381,6 @@ class TD3:
                     states, actions, rewards, next_states, dones = (
                         x.to(self.device) for x in batch
                     )
-                    # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
                     self.update_params(
                         states, actions, rewards.unsqueeze(1), next_states, dones, t
                     )

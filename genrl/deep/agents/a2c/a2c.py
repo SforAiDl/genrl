@@ -219,12 +219,12 @@ calculate losses
 
             self.actor_optimizer.zero_grad()
             loss.backward()
-            # torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
+            torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
             self.actor_optimizer.step()
 
             self.critic_optimizer.zero_grad()
             value_loss.backward()
-            # torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
+            torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.critic_optimizer.step()
 
     def collect_rollouts(self, initial_state):

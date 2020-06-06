@@ -304,9 +304,9 @@ class SAC:
             )
         else:
             state, action, next_state = (
-                state.reshape(-1, self.env.observation_space.shape[0]).float(),
-                action.reshape(-1, self.env.action_space.shape[0]).float(),
-                next_state.reshape(-1, self.env.observation_space.shape[0]).float(),
+                state.reshape(-1, *self.env.observation_space.shape).float(),
+                action.reshape(-1, *self.env.action_space.shape).float(),
+                next_state.reshape(-1, *self.env.observation_space.shape).float(),
             )
             reward, done = reward.reshape(-1, 1), done.reshape(-1, 1)
 

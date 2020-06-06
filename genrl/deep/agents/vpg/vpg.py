@@ -233,32 +233,24 @@ class VPG:
 
     def learn(self) -> None:  # pragma: no cover
         # training loop
-        for episode in range(self.epochs):
-            epoch_reward = 0
-            # for i in range(self.actor_batch_size):
-            #     state = self.env.reset()
-            #     done = False
-            #     for t in range(self.timesteps_per_actorbatch):
-            #         action = Variable(self.select_action(state, deterministic=False))
-            #         state, reward, done, _ = self.env.step(action.item())
+        state = self.env.reset()
+        for epoch in range(self.epochs):
+            self.epoch_reward = np.zeros(self.env.n_envs)
 
-            #         if self.render:
-            #             self.env.render()
+            self.rollout.reset()
+            self.rewards = []
 
-            #         self.traj_reward.append(reward)
+            values, done = self.collect_rollouts(state)
 
-            #         if done:
-            #             break
+            self.get_traj_loss(values, done)
 
-            #     epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
-            #     self.get_traj_loss()
+            self.update_policy()
 
-            self.update(episode)
-
-            if episode % 20 == 0:
-                print("Episode: {}, reward: {}".format(episode, epoch_reward))
+            if epoch % 1 == 0:
+                print("Episode: {}, reward: {}".format(epoch, np.mean(self.rewards)))
+                self.rewards = []
                 if self.tensorboard_log:
-                    self.writer.add_scalar("reward", epoch_reward, episode)
+                    self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if self.save_model is not None:
                 if episode % self.save_interval == 0:

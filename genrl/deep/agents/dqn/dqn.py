@@ -269,9 +269,6 @@ class DQN:
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
         """
-        # if explore == True:
-        #     if np.random.rand() <= self.epsilon:
-        #         return self.env.action_space.sample()
 
         if np.random.rand() > self.epsilon:
             if self.categorical_dqn:
@@ -357,12 +354,10 @@ class DQN:
 
         else:
             q_values = self.model(state)
-            # print(action)
             q_value = q_values.gather(1, action).squeeze(1)
 
             q_next_state_values = self.target_model(next_state)
             q_s_a_prime = q_next_state_values.max(1)[0]
-            # print(reward.shape, q_s_a_prime.shape, done.shape)
             expected_q_value = reward + self.gamma * q_s_a_prime.reshape(-1, 1) * (
                 1 - done
             )

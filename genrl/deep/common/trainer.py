@@ -282,7 +282,6 @@ many steps
             np.zeros(self.env.n_envs),
         )
         total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
-        # self.agent.learn()
 
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
@@ -310,8 +309,6 @@ many steps
             else:
                 if t < self.warmup_steps:
                     action = np.array(self.env.sample())
-                    # print("Observing")
-                    # print(len(action))
                 else:
                     if self.deterministic_actions:
                         action = self.agent.select_action(state, deterministic=True)
@@ -505,11 +502,11 @@ class OnPolicyTrainer(Trainer):
 
             self.agent.update_policy()
 
-            # if epoch % 1 == 0:
-            #     print("Episode: {}, reward: {}".format(epoch, np.mean(self.agent.rewards)))
-            #     self.agent.rewards = []
-            #     if self.tensorboard_log:
-            #         self.writer.add_scalar("reward", self.epoch_reward, epoch)
+            if epoch % self.log_interval == 0:
+                print("Episode: {}, reward: {}".format(epoch, np.mean(self.agent.rewards)))
+                self.agent.rewards = []
+                if self.tensorboard_log:
+                    self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if epoch % self.log_interval == 0:
                 self.logger.write(

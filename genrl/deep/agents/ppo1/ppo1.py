@@ -190,7 +190,6 @@ class PPO1:
             if isinstance(self.env.action_space, gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
-            # with torch.no_grad():
             values, log_prob, entropy = self.evaluate_actions(
                 rollout.observations, actions
             )
@@ -278,11 +277,11 @@ class PPO1:
                 if self.tensorboard_log:
                     self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
-            # if self.save_model is not None:
-            #     if episode % self.save_interval == 0:
-            #         self.checkpoint = self.get_hyperparams()
-            #         self.save(self, episode)
-            #         print("Saved current model")
+            if self.save_model is not None:
+                if episode % self.save_interval == 0:
+                    self.checkpoint = self.get_hyperparams()
+                    self.save(self, episode)
+                    print("Saved current model")
 
         self.env.close()
         if self.tensorboard_log:

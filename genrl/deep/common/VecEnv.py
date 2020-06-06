@@ -155,7 +155,6 @@ class SerialVecEnv(VecEnv):
         :param actions: Actions from the model
         :type actions: Iterable of ints/floats
         """
-        # states, rewards, dones, infos = [], [], [], []
         for i, env in enumerate(self.envs):
             obs, reward, done, info = env.step(actions[i])
             if done:
@@ -203,6 +202,8 @@ images in 'human' and returns tiled images in 'rgb_array'
         :type mode: string
         """
         self.envs[0].render()
+
+        # Does not work need to debug how can vectorized envs be rendered
         # images = np.asarray(self.images())
         # N, H, W, C = images.shape
         # newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
