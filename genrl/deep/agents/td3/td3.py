@@ -371,7 +371,11 @@ class TD3:
                 if self.tensorboard_log:
                     self.writer.add_scalar("episode_reward", np.mean(episode_reward), t)
 
-                state, episode_reward, episode_len = self.env.reset(), np.zeros(self.env.n_envs), np.zeros(self.env.n_envs)
+                state, episode_reward, episode_len = (
+                    self.env.reset(),
+                    np.zeros(self.env.n_envs),
+                    np.zeros(self.env.n_envs),
+                )
                 episode += 1
 
             # update params
