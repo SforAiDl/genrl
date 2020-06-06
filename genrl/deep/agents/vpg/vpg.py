@@ -37,6 +37,7 @@ class VPG:
     :param run_num: if model has already been trained
     :param save_model: True if user wants to save 
     :param load_model: model loading path
+    :param rollout_size: Rollout Buffer Size
     :type network_type: str
     :type env: Gym environment
     :type timesteps_per_actorbatch: int
@@ -52,6 +53,7 @@ class VPG:
     :type run_num: bool
     :type save_model: bool
     :type load_model: string
+    :type rollout_size: int
     """
 
     def __init__(
@@ -74,6 +76,7 @@ class VPG:
         save_model: str = None,
         load_model: str = None,
         save_interval: int = 50,
+        rollout_size: int = 2048,
     ):
         self.network_type = network_type
         self.env = env
@@ -93,6 +96,7 @@ class VPG:
         self.load_model = load_model
         self.save = save_params
         self.load = load_params
+        self.rollout_size = rollout_size
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -137,7 +141,7 @@ class VPG:
         self.optimizer_policy = opt.Adam(self.actor.parameters(), lr=self.lr_policy)
 
         self.rollout = RolloutBuffer(
-            2048,
+            self.rollout_size,
             self.env.observation_space,
             self.env.action_space,
             n_envs=self.env.n_envs,

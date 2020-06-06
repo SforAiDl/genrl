@@ -42,6 +42,7 @@ class A2C:
     :param run_num: Model run number if it has already been trained
     :param save_model: Directory the user wants to save models to
     :param save_interval: Number of steps between saves of models
+    :param rollout_size: Rollout Buffer Size
     :type network_type: string
     :type env: Gym Environment
     :type gamma: float
@@ -61,6 +62,7 @@ class A2C:
     :type run_num: int
     :type save_model: string
     :type save_interval: int
+    :type rollout_size: int
     """
 
     def __init__(
@@ -84,6 +86,7 @@ class A2C:
         run_num: int = None,
         save_model: str = None,
         save_interval: int = 1000,
+        rollout_size: int = 2048,
     ):
         self.network_type = network_type
         self.env = env
@@ -105,6 +108,7 @@ class A2C:
         self.save_model = None
         self.save = save_params
         self.load = load_params
+        self.rollout_size = rollout_size
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -145,7 +149,7 @@ class A2C:
         self.critic_optimizer = opt.Adam(self.ac.critic.parameters(), lr=self.lr_critic)
 
         self.rollout = RolloutBuffer(
-            2048,
+            self.rollout_size,
             self.env.observation_space,
             self.env.action_space,
             n_envs=self.env.n_envs,

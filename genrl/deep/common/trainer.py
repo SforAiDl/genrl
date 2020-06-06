@@ -516,7 +516,7 @@ class OnPolicyTrainer(Trainer):
                     {
                         "Episode": epoch,
                         "Reward": np.mean(self.agent.rewards),
-                        "Timestep": epoch * 2048,
+                        "Timestep": epoch * self.agent.rollout_size,
                     }
                 )
 

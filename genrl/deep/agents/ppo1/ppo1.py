@@ -23,27 +23,44 @@ class PPO1:
 
     Paper: https://arxiv.org/abs/1707.06347
     
-    :param network_type: (str) The deep neural network layer types ['mlp']
-    :param env: (Gym environment) The environment to learn from
-    :param timesteps_per_actorbatch: (int) timesteps per actor per update
-    :param gamma: (float) discount factor
-    :param clip_param: (float) clipping parameter epsilon
-    :param actor_batchsize: (int) trajectories per optimizer epoch
-    :param epochs: (int) the optimizer's number of epochs
-    :param lr_policy: (float) policy network learning rate
-    :param lr_value: (float) value network learning rate
-    :param policy_copy_interval: (int) number of optimizer before copying
+    :param network_type: The deep neural network layer types ['mlp']
+    :param env: The environment to learn from
+    :param timesteps_per_actorbatch: timesteps per actor per update
+    :param gamma: discount factor
+    :param clip_param: clipping parameter epsilon
+    :param actor_batchsize: trajectories per optimizer epoch
+    :param epochs: the optimizer's number of epochs
+    :param lr_policy: policy network learning rate
+    :param lr_value: value network learning rate
+    :param policy_copy_interval: number of optimizer before copying
         params from new policy to old policy
-    :param save_interval: (int) Number of episodes between saves of models
-    :param tensorboard_log: (str) the log location for tensorboard (if None,
+    :param save_interval: Number of episodes between saves of models
+    :param tensorboard_log: the log location for tensorboard (if None,
         no logging)
-    :param seed (int): seed for torch and gym
-    :param device (str): device to use for tensor operations; 'cpu' for cpu
+    :param seed: seed for torch and gym
+    :param device: device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param run_num: (boolean) if model has already been trained
-    :param save_model: (string) directory the user wants to save models to
+    :param run_num: if model has already been trained
+    :param save_model: directory the user wants to save models to
     :param load_model: model loading path
+    :type network_type: str
+    :type env: Gym environment
+    :type timesteps_per_actorbatch: int
+    :type gamma: float
+    :type clip_param: float
+    :type actor_batchsize: int
+    :type epochs: int
+    :type lr_policy: float
+    :type lr_value: float
+    :type policy_copy_interval: int
+    :type save_interval: int
+    :type tensorboard_log: string
+    :type seed: int
+    :type device: string
+    :type run_num: boolean
+    :type save_model: string
     :type load_model: string
+    :type rollout_size: int
     """
 
     def __init__(
@@ -67,6 +84,7 @@ class PPO1:
         save_model: str = None,
         load_model: str = None,
         save_interval: int = 50,
+        rollout_size: int = 2048,
     ):
         self.network_type = network_type
         self.env = env
@@ -88,6 +106,7 @@ class PPO1:
         self.load_model = load_model
         self.save = save_params
         self.load = load_params
+        self.rollout_size = rollout_size
 
         self.ent_coef = 0.01
         self.vf_coef = 0.5
@@ -138,7 +157,7 @@ class PPO1:
         self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
         self.rollout = RolloutBuffer(
-            2048,
+            self.rollout_size,
             self.env.observation_space,
             self.env.action_space,
             n_envs=self.env.n_envs,
