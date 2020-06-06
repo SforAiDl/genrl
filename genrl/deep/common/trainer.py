@@ -503,12 +503,6 @@ class OnPolicyTrainer(Trainer):
             self.agent.update_policy()
 
             if epoch % self.log_interval == 0:
-                print("Episode: {}, reward: {}".format(epoch, np.mean(self.agent.rewards)))
-                self.agent.rewards = []
-                if self.tensorboard_log:
-                    self.writer.add_scalar("reward", self.epoch_reward, epoch)
-
-            if epoch % self.log_interval == 0:
                 self.logger.write(
                     {
                         "Episode": epoch,
