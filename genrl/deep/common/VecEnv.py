@@ -59,7 +59,7 @@ def create_envs(env_name, n_envs):
 
 class VecEnv(ABC):
     """
-    Constructs a wrapper for serial execution through envs.
+    Base class for multiple environments.
 
     :param env: Gym environment to be vectorised
     :param n_envs: Number of environments
@@ -131,11 +131,6 @@ class VecEnv(ABC):
 class SerialVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
-
-    :param env: Gym environment to be vectorised
-    :param n_envs: Number of environments
-    :type env: Gym Environment
-    :type n_envs: int
     """
 
     def __init__(self, *args, **kwargs):
@@ -226,11 +221,6 @@ images in 'human' and returns tiled images in 'rgb_array'
 class SubProcessVecEnv(VecEnv):
     """
     Constructs a wrapper for parallel execution through envs.
-
-    :param env: Environment Name. Should be registered with OpenAI Gym.
-    :param n_envs: Number of environments
-    :type env: string
-    :type n_envs: int
     """
 
     def __init__(self, *args, **kwargs):
