@@ -4,7 +4,6 @@ import random
 import torch
 import numpy as np
 import torch.nn as nn
-from gym import spaces
 from .VecEnv import venv, VecEnv
 from typing import Tuple, Union, Any
 
@@ -203,13 +202,13 @@ def get_obs_shape(observation_space):
     """
     Get the shape of the observation.
     :param observation_space: Observation space 
-    :type observation_space: spaces.Space
+    :type observation_space: gym.spaces.Space
     :returns: The observation space's shape
     :rtype: (Tuple[int, ...])
     """
-    if isinstance(observation_space, spaces.Box):
+    if isinstance(observation_space, gym.spaces.Box):
         return observation_space.shape
-    elif isinstance(observation_space, spaces.Discrete):
+    elif isinstance(observation_space, gym.spaces.Discrete):
         return (1,)
     else:
         raise NotImplementedError()
@@ -219,13 +218,13 @@ def get_action_dim(action_space):
     """
     Get the dimension of the action space.
     :param action_space: Action space
-    :type action_space: spaces.Space
+    :type action_space: gym.spaces.Space
     :returns: Action space's shape
     :rtype: int
     """
-    if isinstance(action_space, spaces.Box):
+    if isinstance(action_space, gym.spaces.Box):
         return int(np.prod(action_space.shape))
-    elif isinstance(action_space, spaces.Discrete):
+    elif isinstance(action_space, gym.spaces.Discrete):
         return 1
     else:
         raise NotImplementedError()
