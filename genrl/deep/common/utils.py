@@ -1,11 +1,10 @@
 import os
+import gym
 import random
-
 import torch
 import numpy as np
 import torch.nn as nn
-import gym
-from .VecEnv import venv
+from .VecEnv import venv, VecEnv
 from typing import Tuple, Union, Any
 
 
@@ -101,7 +100,10 @@ def save_params(algo: Any, timestep: int) -> None:
     :type timestep: int
     """
     algo_name = algo.__class__.__name__
-    env_name = algo.env.unwrapped.spec.id
+    if isinstance(algo.env, VecEnv):
+        env_name = algo.env.envs[0].unwrapped.spec.id
+    else:
+        env_name = algo.env.unwrapped.spec.id
     directory = algo.save_model
     path = "{}/{}_{}".format(directory, algo_name, env_name)
 
@@ -183,3 +185,46 @@ def set_seeds(seed: int, env: Union[gym.Env, venv] = None) -> None:
     random.seed(seed)
     if env is not None:
         env.seed(seed)
+
+
+def get_obs_action_shape(obs, action):
+    """
+    """
+    if isinstance(obs, gym.spaces.Discrete):
+        return 1, 1
+    elif isinstance(obs, gym.spaces.Box):
+        return obs.shape[0], int(np.prod(action.shape))
+    else:
+        raise NotImplementedError
+
+
+def get_obs_shape(observation_space):
+    """
+    Get the shape of the observation.
+    :param observation_space: Observation space 
+    :type observation_space: gym.spaces.Space
+    :returns: The observation space's shape
+    :rtype: (Tuple[int, ...])
+    """
+    if isinstance(observation_space, gym.spaces.Box):
+        return observation_space.shape
+    elif isinstance(observation_space, gym.spaces.Discrete):
+        return (1,)
+    else:
+        raise NotImplementedError()
+
+
+def get_action_dim(action_space):
+    """
+    Get the dimension of the action space.
+    :param action_space: Action space
+    :type action_space: gym.spaces.Space
+    :returns: Action space's shape
+    :rtype: int
+    """
+    if isinstance(action_space, gym.spaces.Box):
+        return int(np.prod(action_space.shape))
+    elif isinstance(action_space, gym.spaces.Discrete):
+        return 1
+    else:
+        raise NotImplementedError()

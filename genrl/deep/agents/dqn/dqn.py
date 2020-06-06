@@ -248,7 +248,7 @@ class DQN:
                 self.replay_size, self.prioritized_replay_alpha
             )
         else:
-            self.replay_buffer = ReplayBuffer(self.replay_size)
+            self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
 
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
@@ -258,31 +258,28 @@ class DQN:
         """
         self.target_model.load_state_dict(self.model.state_dict())
 
-    def select_action(self, state: np.ndarray, explore: bool = True) -> np.ndarray:
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         """
         Epsilon Greedy selection of action
 
         :param state: Observation state
         :type state: int, float, ...
-        :param explore: randomness in action selection
-        :type explore: bool
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
         """
-        if explore == True:
-            if np.random.rand() <= self.epsilon:
-                return self.env.action_space.sample()
 
-        if self.categorical_dqn:
-            with torch.no_grad():
+        if np.random.rand() > self.epsilon:
+            if self.categorical_dqn:
                 state = Variable(torch.FloatTensor(state))
                 dist = self.model(state).data.cpu()
                 dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                action = dist.sum(2).max(1)[1].numpy()[0]
+                action = dist.sum(2).max(1)[1].numpy()  # [0]
+            else:
+                state = Variable(torch.FloatTensor(state))
+                q_value = self.model(state)
+                action = np.argmax(q_value.detach().numpy(), axis=-1)
         else:
-            state = Variable(torch.FloatTensor(state))
-            q_value = self.model(state)
-            action = np.argmax(q_value.detach().numpy())
+            action = np.asarray(self.env.sample())  # .reshape(1,-1)
 
         return action
 
@@ -309,6 +306,16 @@ class DQN:
                 self.batch_size
             )
 
+        state = state.reshape(
+            self.batch_size * self.env.n_envs, *self.env.observation_space.shape
+        )
+        action = action.reshape(self.batch_size * self.env.n_envs, 1)
+        reward = reward.reshape(-1, 1)
+        done = done.reshape(-1, 1)
+        next_state = next_state.reshape(
+            self.batch_size * self.env.n_envs, *self.env.observation_space.shape
+        )
+
         state = Variable(torch.FloatTensor(np.float32(state)))
         next_state = Variable(torch.FloatTensor(np.float32(next_state)))
         action = Variable(torch.LongTensor(action.long()))
@@ -322,17 +329,15 @@ class DQN:
         if self.categorical_dqn:
             projection_dist = self.projection_distribution(next_state, reward, done)
             dist = self.model(state)
-            action = (
-                action.unsqueeze(1)
-                .unsqueeze(1)
-                .expand(self.batch_size, 1, self.num_atoms)
+            action = action.unsqueeze(1).expand(
+                self.batch_size * self.env.n_envs, 1, self.num_atoms
             )
             dist = dist.gather(1, action).squeeze(1)
             dist.data.clamp_(0.01, 0.99)
 
         elif self.double_dqn:
             q_values = self.model(state)
-            q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+            q_value = q_values.gather(1, action).squeeze(1)
 
             q_next_state_values = self.model(next_state)
             action_next = q_next_state_values.max(1)[1]
@@ -341,15 +346,19 @@ class DQN:
             q_target_s_a_prime = q_target_next_state_values.gather(
                 1, action_next.unsqueeze(1)
             ).squeeze(1)
-            expected_q_value = reward + self.gamma * q_target_s_a_prime * (1 - done)
+            expected_q_value = reward + self.gamma * q_target_s_a_prime.reshape(
+                -1, 1
+            ) * (1 - done)
 
         else:
             q_values = self.model(state)
-            q_value = q_values.gather(1, action.unsqueeze(1)).squeeze(1)
+            q_value = q_values.gather(1, action).squeeze(1)
 
             q_next_state_values = self.target_model(next_state)
             q_s_a_prime = q_next_state_values.max(1)[0]
-            expected_q_value = reward + self.gamma * q_s_a_prime * (1 - done)
+            expected_q_value = reward + self.gamma * q_s_a_prime.reshape(-1, 1) * (
+                1 - done
+            )
 
         if self.categorical_dqn:
             loss = -(Variable(projection_dist) * dist.log()).sum(1).mean()
@@ -423,8 +432,8 @@ class DQN:
         )
         next_dist = next_dist.gather(1, next_action).squeeze(1)
 
-        rewards = rewards.unsqueeze(1).expand_as(next_dist)
-        dones = dones.unsqueeze(1).expand_as(next_dist)
+        rewards = rewards.expand_as(next_dist)
+        dones = dones.expand_as(next_dist)
         support = support.unsqueeze(0).expand_as(next_dist)
 
         Tz = rewards + (1 - dones) * 0.99 * support
@@ -437,7 +446,7 @@ class DQN:
             torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size)
             .long()
             .unsqueeze(1)
-            .expand(self.batch_size, self.num_atoms)
+            .expand(self.batch_size * self.env.n_envs, self.num_atoms)
         )
 
         projection_dist = torch.zeros(next_dist.size())
