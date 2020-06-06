@@ -12,24 +12,25 @@ class ActionNoise(ABC):
     :type mean: float
     :type std: float
     """
-    def __init__(self, mean, std):
+
+    def __init__(self, mean: float, std: float):
         # super().__init__(mean, std)
         self._mean = mean
         self._std = std
 
     @abstractmethod
-    def __call__(self):
+    def __call__(self) -> None:
         raise NotImplementedError
 
     @property
-    def mean(self):
+    def mean(self) -> float:
         """
         Returns mean of noise distribution
         """
         return self._mean
 
     @property
-    def std(self):
+    def std(self) -> float:
         """
         Returns standard deviation of noise distribution
         """
@@ -45,16 +46,17 @@ class NormalActionNoise(ActionNoise):
     :type mean: float
     :type std: float
     """
-    def __init__(self, mean, std):
+
+    def __init__(self, mean: float, std: float):
         super(NormalActionNoise, self).__init__(mean, std)
 
-    def __call__(self):
+    def __call__(self) -> float:
         """
         Return action noise randomly sampled from noise distribution
         """
         return np.random.normal(self._mean, self._std)
 
-    def reset(self):
+    def reset(self) -> None:
         pass
 
 
@@ -73,7 +75,15 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
     :type dt: float
     :type initial_noise: Numpy array
     """
-    def __init__(self, mean, std, theta=0.15, dt=1e-2, initial_noise=None):
+
+    def __init__(
+        self,
+        mean: float,
+        std: float,
+        theta: float = 0.15,
+        dt: float = 1e-2,
+        initial_noise: np.ndarray = None,
+    ):
         super(OrnsteinUhlenbeckActionNoise, self).__init__(mean, std)
         self._theta = theta
         self._mean = mean
@@ -83,7 +93,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.noise_prev = None
         self.reset()
 
-    def __call__(self):
+    def __call__(self) -> float:
         """
         Return action noise randomly sampled from noise distribution \
 according to the Ornstein Uhlenbeck process
@@ -91,16 +101,12 @@ according to the Ornstein Uhlenbeck process
         noise = (
             self.noise_prev
             + self._theta * (self._mean - self.noise_prev) * self._dt
-            + (
-                self._std
-                * np.sqrt(self._dt)
-                * np.random.normal(size=self._mean.shape)
-            )
+            + (self._std * np.sqrt(self._dt) * np.random.normal(size=self._mean.shape))
         )
         self.noise_prev = noise
         return noise
 
-    def reset(self):
+    def reset(self) -> None:
         """
         Reset the initial noise value for the noise distribution sampling
         """

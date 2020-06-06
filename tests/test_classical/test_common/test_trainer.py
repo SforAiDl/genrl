@@ -11,7 +11,13 @@ class TestTrainer:
         env = gym.make("FrozenLake-v0")
         agent = QLearning(env)
         trainer = Trainer(
-            agent, env, mode="dyna", model="tabular", n_episodes=50, start_steps=0, evaluate_frequency=1
+            agent,
+            env,
+            mode="dyna",
+            model="tabular",
+            n_episodes=50,
+            start_steps=0,
+            evaluate_frequency=1,
         )
         ep_rs = trainer.train()
         trainer.evaluate()

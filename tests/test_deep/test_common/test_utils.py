@@ -65,15 +65,6 @@ class TestUtils:
         )
         assert output_size == 1764
 
-    def test_evaluate(self):
-        """
-        test evaluating trained algorithm
-        """
-        env = gym.make("CartPole-v0")
-        algo = PPO1("mlp", env, epochs=1)
-        algo.learn()
-        evaluate(algo, num_timesteps=10)
-
     def test_save_params(self):
         """
         test saving algorithm state dict
@@ -105,7 +96,7 @@ class TestUtils:
         assert state_dim == 4
         assert action_dim == 2
         assert discrete == True
-        
+
         env = gym.make("Pendulum-v0")
 
         state_dim, action_dim, discrete, action_lim = get_env_properties(env)

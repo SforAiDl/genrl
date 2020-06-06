@@ -3,6 +3,7 @@ import gym
 import matplotlib.pyplot as plt
 
 from .models import get_model_from_name
+from typing import Any, Optional, Tuple, List
 
 
 class Trainer:
@@ -31,17 +32,17 @@ class Trainer:
 
     def __init__(
         self,
-        agent,
-        env,
-        mode="learn",
-        model=None,
-        n_episodes=30000,
-        plan_n_steps=3,
-        start_steps=5000,
-        start_plan=50,
-        evaluate_frequency=500,
-        seed=None,
-        render=False,
+        agent: Any,
+        env: gym.Env,
+        mode: str = "learn",
+        model: str = None,
+        n_episodes: int = 30000,
+        plan_n_steps: int = 3,
+        start_steps: int = 5000,
+        start_plan: int = 50,
+        evaluate_frequency: int = 500,
+        seed: Optional[int] = None,
+        render: bool = False,
     ):
         self.agent = agent
         self.env = env
@@ -70,7 +71,7 @@ class Trainer:
                 self.env.observation_space.n, self.env.action_space.n
             )
 
-    def learn(self, transitions):
+    def learn(self, transitions: Tuple) -> None:
         """
         learn from transition tuples
 
@@ -79,7 +80,7 @@ class Trainer:
         """
         self.agent.update(transitions)
 
-    def plan(self):
+    def plan(self) -> None:
         """
         plans on samples drawn from model
         """
@@ -88,7 +89,7 @@ class Trainer:
             r, s_ = self.model.step(s, a)
             self.agent.update((s, a, r, s_))
 
-    def train(self):
+    def train(self) -> List[float]:
         """
         general training loop for classical RL
         """
@@ -136,13 +137,13 @@ class Trainer:
 
         return ep_rews
 
-    def evaluate(self, eval_ep=100):
-        '''
+    def evaluate(self, eval_ep: int = 100) -> None:
+        """
         Evaluate function.
 
         :param eval_ep: Number of episodes you want to evaluate for
         :type eval_ep: int
-        '''
+        """
         ep = 0
         ep_rew = 0
         ep_rews = []
@@ -153,10 +154,10 @@ class Trainer:
             next_state, reward, done, _ = self.env.step(action)
 
             state = next_state
-            ep_rew+=reward
+            ep_rew += reward
             if done == True:
                 ep_rews.append(ep_rew)
-                ep+=1
+                ep += 1
                 if ep == 100:
                     print(
                         "Evaluating on {} episodes, Mean Reward: {} and Std Deviation for the reward: {}".format(
@@ -164,9 +165,8 @@ class Trainer:
                         )
                     )
                     break
-                
 
-    def plot(self, results, window_size=100):
+    def plot(self, results: List[float], window_size: int = 100) -> None:
         """
         plot model rewards
         :param results: rewards for each episode
@@ -189,10 +189,17 @@ if __name__ == "__main__":
     env = gym.make("FrozenLake-v0")
     agent = QLearning(env, epsilon=0.6, lr=0.1)
     trainer = Trainer(
-        agent, env, mode="dyna", model="tabular", seed=42, n_episodes=1000, start_steps=0, evaluate_frequency=500
+        agent,
+        env,
+        mode="dyna",
+        model="tabular",
+        seed=42,
+        n_episodes=1000,
+        start_steps=0,
+        evaluate_frequency=500,
     )
     ep_rs = trainer.train()
-    print("-"*82)
+    print("-" * 82)
     print("Evaluating the learned model")
     trainer.evaluate()
     trainer.plot(ep_rs)

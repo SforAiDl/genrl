@@ -5,9 +5,10 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 from genrl.deep.common.utils import mlp, cnn
+from typing import List, Tuple
 
 
-def noisy_mlp(fc_layers, noisy_layers):
+def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):
     """
     Generate Noisy MLP model given sizes of each fully connected and noisy layers
 
@@ -40,7 +41,7 @@ class DuelingDQNValueMlp(nn.Module):
     :type hidden: tuple 
     """
 
-    def __init__(self, state_dim, action_dim, hidden=(128, 128)):
+    def __init__(self, state_dim: int, action_dim: int, hidden: Tuple = (128, 128)):
         super(DuelingDQNValueMlp, self).__init__()
 
         self.feature = nn.Sequential(nn.Linear(state_dim, hidden[0]), nn.ReLU())
@@ -53,7 +54,7 @@ class DuelingDQNValueMlp(nn.Module):
             nn.Linear(hidden[0], hidden[1]), nn.ReLU(), nn.Linear(hidden[1], 1)
         )
 
-    def forward(self, state):
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
         features = self.feature(state)
         advantage = self.advantage(features)
         value = self.value(features)
@@ -72,7 +73,9 @@ class DuelingDQNValueCNN(nn.Module):
     :type fc_layers: tuple
     """
 
-    def __init__(self, action_dim, history_length=4, fc_layers=(256,)):
+    def __init__(
+        self, action_dim: int, history_length: int = 4, fc_layers: Tuple = (256,)
+    ):
         super(DuelingDQNValueCNN, self).__init__()
 
         self.action_dim = action_dim
@@ -82,7 +85,7 @@ class DuelingDQNValueCNN(nn.Module):
         self.advantage = mlp([output_size] + list(fc_layers) + [action_dim])
         self.value = mlp([output_size] + list(fc_layers) + [1])
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv(x)
         x = x.view(x.size(0), -1)
         advantage = self.advantage(x)
@@ -102,7 +105,7 @@ class NoisyLinear(nn.Module):
     :type std_init: float 
     """
 
-    def __init__(self, in_features, out_features, std_init=0.4):
+    def __init__(self, in_features: int, out_features: int, std_init: float = 0.4):
         super(NoisyLinear, self).__init__()
 
         self.in_features = in_features
@@ -122,7 +125,7 @@ class NoisyLinear(nn.Module):
         self.reset_parameters()
         self.reset_noise()
 
-    def forward(self, state):
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
         if self.training:
             weight = self.weight_mu + self.weight_sigma.mul(
                 Variable(self.weight_epsilon)
@@ -133,7 +136,7 @@ class NoisyLinear(nn.Module):
             bias = self.bias_mu
         return F.linear(state, weight, bias)
 
-    def reset_parameters(self):
+    def reset_parameters(self) -> None:
         """
         Reset the parameters 
         """
@@ -147,7 +150,7 @@ class NoisyLinear(nn.Module):
         self.bias_mu.data.uniform_(-mu_range, mu_range)
         self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.bias_sigma.size(0)))
 
-    def reset_noise(self):
+    def reset_noise(self) -> None:
         """
         Reset Noisy layers weights
         """
@@ -157,7 +160,7 @@ class NoisyLinear(nn.Module):
         self.weight_epsilon.copy_(epsilon_out.ger(epsilon_in))
         self.bias_epsilon.copy_(self._scale_noise(self.out_features))
 
-    def _scale_noise(self, size):
+    def _scale_noise(self, size: int) -> torch.Tensor:
         x = torch.randn(size)
         x = x.sign().mul(x.abs().sqrt())
         return x
@@ -178,7 +181,11 @@ class NoisyDQNValue(nn.Module):
     """
 
     def __init__(
-        self, state_dim, action_dim, fc_layers=(128,), noisy_layers=(128, 128)
+        self,
+        state_dim: int,
+        action_dim: int,
+        fc_layers: Tuple = (128,),
+        noisy_layers: Tuple = (128, 128),
     ):
         super(NoisyDQNValue, self).__init__()
 
@@ -186,10 +193,10 @@ class NoisyDQNValue(nn.Module):
             [state_dim] + list(fc_layers), list(noisy_layers) + [action_dim]
         )
 
-    def forward(self, state):
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
         return self.model(state)
 
-    def reset_noise(self):
+    def reset_noise(self) -> None:
         for layer in self.model:
             if isinstance(layer, NoisyLinear):
                 layer.reset_noise()
@@ -210,7 +217,11 @@ class NoisyDQNValueCNN(nn.Module):
     """
 
     def __init__(
-        self, action_dim, history_length=4, fc_layers=(128,), noisy_layers=(128, 128)
+        self,
+        action_dim: int,
+        history_length: int = 4,
+        fc_layers: Tuple = (128,),
+        noisy_layers: Tuple = (128, 128),
     ):
         super(NoisyDQNValueCNN, self).__init__()
 
@@ -220,13 +231,13 @@ class NoisyDQNValueCNN(nn.Module):
             [output_size] + list(fc_layers), list(noisy_layers) + [action_dim]
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv(x)
         x = x.view(x.size(0), -1)
         x = self.model(x)
         return x
 
-    def reset_noise(self):
+    def reset_noise(self) -> None:
         for layer in self.model:
             if isinstance(layer, NoisyLinear):
                 layer.reset_noise()
@@ -250,11 +261,11 @@ class CategoricalDQNValue(nn.Module):
 
     def __init__(
         self,
-        state_dim,
-        action_dim,
-        num_atoms,
-        fc_layers=(128, 128),
-        noisy_layers=(128, 512),
+        state_dim: int,
+        action_dim: int,
+        num_atoms: int,
+        fc_layers: Tuple = (128, 128),
+        noisy_layers: Tuple = (128, 512),
     ):
         super(CategoricalDQNValue, self).__init__()
 
@@ -267,14 +278,14 @@ class CategoricalDQNValue(nn.Module):
             list(noisy_layers) + [self.action_dim * self.num_atoms],
         )
 
-    def forward(self, state):
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
         features = self.model(state)
         dist = F.softmax(features.view(-1, self.num_atoms)).view(
             -1, self.action_dim, self.num_atoms
         )
         return dist
 
-    def reset_noise(self):
+    def reset_noise(self) -> None:
         for layer in self.model:
             if isinstance(layer, NoisyLinear):
                 layer.reset_noise()
@@ -298,11 +309,11 @@ class CategoricalDQNValueCNN(nn.Module):
 
     def __init__(
         self,
-        action_dim,
-        num_atoms,
-        history_length=4,
-        fc_layers=(128, 128),
-        noisy_layers=(128, 512),
+        action_dim: int,
+        num_atoms: int,
+        history_length: int = 4,
+        fc_layers: Tuple = (128, 128),
+        noisy_layers: Tuple = (128, 512),
     ):
         super(CategoricalDQNValueCNN, self).__init__()
 
@@ -315,7 +326,7 @@ class CategoricalDQNValueCNN(nn.Module):
             list(noisy_layers) + [self.action_dim * self.num_atoms],
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.conv(x)
         x = x.view(x.size(0), -1)
         x = self.model(x)
@@ -324,7 +335,7 @@ class CategoricalDQNValueCNN(nn.Module):
         )
         return x
 
-    def reset_noise(self):
+    def reset_noise(self) -> None:
         for layer in self.model:
             if isinstance(layer, NoisyLinear):
                 layer.reset_noise()
