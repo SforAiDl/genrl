@@ -281,9 +281,9 @@ class PPO1:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
             if self.save_model is not None:
-                if episode % self.save_interval == 0:
+                if epoch % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, episode)
+                    self.save(self, epoch)
                     print("Saved current model")
 
         self.env.close()

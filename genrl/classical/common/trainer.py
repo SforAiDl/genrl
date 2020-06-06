@@ -187,19 +187,19 @@ class Trainer:
 
 if __name__ == "__main__":
     env = gym.make("FrozenLake-v0")
-    agent = QLearning(env, epsilon=0.6, lr=0.1)
-    trainer = Trainer(
-        agent,
-        env,
-        mode="dyna",
-        model="tabular",
-        seed=42,
-        n_episodes=1000,
-        start_steps=0,
-        evaluate_frequency=500,
-    )
-    ep_rs = trainer.train()
-    print("-" * 82)
-    print("Evaluating the learned model")
-    trainer.evaluate()
-    trainer.plot(ep_rs)
+    # agent = QLearning(env, epsilon=0.6, lr=0.1)
+    # trainer = Trainer(
+    #     agent,
+    #     env,
+    #     mode="dyna",
+    #     model="tabular",
+    #     seed=42,
+    #     n_episodes=1000,
+    #     start_steps=0,
+    #     evaluate_frequency=500,
+    # )
+    # ep_rs = trainer.train()
+    # print("-" * 82)
+    # print("Evaluating the learned model")
+    # trainer.evaluate()
+    # trainer.plot(ep_rs)

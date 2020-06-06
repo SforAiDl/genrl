@@ -396,11 +396,11 @@ class SAC:
 
                 if self.save_model is not None:
                     if (
-                        timestep >= self.start_update
-                        and timestep % self.save_interval == 0
+                        i >= self.start_update
+                        and i % self.save_interval == 0
                     ):
                         self.checkpoint = self.get_hyperparams()
-                        self.save(self, timestep)
+                        self.save(self, i)
                         print("Saved current model")
 
                 # prepare transition for replay memory push
@@ -415,12 +415,12 @@ class SAC:
                 self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
                 state = next_state
 
-            if timestep > total_steps:
+            if i > total_steps:
                 break
 
             # write episode reward to tensorboard logs
             if self.tensorboard_log:
-                writer.add_scalar("reward/episode_reward", episode_reward, timestep)
+                writer.add_scalar("reward/episode_reward", episode_reward, i)
 
             if episode % 5 == 0:
                 print(
