@@ -165,7 +165,7 @@ class VPG:
         # create distribution based on policy_fn output
         a, c = self.actor.get_action(state, deterministic=False)
 
-        return a, c.log_prob(a)
+        return a, c.log_prob(a), None
 
     def get_value_log_probs(self, state, action):
         a, c = self.actor.get_action(state, deterministic=False)
@@ -205,7 +205,7 @@ class VPG:
 
         for i in range(2048):
 
-            action, old_log_probs = self.select_action(state)
+            action, old_log_probs, _ = self.select_action(state)
 
             next_state, reward, done, _ = self.env.step(action.numpy())
             self.epoch_reward += reward

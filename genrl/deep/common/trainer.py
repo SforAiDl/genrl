@@ -113,35 +113,39 @@ False (To be implemented)
         """
         raise NotImplementedError
 
-    def evaluate(self):
+    def evaluate(self): 
         """
         Evaluate function
         """
-        ep, ep_r = 0, 0
+        ep, ep_r = 0, np.zeros(self.env.n_envs)
         ep_rews = []
         state = self.env.reset()
         while True:
-            if self.agent.__class__.__name__ == "DQN":
-                action = self.agent.select_action(state, explore=False)
-            else:
+            if self.off_policy:
                 action = self.agent.select_action(state)
+            else:
+                action, _, _ = self.agent.select_action(state)
+
+            if isinstance(action, torch.Tensor):
+                action = action.numpy()
+
             next_state, reward, done, _ = self.env.step(action)
             ep_r += reward
             state = next_state
-            if done:
-                ep += 1
-                ep_rews.append(ep_r)
-                state = self.env.reset()
-                ep_r = 0
-                if ep == self.evaluate_episodes:
-                    print(
-                        "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                            self.evaluate_episodes,
-                            np.around(np.mean(ep_rews), decimals=4),
-                            np.around(np.std(ep_rews), decimals=4),
+            if np.any(done):
+                for i, d in enumerate(done):
+                    ep += 1
+                    ep_rews.append(ep_r[i])
+                    ep_r[i] = 0
+                    if ep == self.evaluate_episodes:
+                        print(
+                            "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                                self.evaluate_episodes,
+                                np.around(np.mean(ep_rews), decimals=4),
+                                np.around(np.std(ep_rews), decimals=4),
+                            )
                         )
-                    )
-                    break
+                        return
 
     @property
     def n_envs(self) -> int:

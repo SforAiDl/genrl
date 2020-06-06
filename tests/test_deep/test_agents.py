@@ -38,7 +38,7 @@ class TestAlgos:
             algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
         )
         trainer.train()
-        # trainer.evaluate()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_ppo1(self):
@@ -49,7 +49,7 @@ class TestAlgos:
             algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
         )
         trainer.train()
-        # trainer.evaluate()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_vpg(self):
@@ -60,7 +60,7 @@ class TestAlgos:
             algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
         )
         trainer.train()
-        # trainer.evaluate()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_ddpg(self):
@@ -71,7 +71,7 @@ class TestAlgos:
             algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
         )
         trainer.train()
-        # trainer.evaluate()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_dqn(self):
@@ -83,7 +83,7 @@ class TestAlgos:
             algo, env, log_mode=["csv"], logdir="./logs", epochs=1, evaluate_episodes=2
         )
         trainer.train()
-        # trainer.evaluate()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
         # Double DQN with prioritized replay buffer

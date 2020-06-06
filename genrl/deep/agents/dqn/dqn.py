@@ -258,14 +258,12 @@ class DQN:
         """
         self.target_model.load_state_dict(self.model.state_dict())
 
-    def select_action(self, state: np.ndarray, explore: bool = True) -> np.ndarray:
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         """
         Epsilon Greedy selection of action
 
         :param state: Observation state
         :type state: int, float, ...
-        :param explore: randomness in action selection
-        :type explore: bool
         :returns: Action based on the state and epsilon value 
         :rtype: int, float, ... 
         """
