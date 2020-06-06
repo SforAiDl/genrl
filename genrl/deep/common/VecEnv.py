@@ -91,7 +91,7 @@ class VecEnv(ABC):
 
     def seed(self, seed):
         """
-        Set seed for reproducability in all environments
+        Set seed for reproducibility in all environments
         """
         [env.seed(seed + idx) for idx, env in enumerate(self.envs)]
 
@@ -138,8 +138,8 @@ class SerialVecEnv(VecEnv):
     :type n_envs: int
     """
 
-    def __init__(self, envs, n_envs=2):
-        super(SerialVecEnv, self).__init__(envs, n_envs)
+    def __init__(self, *args, **kwargs):
+        super(SerialVecEnv, self).__init__(*args, **kwargs)
         self.states = np.zeros(
             (self.n_envs, *self.observation_space.shape),
             dtype=self.observation_space.dtype,
@@ -225,7 +225,7 @@ images in 'human' and returns tiled images in 'rgb_array'
 
 class SubProcessVecEnv(VecEnv):
     """
-    Constructs a wrapper for serial execution through envs.
+    Constructs a wrapper for parallel execution through envs.
 
     :param env: Environment Name. Should be registered with OpenAI Gym.
     :param n_envs: Number of environments
@@ -233,8 +233,8 @@ class SubProcessVecEnv(VecEnv):
     :type n_envs: int
     """
 
-    def __init__(self, env, n_envs=2):
-        super(SubProcessVecEnv, self).__init__(env, n_envs)
+    def __init__(self, *args, **kwargs):
+        super(SubProcessVecEnv, self).__init__(*args, **kwargs)
 
         self.procs = []
         self.parent_conns, self.child_conns = zip(
