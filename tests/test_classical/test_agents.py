@@ -10,7 +10,7 @@ class TestAgents:
         env = gym.make("FrozenLake-v0")
         agent = QLearning(env)
 
-        assert np.any(agent.Q) is False
+        assert np.any(agent.Q) is not True
 
         agent.update((3, 1, 3.1, 4))
         answer = np.zeros((16, 4))
@@ -23,8 +23,8 @@ class TestAgents:
         env = gym.make("FrozenLake-v0")
         agent = SARSA(env)
 
-        assert np.any(agent.Q) is False
-        assert np.any(agent.e) is False
+        assert np.any(agent.Q) is not True
+        assert np.any(agent.e) is not True
 
         agent.update((3, 1, 3.1, 4))
         answer_Q = np.zeros((16, 4))

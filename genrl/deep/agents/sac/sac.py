@@ -431,10 +431,10 @@ class SAC:
             ]
 
             if np.any(done) or np.any(episode_len == self.max_ep_len):
-                for i, di in enumerate(done):
+                for j, di in enumerate(done):
                     if di:
-                        episode_reward[i] = 0
-                        episode_len[i] = 0
+                        episode_reward[j] = 0
+                        episode_len[j] = 0
 
             self.replay_buffer.extend(zip(state, action, reward, next_state, done))
             state = next_state

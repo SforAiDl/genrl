@@ -17,16 +17,23 @@ after_success:
 jobs:
   include:
     #Run tests
+    - stage: Lint Check
+      python: "3.6"
+      install:
+        - pip intall black flake8 isort black
+      script:
+        - flake8 .
+        - black --check .
+        - isort -rc -c .
+      after_success:
+        
     - stage: test
       python: "3.6"
       install: 
         - python setup.py install
-        - pip install codecov
+        - pip install codecov pytest-cov
         - pip install pytest-cov
-        - pip install black
       script:
-        - black --check genrl
-        - black --check tests
         - pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
       
       after_success:
