@@ -138,15 +138,15 @@ False (To be implemented))
                         ep += 1
                         ep_rews.append(ep_r[i])
                         ep_r[i] = 0
-                        if ep == self.evaluate_episodes:
-                            print(
-                                "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                                    self.evaluate_episodes,
-                                    np.around(np.mean(ep_rews), decimals=4),
-                                    np.around(np.std(ep_rews), decimals=4),
-                                )
-                            )
-                            return
+            if ep == self.evaluate_episodes:
+                print(
+                    "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                        self.evaluate_episodes,
+                        np.around(np.mean(ep_rews), decimals=4),
+                        np.around(np.std(ep_rews), decimals=4),
+                    )
+                )
+                return
 
     @property
     def n_envs(self) -> int:
@@ -350,7 +350,7 @@ many steps)
                     # print(self.rewards)
                     self.logger.write(
                         {
-                            "timestep": t,
+                            "timestep": timestep,
                             "Episode": sum(episode),
                             "Episode Reward": np.around(
                                 np.mean(self.rewards), decimals=4
