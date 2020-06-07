@@ -1,9 +1,11 @@
-import torch
-from collections import deque
 import random
-import numpy as np
+from collections import deque
 from typing import Tuple
-from .utils import get_obs_shape, get_action_dim
+
+import numpy as np
+import torch
+
+from .utils import get_action_dim, get_obs_shape
 
 
 class ReplayBuffer:

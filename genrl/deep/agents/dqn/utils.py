@@ -1,10 +1,11 @@
-import torch
 import math
+from typing import List, Tuple
+
+import torch
 import torch.nn as nn
 from torch.autograd import Variable
 
-from genrl.deep.common.utils import mlp, cnn
-from typing import List, Tuple
+from genrl.deep.common.utils import cnn, mlp
 
 
 def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):

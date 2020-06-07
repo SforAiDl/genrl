@@ -1,9 +1,9 @@
-import gym
 import copy
-import numpy as np
 import multiprocessing as mp
-
 from abc import ABC, abstractmethod
+
+import gym
+import numpy as np
 
 
 def worker(parent_conn, child_conn, env):

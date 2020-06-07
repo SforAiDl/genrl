@@ -1,6 +1,8 @@
+from typing import Any, Dict, List
+
 import numpy as np
 from scipy import stats
-from typing import List, Dict, Any
+
 from .bandits import Bandit
 
 
@@ -194,7 +196,9 @@ class EpsGreedyPolicy(BanditPolicy):
         self.reward_hist.append(reward)
         self._regret += max(self.quality) - self.quality[action]
         self.regret_hist.append(self.regret)
-        self.quality[action] += (reward - self.quality[action]) / (self.counts[action] + 1)
+        self.quality[action] += (reward - self.quality[action]) / (
+            self.counts[action] + 1
+        )
         self.counts[action] += 1
 
 
@@ -249,7 +253,8 @@ class UCBPolicy(BanditPolicy):
         :rtype: int
         """
         action = np.argmax(
-            self.quality + self.c * np.sqrt(2 * np.log(timestep + 1) / (self.counts + 1))
+            self.quality
+            + self.c * np.sqrt(2 * np.log(timestep + 1) / (self.counts + 1))
         )
         self.action_hist.append(action)
         return action
@@ -270,7 +275,9 @@ class UCBPolicy(BanditPolicy):
         self.reward_hist.append(reward)
         self._regret += max(self.quality) - self.quality[action]
         self.regret_hist.append(self.regret)
-        self.quality[action] += (reward - self.quality[action]) / (self.counts[action] + 1)
+        self.quality[action] += (reward - self.quality[action]) / (
+            self.counts[action] + 1
+        )
         self.counts[action] += 1
 
 

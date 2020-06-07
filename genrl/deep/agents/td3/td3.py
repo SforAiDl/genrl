@@ -1,19 +1,20 @@
+from copy import deepcopy
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
-import gym
-from copy import deepcopy
 
 from ...common import (
     ReplayBuffer,
-    get_model,
-    save_params,
-    load_params,
     get_env_properties,
+    get_model,
+    load_params,
+    save_params,
     set_seeds,
     venv,
 )
-from typing import Tuple, Union, Dict, Optional, Any
 
 
 class TD3:
@@ -369,7 +370,9 @@ class TD3:
                     self.noise.reset()
 
                 if self.tensorboard_log:
-                    self.writer.add_scalar("episode_reward", np.mean(episode_reward), timestep)
+                    self.writer.add_scalar(
+                        "episode_reward", np.mean(episode_reward), timestep
+                    )
 
                 state, episode_reward, episode_len = (
                     self.env.reset(),

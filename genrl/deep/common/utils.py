@@ -1,11 +1,13 @@
 import os
-import gym
 import random
-import torch
+from typing import Any, Tuple, Union
+
+import gym
 import numpy as np
+import torch
 import torch.nn as nn
-from .VecEnv import venv, VecEnv
-from typing import Tuple, Union, Any
+
+from .VecEnv import VecEnv, venv
 
 
 def get_model(type_: str, name_: str) -> Union:

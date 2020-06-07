@@ -1,1 +1,1 @@
-from genrl.deep.agents import DQN, PPO1, DDPG, VPG, SAC, TD3, A2C  # noqa
+from genrl.deep.agents import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG  # noqa

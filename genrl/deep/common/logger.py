@@ -1,8 +1,8 @@
 import os
 import sys
+from typing import Any, Dict, List
 
 from torch.utils.tensorboard import SummaryWriter
-from typing import List, Dict, Any
 
 
 class Logger:
@@ -24,8 +24,8 @@ class Logger:
                 os.makedirs(self._logdir)
         self._formats = formats
         self.writers = []
-        for format in self.formats:
-            self.writers.append(get_logger_by_name(format)(self.logdir))
+        for ft in self.formats:
+            self.writers.append(get_logger_by_name(ft)(self.logdir))
 
     def write(self, kvs: Dict[str, Any]) -> None:
         """

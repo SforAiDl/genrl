@@ -1,8 +1,10 @@
+from typing import Tuple
+
 from gym import spaces
+
 from .base import BaseActorCritic
 from .policies import MlpPolicy
 from .values import MlpValue
-from typing import Tuple
 
 
 class MlpActorCritic(BaseActorCritic):

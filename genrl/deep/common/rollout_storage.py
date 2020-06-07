@@ -1,14 +1,10 @@
-from typing import (
-    Union,
-    Optional,
-    Generator,
-    NamedTuple,
-)
+from typing import Generator, NamedTuple, Optional, Union
 
-import torch
 import numpy as np
-from genrl.deep.common.utils import get_obs_action_shape
+import torch
 from gym import spaces
+
+from genrl.deep.common.utils import get_obs_action_shape
 
 
 class RolloutBufferSamples(NamedTuple):

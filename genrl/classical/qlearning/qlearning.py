@@ -1,6 +1,7 @@
-import numpy as np
-import gym
 from typing import Tuple
+
+import gym
+import numpy as np
 
 
 class QLearning:

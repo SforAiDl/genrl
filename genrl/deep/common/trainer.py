@@ -1,16 +1,16 @@
+from abc import ABC
+from collections import deque
+from typing import Any, List, Optional, Type, Union
+
+import gym
+import numpy as np
 import torch
 from torchvision import transforms
-import numpy as np
-from collections import deque
-import gym
-from abc import ABC
 
-
-from .utils import set_seeds, save_params
+from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
+from .utils import save_params, set_seeds
 from .VecEnv import venv
-from .buffers import ReplayBuffer, PrioritizedBuffer
-from typing import Union, Type, List, Optional, Any
 
 
 class Trainer(ABC):
@@ -376,7 +376,10 @@ many steps)
 
             # update params for other agents
             else:
-                if timestep >= self.start_update and timestep % self.update_interval == 0:
+                if (
+                    timestep >= self.start_update
+                    and timestep % self.update_interval == 0
+                ):
                     for _ in range(self.update_interval):
                         batch = self.buffer.sample(self.batch_size)
                         states, actions, rewards, next_states, dones = (

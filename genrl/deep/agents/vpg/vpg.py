@@ -1,19 +1,20 @@
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.optim as opt
 from torch.autograd import Variable
-import gym
 
 from ...common import (
-    get_model,
-    save_params,
-    load_params,
-    get_env_properties,
-    set_seeds,
     RolloutBuffer,
+    get_env_properties,
+    get_model,
+    load_params,
+    save_params,
+    set_seeds,
     venv,
 )
-from typing import Tuple, Union, Optional, Any, Dict
 
 
 class VPG:

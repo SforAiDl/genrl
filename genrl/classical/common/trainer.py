@@ -1,9 +1,10 @@
-import numpy as np
+from typing import Any, List, Optional, Tuple
+
 import gym
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .models import get_model_from_name
-from typing import Any, Optional, Tuple, List
 
 
 class Trainer:

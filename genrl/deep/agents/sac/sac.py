@@ -1,14 +1,15 @@
+from copy import deepcopy
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-import gym
-from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from ...common import get_model, ReplayBuffer, save_params, load_params, set_seeds, venv
-from typing import Union, Tuple, Any, Optional, Dict
+from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds, venv
 
 
 class SAC:

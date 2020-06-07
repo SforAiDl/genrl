@@ -1,35 +1,32 @@
 from collections import deque
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Union
 
 import gym
 import numpy as np
-
 import torch
 import torch.optim as opt
 import torchvision.transforms as transforms
 from torch.autograd import Variable
-from copy import deepcopy
 
 from ...common import (
-    ReplayBuffer,
     PrioritizedBuffer,
-    get_model,
-    save_params,
-    load_params,
+    ReplayBuffer,
     get_env_properties,
+    get_model,
+    load_params,
+    save_params,
     set_seeds,
     venv,
 )
-
 from .utils import (
-    DuelingDQNValueMlp,
-    DuelingDQNValueCNN,
-    NoisyDQNValue,
-    NoisyDQNValueCNN,
     CategoricalDQNValue,
     CategoricalDQNValueCNN,
+    DuelingDQNValueCNN,
+    DuelingDQNValueMlp,
+    NoisyDQNValue,
+    NoisyDQNValueCNN,
 )
-
-from typing import Union, Any, Optional, Dict, List
 
 
 class DQN:

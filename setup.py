@@ -1,7 +1,7 @@
+import codecs
 import os
 
-import codecs
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # Basic information
 NAME = "genrl"

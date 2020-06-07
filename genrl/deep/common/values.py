@@ -1,7 +1,9 @@
-from .base import BaseValue
-from .utils import mlp, cnn
-from typing import Tuple, Union, Type
+from typing import Tuple, Type, Union
+
 import numpy as np
+
+from .base import BaseValue
+from .utils import cnn, mlp
 
 
 def _get_val_model(
