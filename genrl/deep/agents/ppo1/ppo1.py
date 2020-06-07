@@ -10,9 +10,9 @@ from ...common import (
     load_params,
     get_env_properties,
     set_seeds,
-    RolloutBuffer,
-    venv,
+    RolloutBuffer
 )
+from ....environments import VecEnv
 
 from typing import Union, Any, Optional, Tuple, Dict
 
@@ -66,7 +66,7 @@ class PPO1:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         timesteps_per_actorbatch: int = 256,
         gamma: float = 0.99,
         clip_param: float = 0.2,

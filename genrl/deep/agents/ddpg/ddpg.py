@@ -12,15 +12,15 @@ from ...common import (
     load_params,
     get_env_properties,
     set_seeds,
-    venv,
 )
+from ....environments import VecEnv
 from typing import Optional, Any, Tuple, Union, Dict
 
 
 class DDPG:
     """
     Deep Deterministic Policy Gradient algorithm (DDPG)
-    
+
     Paper: https://arxiv.org/abs/1509.02971
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
@@ -76,7 +76,7 @@ class DDPG:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 100,
@@ -196,8 +196,8 @@ class DDPG:
         :param deterministic: Action selection type
         :type state: int, float, ...
         :type deterministic: bool
-        :returns: Action based on the state and epsilon value 
-        :rtype: int, float, ... 
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
         """
         with torch.no_grad():
             action, _ = self.ac.get_action(

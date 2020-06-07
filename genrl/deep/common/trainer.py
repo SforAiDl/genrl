@@ -1,14 +1,9 @@
 from abc import ABC
-from torchvision import transforms
 import torch
 import numpy as np
-from collections import deque
-import gym
-
 
 from .utils import set_seeds, save_params
 from .logger import Logger
-from .VecEnv import venv
 from .buffers import ReplayBuffer, PrioritizedBuffer
 from typing import Union, Type, List, Optional, Any
 

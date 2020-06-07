@@ -11,8 +11,8 @@ from ...common import (
     load_params,
     get_env_properties,
     set_seeds,
-    venv,
 )
+from ....environments import VecEnv
 from typing import Tuple, Union, Dict, Optional, Any
 
 
@@ -88,7 +88,7 @@ class TD3:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 100,

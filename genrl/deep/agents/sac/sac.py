@@ -7,14 +7,21 @@ from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from ...common import get_model, ReplayBuffer, save_params, load_params, set_seeds, venv
+from ...common import (
+    get_model,
+    ReplayBuffer,
+    save_params,
+    load_params,
+    set_seeds
+)
+from ....environments import VecEnv
 from typing import Union, Tuple, Any, Optional, Dict
 
 
 class SAC:
     """
     Soft Actor Critic algorithm (SAC)
-    
+
     Paper: https://arxiv.org/abs/1812.05905
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
@@ -68,7 +75,7 @@ class SAC:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 256,
@@ -224,7 +231,7 @@ class SAC:
     def sample_action(self, state: np.ndarray) -> np.ndarray:
         """
         sample action normal distribution parameterized by policy network
-        
+
         :param state: Observation state
         :type: int, float, ...
         :returns: action

@@ -10,7 +10,6 @@ from ...common import (
     save_params,
     load_params,
     set_seeds,
-    venv,
     RolloutBuffer
 )
 from typing import Union, Tuple, Any, Optional, Dict
@@ -68,7 +67,7 @@ class A2C:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: gym.Env,
         gamma: float = 0.99,
         actor_batch_size: int = 64,
         lr_actor: float = 0.01,

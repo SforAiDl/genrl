@@ -4,7 +4,7 @@ import random
 import torch
 import numpy as np
 import torch.nn as nn
-from .VecEnv import venv, VecEnv
+from ...environments import VecEnv
 from typing import Tuple, Union, Any
 
 
@@ -142,7 +142,7 @@ def load_params(algo: Any) -> None:
         raise Exception("Invalid file name")
 
 
-def get_env_properties(env: Union[gym.Env, venv]) -> (Tuple[int]):
+def get_env_properties(env: Union[gym.Env, VecEnv]) -> (Tuple[int]):
     """
     Finds important properties of environment
 
@@ -169,7 +169,7 @@ discreteness of action space and action limit (highest action value)
     return state_dim, action_dim, discrete, action_lim
 
 
-def set_seeds(seed: int, env: Union[gym.Env, venv] = None) -> None:
+def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
     """
     Sets seeds for reproducibility
 
@@ -189,6 +189,12 @@ def set_seeds(seed: int, env: Union[gym.Env, venv] = None) -> None:
 
 def get_obs_action_shape(obs, action):
     """
+    Get the shapes of observation and action
+
+    :param obs: State space of environment
+    :param action: Action
+    :type obs: gym.Space
+    :type action: np.array
     """
     if isinstance(obs, gym.spaces.Discrete):
         return 1, 1
@@ -201,7 +207,8 @@ def get_obs_action_shape(obs, action):
 def get_obs_shape(observation_space):
     """
     Get the shape of the observation.
-    :param observation_space: Observation space 
+
+    :param observation_space: Observation space
     :type observation_space: gym.spaces.Space
     :returns: The observation space's shape
     :rtype: (Tuple[int, ...])

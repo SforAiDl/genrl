@@ -7,7 +7,7 @@ from typing import (
 
 import torch
 import numpy as np
-from genrl.deep.common.utils import get_obs_action_shape
+from .utils import get_obs_action_shape
 from gym import spaces
 
 

@@ -1,7 +1,5 @@
-import pytest
 import torch
 import torch.nn as nn
-import gym
 import os
 from shutil import rmtree
 
@@ -10,11 +8,10 @@ from genrl.deep.common import (
     MlpPolicy,
     MlpValue,
     CNNValue,
-    venv,
-    OnPolicyTrainer,
 )
 from genrl.deep.common.utils import *
-from genrl import PPO1
+from genrl.environments import VectorEnv
+from genrl import PPO1, OnPolicyTrainer
 
 
 class TestUtils:
@@ -71,10 +68,10 @@ class TestUtils:
         """
         test saving algorithm state dict
         """
-        env = venv("CartPole-v0", 1)
+        env = VectorEnv("CartPole-v0", 1)
         algo = PPO1("mlp", env, epochs=1, save_model="test_ckpt")
         # algo.learn()
-        trainer = OnPolicyTrainer(algo, env, ["stdout"], save_interval=1, epochs=1)
+        trainer = OnPolicyTrainer(algo, ["stdout"], save_interval=1, epochs=1)
         trainer.train()
 
         assert len(os.listdir("test_ckpt/PPO1_CartPole-v0")) != 0
@@ -83,7 +80,7 @@ class TestUtils:
         """
         test loading algorithm parameters
         """
-        env = venv("CartPole-v0", 1)
+        env = VectorEnv("CartPole-v0", 1)
         algo = PPO1(
             "mlp", env, epochs=1, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",
         )
@@ -94,14 +91,14 @@ class TestUtils:
         """
         test getting environment properties
         """
-        env = venv("CartPole-v0", 1)
+        env = VectorEnv("CartPole-v0", 1)
 
         state_dim, action_dim, discrete, _ = get_env_properties(env)
         assert state_dim == 4
         assert action_dim == 2
         assert discrete == True
 
-        env = venv("Pendulum-v0", 1)
+        env = VectorEnv("Pendulum-v0", 1)
 
         state_dim, action_dim, discrete, action_lim = get_env_properties(env)
         assert state_dim == 3

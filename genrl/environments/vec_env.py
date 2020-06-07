@@ -1,9 +1,8 @@
-import gym
+from abc import ABC, abstractmethod
+
+import multiprocessing as mp
 import copy
 import numpy as np
-import multiprocessing as mp
-
-from abc import ABC, abstractmethod
 
 
 def worker(parent_conn, child_conn, env):
@@ -40,23 +39,6 @@ def worker(parent_conn, child_conn, env):
             raise NotImplementedError
 
 
-def create_envs(env_name, n_envs):
-    """
-    Helper function to return list of environments
-
-    :param env_name: Name of environment to be vectorised
-    :param n_envs: Number of environments per VecEnv
-    :type env_name: string
-    :type n_envs: int
-    :returns: Multiple of the same gym environment
-    :rtype: list
-    """
-    envs = []
-    for i in range(n_envs):
-        envs.append(env)
-    return envs
-
-
 class VecEnv(ABC):
     """
     Base class for multiple environments.
@@ -67,11 +49,17 @@ class VecEnv(ABC):
     :type n_envs: int
     """
 
-    def __init__(self, env, n_envs=2):
-        self.envs = create_envs(env, n_envs)
+    def __init__(self, envs, n_envs=2):
+        self.envs = envs
+        self.env = envs[0]
         self._n_envs = len(self.envs)
-        self.observation_space = self.env.observation_space
-        self.action_space = self.env.action_space
+
+    def __getattr__(self, name):
+        """
+        All other calls would go to base env
+        """
+        env = super(VecEnv, self).__getattribute__("env")
+        return getattr(env, name)
 
     def __iter__(self):
         """
@@ -302,20 +290,3 @@ class SubProcessVecEnv(VecEnv):
             parent_conn.send(("close", None))
         for proc in self.procs:
             proc.join()
-
-
-def venv(env, n_envs, parallel=False):
-    """
-    Chooses the kind of Vector Environment that is required
-
-    :param env: Gym environment to be vectorised
-    :param n_envs: Number of environments
-    :param parallel: True if we want environments to run parallely and \
-subprocesses, False if we want environments to run serially one after the other
-    :returns: Vector Environment
-    :rtype: VecEnv
-    """
-    if parallel:
-        return SubProcessVecEnv(env, n_envs)
-    else:
-        return SerialVecEnv(env, n_envs)

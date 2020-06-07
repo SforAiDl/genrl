@@ -11,8 +11,8 @@ from ...common import (
     get_env_properties,
     set_seeds,
     RolloutBuffer,
-    venv,
 )
+from ....environments import VecEnv
 from typing import Tuple, Union, Optional, Any, Dict
 
 
@@ -33,13 +33,14 @@ class VPG:
     :param save_interval: Number of episodes between saves of models
     :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
-    :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
+    :param device: device to use for tensor operations; \
+'cpu' for cpu and 'cuda' for gpu
     :param run_num: if model has already been trained
-    :param save_model: True if user wants to save 
+    :param save_model: True if user wants to save
     :param load_model: model loading path
     :param rollout_size: Rollout Buffer Size
     :type network_type: str
-    :type env: Gym environment
+    :type env: Gym environment(s)
     :type timesteps_per_actorbatch: int
     :type gamma: float
     :type actor_batchsize: int
@@ -59,7 +60,7 @@ class VPG:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         timesteps_per_actorbatch: int = 1000,
         gamma: float = 0.99,
         actor_batch_size: int = 4,

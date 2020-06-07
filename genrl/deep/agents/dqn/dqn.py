@@ -14,8 +14,9 @@ from ...common import (
     load_params,
     get_env_properties,
     set_seeds,
-    venv,
 )
+
+from ....environments import VecEnv
 
 from .utils import (
     DuelingDQNValueMlp,
@@ -86,7 +87,7 @@ class DQN:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         double_dqn: bool = False,
         dueling_dqn: bool = False,
         noisy_dqn: bool = False,
@@ -295,13 +296,13 @@ class DQN:
         if self.network_type == "cnn":
             if self.framestack is not None:
                 state = state.view(
-                    self.batch_size,
+                    -1,
                     self.framestack,
                     self.env.screen_size,
                     self.env.screen_size,
                 )
                 next_state = next_state.view(
-                    self.batch_size,
+                    -1,
                     self.framestack,
                     self.env.screen_size,
                     self.env.screen_size,

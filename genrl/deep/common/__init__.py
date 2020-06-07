@@ -41,9 +41,3 @@ from genrl.deep.common.values import (              # noqa
     get_value_from_name,
 )
 from genrl.deep.common.rollout_storage import RolloutBuffer            # noqa
-from genrl.deep.common.VecEnv import (              # noqa
-    VecEnv,
-    SerialVecEnv,
-    SubProcessVecEnv,
-    venv
-)
