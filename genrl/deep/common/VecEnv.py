@@ -51,7 +51,7 @@ def create_envs(env_name, n_envs):
     :rtype: list
     """
     envs = []
-    for i in range(n_envs):
+    for _i in range(n_envs):
         envs.append(gym.make(env_name))
     return envs
 
@@ -174,17 +174,18 @@ class SerialVecEnv(VecEnv):
         """
         Renders all envs in a tiles format similar to baselines
 
-        :param mode: Can either be 'human' or 'rgb_array'. Displays tiled \
-images in 'human' and returns tiled images in 'rgb_array'
+        :param mode: (Can either be 'human' or 'rgb_array'. Displays tiled
+images in 'human' and returns tiled images in 'rgb_array')
         :type mode: string
         """
         images = np.asarray(self.images())
-        N, H, W, C = images.shape
-        newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
-        images = np.array(list(images) + [images[0] * 0 for _ in range(N, newH * newW)])
-        out_image = images.reshape(newH, newW, H, W, C)
+        batch, height, width, channel = images.shape
+        newwidth, newheight = int(np.ceil(np.sqrt(width))), int(np.ceil(np.sqrt(height)))
+        images = np.array(
+            list(images) + [images[0] * 0 for _ in range(batch, newheight * newwidth)])
+        out_image = images.reshape(newheight, newwidth, height, width, channel)
         out_image = out_image.transpose(0, 2, 1, 3, 4)
-        out_image = out_image.reshape(newH * H, newW * W, C)
+        out_image = out_image.reshape(newheight * height, newwidth * width, channel)
         if mode == "human":
             import cv2  # noqa
 
@@ -291,8 +292,8 @@ def venv(env, n_envs, parallel=False):
 
     :param env: Gym environment to be vectorised
     :param n_envs: Number of environments
-    :param parallel: True if we want environments to run parallely and \
-subprocesses, False if we want environments to run serially one after the other
+    :param parallel: (True if we want environments to run parallely and
+subprocesses, False if we want environments to run serially one after the other)
     :returns: Vector Environment
     :rtype: VecEnv
     """

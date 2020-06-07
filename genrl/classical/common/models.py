@@ -56,11 +56,11 @@ class TabularModel:
         """
         reward = self.r_model[state, action]
         next_state = self.s_model[state, action]
-        return r, s_
+        return reward, next_state
 
     def is_empty(self) -> bool:
         """
-        Check if the model has been updated or not 
+        Check if the model has been updated or not
 
         :returns: True if model not updated yet
         :rtype: bool

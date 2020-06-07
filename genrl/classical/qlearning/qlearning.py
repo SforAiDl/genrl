@@ -13,7 +13,7 @@ class QLearning:
     :param epsilon: exploration coefficient
     :param gamma: discount factor
     :param lr: learning rate
-    :type env: Gym environment 
+    :type env: Gym environment
     :type epsilon: float
     :type gamma: float
     :type lr: float
@@ -49,7 +49,7 @@ class QLearning:
         """
         Update the Q table
 
-        :param transition: step taken in the environment 
+        :param transition: step taken in the environment
         """
         state, action, reward, next_state = transition
 

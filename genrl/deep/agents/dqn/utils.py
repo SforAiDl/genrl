@@ -1,7 +1,6 @@
 import torch
 import math
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.autograd import Variable
 
 from genrl.deep.common.utils import mlp, cnn
@@ -13,7 +12,7 @@ def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):
     Generate Noisy MLP model given sizes of each fully connected and noisy layers
 
     :param fc_layers: list of fc layers
-    :param noisy_layers: list of noisy layers 
+    :param noisy_layers: list of noisy layers
     :type fc_layers: list
     :type noisy_layers: list
     :returns: Noisy model
@@ -31,14 +30,14 @@ def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):
 
 class DuelingDQNValueMlp(nn.Module):
     """
-    Class for Dueling DQN's MLP Value function 
+    Class for Dueling DQN's MLP Value function
 
     :param state_dim: Observation space
     :param action_dim: Action space
     :param hidden: Number of hidden Nodes
     :type state_dim: int, float, ...
     :type action_dim: int, float, ...
-    :type hidden: tuple 
+    :type hidden: tuple
     """
 
     def __init__(self, state_dim: int, action_dim: int, hidden: Tuple = (128, 128)):
@@ -63,11 +62,11 @@ class DuelingDQNValueMlp(nn.Module):
 
 class DuelingDQNValueCNN(nn.Module):
     """
-    Class for Dueling DQN's CNN Value function 
+    Class for Dueling DQN's CNN Value function
 
     :param action_dim: Action space
     :param history_length: History length that you want
-    :param fc_layers: no of units in fc layers 
+    :param fc_layers: no of units in fc layers
     :type action_dim: int, float, ...
     :type history_length: int
     :type fc_layers: tuple
@@ -99,10 +98,10 @@ class NoisyLinear(nn.Module):
 
     :param in_features: input features for the network
     :param out_features: output features for the network
-    :param std_init: Used for initializing weights 
+    :param std_init: Used for initializing weights
     :type in_features: int
     :type out_features: int
-    :type std_init: float 
+    :type std_init: float
     """
 
     def __init__(self, in_features: int, out_features: int, std_init: float = 0.4):
@@ -134,11 +133,11 @@ class NoisyLinear(nn.Module):
         else:
             weight = self.weight_mu
             bias = self.bias_mu
-        return F.linear(state, weight, bias)
+        return nn.functional.linear(state, weight, bias)
 
     def reset_parameters(self) -> None:
         """
-        Reset the parameters 
+        Reset the parameters
         """
         mu_range = 1 / math.sqrt(self.weight_mu.size(1))
 
@@ -174,9 +173,9 @@ class NoisyDQNValue(nn.Module):
     :param action_dim: Action space
     :param fc_layers: no of units in fc layers
     :param noisy_layers: no of units in noisy layers
-    :type state_dim: int, float, ... 
+    :type state_dim: int, float, ...
     :type action_dim: int, float, ...
-    :type fc_layers: tuple  
+    :type fc_layers: tuple
     :type noisy_layers: tuple
     """
 
@@ -212,7 +211,7 @@ class NoisyDQNValueCNN(nn.Module):
     :param noisy_layers: no of units in noisy layers
     :type action_dim: int, float, ...
     :type history_length: int
-    :type fc_layers: tuple  
+    :type fc_layers: tuple
     :type noisy_layers: tuple
     """
 
@@ -252,10 +251,10 @@ class CategoricalDQNValue(nn.Module):
     :param num_atoms: Number of atoms in the Categorical network
     :param fc_layers: no of units in fc layers
     :param noisy_layers: no of units in noisy layers
-    :type state_dim: int, float, ... 
+    :type state_dim: int, float, ...
     :type action_dim: int, float, ...
     :type num_atoms: int
-    :type fc_layers: tuple  
+    :type fc_layers: tuple
     :type noisy_layers: tuple
     """
 
@@ -280,7 +279,7 @@ class CategoricalDQNValue(nn.Module):
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         features = self.model(state)
-        dist = F.softmax(features.view(-1, self.num_atoms)).view(
+        dist = nn.functional.softmax(features.view(-1, self.num_atoms)).view(
             -1, self.action_dim, self.num_atoms
         )
         return dist
@@ -303,7 +302,7 @@ class CategoricalDQNValueCNN(nn.Module):
     :type action_dim: int, float, ...
     :type num_atoms: int
     :type history_length: int
-    :type fc_layers: tuple  
+    :type fc_layers: tuple
     :type noisy_layers: tuple
     """
 
@@ -330,7 +329,7 @@ class CategoricalDQNValueCNN(nn.Module):
         x = self.conv(x)
         x = x.view(x.size(0), -1)
         x = self.model(x)
-        x = F.softmax(x.view(-1, self.num_atoms)).view(
+        x = nn.functional.softmax(x.view(-1, self.num_atoms)).view(
             -1, self.action_dim, self.num_atoms
         )
         return x

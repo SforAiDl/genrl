@@ -21,7 +21,7 @@ class TD3:
     Twin Delayed DDPG
 
     Paper: https://arxiv.org/abs/1509.02971
-    
+
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
@@ -140,7 +140,7 @@ class TD3:
 
     def create_model(self) -> None:
         state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete == True:
+        if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
             )

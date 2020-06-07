@@ -220,7 +220,7 @@ class UCBPolicy(BanditPolicy):
     def c(self) -> float:
         """
         Get the confidence level which weights the exploration term
-        
+
         :returns: Confidence level which controls degree of exploration
         :rtype: float
         """
@@ -466,7 +466,7 @@ class BayesianUCBPolicy(BanditPolicy):
     def c(self) -> float:
         """
         Get the confidence level which weights the exploration term
-        
+
         :returns: Confidence level which controls degree of exploration
         :rtype: float
         """

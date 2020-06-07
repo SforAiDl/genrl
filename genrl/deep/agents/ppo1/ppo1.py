@@ -22,7 +22,7 @@ class PPO1:
     Proximal Policy Optimization algorithm (Clipped policy).
 
     Paper: https://arxiv.org/abs/1707.06347
-    
+
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param timesteps_per_actorbatch: (int) timesteps per actor per update
@@ -122,9 +122,12 @@ class PPO1:
         self.policy_new = self.policy_new.to(self.device)
         self.policy_old = self.policy_old.to(self.device)
 
-        self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
-            self.device
-        )
+        self.value_fn = get_model(
+            "v",
+            self.network_type)(
+            state_dim,
+            action_dim).to(
+            self.device)
 
         # load paramaters if already trained
         if self.load_model is not None:
@@ -132,7 +135,10 @@ class PPO1:
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights", "save_model"]:
+                if key not in [
+                    "policy_weights",
+                    "value_weights",
+                        "save_model"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
@@ -141,7 +147,8 @@ class PPO1:
         self.optimizer_policy = opt.Adam(
             self.policy_new.parameters(), lr=self.lr_policy
         )
-        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
+        self.optimizer_value = opt.Adam(
+            self.value_fn.parameters(), lr=self.lr_value)
 
         self.traj_reward = []
         self.policy_old.policy_hist = Variable(torch.Tensor()).to(self.device)
@@ -155,8 +162,10 @@ class PPO1:
         state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on policy_old output
-        action, c_old = self.policy_old.get_action(Variable(state), deterministic=False)
-        _, c_new = self.policy_new.get_action(Variable(state), deterministic=False)
+        action, c_old = self.policy_old.get_action(
+            Variable(state), deterministic=False)
+        _, c_new = self.policy_new.get_action(
+            Variable(state), deterministic=False)
         val = self.value_fn.get_value(Variable(state))
 
         # store policy probs and value function for current traj
@@ -196,7 +205,9 @@ class PPO1:
         advantages = Variable(returns) - Variable(self.value_fn.value_hist)
 
         # compute policy and value loss
-        ratio = torch.div(self.policy_new.policy_hist, self.policy_old.policy_hist)
+        ratio = torch.div(
+            self.policy_new.policy_hist,
+            self.policy_old.policy_hist)
         clipping = (
             torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
             .mul(advantages)
@@ -213,8 +224,10 @@ class PPO1:
         ).unsqueeze(0)
 
         # store traj loss values in epoch loss tensors
-        self.policy_new.loss_hist = torch.cat([self.policy_new.loss_hist, loss_policy])
-        self.value_fn.loss_hist = torch.cat([self.value_fn.loss_hist, loss_value])
+        self.policy_new.loss_hist = torch.cat(
+            [self.policy_new.loss_hist, loss_policy])
+        self.value_fn.loss_hist = torch.cat(
+            [self.value_fn.loss_hist, loss_value])
 
         # clear traj history
         self.traj_reward = []
@@ -252,10 +265,10 @@ class PPO1:
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
-            for i in range(self.actor_batch_size):
+            for _i in range(self.actor_batch_size):
                 state = self.env.reset()
                 done = False
-                for t in range(self.timesteps_per_actorbatch):
+                for _t in range(self.timesteps_per_actorbatch):
                     action = self.select_action(state)
                     state, reward, done, _ = self.env.step(action)
 
@@ -267,7 +280,8 @@ class PPO1:
                     if done:
                         break
 
-                epoch_reward += np.sum(self.traj_reward) / self.actor_batch_size
+                epoch_reward += (np.sum(self.traj_reward) /
+                                 self.actor_batch_size)
                 self.get_traj_loss()
 
             self.update(episode)
@@ -281,9 +295,9 @@ class PPO1:
                 self.policy_old.load_state_dict(self.policy_new.state_dict())
 
             if self.save_model is not None:
-                if epoch % self.save_interval == 0:
+                if episode % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, epoch)
+                    self.save(self, episode)
                     print("Saved current model")
 
         self.env.close()

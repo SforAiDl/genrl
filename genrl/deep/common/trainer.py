@@ -24,8 +24,8 @@ class Trainer(ABC):
     :param save_interval: Model to save in each of these many timesteps
     :param render: Should the Environment render
     :param max_ep_len: Max Episode Length
-    :param distributed: True if distributed training is enabled, else \
-False (To be implemented)
+    :param distributed: (True if distributed training is enabled, else
+False (To be implemented))
     :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
@@ -135,11 +135,9 @@ False (To be implemented)
                 if ep == self.evaluate_episodes:
                     print(
                         "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                            self.evaluate_episodes,
-                            np.around(np.mean(ep_rews), decimals=4),
-                            np.around(np.std(ep_rews), decimals=4),
-                        )
-                    )
+                            self.evaluate_episodes, np.around(
+                                np.mean(ep_rews), decimals=4), np.around(
+                                np.std(ep_rews), decimals=4), ))
                     break
 
     @property
@@ -162,8 +160,8 @@ class OffPolicyTrainer(Trainer):
     :param save_interval: Model to save in each of these many timesteps
     :param render: Should the Environment render
     :param max_ep_len: Max Episode Length
-    :param distributed: Should distributed training be enabled? \
-(To be implemented)
+    :param distributed: (Should distributed training be enabled?
+(To be implemented))
     :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
@@ -172,10 +170,10 @@ class OffPolicyTrainer(Trainer):
     :param batch_size: Size of batch
     :param seed: Set seed for reproducibility
     :param deterministic_actions: Take deterministic actions during training.
-    :param warmup_steps: Observe the environment for these many steps \
-with randomly sampled actions to store in buffer.
-    :param start_update: Starting updating the policy after these \
-many steps
+    :param warmup_steps: (Observe the environment for these many steps 
+with randomly sampled actions to store in buffer.)
+    :param start_update: (Starting updating the policy after these
+many steps)
     :param update_interval: Update model policies after number of steps.
     :type agent: object
     :type env: object
@@ -302,7 +300,8 @@ many steps
                     action = self.env.action_space.sample()
                 else:
                     if self.deterministic_actions:
-                        action = self.agent.select_action(state, deterministic=True)
+                        action = self.agent.select_action(
+                            state, deterministic=True)
                     else:
                         action = self.agent.select_action(state)
 
@@ -318,7 +317,8 @@ many steps
             if self.agent.__class__.__name__ == "DQN" and self.network_type == "cnn":
                 self.state_history.append(self.transform(next_state))
                 phi_next_state = torch.stack(list(self.state_history), dim=1)
-                self.buffer.push((phi_state, action, reward, phi_next_state, done))
+                self.buffer.push(
+                    (phi_state, action, reward, phi_next_state, done))
                 phi_state = phi_next_state
             else:
                 self.buffer.push((state, action, reward, next_state, done))
@@ -389,8 +389,8 @@ class OnPolicyTrainer(Trainer):
     :param save_interval: Model to save in each of these many timesteps
     :param render: Should the Environment render
     :param max_ep_len: Max Episode Length
-    :param distributed: Should distributed training be enabled? \
-(To be implemented)
+    :param distributed: (Should distributed training be enabled?
+(To be implemented))
     :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
@@ -468,14 +468,15 @@ class OnPolicyTrainer(Trainer):
 
             epoch_reward = 0
 
-            for i in range(self.agent.actor_batch_size):
+            for _i in range(self.agent.actor_batch_size):
 
                 state = self.env.reset()
                 done = False
 
-                for t in range(self.agent.timesteps_per_actorbatch):
+                for _t in range(self.agent.timesteps_per_actorbatch):
                     if self.deterministic_actions:
-                        action = self.agent.select_action(state, deterministic=True)
+                        action = self.agent.select_action(
+                            state, deterministic=True)
                     else:
                         action = self.agent.select_action(state)
                     state, reward, done, _ = self.env.step(np.array(action))
@@ -488,9 +489,8 @@ class OnPolicyTrainer(Trainer):
                     if done:
                         break
 
-                epoch_reward += (
-                    np.sum(self.agent.traj_reward) / self.agent.actor_batch_size
-                )
+                epoch_reward += (np.sum(self.agent.traj_reward) /
+                                 self.agent.actor_batch_size)
                 self.agent.get_traj_loss()
 
             if self.agent.__class__.__name__ == "PPO1":
@@ -503,17 +503,17 @@ class OnPolicyTrainer(Trainer):
             if episode % self.log_interval == 0:
                 self.logger.write(
                     {
-                        "Episode": episode,
-                        "Reward": np.around(epoch_reward, decimals=4),
-                        "Timestep": (i * episode * self.agent.timesteps_per_actorbatch),
-                    }
-                )
+                        "Episode": episode, "Reward": np.around(
+                            epoch_reward, decimals=4), "Timestep": (
+                            i * episode * self.agent.timesteps_per_actorbatch), })
 
             if self.save_interval != 0 and episode % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
                 save_params(
-                    self.agent, i * episode * self.agent.timesteps_per_actorbatch
-                )
+                    self.agent,
+                    i *
+                    episode *
+                    self.agent.timesteps_per_actorbatch)
 
         self.env.close()
         self.logger.close()

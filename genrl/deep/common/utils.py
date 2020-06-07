@@ -14,8 +14,8 @@ def get_model(type_: str, name_: str) -> Union:
     Utility to get the class of required function
 
     :param type_: "ac" for Actor Critic, "v" for Value, "p" for Policy
-    :param name_: Name of the specific structure of model. \
-Eg. "mlp" or "cnn"
+    :param name_: Name of the specific structure of model. (
+Eg. "mlp" or "cnn")
     :type type_: string
     :type name_: string
     :returns: Required class. Eg. MlpActorCritic
@@ -43,8 +43,8 @@ def mlp(sizes: Tuple, sac: bool = False):
     :param sac: True if Soft Actor Critic is being used, else False
     :type sizes: tuple or list
     :type sac: bool
-    :returns: Neural Network with fully-connected linear layers and \
-activation layers
+    :returns: (Neural Network with fully-connected linear layers and
+activation layers)
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
@@ -61,8 +61,8 @@ def cnn(
     in_size: int = 84,
 ) -> (Tuple):
     """
-    Generates a CNN model given input dimensions, channels, kernel_sizes and \
-strides
+    (Generates a CNN model given input dimensions, channels, kernel_sizes and
+strides)
 
     :param channels: Input output channels before and after each convolution
     :param kernel_sizes: Kernel sizes for each convolution
@@ -72,8 +72,8 @@ strides
     :type kernel_sizes: tuple
     :type strides: tuple
     :type in_size: int
-    :returns: Convolutional Neural Network with convolutional layers and \
-activation layers
+    :returns: (Convolutional Neural Network with convolutional layers and
+activation layers)
     """
     cnn_layers = []
     output_size = in_size
@@ -114,15 +114,13 @@ def save_params(algo: Any, timestep: int) -> None:
         elif list(os.scandir(path)) == []:
             run_num = 0
         else:
-            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
-                -1
-            ].path
-            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
+            last_path = sorted(os.scandir(path),
+                               key=lambda d: d.stat().st_mtime)[-1].path
+            run_num = int(last_path[len(path) + 1:].split("-")[0]) + 1
         algo.run_num = run_num
 
-    torch.save(
-        algo.get_hyperparams(), "{}/{}-log-{}.pt".format(path, run_num, timestep)
-    )
+    torch.save(algo.get_hyperparams(),
+               "{}/{}-log-{}.pt".format(path, run_num, timestep))
 
 
 def load_params(algo: Any) -> None:
@@ -147,7 +145,7 @@ def get_env_properties(env: Union[gym.Env, venv]) -> (Tuple[int]):
     :param env: Environment that the agent is interacting with
     :type env: Gym Environment
 
-    :returns: State space dimensions, Action space dimensions, \
+    :returns: (State space dimensions, Action space dimensions,
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """

@@ -19,9 +19,9 @@ from typing import Tuple, Union, Optional, Any, Dict
 class VPG:
     """
     Vanilla Policy Gradient algorithm
-    
+
     Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
-    
+
     :param network_type: The deep neural network layer types ['mlp']
     :param env: The environment to learn from
     :param timesteps_per_actorbatch: timesteps per actor per update
@@ -35,7 +35,7 @@ class VPG:
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
     :param run_num: if model has already been trained
-    :param save_model: True if user wants to save 
+    :param save_model: True if user wants to save
     :param load_model: model loading path
     :type network_type: str
     :type env: Gym environment
@@ -115,7 +115,7 @@ class VPG:
 
     def create_model(self) -> None:
         """
-        Initialize the actor and critic networks 
+        Initialize the actor and critic networks
         """
         state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
         # Instantiate networks and optimizers
@@ -147,13 +147,13 @@ class VPG:
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
         """
-        Select action for the given state 
+        Select action for the given state
 
         :param state: State for which action has to be sampled
-        :param deterministic: Whether the action is deterministic or not 
+        :param deterministic: Whether the action is deterministic or not
         :type state: int, float, ...
         :type deterministic: bool
-        :returns: The action 
+        :returns: The action
         :rtype: int, float, ...
         """
         state = Variable(torch.as_tensor(state).float().to(self.device))
@@ -171,15 +171,15 @@ class VPG:
 
     def get_traj_loss(self) -> None:
         """
-        Calculates the loss for the trajectory 
+        Calculates the loss for the trajectory
         """
-        disc_R = 0
+        disc_r = 0
         returns = []
 
         # calculate discounted return
         for reward in self.traj_reward[::-1]:
-            disc_R = reward + self.gamma * disc_R
-            returns.insert(0, disc_R)
+            disc_r = reward + self.gamma * disc_r
+            returns.insert(0, disc_r)
 
         # advantage estimation
         returns = torch.FloatTensor(returns).to(self.device)
@@ -205,7 +205,7 @@ class VPG:
         """
         Update the policy and take the step for the optimizer
 
-        :param episode: Episode number 
+        :param episode: Episode number
         :type episode: int
         """
         # mean of all traj losses in single epoch
@@ -234,10 +234,10 @@ class VPG:
         # training loop
         for episode in range(self.epochs):
             epoch_reward = 0
-            for i in range(self.actor_batch_size):
+            for _i in range(self.actor_batch_size):
                 state = self.env.reset()
                 done = False
-                for t in range(self.timesteps_per_actorbatch):
+                for _t in range(self.timesteps_per_actorbatch):
                     action = Variable(self.select_action(state, deterministic=False))
                     state, reward, done, _ = self.env.step(action.item())
 
@@ -260,9 +260,9 @@ class VPG:
                     self.writer.add_scalar("reward", epoch_reward, episode)
 
             if self.save_model is not None:
-                if epoch % self.save_interval == 0:
+                if episode % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, epoch)
+                    self.save(self, episode)
                     print("Saved current model")
 
         self.env.close()

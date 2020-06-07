@@ -35,11 +35,18 @@ class SARSA:
         self.gamma = gamma
         self.lr = lr
 
-        self.Q = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.Q = np.zeros(
+            (self.env.observation_space.n,
+             self.env.action_space.n))
 
-        self.e = np.zeros((self.env.observation_space.n, self.env.action_space.n))
+        self.e = np.zeros(
+            (self.env.observation_space.n,
+             self.env.action_space.n))
 
-    def get_action(self, state: np.ndarray, explore: bool = True) -> np.ndarray:
+    def get_action(
+            self,
+            state: np.ndarray,
+            explore: bool = True) -> np.ndarray:
         """
         Epsilon greedy selection of epsilon in the explore phase
 
@@ -59,15 +66,18 @@ class SARSA:
         """
         Update the Q table and e values
 
-        :param transition: step taken in the envrionment 
+        :param transition: step taken in the envrionment
         """
         state, action, reward, next_state = transition
 
         next_action = self.get_action(next_state)
-        delta = reward + self.gamma * self.Q[next_state, next_action] - self.Q[state, action]
+        delta = reward + self.gamma * (
+            self.Q[next_state, next_action] - self.Q[state, action])
         self.e[state, action] += 1
 
         for _si in range(self.env.observation_space.n):
             for _ai in range(self.env.action_space.n):
-                self.Q[state, action] += self.lr * delta * self.e[state, action]
-                self.e[state, action] = self.gamma * self.lmbda * self.e[state, action]
+                self.Q[state, action] += self.lr * (
+                    delta * self.e[state, action])
+                self.e[state, action] = self.gamma * (
+                    self.lmbda * self.e[state, action])

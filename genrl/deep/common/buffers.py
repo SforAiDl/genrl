@@ -27,16 +27,19 @@ class ReplayBuffer:
         """
         self.memory.append(x)
 
-    def sample(
-        self, batch_size: int
-    ) -> (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
+    def sample(self,
+               batch_size: int) -> (Tuple[torch.Tensor,
+                                          torch.Tensor,
+                                          torch.Tensor,
+                                          torch.Tensor,
+                                          torch.Tensor]):
         """
         Returns randomly sampled experiences from replay memory
 
         :param batch_size: Number of samples per batch
         :type batch_size: int
-        :returns: Tuple composing of `state`, `action`, `reward`, \
-`next_state` and `done`
+        :returns: (Tuple composing of `state`, `action`, `reward`,
+`next_state` and `done`)
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
@@ -74,8 +77,8 @@ class PrioritizedBuffer:
         """
         Adds new experience to buffer
 
-        :param x: Tuple containing `state`, `action`, `reward`, \
-`next_state` and `done`
+        :param x: (Tuple containing `state`, `action`, `reward`,
+`next_state` and `done`)
         :type x: tuple
         :returns: None
         """
@@ -97,16 +100,16 @@ class PrioritizedBuffer:
         ]
     ):
         """
-        Returns randomly sampled memories from replay memory along with their \
-respective indices and weights
+        (Returns randomly sampled memories from replay memory along with their
+respective indices and weights)
 
         :param batch_size: Number of samples per batch
-        :param beta: Bias exponent used to correct \
-Importance Sampling (IS) weights
+        :param beta: (Bias exponent used to correct
+Importance Sampling (IS) weights)
         :type batch_size: int
         :type beta: float
-        :returns: Tuple containing `states`, `actions`, `next_states`, \
-`rewards`, `dones`, `indices` and `weights`
+        :returns: (Tuple containing `states`, `actions`, `next_states`,
+`rewards`, `dones`, `indices` and `weights`)
         """
         total = len(self.buffer)
 
@@ -122,20 +125,24 @@ Importance Sampling (IS) weights
         weights = np.asarray(weights, dtype=np.float32)
 
         samples = np.asarray(self.buffer, dtype=deque)[indices]
-        (states, actions, rewards, next_states, dones) = map(np.stack, zip(*samples))
+        (states, actions, rewards, next_states,
+         dones) = map(np.stack, zip(*samples))
 
         return (
             torch.as_tensor(v, dtype=torch.float32)
             for v in [states, actions, rewards, next_states, dones, indices, weights]
         )
 
-    def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:
+    def update_priorities(
+            self,
+            batch_indices: Tuple,
+            batch_priorities: Tuple) -> None:
         """
         Updates list of priorities with new order of priorities
 
         :param batch_indices: List of indices of batch
-        :param batch_priorities: List of priorities of the batch at the \
-specific indices
+        :param batch_priorities: (List of priorities of the batch at the
+specific indices)
         :type batch_indices: list or tuple
         :type batch_priorities: list or tuple
         """

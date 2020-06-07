@@ -5,14 +5,17 @@ import numpy as np
 
 
 def _get_val_model(
-    arch: str, val_type: str, state_dim: str, hidden: Tuple, action_dim: int = None
-):
+        arch: str,
+        val_type: str,
+        state_dim: str,
+        hidden: Tuple,
+        action_dim: int = None):
     """
     Returns Neural Network given specifications
 
     :param arch: Specifies type of architecture "mlp" for MLP layers
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param state_dim: State dimensions of environment
     :param action_dim: Action dimensions of environment
     :param hidden: Sizes of hidden layers
@@ -39,8 +42,8 @@ class MlpValue(BaseValue):
 
     :param state_dim: State dimensions of environment
     :param action_dim: Action dimensions of environment
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param hidden: Sizes of hidden layers
     :type state_dim: int
     :type action_dim: int
@@ -60,7 +63,8 @@ class MlpValue(BaseValue):
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = _get_val_model(mlp, val_type, state_dim, hidden, action_dim)
+        self.model = _get_val_model(
+            mlp, val_type, state_dim, hidden, action_dim)
 
 
 class CNNValue(BaseValue):
@@ -70,8 +74,8 @@ class CNNValue(BaseValue):
     :param state_dim: State dimension of environment
     :param action_dim: Action dimension of environment
     :param history_length: Length of history of states
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param hidden: Sizes of hidden layers
     :type state_dim: int
     :type action_dim: int
@@ -93,7 +97,12 @@ class CNNValue(BaseValue):
 
         self.conv, output_size = cnn((history_length, 16, 32))
 
-        self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
+        self.fc = _get_val_model(
+            mlp,
+            val_type,
+            output_size,
+            fc_layers,
+            action_dim)
 
     def forward(self, state: np.ndarray) -> np.ndarray:
         state = self.conv(state)

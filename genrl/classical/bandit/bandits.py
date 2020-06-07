@@ -40,7 +40,7 @@ class Bandit(object):
 class GaussianBandit(Bandit):
     """
     Bandit with Stationary Rewards following a Gaussian distribution.
-    
+
     :param arms: Number of arms in the bandit
     :param rewards: The mean for the Gaussain distribution of each action
     :type arms: int

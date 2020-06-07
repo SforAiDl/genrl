@@ -27,8 +27,8 @@ class A2C:
     :param layers: Number of neurons in hidden layers
     :param noise: Noise function to use
     :param noise_std: Standard deviation for action noise
-    :param tensorboard_log: The log location for Tensorboard\
-(if None, no logging)
+    :param tensorboard_log: (The log location for Tensorboard
+(if None, no logging))
     :param seed: Seed for reproducing results
     :param render: True if environment is to be rendered, else False
     :param device: Device to use for Tensor operation ['cpu', 'cuda']
@@ -185,8 +185,8 @@ class A2C:
 
     def get_traj_loss(self) -> None:
         """
-        Get trajectory of agent to calculate discounted rewards and \
-calculate losses
+        (Get trajectory of agent to calculate discounted rewards and 
+calculate losses)
         """
         discounted_reward = 0
         returns = []
@@ -245,11 +245,11 @@ calculate losses
         for episode in range(self.num_episodes):
             episode_reward = 0
             steps = []
-            for i in range(self.actor_batch_size):
+            for _i in range(self.actor_batch_size):
                 state = self.env.reset()
                 done = False
 
-                for t in range(self.timesteps_per_actorbatch):
+                for _t in range(self.timesteps_per_actorbatch):
                     action = self.select_action(state)
                     state, reward, done, _ = self.env.step(action)
 
@@ -286,8 +286,8 @@ calculate losses
         """
         Helper function to extract the observation and action space
 
-        :returns: Observation space, Action Space and whether the action \
-space is discrete or not
+        :returns: (Observation space, Action Space and whether the action
+space is discrete or not)
         :rtype: int, float, ... ; int, float, ... ; bool
         """
         state_dim = self.env.observation_space.shape[0]

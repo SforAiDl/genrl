@@ -14,7 +14,7 @@ from typing import Union, Tuple, Any, Optional, Dict
 class SAC:
     """
     Soft Actor Critic algorithm (SAC)
-    
+
     Paper: https://arxiv.org/abs/1812.05905
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
@@ -215,7 +215,7 @@ class SAC:
     def sample_action(self, state: np.ndarray) -> np.ndarray:
         """
         sample action normal distribution parameterized by policy network
-        
+
         :param state: Observation state
         :type: int, float, ...
         :returns: action
