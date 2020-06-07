@@ -160,9 +160,9 @@ class NoisyLinear(nn.Module):
         self.bias_epsilon.copy_(self._scale_noise(self.out_features))
 
     def _scale_noise(self, size: int) -> torch.Tensor:
-        x = torch.randn(size)
-        x = x.sign().mul(x.abs().sqrt())
-        return x
+        inp = torch.randn(size)
+        inp = inp.sign().mul(inp.abs().sqrt())
+        return inp
 
 
 class NoisyDQNValue(nn.Module):
@@ -230,11 +230,11 @@ class NoisyDQNValueCNN(nn.Module):
             [output_size] + list(fc_layers), list(noisy_layers) + [action_dim]
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.conv(x)
-        x = x.view(x.size(0), -1)
-        x = self.model(x)
-        return x
+    def forward(self, inp: torch.Tensor) -> torch.Tensor:
+        inp = self.conv(inp)
+        inp = inp.view(inp.size(0), -1)
+        inp = self.model(inp)
+        return inp
 
     def reset_noise(self) -> None:
         for layer in self.model:
@@ -325,14 +325,14 @@ class CategoricalDQNValueCNN(nn.Module):
             list(noisy_layers) + [self.action_dim * self.num_atoms],
         )
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.conv(x)
-        x = x.view(x.size(0), -1)
-        x = self.model(x)
-        x = nn.functional.softmax(x.view(-1, self.num_atoms)).view(
+    def forward(self, inp: torch.Tensor) -> torch.Tensor:
+        inp = self.conv(inp)
+        inp = inp.view(inp.size(0), -1)
+        inp = self.model(inp)
+        inp = nn.functional.softmax(inp.view(-1, self.num_atoms)).view(
             -1, self.action_dim, self.num_atoms
         )
-        return x
+        return inp
 
     def reset_noise(self) -> None:
         for layer in self.model:

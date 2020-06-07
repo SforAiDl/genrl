@@ -133,19 +133,20 @@ False (To be implemented))
             ep_r += reward
             state = next_state
             if np.any(done):
-                for i, d in enumerate(done):
-                    ep += 1
-                    ep_rews.append(ep_r[i])
-                    ep_r[i] = 0
-                    if ep == self.evaluate_episodes:
-                        print(
-                            "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                                self.evaluate_episodes,
-                                np.around(np.mean(ep_rews), decimals=4),
-                                np.around(np.std(ep_rews), decimals=4),
+                for i, di in enumerate(done):
+                    if di:
+                        ep += 1
+                        ep_rews.append(ep_r[i])
+                        ep_r[i] = 0
+                        if ep == self.evaluate_episodes:
+                            print(
+                                "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                                    self.evaluate_episodes,
+                                    np.around(np.mean(ep_rews), decimals=4),
+                                    np.around(np.std(ep_rews), decimals=4),
+                                )
                             )
-                        )
-                        return
+                            return
 
     @property
     def n_envs(self) -> int:
@@ -177,7 +178,7 @@ class OffPolicyTrainer(Trainer):
     :param batch_size: Size of batch
     :param seed: Set seed for reproducibility
     :param deterministic_actions: Take deterministic actions during training.
-    :param warmup_steps: (Observe the environment for these many steps 
+    :param warmup_steps: (Observe the environment for these many steps
 with randomly sampled actions to store in buffer.)
     :param start_update: (Starting updating the policy after these
 many steps)
@@ -297,13 +298,13 @@ many steps)
 
         self.rewards = [0]
 
-        for t in range(0, total_steps, self.env.n_envs):
+        for timestep in range(0, total_steps, self.env.n_envs):
             if self.network_type == "cnn":
                 self.state_history.append(self.transform(state))
                 phi_state = torch.stack(list(self.state_history), dim=1)
 
             if self.agent.__class__.__name__ == "DQN":
-                self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
+                self.agent.epsilon = self.agent.calculate_epsilon_by_frame(timestep)
 
                 if self.network_type == "cnn":
                     action = self.agent.select_action(phi_state)
@@ -311,7 +312,7 @@ many steps)
                     action = self.agent.select_action(state)
 
             else:
-                if t < self.warmup_steps:
+                if timestep < self.warmup_steps:
                     action = np.array(self.env.sample())
                 else:
                     if self.deterministic_actions:
@@ -319,7 +320,7 @@ many steps)
                     else:
                         action = self.agent.select_action(state)
 
-            next_state, reward, done, info = self.env.step(action)
+            next_state, reward, done, _ = self.env.step(action)
 
             if self.render:
                 self.env.render()
@@ -358,8 +359,8 @@ many steps)
                     )
                     self.rewards = [0]
 
-                for i, d in enumerate(done):
-                    if d:
+                for i, di in enumerate(done):
+                    if di:
                         self.rewards.append(episode_reward[i])
                         episode_reward[i] = 0
                         episode_len[i] = 0
@@ -370,12 +371,12 @@ many steps)
                 if self.agent.replay_buffer.pos > self.agent.batch_size:
                     self.agent.update_params()
 
-                if t % self.update_interval == 0:
+                if timestep % self.update_interval == 0:
                     self.agent.update_target_model()
 
             # update params for other agents
             else:
-                if t >= self.start_update and t % self.update_interval == 0:
+                if timestep >= self.start_update and timestep % self.update_interval == 0:
                     for _ in range(self.update_interval):
                         batch = self.buffer.sample(self.batch_size)
                         states, actions, rewards, next_states, dones = (
@@ -395,12 +396,12 @@ many steps)
                             )
 
             if (
-                t >= self.start_update
+                timestep >= self.start_update
                 and self.save_interval != 0
-                and t % self.save_interval == 0
+                and timestep % self.save_interval == 0
             ):
                 self.checkpoint = self.agent.get_hyperparams()
-                save_params(self.agent, t)
+                save_params(self.agent, timestep)
 
         self.env.close()
         self.logger.close()

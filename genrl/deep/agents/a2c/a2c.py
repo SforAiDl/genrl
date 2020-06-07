@@ -169,7 +169,7 @@ class A2C:
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
         """
-        Selection of action 
+        Selection of action
 
         :param state: Observation state
         :param deterministic: Action selection type
@@ -188,7 +188,7 @@ class A2C:
 
     def get_traj_loss(self, value, done) -> None:
         """
-        (Get trajectory of agent to calculate discounted rewards and 
+        (Get trajectory of agent to calculate discounted rewards and
 calculate losses)
         """
         self.rollout.compute_returns_and_advantage(value.detach().cpu().numpy(), done)
@@ -252,8 +252,8 @@ calculate losses)
 
             state = next_state
 
-            for i, d in enumerate(done):
-                if d:
+            for i, di in enumerate(done):
+                if di:
                     self.rewards.append(self.epoch_reward[i])
                     self.epoch_reward[i] = 0
 

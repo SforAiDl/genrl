@@ -47,9 +47,9 @@ activation layers)
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
-    for j in range(limit - 1):
-        act = nn.ReLU if j < limit - 2 else nn.Identity
-        layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
+    for layer in range(limit - 1):
+        act = nn.ReLU if layer < limit - 2 else nn.Identity
+        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act()]
     return nn.Sequential(*layers)
 
 
@@ -201,7 +201,7 @@ def get_obs_action_shape(obs, action):
 def get_obs_shape(observation_space):
     """
     Get the shape of the observation.
-    :param observation_space: Observation space 
+    :param observation_space: Observation space
     :type observation_space: gym.spaces.Space
     :returns: The observation space's shape
     :rtype: (Tuple[int, ...])

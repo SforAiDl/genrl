@@ -107,8 +107,8 @@ class DQN:
         min_epsilon: float = 0.01,
         epsilon_decay: int = 1000,
         num_atoms: int = 51,
-        Vmin: int = -10,
-        Vmax: int = 10,
+        vmin: int = -10,
+        vmax: int = 10,
         tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
@@ -134,8 +134,8 @@ class DQN:
         self.gamma = gamma
         self.batch_size = batch_size
         self.num_atoms = num_atoms
-        self.Vmin = Vmin
-        self.Vmax = Vmax
+        self.Vmin = vmin
+        self.Vmax = vmax
         self.tensorboard_log = tensorboard_log
         self.render = render
         self.loss_hist = []
@@ -264,8 +264,8 @@ class DQN:
 
         :param state: Observation state
         :type state: int, float, ...
-        :returns: Action based on the state and epsilon value 
-        :rtype: int, float, ... 
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
         """
 
         if np.random.rand() > self.epsilon:
@@ -451,10 +451,10 @@ class DQN:
 
         projection_dist = torch.zeros(next_dist.size())
         projection_dist.view(-1).index_add_(
-            0, (lower + offset).view(-1), (next_dist * (upper.float() - b)).view(-1)
+            0, (lower + offset).view(-1), (next_dist * (upper.float() - bz)).view(-1)
         )
         projection_dist.view(-1).index_add_(
-            0, (upper + offset).view(-1), (next_dist * (b - lower.float())).view(-1)
+            0, (upper + offset).view(-1), (next_dist * (bz - lower.float())).view(-1)
         )
 
         return projection_dist

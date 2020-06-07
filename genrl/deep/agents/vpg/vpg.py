@@ -224,8 +224,8 @@ class VPG:
 
             state = next_state
 
-            for i, d in enumerate(done):
-                if d:
+            for i, di in enumerate(done):
+                if di:
                     self.rewards.append(self.epoch_reward[i])
                     self.epoch_reward[i] = 0
 
