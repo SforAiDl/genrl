@@ -3,9 +3,81 @@ from collections import deque
 import random
 import numpy as np
 from typing import Tuple
+from .utils import get_obs_shape, get_action_dim
 
 
 class ReplayBuffer:
+    def __init__(self, size, env):
+        self.obs_shape = get_obs_shape(env.observation_space)
+        self.action_dim = get_action_dim(env.action_space)
+        self.buffer_size = size
+        self.n_envs = env.n_envs
+
+        self.observations = np.zeros(
+            (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32
+        )
+        self.actions = np.zeros(
+            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32
+        )
+        self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.next_observations = np.zeros(
+            (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32
+        )
+        self.pos = 0
+
+    def push(self, x):
+        if self.pos >= self.buffer_size:
+            self.observations = np.roll(self.observations, -1, axis=0)
+            self.actions = np.roll(self.actions, -1, axis=0)
+            self.rewards = np.roll(self.rewards, -1, axis=0)
+            self.dones = np.roll(self.dones, -1, axis=0)
+            self.next_observations = np.roll(self.next_observations, -1, axis=0)
+            pos = self.buffer_size - 1
+        else:
+            pos = self.pos
+        self.observations[pos] += np.array(x[0]).copy()
+        self.actions[pos] += np.array(x[1]).copy()
+        self.rewards[pos] += np.array(x[2]).copy()
+        self.next_observations[pos] += np.array(x[3]).copy()
+        self.dones[pos] += np.array(x[4]).copy()
+        self.pos += 1
+
+    def sample(self, batch_size):
+        if self.pos < self.buffer_size:
+            indicies = np.random.randint(0, self.pos, size=batch_size)
+        else:
+            indicies = np.random.randint(0, self.buffer_size, size=batch_size)
+        state = self.observations[indicies, :]
+        action = self.actions[indicies, :]
+        reward = self.rewards[indicies, :]
+        next_state = self.next_observations[indicies, :]
+        done = self.dones[indicies, :]
+        return (
+            torch.from_numpy(v).float()
+            for v in [state, action, reward, next_state, done]
+        )
+
+    def extend(self, x):
+        for sample in x:
+            if self.pos >= self.buffer_size:
+                self.observations = np.roll(self.observations, -1, axis=0)
+                self.actions = np.roll(self.actions, -1, axis=0)
+                self.rewards = np.roll(self.rewards, -1, axis=0)
+                self.dones = np.roll(self.dones, -1, axis=0)
+                self.next_observations = np.roll(self.next_observations, -1, axis=0)
+                pos = self.buffer_size - 1
+            else:
+                pos = self.pos
+            self.observations[pos] = np.array(sample[0]).copy()
+            self.actions[pos] = np.array(sample[1]).copy()
+            self.rewards[pos] = np.array(sample[2]).copy()
+            self.next_observations[pos] = np.array(sample[3]).copy()
+            self.dones[pos] = np.array(sample[4]).copy()
+            self.pos += 1
+
+
+class PushReplayBuffer:
     """
     Implements the basic Experience Replay Mechanism
 
@@ -27,6 +99,9 @@ class ReplayBuffer:
         """
         self.memory.append(x)
 
+    def extend(self, x):
+        self.memory.extend(x)
+
     def sample(
         self, batch_size: int
     ) -> (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -40,8 +115,9 @@ class ReplayBuffer:
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
+        print(state.shape)
         return (
-            torch.as_tensor(v, dtype=torch.float32)
+            torch.from_numpy(v).float()
             for v in [state, action, reward, next_state, done]
         )
 
@@ -51,7 +127,7 @@ class ReplayBuffer:
 
         :returns: Length of replay memory
         """
-        return len(self.memory)
+        return self.pos
 
 
 class PrioritizedBuffer:
