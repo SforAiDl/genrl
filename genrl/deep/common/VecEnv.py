@@ -1,4 +1,5 @@
 import gym
+import copy
 import numpy as np
 import multiprocessing as mp
 
@@ -58,7 +59,7 @@ def create_envs(env_name, n_envs):
 
 class VecEnv(ABC):
     """
-    Constructs a wrapper for serial execution through envs.
+    Base class for multiple environments.
 
     :param env: Gym environment to be vectorised
     :param n_envs: Number of environments
@@ -82,12 +83,6 @@ class VecEnv(ABC):
         """
         return [env.action_space.sample() for env in self.envs]
 
-    def action_spaces(self):
-        """
-        Return action spaces of each environment
-        """
-        return [env.action_space for env in self.envs]
-
     def __getitem__(self, index):
         """
         Return environment at the given index
@@ -96,9 +91,9 @@ class VecEnv(ABC):
 
     def seed(self, seed):
         """
-        Set seed for reproducability in all environments
+        Set seed for reproducibility in all environments
         """
-        [env.seed(seed) for env in self.envs]
+        [env.seed(seed + idx) for idx, env in enumerate(self.envs)]
 
     @abstractmethod
     def step(self, actions):
@@ -116,19 +111,37 @@ class VecEnv(ABC):
     def n_envs(self):
         return self._n_envs
 
+    @property
+    def observation_space(self):
+        return self.envs[0].observation_space
+
+    @property
+    def action_space(self):
+        return self.envs[0].action_space
+
+    @property
+    def observation_spaces(self):
+        return [i.observation_space for i in self.envs]
+
+    @property
+    def action_spaces(self):
+        return [i.action_space for i in self.envs]
+
 
 class SerialVecEnv(VecEnv):
     """
     Constructs a wrapper for serial execution through envs.
-
-    :param env: Gym environment to be vectorised
-    :param n_envs: Number of environments
-    :type env: Gym Environment
-    :type n_envs: int
     """
 
-    def __init__(self, envs, n_envs=2):
-        super(SerialVecEnv, self).__init__(envs, n_envs)
+    def __init__(self, *args, **kwargs):
+        super(SerialVecEnv, self).__init__(*args, **kwargs)
+        self.states = np.zeros(
+            (self.n_envs, *self.observation_space.shape),
+            dtype=self.observation_space.dtype,
+        )
+        self.rewards = np.zeros((self.n_envs))
+        self.dones = np.zeros((self.n_envs))
+        self.infos = [{} for _ in range(self.n_envs)]
 
     def step(self, actions):
         """
@@ -137,25 +150,30 @@ class SerialVecEnv(VecEnv):
         :param actions: Actions from the model
         :type actions: Iterable of ints/floats
         """
-        states, rewards, dones, infos = [], [], [], []
         for i, env in enumerate(self.envs):
             obs, reward, done, info = env.step(actions[i])
-            states.append(obs)
-            rewards.append(reward)
-            dones.append(done)
-            infos.append(info)
+            if done:
+                obs = env.reset()
+            self.states[i] = obs
+            self.rewards[i] = reward
+            self.dones[i] = done
+            self.infos[i] = info
 
-        return states, rewards, dones, infos
+        return (
+            np.copy(self.states),
+            self.rewards.copy(),
+            self.dones.copy(),
+            copy.deepcopy(self.infos),
+        )
 
     def reset(self):
         """
         Resets all envs
         """
-        states = []
-        for env in self.envs:
-            states.append(env.reset())
+        for i, env in enumerate(self.envs):
+            self.states[i] = env.reset()
 
-        return states
+        return np.copy(self.states)
 
     def close(self):
         """
@@ -178,37 +196,34 @@ class SerialVecEnv(VecEnv):
 images in 'human' and returns tiled images in 'rgb_array')
         :type mode: string
         """
-        images = np.asarray(self.images())
-        batch, height, width, channel = images.shape
-        newwidth, newheight = int(np.ceil(np.sqrt(width))), int(np.ceil(np.sqrt(height)))
-        images = np.array(
-            list(images) + [images[0] * 0 for _ in range(batch, newheight * newwidth)])
-        out_image = images.reshape(newheight, newwidth, height, width, channel)
-        out_image = out_image.transpose(0, 2, 1, 3, 4)
-        out_image = out_image.reshape(newheight * height, newwidth * width, channel)
-        if mode == "human":
-            import cv2  # noqa
+        self.envs[0].render()
 
-            cv2.imshow("vecenv", out_image[:, :, ::-1])
-            cv2.waitKey(1)
-        elif mode == "rgb_array":
-            return out_image
-        else:
-            raise NotImplementedError
+        # images = np.asarray(self.images())
+        # batch, height, width, channel = images.shape
+        # newwidth, newheight = int(np.ceil(np.sqrt(width))), int(np.ceil(np.sqrt(height)))
+        # images = np.array(
+        #     list(images) + [images[0] * 0 for _ in range(batch, newheight * newwidth)])
+        # out_image = images.reshape(newheight, newwidth, height, width, channel)
+        # out_image = out_image.transpose(0, 2, 1, 3, 4)
+        # out_image = out_image.reshape(newheight * height, newwidth * width, channel)
+        # if mode == "human":
+        #     import cv2  # noqa
+
+        #     cv2.imshow("vecenv", out_image[:, :, ::-1])
+        #     cv2.waitKey(1)
+        # elif mode == "rgb_array":
+        #     return out_image
+        # else:
+        #     raise NotImplementedError
 
 
 class SubProcessVecEnv(VecEnv):
     """
-    Constructs a wrapper for serial execution through envs.
-
-    :param env: Environment Name. Should be registered with OpenAI Gym.
-    :param n_envs: Number of environments
-    :type env: string
-    :type n_envs: int
+    Constructs a wrapper for parallel execution through envs.
     """
 
-    def __init__(self, env, n_envs=2):
-        super(SubProcessVecEnv, self).__init__(env, n_envs)
+    def __init__(self, *args, **kwargs):
+        super(SubProcessVecEnv, self).__init__(*args, **kwargs)
 
         self.procs = []
         self.parent_conns, self.child_conns = zip(

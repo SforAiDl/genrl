@@ -55,6 +55,31 @@ class TD3:
     :param run_num: model run number if it has already been trained
     :param save_model: model save directory
     :param load_model: model loading path
+    :type network_type: str
+    :type env: Gym environment
+    :type gamma: float
+    :type replay_size: int
+    :type batch_size: int
+    :type lr_p: float
+    :type lr_q: float
+    :type polyak: float
+    :type policy_frequency: int
+    :type epochs: int
+    :type start_steps: int
+    :type steps_per_epoch: int
+    :type noise_std: float
+    :type max_ep_len: int
+    :type start_update: int
+    :type update_interval: int
+    :type save_interval: int
+    :type layers: tuple or list
+    :type tensorboard_log: str
+    :type seed: int
+    :type render: boolean
+    :type device: str
+    :type run_num: boolean
+    :type save_name: str
+    :type save_version: int
     :type run_num: int
     :type save_model: string
     :type load_model: string
@@ -144,7 +169,6 @@ class TD3:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
             )
-
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
@@ -179,7 +203,7 @@ class TD3:
         for param in self.ac_target.parameters():
             param.requires_grad = False
 
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
         self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
@@ -234,9 +258,9 @@ class TD3:
                     dim=-1,
                 )
             )
-            target_q = torch.min(target_q1, target_q2)
+            target_q = torch.min(target_q1, target_q2).unsqueeze(1)
 
-            target = reward + self.gamma * (1 - done) * target_q
+            target = reward.squeeze(1) + self.gamma * (1 - done) * target_q.squeeze(1)
 
         l1 = nn.MSELoss()(q1, target)
         l2 = nn.MSELoss()(q2, target)
@@ -259,6 +283,7 @@ class TD3:
         timestep: int,
     ) -> None:
         self.optimizer_q.zero_grad()
+        # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
         loss_q.backward()
         self.optimizer_q.step()
@@ -287,18 +312,23 @@ class TD3:
                     param_target.data.add_((1 - self.polyak) * param.data)
 
     def learn(self) -> None:  # pragma: no cover
-        state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
-        total_steps = self.steps_per_epoch * self.epochs
+        state, episode_reward, episode_len, episode = (
+            self.env.reset(),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+        )
+        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
         if self.noise is not None:
             self.noise.reset()
 
-        for t in range(total_steps):
+        for t in range(0, total_steps, self.env.n_envs):
             # execute single transition
             if t > self.start_steps:
                 action = self.select_action(state, deterministic=True)
             else:
-                action = self.env.action_space.sample()
+                action = self.env.sample()
 
             next_state, reward, done, _ = self.env.step(action)
             if self.render:
@@ -306,38 +336,58 @@ class TD3:
             episode_reward += reward
             episode_len += 1
 
-            # dont set done to True if max_ep_len reached
-            done = False if episode_len == self.max_ep_len else done
+            # dont set d to True if max_ep_len reached
+            # done = self.env.n_envs*[False] if np.any(episode_len == self.max_ep_len) else done
+            done = np.array(
+                [
+                    False if episode_len[i] == self.max_ep_len else done[i]
+                    for i, ep_len in enumerate(episode_len)
+                ]
+            )
 
-            self.replay_buffer.push((state, action, reward, next_state, done))
+            self.replay_buffer.extend(zip(state, action, reward, next_state, done))
 
             state = next_state
 
-            if done or (episode_len == self.max_ep_len):
+            if np.any(done) or np.any(episode_len == self.max_ep_len):
+
+                if sum(episode) % 20 == 0:
+                    print(
+                        "Ep: {}, reward: {}, t: {}".format(
+                            sum(episode), np.mean(episode_reward), t
+                        )
+                    )
+
+                for i, d in enumerate(done):
+                    # print(d)
+                    if d or episode_len[i] == self.max_ep_len:
+                        episode_reward[i] = 0
+                        episode_len[i] = 0
+                        episode += 1
 
                 if self.noise is not None:
                     self.noise.reset()
 
-                if episode % 20 == 0:
-                    print(
-                        "Episode: {}, Reward: {}, Timestep: {}".format(
-                            episode, episode_reward, t
-                        )
-                    )
                 if self.tensorboard_log:
-                    self.writer.add_scalar("episode_reward", episode_reward, t)
+                    self.writer.add_scalar("episode_reward", np.mean(episode_reward), t)
 
-                state, episode_reward, episode_len = self.env.reset(), 0, 0
+                state, episode_reward, episode_len = (
+                    self.env.reset(),
+                    np.zeros(self.env.n_envs),
+                    np.zeros(self.env.n_envs),
+                )
                 episode += 1
 
             # update params
             if t >= self.start_update and t % self.update_interval == 0:
                 for _ in range(self.update_interval):
                     batch = self.replay_buffer.sample(self.batch_size)
-                    states, actions, next_states, rewards, dones = (
+                    states, actions, rewards, next_states, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(states, actions, next_states, rewards, dones, t)
+                    self.update_params(
+                        states, actions, rewards.unsqueeze(1), next_states, dones, t
+                    )
 
             if self.save_model is not None:
                 if t >= self.start_update and t % self.save_interval == 0:
