@@ -11,3 +11,5 @@ checkpoints/
 *.log
 htmlcov
 logs/
+*.pt
+.coverage
