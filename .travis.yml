@@ -32,7 +32,6 @@ jobs:
       install: 
         - python setup.py install
         - pip install codecov pytest-cov
-        - pip install pytest-cov
       script:
         - pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
       
