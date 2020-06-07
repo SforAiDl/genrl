@@ -1,4 +1,4 @@
-from genrl.classical import SARSA  # noqa; noqa; noqa
+from genrl.classical import SARSA  # noqa
 from genrl.classical import Bandit  # noqa
 from genrl.classical import BanditPolicy  # noqa
 from genrl.classical import BayesianUCBPolicy  # noqa
