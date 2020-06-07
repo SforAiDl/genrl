@@ -190,10 +190,10 @@ class SAC:
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
 
         # freeze target parameters
-        for p in self.q1_targ.parameters():
-            p.requires_grad = False
-        for p in self.q2_targ.parameters():
-            p.requires_grad = False
+        for param in self.q1_targ.parameters():
+            param.requires_grad = False
+        for param in self.q2_targ.parameters():
+            param.requires_grad = False
 
         # optimizers
         self.q1_optimizer = opt.Adam(self.q1.parameters(), self.lr)
@@ -415,10 +415,7 @@ class SAC:
                     writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
                 if self.save_model is not None:
-                    if (
-                        i >= self.start_update
-                        and i % self.save_interval == 0
-                    ):
+                    if i >= self.start_update and i % self.save_interval == 0:
                         self.checkpoint = self.get_hyperparams()
                         self.save(self, i)
                         print("Saved current model")
@@ -433,10 +430,10 @@ class SAC:
             ]
 
             if np.any(done) or np.any(episode_len == self.max_ep_len):
-                for l, d in enumerate(done):
-                    if d:
-                        episode_reward[l] = 0
-                        episode_len[l] = 0
+                for i, di in enumerate(done):
+                    if di:
+                        episode_reward[i] = 0
+                        episode_len[i] = 0
 
             self.replay_buffer.extend(zip(state, action, reward, next_state, done))
             state = next_state

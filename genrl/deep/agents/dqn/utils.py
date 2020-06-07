@@ -19,11 +19,11 @@ def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):
     :rtype: Pytorch model
     """
     model = []
-    for j in range(len(fc_layers) - 1):
-        model += [nn.Linear(fc_layers[j], fc_layers[j + 1]), nn.ReLU()]
-    for j in range(len(noisy_layers) - 1):
-        model += [NoisyLinear(noisy_layers[j], noisy_layers[j + 1])]
-        if j < len(noisy_layers) - 2:
+    for layer in range(len(fc_layers) - 1):
+        model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), nn.ReLU()]
+    for layer in range(len(noisy_layers) - 1):
+        model += [NoisyLinear(noisy_layers[layer], noisy_layers[layer + 1])]
+        if layer < len(noisy_layers) - 2:
             model += [nn.ReLU()]
     return nn.Sequential(*model)
 
@@ -84,11 +84,11 @@ class DuelingDQNValueCNN(nn.Module):
         self.advantage = mlp([output_size] + list(fc_layers) + [action_dim])
         self.value = mlp([output_size] + list(fc_layers) + [1])
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.conv(x)
-        x = x.view(x.size(0), -1)
-        advantage = self.advantage(x)
-        value = self.value(x)
+    def forward(self, inp: torch.Tensor) -> torch.Tensor:
+        inp = self.conv(inp)
+        inp = inp.view(inp.size(0), -1)
+        advantage = self.advantage(inp)
+        value = self.value(inp)
         return value + advantage - advantage.mean()
 
 

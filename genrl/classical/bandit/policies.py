@@ -425,7 +425,11 @@ class BayesianUCBPolicy(BanditPolicy):
     """
 
     def __init__(
-        self, bandit: Bandit, alpha: float = 1.0, beta: float = 1.0, confidence: float = 3.0,
+        self,
+        bandit: Bandit,
+        alpha: float = 1.0,
+        beta: float = 1.0,
+        confidence: float = 3.0,
     ):
         super(BayesianUCBPolicy, self).__init__(bandit)
         self._c = confidence

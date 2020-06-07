@@ -315,8 +315,7 @@ many steps)
                     action = np.array(self.env.sample())
                 else:
                     if self.deterministic_actions:
-                        action = self.agent.select_action(
-                            state, deterministic=True)
+                        action = self.agent.select_action(state, deterministic=True)
                     else:
                         action = self.agent.select_action(state)
 

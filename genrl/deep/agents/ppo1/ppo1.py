@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.optim as opt
 import gym
 
@@ -22,7 +21,7 @@ class PPO1:
     Proximal Policy Optimization algorithm (Clipped policy).
 
     Paper: https://arxiv.org/abs/1707.06347
-    
+
     :param network_type: The deep neural network layer types ['mlp']
     :param env: The environment to learn from
     :param timesteps_per_actorbatch: timesteps per actor per update
@@ -137,12 +136,9 @@ class PPO1:
         )
         self.policy_new = self.policy_new.to(self.device)
 
-        self.value_fn = get_model(
-            "v",
-            self.network_type)(
-            state_dim,
-            action_dim).to(
-            self.device)
+        self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
+            self.device
+        )
 
         # load paramaters if already trained
         if self.load_model is not None:
@@ -150,18 +146,14 @@ class PPO1:
             self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
             self.value_fn.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
-                if key not in [
-                    "policy_weights",
-                    "value_weights",
-                        "save_model"]:
+                if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
         self.optimizer_policy = opt.Adam(
             self.policy_new.parameters(), lr=self.lr_policy
         )
-        self.optimizer_value = opt.Adam(
-            self.value_fn.parameters(), lr=self.lr_value)
+        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
 
         self.rollout = RolloutBuffer(
             self.rollout_size,
@@ -174,14 +166,14 @@ class PPO1:
         state = torch.as_tensor(state).float().to(self.device)
         # create distribution based on policy output
         action, c_new = self.policy_new.get_action(state, deterministic=False)
-        val = self.value_fn.get_value(state)
+        value = self.value_fn.get_value(state)
 
-        return action.detach().cpu().numpy(), val, c_new.log_prob(action)
+        return action.detach().cpu().numpy(), value, c_new.log_prob(action)
 
     def evaluate_actions(self, obs, old_actions):
-        val = self.value_fn.get_value(obs)
+        value = self.value_fn.get_value(obs)
         _, dist = self.policy_new.get_action(obs)
-        return val, dist.log_prob(old_actions), dist.entropy()
+        return value, dist.log_prob(old_actions), dist.entropy()
 
     # get clipped loss for single trajectory (episode)
     def get_traj_loss(self, values, dones):
@@ -212,7 +204,7 @@ class PPO1:
 
             values = values.flatten()
 
-            value_loss = F.mse_loss(rollout.returns, values)
+            value_loss = nn.functional.mse_loss(rollout.returns, values)
 
             entropy_loss = -torch.mean(entropy)  # Change this to entropy
 
@@ -239,7 +231,7 @@ class PPO1:
             with torch.no_grad():
                 action, values, old_log_probs = self.select_action(state)
 
-            next_state, reward, done, _ = self.env.step(np.array(action))
+            next_state, reward, dones, _ = self.env.step(np.array(action))
             self.epoch_reward += reward
 
             if self.render:
@@ -249,19 +241,19 @@ class PPO1:
                 state,
                 action.reshape(self.env.n_envs, 1),
                 reward,
-                done,
+                dones,
                 values,
                 old_log_probs,
             )
 
             state = next_state
 
-            for i, d in enumerate(done):
-                if d:
+            for i, done in enumerate(dones):
+                if done:
                     self.rewards.append(self.epoch_reward[i])
                     self.epoch_reward[i] = 0
 
-        return values, done
+        return values, dones
 
     def learn(self):  # pragma: no cover
         # training loop
@@ -285,9 +277,9 @@ class PPO1:
                     self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if self.save_model is not None:
-                if episode % self.save_interval == 0:
+                if epoch % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, episode)
+                    self.save(self, epoch)
                     print("Saved current model")
 
         self.env.close()

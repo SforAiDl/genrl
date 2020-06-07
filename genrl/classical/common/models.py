@@ -19,7 +19,13 @@ class TabularModel:
         self.s_model = np.zeros((s_dim, a_dim), dtype=np.uint8)
         self.r_model = np.zeros((s_dim, a_dim))
 
-    def add(self, state: np.ndarray, action: np.ndarray, reward: float, next_state: np.ndarray) -> None:
+    def add(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        next_state: np.ndarray,
+    ) -> None:
         """
         add transition to model
         :param state: state

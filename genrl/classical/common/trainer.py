@@ -176,7 +176,7 @@ class Trainer:
         """
         avgd_results = [0] * len(results)
         for i in range(window_size, len(results)):
-            avgd_results[i] = np.mean(results[i - window_size:i])
+            avgd_results[i] = np.mean(results[i - window_size : i])
 
         plt.plot(list(range(0, len(results))), avgd_results)
         plt.title("Results")

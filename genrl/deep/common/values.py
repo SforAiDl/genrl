@@ -5,11 +5,8 @@ import numpy as np
 
 
 def _get_val_model(
-        arch: str,
-        val_type: str,
-        state_dim: str,
-        hidden: Tuple,
-        action_dim: int = None):
+    arch: str, val_type: str, state_dim: str, hidden: Tuple, action_dim: int = None
+):
     """
     Returns Neural Network given specifications
 
@@ -63,8 +60,7 @@ class MlpValue(BaseValue):
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = _get_val_model(
-            mlp, val_type, state_dim, hidden, action_dim)
+        self.model = _get_val_model(mlp, val_type, state_dim, hidden, action_dim)
 
 
 class CNNValue(BaseValue):
@@ -97,12 +93,7 @@ class CNNValue(BaseValue):
 
         self.conv, output_size = cnn((history_length, 16, 32))
 
-        self.fc = _get_val_model(
-            mlp,
-            val_type,
-            output_size,
-            fc_layers,
-            action_dim)
+        self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
 
     def forward(self, state: np.ndarray) -> np.ndarray:
         state = self.conv(state)

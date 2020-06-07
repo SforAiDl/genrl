@@ -253,9 +253,9 @@ class VPG:
                     self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if self.save_model is not None:
-                if episode % self.save_interval == 0:
+                if epoch % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, episode)
+                    self.save(self, epoch)
                     print("Saved current model")
 
         self.env.close()
