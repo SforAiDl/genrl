@@ -7,13 +7,7 @@ from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from ...common import (
-    get_model,
-    ReplayBuffer,
-    save_params,
-    load_params,
-    set_seeds
-)
+from ...common import get_model, ReplayBuffer, save_params, load_params, set_seeds
 from ....environments import VecEnv
 from typing import Union, Tuple, Any, Optional, Dict
 

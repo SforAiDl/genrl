@@ -10,7 +10,7 @@ from ...common import (
     load_params,
     get_env_properties,
     set_seeds,
-    RolloutBuffer
+    RolloutBuffer,
 )
 from ....environments import VecEnv
 

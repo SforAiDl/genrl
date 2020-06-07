@@ -31,7 +31,7 @@ grayscale
         env: gym.Env,
         frameskip: Union[Tuple, int] = (2, 5),
         grayscale: bool = True,
-        screen_size: int = 84
+        screen_size: int = 84,
     ):
         super(AtariPreprocessing, self).__init__(env)
 
@@ -43,13 +43,11 @@ grayscale
         # Redefine observation space for Atari environments
         if grayscale:
             self.observation_space = Box(
-                low=0, high=255,
-                shape=(screen_size, screen_size), dtype=np.uint8
+                low=0, high=255, shape=(screen_size, screen_size), dtype=np.uint8
             )
         else:
             self.observation_space = Box(
-                low=0, high=255,
-                shape=(screen_size, screen_size, 3), dtype=np.uint8
+                low=0, high=255, shape=(screen_size, screen_size, 3), dtype=np.uint8
             )
 
         # Observation buffer to hold last two observations for max pooling
@@ -124,9 +122,7 @@ resizes output to appropriate screen size.
         :returns: Output observation in required format
         :rtype: NumPy array
         """
-        np.maximum(
-            self._obs_buffer[0], self._obs_buffer[1], out=self._obs_buffer[0]
-        )
+        np.maximum(self._obs_buffer[0], self._obs_buffer[1], out=self._obs_buffer[0])
 
         obs = cv2.resize(
             self._obs_buffer[0],

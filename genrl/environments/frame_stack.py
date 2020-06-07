@@ -89,12 +89,7 @@ to conserve memory usage
     :type compress: bool
     """
 
-    def __init__(
-        self,
-        env: gym.Env,
-        framestack: int = 4,
-        compress: bool = False
-    ):
+    def __init__(self, env: gym.Env, framestack: int = 4, compress: bool = False):
         super(FrameStack, self).__init__(env)
 
         self.env = env
@@ -102,12 +97,10 @@ to conserve memory usage
         self.framestack = framestack
 
         low = np.repeat(
-            np.expand_dims(self.env.observation_space.low, axis=0),
-            framestack, axis=0
+            np.expand_dims(self.env.observation_space.low, axis=0), framestack, axis=0
         )
         high = np.repeat(
-            np.expand_dims(self.env.observation_space.high, axis=0),
-            framestack, axis=0
+            np.expand_dims(self.env.observation_space.high, axis=0), framestack, axis=0
         )
         self.observation_space = Box(
             low=low, high=high, dtype=self.env.observation_space.dtype

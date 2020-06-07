@@ -1,18 +1,14 @@
 import gym
 
-from ..environments import (
-    GymWrapper, AtariPreprocessing, FrameStack, NoopReset
-)
-from ..environments.vec_env import (
-    VecEnv, SubProcessVecEnv, SerialVecEnv
-)
+from ..environments import GymWrapper, AtariPreprocessing, FrameStack, NoopReset
+from ..environments.vec_env import VecEnv, SubProcessVecEnv, SerialVecEnv
 
 
 def VectorEnv(
     env_id: str,
     n_envs: int = 2,
     parallel: bool = False,
-    env_type: str = 'gym',
+    env_type: str = "gym",
     **kwargs
 ) -> VecEnv:
     """
@@ -30,10 +26,10 @@ subprocesses, False if we want environments to run serially one after the other
     :returns: Vector Environment
     :rtype: VecEnv
     """
-    assert env_type in ['gym', 'atari']
-    if env_type == 'gym':
+    assert env_type in ["gym", "atari"]
+    if env_type == "gym":
         Env = GymEnv
-    elif env_type == 'atari':
+    elif env_type == "atari":
         Env = AtariEnv
 
     envs = []
@@ -96,15 +92,12 @@ def AtariEnv(env_id: str, **kwargs) -> gym.Env:
     for wrapper in wrapper_list:
         if wrapper is AtariPreprocessing:
             env = wrapper(
-                env, kwargs["frameskip"],
-                kwargs["grayscale"], kwargs["screen_size"]
+                env, kwargs["frameskip"], kwargs["grayscale"], kwargs["screen_size"]
             )
         elif wrapper is NoopReset:
             env = wrapper(env, kwargs["max_noops"])
         elif wrapper is FrameStack:
-            env = wrapper(
-                env, kwargs["framestack"], kwargs["lz4_compress"]
-            )
+            env = wrapper(env, kwargs["framestack"], kwargs["lz4_compress"])
         else:
             env = wrapper(env)
     return env

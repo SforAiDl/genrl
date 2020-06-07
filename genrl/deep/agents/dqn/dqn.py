@@ -296,16 +296,10 @@ class DQN:
         if self.network_type == "cnn":
             if self.framestack is not None:
                 state = state.view(
-                    -1,
-                    self.framestack,
-                    self.env.screen_size,
-                    self.env.screen_size,
+                    -1, self.framestack, self.env.screen_size, self.env.screen_size,
                 )
                 next_state = next_state.view(
-                    -1,
-                    self.framestack,
-                    self.env.screen_size,
-                    self.env.screen_size,
+                    -1, self.framestack, self.env.screen_size, self.env.screen_size,
                 )
 
         if self.categorical_dqn:
@@ -331,7 +325,6 @@ class DQN:
             expected_q_value = reward + self.gamma * q_target_s_a_prime.reshape(
                 -1, 1
             ) * (1 - done)
-
         else:
             q_values = self.model(state)
             q_value = q_values.gather(1, action).squeeze(1)
@@ -361,7 +354,8 @@ class DQN:
 
     def update_params(self) -> None:
         """
-        Takes the step for optimizer. This internally call get_td_loss(), so no need to call the function explicitly.
+        (Takes the step for optimizer. This internally call get_td_loss(),
+so no need to call the function explicitly.)
         """
         loss = self.get_td_loss()
         self.optimizer.zero_grad()

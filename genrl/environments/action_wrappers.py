@@ -10,9 +10,7 @@ class ClipAction(ActionWrapper):
 
     @property
     def action(self, action):
-        return np.clip(
-            action, self.env.action_space.low, self.env.action_space.high
-        )
+        return np.clip(action, self.env.action_space.low, self.env.action_space.high)
 
 
 class RescaleAction(ActionWrapper):
@@ -21,17 +19,15 @@ class RescaleAction(ActionWrapper):
         assert isinstance(self.env.action_space, Box)
         assert high > low
 
-        self.low = (
-            np.zeros(env.action_space.shape, dtype=env.action_space.dtype)
-            + low
-        )
+        self.low = np.zeros(env.action_space.shape, dtype=env.action_space.dtype) + low
         self.high = (
-            np.zeros(env.action_space.shape, dtype=env.action_space.dtype)
-            + high
+            np.zeros(env.action_space.shape, dtype=env.action_space.dtype) + high
         )
         self.action_space = Box(
-            low=low, high=high, shape=env.action_space.shape,
-            dtype=env.action_space.dtype
+            low=low,
+            high=high,
+            shape=env.action_space.shape,
+            dtype=env.action_space.dtype,
         )
 
     @property
@@ -40,5 +36,5 @@ class RescaleAction(ActionWrapper):
         assert np.all(action <= self.high)
         low = self.env.action_space.low
         high = self.env.action_space.high
-        action = low + (high-low) * ((action-self.low) / (self.high-self.low))
+        action = low + (high - low) * ((action - self.low) / (self.high - self.low))
         return np.clip(action, low, high)
