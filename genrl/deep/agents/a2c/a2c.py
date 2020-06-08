@@ -36,6 +36,8 @@ class A2C:
     :param save_model: Directory the user wants to save models to
     :param save_interval: Number of steps between saves of models
     :param rollout_size: Rollout Buffer Size
+    :param val_coeff: Coefficient of value loss in overall loss function
+    :param entropy_coeff: Coefficient of entropy loss in overall loss function
     :type network_type: string
     :type env: Gym Environment
     :type gamma: float
@@ -56,6 +58,8 @@ class A2C:
     :type save_model: string
     :type save_interval: int
     :type rollout_size: int
+    :type val_coeff: float
+    :type entropy_coeff: float
     """
 
     def __init__(
@@ -80,6 +84,8 @@ class A2C:
         save_model: str = None,
         save_interval: int = 1000,
         rollout_size: int = 2048,
+        val_coeff: float = 0.5,
+        entropy_coeff: float = 0.01,
     ):
         self.network_type = network_type
         self.env = env
@@ -102,6 +108,8 @@ class A2C:
         self.save = save_params
         self.load = load_params
         self.rollout_size = rollout_size
+        self.val_coeff = val_coeff
+        self.entropy_coeff = entropy_coeff
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -162,7 +170,7 @@ class A2C:
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
         """
-        Selection of action 
+        Selection of action
 
         :param state: Observation state
         :param deterministic: Action selection type
@@ -200,18 +208,19 @@ calculate losses
             if isinstance(self.env.action_space, gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
-            vals, log_prob = self.get_value_log_probs(rollout.observations, actions)
+            values, log_prob = self.get_value_log_probs(rollout.observations, actions)
 
             policy_loss = rollout.advantages * log_prob
-
             policy_loss = -torch.sum(policy_loss)
 
-            value_loss = F.mse_loss(rollout.returns, vals)
+            value_loss = self.val_coeff * F.mse_loss(rollout.returns, values)
 
-            loss = policy_loss
+            entropy_loss = (torch.exp(log_prob) * log_prob).sum()
+
+            actor_loss = policy_loss + self.entropy_coeff * entropy_loss
 
             self.actor_optimizer.zero_grad()
-            loss.backward()
+            actor_loss.backward()
             torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
             self.actor_optimizer.step()
 
