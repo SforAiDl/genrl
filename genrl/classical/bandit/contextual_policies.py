@@ -1,5 +1,4 @@
 import numpy as np
-from scipy import stats
 from typing import List, Dict, Any
 from .contextual_bandits import ContextualBandit
 
@@ -75,14 +74,16 @@ class CBPolicy(object):
         """
         raise NotImplementedError
 
-    def update_params(self, action: int, reward: float) -> None:
+    def update_params(self, context: int, action: int, reward: float) -> None:
         """
         Update parmeters for the policy
 
         This method needs to be implemented in the specific policy.
 
+        :param context: context for which action is taken
         :param action: action taken for the step
         :param reward: reward obtained for the step
+        :type context: int
         :type action: int
         :type reward: float
         """
@@ -331,7 +332,7 @@ if __name__ == "__main__":
     from .contextual_bandits import BernoulliCB, GaussianCB
 
     timesteps = 10000
-    iterations = 10
+    iterations = 1000
     bandits = 5
     arms = 10
     bandit_args = {"bandits": bandits, "arms": arms}
