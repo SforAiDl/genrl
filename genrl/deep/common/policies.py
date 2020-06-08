@@ -1,6 +1,7 @@
+from typing import Tuple
+
 from .base import BasePolicy
 from .utils import mlp
-from typing import Tuple
 
 
 class MlpPolicy(BasePolicy):

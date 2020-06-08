@@ -1,35 +1,32 @@
 from collections import deque
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Union
 
 import gym
 import numpy as np
-
 import torch
 import torch.optim as opt
 import torchvision.transforms as transforms
 from torch.autograd import Variable
-from copy import deepcopy
 
 from ...common import (
-    ReplayBuffer,
     PrioritizedBuffer,
-    get_model,
-    save_params,
-    load_params,
+    ReplayBuffer,
     get_env_properties,
+    get_model,
+    load_params,
+    save_params,
     set_seeds,
     venv,
 )
-
 from .utils import (
-    DuelingDQNValueMlp,
-    DuelingDQNValueCNN,
-    NoisyDQNValue,
-    NoisyDQNValueCNN,
     CategoricalDQNValue,
     CategoricalDQNValueCNN,
+    DuelingDQNValueCNN,
+    DuelingDQNValueMlp,
+    NoisyDQNValue,
+    NoisyDQNValueCNN,
 )
-
-from typing import Union, Any, Optional, Dict, List
 
 
 class DQN:
@@ -37,7 +34,7 @@ class DQN:
     Deep Q Networks
 
     Paper (DQN) https://arxiv.org/pdf/1312.5602.pdf
-    
+
     Paper (Double DQN) https://arxiv.org/abs/1509.06461
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
@@ -66,9 +63,9 @@ class DQN:
     :type env: Gym environment
     :type double_dqn: bool
     :type dueling_dqn: bool
-    :type noisy_dqn: bool 
-    :type categorical_dqn: bool 
-    :type parameterized_replay: bool 
+    :type noisy_dqn: bool
+    :type categorical_dqn: bool
+    :type parameterized_replay: bool
     :type epochs: int
     :type max_iterations_per_epoch: int
     :type max_ep_len: int
@@ -107,8 +104,8 @@ class DQN:
         min_epsilon: float = 0.01,
         epsilon_decay: int = 1000,
         num_atoms: int = 51,
-        Vmin: int = -10,
-        Vmax: int = 10,
+        vmin: int = -10,
+        vmax: int = 10,
         tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
@@ -134,8 +131,8 @@ class DQN:
         self.gamma = gamma
         self.batch_size = batch_size
         self.num_atoms = num_atoms
-        self.Vmin = Vmin
-        self.Vmax = Vmax
+        self.Vmin = vmin
+        self.Vmax = vmax
         self.tensorboard_log = tensorboard_log
         self.render = render
         self.loss_hist = []
@@ -174,7 +171,7 @@ class DQN:
 
     def create_model(self) -> None:
         """
-        Initialize the model and target model for various variants of DQN. 
+        Initialize the model and target model for various variants of DQN.
         Initializes optimizer and replay buffers as well.
         """
         state_dim, action_dim, _, _ = get_env_properties(self.env)
@@ -264,8 +261,8 @@ class DQN:
 
         :param state: Observation state
         :type state: int, float, ...
-        :returns: Action based on the state and epsilon value 
-        :rtype: int, float, ... 
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
         """
 
         if np.random.rand() > self.epsilon:
@@ -285,7 +282,7 @@ class DQN:
 
     def get_td_loss(self) -> torch.Tensor:
         """
-        Computes loss for various variants 
+        Computes loss for various variants
 
         :returns: the TD loss depending upon the variant
         :rtype: float
@@ -392,12 +389,12 @@ class DQN:
 
     def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
         """
-        A helper function to calculate the value of epsilon after every step. 
+        A helper function to calculate the value of epsilon after every step.
 
-        :param frame_idx: Current step 
+        :param frame_idx: Current step
         :type frame_idx: int
         :returns: epsilon value for the step
-        :rtype: float 
+        :rtype: float
         """
         return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
             -1.0 * frame_idx / self.epsilon_decay
@@ -411,12 +408,12 @@ class DQN:
 
         :param next_state: next observation state
         :param rewards: rewards collected
-        :param dones: dones 
+        :param dones: dones
         :type next_state: int, float, ...
-        :type rewards: list 
+        :type rewards: list
         :type dones: list
-        :returns: projection distribution 
-        :rtype: float 
+        :returns: projection distribution
+        :rtype: float
         """
         batch_size = next_state.size(0)
 
@@ -436,11 +433,11 @@ class DQN:
         dones = dones.expand_as(next_dist)
         support = support.unsqueeze(0).expand_as(next_dist)
 
-        Tz = rewards + (1 - dones) * 0.99 * support
-        Tz = Tz.clamp(min=self.Vmin, max=self.Vmax)
-        b = (Tz - self.Vmin) / delta_z
-        lower = b.floor().long()
-        upper = b.ceil().long()
+        tz = rewards + (1 - dones) * 0.99 * support
+        tz = tz.clamp(min=self.Vmin, max=self.Vmax)
+        bz = (tz - self.Vmin) / delta_z
+        lower = bz.floor().long()
+        upper = bz.ceil().long()
 
         offset = (
             torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size)
@@ -451,10 +448,10 @@ class DQN:
 
         projection_dist = torch.zeros(next_dist.size())
         projection_dist.view(-1).index_add_(
-            0, (lower + offset).view(-1), (next_dist * (upper.float() - b)).view(-1)
+            0, (lower + offset).view(-1), (next_dist * (upper.float() - bz)).view(-1)
         )
         projection_dist.view(-1).index_add_(
-            0, (upper + offset).view(-1), (next_dist * (b - lower.float())).view(-1)
+            0, (upper + offset).view(-1), (next_dist * (bz - lower.float())).view(-1)
         )
 
         return projection_dist

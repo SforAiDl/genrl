@@ -1,5 +1,6 @@
-import numpy as np
 from typing import Tuple
+
+import numpy as np
 
 
 class TabularModel:
@@ -19,20 +20,26 @@ class TabularModel:
         self.s_model = np.zeros((s_dim, a_dim), dtype=np.uint8)
         self.r_model = np.zeros((s_dim, a_dim))
 
-    def add(self, s: np.ndarray, a: np.ndarray, r: float, s_: np.ndarray) -> None:
+    def add(
+        self,
+        state: np.ndarray,
+        action: np.ndarray,
+        reward: float,
+        next_state: np.ndarray,
+    ) -> None:
         """
         add transition to model
-        :param s: state
-        :param a: action
-        :param r: reward
-        :param s_: next state
-        :type s: float array
-        :type a: int
-        :type r: int
-        :type s_: float array
+        :param state: state
+        :param action: action
+        :param reward: reward
+        :param next_state: next state
+        :type state: float array
+        :type action: int
+        :type reward: int
+        :type next_state: float array
         """
-        self.s_model[s, a] = s_
-        self.r_model[s, a] = r
+        self.s_model[state, action] = next_state
+        self.r_model[state, action] = reward
 
     def sample(self) -> Tuple:
         """
@@ -42,25 +49,25 @@ class TabularModel:
         :rtype: int, float, ... ; int, float, ...
         """
         # select random visited state
-        s = np.random.choice(np.where(np.sum(self.s_model, axis=1) > 0)[0])
+        state = np.random.choice(np.where(np.sum(self.s_model, axis=1) > 0)[0])
         # random action in that state
-        a = np.random.choice(np.where(self.s_model[s] > 0)[0])
-        return s, a
+        action = np.random.choice(np.where(self.s_model[state] > 0)[0])
+        return state, action
 
-    def step(self, s: np.ndarray, a: np.ndarray) -> Tuple:
+    def step(self, state: np.ndarray, action: np.ndarray) -> Tuple:
         """
         return consequence of action at state
 
         :returns: reward and next state
         :rtype: int; int, float, ...
         """
-        r = self.r_model[s, a]
-        s_ = self.s_model[s, a]
-        return r, s_
+        reward = self.r_model[state, action]
+        next_state = self.s_model[state, action]
+        return reward, next_state
 
     def is_empty(self) -> bool:
         """
-        Check if the model has been updated or not 
+        Check if the model has been updated or not
 
         :returns: True if model not updated yet
         :rtype: bool

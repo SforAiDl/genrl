@@ -1,6 +1,6 @@
-import pytest
-import numpy as np
 import gym
+import numpy as np
+import pytest
 
 from genrl.classical.common import TabularModel
 
@@ -11,10 +11,10 @@ class TestModels:
 
         assert model.s_model.shape == (4, 2)
         assert model.r_model.shape == (4, 2)
-        assert model.is_empty() == True
+        assert model.is_empty() is True
 
         model.add(3, 1, 3.1, 1)
-        assert model.is_empty() == False
+        assert model.is_empty() is False
 
         assert model.s_model[3, 1] == 1
         assert model.r_model[3, 1] == 3.1
