@@ -280,7 +280,9 @@ class DQN:
         state = state.reshape(
             self.batch_size * self.env.n_envs, *self.env.observation_space.shape
         )
-        action = action.reshape(self.batch_size * self.env.n_envs, 1)
+        action = action.reshape(
+            self.batch_size * self.env.n_envs, *self.env.action_shape
+        )
         reward = reward.reshape(-1, 1)
         done = done.reshape(-1, 1)
         next_state = next_state.reshape(
@@ -294,13 +296,12 @@ class DQN:
         done = Variable(torch.FloatTensor(done))
 
         if self.network_type == "cnn":
-            if self.framestack is not None:
-                state = state.view(
-                    -1, self.framestack, self.env.screen_size, self.env.screen_size,
-                )
-                next_state = next_state.view(
-                    -1, self.framestack, self.env.screen_size, self.env.screen_size,
-                )
+            state = state.view(
+                -1, self.framestack, self.env.screen_size, self.env.screen_size,
+            )
+            next_state = next_state.view(
+                -1, self.framestack, self.env.screen_size, self.env.screen_size,
+            )
 
         if self.categorical_dqn:
             projection_dist = self.projection_distribution(next_state, reward, done)

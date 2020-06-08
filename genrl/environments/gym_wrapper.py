@@ -38,6 +38,13 @@ serially or parallelly
         env = super(GymWrapper, self).__getattribute__("env")
         return getattr(env, name)
 
+    @property
+    def action_shape(self):
+        if isinstance(self.env.action_space, gym.spaces.Discrete):
+            return [1]
+        elif isinstance(self.env.action_space, gym.spaces.Box):
+            return self.env.action_space.shape
+
     def render(self, mode: str = "human") -> None:
         """
         Renders all envs in a tiles format similar to baselines.

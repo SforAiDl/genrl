@@ -1,15 +1,18 @@
 import gym
 
 from ..environments import GymWrapper, AtariPreprocessing, FrameStack, NoopReset
-from ..environments.vec_env import VecEnv, SubProcessVecEnv, SerialVecEnv
+from ..environments.vec_env.vector_envs import SubProcessVecEnv, SerialVecEnv
+from ..environments.vec_env import VecEnv, VecNormalize
+
+from typing import Dict
 
 
 def VectorEnv(
     env_id: str,
     n_envs: int = 2,
-    parallel: bool = False,
+    parallel: int = False,
     env_type: str = "gym",
-    **kwargs
+    atari_args: Dict = {},
 ) -> VecEnv:
     """
     Chooses the kind of Vector Environment that is required
@@ -19,28 +22,30 @@ def VectorEnv(
     :param parallel: True if we want environments to run parallely and \
 subprocesses, False if we want environments to run serially one after the other
     :param env_type: Type of environment. Currently, we support ['gym', 'atari']
+    :param atari_args: Kwargs for AtariEnv
     :type env_id: string
     :type n_envs: int
     :type parallel: False
     :type env_type: string
+    :type atari_args: Dictionary
     :returns: Vector Environment
     :rtype: VecEnv
     """
-    assert env_type in ["gym", "atari"]
-    if env_type == "gym":
-        Env = GymEnv
-    elif env_type == "atari":
-        Env = AtariEnv
-
     envs = []
+
     for _ in range(n_envs):
-        env = Env(env_id, **kwargs)
+        if env_type == "atari":
+            env = AtariEnv(env_id, atari_args)
+        else:
+            env = GymEnv(env_id)
         envs.append(env)
 
     if parallel:
-        return SubProcessVecEnv(envs, n_envs)
+        venv = SubProcessVecEnv(envs, n_envs)
     else:
-        return SerialVecEnv(envs, n_envs)
+        venv = SerialVecEnv(envs, n_envs)
+
+    return VecNormalize(venv)
 
 
 def GymEnv(env_id: str) -> gym.Env:

@@ -51,15 +51,12 @@ class VecEnv(ABC):
 
     def __init__(self, envs, n_envs=2):
         self.envs = envs
-        self.env = envs[0]
-        self._n_envs = len(self.envs)
+        self.single_env = envs[0]
+        self._n_envs = n_envs
 
     def __getattr__(self, name):
-        """
-        All other calls would go to base env
-        """
-        env = super(VecEnv, self).__getattribute__("env")
-        return getattr(env, name)
+        single_env = super(VecEnv, self).__getattribute__('single_env')
+        return getattr(single_env, name)
 
     def __iter__(self):
         """
@@ -276,7 +273,6 @@ class SubProcessVecEnv(VecEnv):
         self.waiting = False
 
         observations, rewards, dones, infos = zip(*result)
-        print(observations, rewards, dones)
         return observations, rewards, dones, infos
 
     def close(self):
