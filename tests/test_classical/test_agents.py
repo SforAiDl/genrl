@@ -1,8 +1,8 @@
-import pytest
-import numpy as np
 import gym
+import numpy as np
+import pytest
 
-from genrl import QLearning, SARSA
+from genrl import SARSA, QLearning
 
 
 class TestAgents:
@@ -10,7 +10,7 @@ class TestAgents:
         env = gym.make("FrozenLake-v0")
         agent = QLearning(env)
 
-        assert np.any(agent.Q) == False
+        assert not np.any(agent.Q)
 
         agent.update((3, 1, 3.1, 4))
         answer = np.zeros((16, 4))
@@ -23,8 +23,8 @@ class TestAgents:
         env = gym.make("FrozenLake-v0")
         agent = SARSA(env)
 
-        assert np.any(agent.Q) == False
-        assert np.any(agent.e) == False
+        assert not np.any(agent.Q)
+        assert not np.any(agent.e)
 
         agent.update((3, 1, 3.1, 4))
         answer_Q = np.zeros((16, 4))

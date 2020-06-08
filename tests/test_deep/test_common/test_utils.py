@@ -1,20 +1,21 @@
-import pytest
-import torch
-import torch.nn as nn
-import gym
 import os
 from shutil import rmtree
 
+import gym
+import pytest
+import torch
+import torch.nn as nn
+
+from genrl import PPO1
 from genrl.deep.common import (
+    CNNValue,
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
-    CNNValue,
-    venv,
     OnPolicyTrainer,
+    venv,
 )
 from genrl.deep.common.utils import *
-from genrl import PPO1
 
 
 class TestUtils:
@@ -99,14 +100,14 @@ class TestUtils:
         state_dim, action_dim, discrete, _ = get_env_properties(env)
         assert state_dim == 4
         assert action_dim == 2
-        assert discrete == True
+        assert discrete is True
 
         env = venv("Pendulum-v0", 1)
 
         state_dim, action_dim, discrete, action_lim = get_env_properties(env)
         assert state_dim == 3
         assert action_dim == 1
-        assert discrete == False
+        assert discrete is False
         assert action_lim == 2.0
 
     def test_set_seeds(self):

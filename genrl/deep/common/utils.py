@@ -1,11 +1,13 @@
 import os
-import gym
 import random
-import torch
+from typing import Any, Tuple, Union
+
+import gym
 import numpy as np
+import torch
 import torch.nn as nn
-from .VecEnv import venv, VecEnv
-from typing import Tuple, Union, Any
+
+from .VecEnv import VecEnv, venv
 
 
 def get_model(type_: str, name_: str) -> Union:
@@ -13,8 +15,8 @@ def get_model(type_: str, name_: str) -> Union:
     Utility to get the class of required function
 
     :param type_: "ac" for Actor Critic, "v" for Value, "p" for Policy
-    :param name_: Name of the specific structure of model. \
-Eg. "mlp" or "cnn"
+    :param name_: Name of the specific structure of model. (
+Eg. "mlp" or "cnn")
     :type type_: string
     :type name_: string
     :returns: Required class. Eg. MlpActorCritic
@@ -42,14 +44,14 @@ def mlp(sizes: Tuple, sac: bool = False):
     :param sac: True if Soft Actor Critic is being used, else False
     :type sizes: tuple or list
     :type sac: bool
-    :returns: Neural Network with fully-connected linear layers and \
-activation layers
+    :returns: (Neural Network with fully-connected linear layers and
+activation layers)
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
-    for j in range(limit - 1):
-        act = nn.ReLU if j < limit - 2 else nn.Identity
-        layers += [nn.Linear(sizes[j], sizes[j + 1]), act()]
+    for layer in range(limit - 1):
+        act = nn.ReLU if layer < limit - 2 else nn.Identity
+        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act()]
     return nn.Sequential(*layers)
 
 
@@ -60,8 +62,8 @@ def cnn(
     in_size: int = 84,
 ) -> (Tuple):
     """
-    Generates a CNN model given input dimensions, channels, kernel_sizes and \
-strides
+    (Generates a CNN model given input dimensions, channels, kernel_sizes and
+strides)
 
     :param channels: Input output channels before and after each convolution
     :param kernel_sizes: Kernel sizes for each convolution
@@ -71,8 +73,8 @@ strides
     :type kernel_sizes: tuple
     :type strides: tuple
     :type in_size: int
-    :returns: Convolutional Neural Network with convolutional layers and \
-activation layers
+    :returns: (Convolutional Neural Network with convolutional layers and
+activation layers)
     """
     cnn_layers = []
     output_size = in_size
@@ -149,7 +151,7 @@ def get_env_properties(env: Union[gym.Env, venv]) -> (Tuple[int]):
     :param env: Environment that the agent is interacting with
     :type env: Gym Environment
 
-    :returns: State space dimensions, Action space dimensions, \
+    :returns: (State space dimensions, Action space dimensions,
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
@@ -201,7 +203,7 @@ def get_obs_action_shape(obs, action):
 def get_obs_shape(observation_space):
     """
     Get the shape of the observation.
-    :param observation_space: Observation space 
+    :param observation_space: Observation space
     :type observation_space: gym.spaces.Space
     :returns: The observation space's shape
     :rtype: (Tuple[int, ...])

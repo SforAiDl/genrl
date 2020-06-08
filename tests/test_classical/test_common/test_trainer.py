@@ -1,6 +1,6 @@
-import pytest
-import numpy as np
 import gym
+import numpy as np
+import pytest
 
 from genrl import SARSA, QLearning
 from genrl.classical.common import Trainer

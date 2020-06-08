@@ -1,19 +1,20 @@
+from copy import deepcopy
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
-import gym
-from copy import deepcopy
 
 from ...common import (
     ReplayBuffer,
-    get_model,
-    save_params,
-    load_params,
     get_env_properties,
+    get_model,
+    load_params,
+    save_params,
     set_seeds,
     venv,
 )
-from typing import Tuple, Union, Dict, Optional, Any
 
 
 class TD3:
@@ -21,7 +22,7 @@ class TD3:
     Twin Delayed DDPG
 
     Paper: https://arxiv.org/abs/1509.02971
-    
+
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
@@ -165,7 +166,7 @@ class TD3:
 
     def create_model(self) -> None:
         state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete == True:
+        if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
             )
@@ -323,9 +324,9 @@ class TD3:
         if self.noise is not None:
             self.noise.reset()
 
-        for t in range(0, total_steps, self.env.n_envs):
+        for timestep in range(0, total_steps, self.env.n_envs):
             # execute single transition
-            if t > self.start_steps:
+            if timestep > self.start_steps:
                 action = self.select_action(state, deterministic=True)
             else:
                 action = self.env.sample()
@@ -354,13 +355,13 @@ class TD3:
                 if sum(episode) % 20 == 0:
                     print(
                         "Ep: {}, reward: {}, t: {}".format(
-                            sum(episode), np.mean(episode_reward), t
+                            sum(episode), np.mean(episode_reward), timestep
                         )
                     )
 
-                for i, d in enumerate(done):
+                for i, di in enumerate(done):
                     # print(d)
-                    if d or episode_len[i] == self.max_ep_len:
+                    if di or episode_len[i] == self.max_ep_len:
                         episode_reward[i] = 0
                         episode_len[i] = 0
                         episode += 1
@@ -369,7 +370,9 @@ class TD3:
                     self.noise.reset()
 
                 if self.tensorboard_log:
-                    self.writer.add_scalar("episode_reward", np.mean(episode_reward), t)
+                    self.writer.add_scalar(
+                        "episode_reward", np.mean(episode_reward), timestep
+                    )
 
                 state, episode_reward, episode_len = (
                     self.env.reset(),
@@ -379,7 +382,7 @@ class TD3:
                 episode += 1
 
             # update params
-            if t >= self.start_update and t % self.update_interval == 0:
+            if timestep >= self.start_update and timestep % self.update_interval == 0:
                 for _ in range(self.update_interval):
                     batch = self.replay_buffer.sample(self.batch_size)
                     states, actions, rewards, next_states, dones = (
@@ -390,9 +393,9 @@ class TD3:
                     )
 
             if self.save_model is not None:
-                if t >= self.start_update and t % self.save_interval == 0:
+                if timestep >= self.start_update and timestep % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, t)
+                    self.save(self, timestep)
                     print("Saved current model")
 
         self.env.close()
