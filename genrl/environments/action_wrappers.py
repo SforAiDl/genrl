@@ -1,18 +1,21 @@
-import numpy as np
-from gym.spaces import Box
-from gym.core import ActionWrapper
-import gym
 from typing import Union
+
+import gym
+import numpy as np
+from gym.core import ActionWrapper
+from gym.spaces import Box
+
 from .vec_env import VecEnv
 
 
 class ClipAction(ActionWrapper):
     """
     Action Wrapper to clip actions
-    
+
     :param env: The environment whose actions need to be clipped
     :type env: object
     """
+
     def __init__(self, env: Union[gym.Env, VecEnv]):
         super(ClipAction, self).__init__(env)
         assert isinstance(self.env.action_space, Box)
@@ -33,6 +36,7 @@ class RescaleAction(ActionWrapper):
     :type low: int
     :type high: int
     """
+
     def __init__(self, env: Union[gym.Env, VecEnv], low: int, high: int):
         super(RescaleAction, self).__init__(env)
         assert isinstance(self.env.action_space, Box)

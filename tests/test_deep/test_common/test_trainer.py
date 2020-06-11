@@ -2,6 +2,7 @@ from genrl import PPO1, TD3
 from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
 from genrl.environments import VectorEnv
 
+
 def test_on_policy_trainer():
     env = VectorEnv("CartPole-v1", 2)
     algo = PPO1("mlp", env)

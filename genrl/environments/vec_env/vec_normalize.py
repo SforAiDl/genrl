@@ -1,8 +1,9 @@
+from typing import Any, Tuple
+
 import numpy as np
-from .vector_envs import VecEnv
+
 from .utils import RunningMeanStd
 from .vector_envs import VecEnv
-from typing import Any, Tuple
 
 
 class VecNormalize(VecEnv):
@@ -22,18 +23,21 @@ class VecNormalize(VecEnv):
     :type clip_reward: float
     :type gamma: float
     """
+
     def __init__(
         self,
         venv: VecEnv,
         norm_obs: bool = True,
         norm_reward: bool = False,
-        clip_obs: float = 10.,
-        clip_reward: float = 10.,
+        clip_obs: float = 10.0,
+        clip_reward: float = 10.0,
         gamma: float = 0.99,
     ):
         super(VecNormalize, self).__init__(venv)
 
-        self.obs_rms = RunningMeanStd(shape=self.observation_space.shape) if norm_obs else False
+        self.obs_rms = (
+            RunningMeanStd(shape=self.observation_space.shape) if norm_obs else False
+        )
         self.reward_rms = RunningMeanStd(shape=(1, 1)) if norm_reward else False
 
         self.clip_obs = clip_obs
@@ -64,13 +68,17 @@ class VecNormalize(VecEnv):
 
         self.returns = self.returns * self.gamma + rewards
         states = self._normalize(self.obs_rms, self.clip_obs, states)
-        rewards = self._normalize(self.reward_rms, self.clip_reward, rewards).reshape(self.n_envs,)
+        rewards = self._normalize(self.reward_rms, self.clip_reward, rewards).reshape(
+            self.n_envs,
+        )
 
         self.returns[dones.astype(bool)] = 0
 
         return states, rewards, dones, infos
 
-    def _normalize(self, rms: RunningMeanStd, clip: float, batch: np.ndarray) -> np.ndarray:
+    def _normalize(
+        self, rms: RunningMeanStd, clip: float, batch: np.ndarray
+    ) -> np.ndarray:
         """
         Function to normalize and clip a given RMS
 
@@ -85,9 +93,7 @@ class VecNormalize(VecEnv):
         """
         if rms:
             rms.update(batch)
-            batch = np.clip(
-                (batch - rms.mean) / np.sqrt(rms.var + 1e-8), -clip, clip
-            )
+            batch = np.clip((batch - rms.mean) / np.sqrt(rms.var + 1e-8), -clip, clip)
         return batch
 
     def reset(self) -> np.ndarray:

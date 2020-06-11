@@ -6,7 +6,7 @@ from genrl import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
 from genrl.deep.common import (
     OffPolicyTrainer,
     OnPolicyTrainer,
-    OrnsteinUhlenbeckActionNoise
+    OrnsteinUhlenbeckActionNoise,
 )
 from genrl.environments import VectorEnv
 

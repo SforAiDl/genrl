@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 
+from ....environments import VecEnv
 from ...common import (
     ReplayBuffer,
     get_env_properties,
@@ -15,7 +16,6 @@ from ...common import (
     save_params,
     set_seeds,
 )
-from ....environments import VecEnv
 
 
 class DDPG:

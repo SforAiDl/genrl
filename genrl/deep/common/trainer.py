@@ -1,15 +1,14 @@
 from abc import ABC
-import torch
+from typing import Any, List, Optional, Type, Union
+
 import gym
 import numpy as np
+import torch
 
+from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
-from .buffers import ReplayBuffer, PrioritizedBuffer
-from ...environments import VecEnv
 from .utils import save_params, set_seeds
-
-from typing import Union, Type, List, Optional, Any
 
 
 class Trainer(ABC):

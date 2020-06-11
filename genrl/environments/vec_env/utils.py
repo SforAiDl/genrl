@@ -1,5 +1,6 @@
-import numpy as np
 from typing import Tuple
+
+import numpy as np
 
 
 class RunningMeanStd:
@@ -11,6 +12,7 @@ class RunningMeanStd:
     :type epsilon: float
     :type shape: Tuple
     """
+
     def __init__(self, epsilon: float = 1e-4, shape: Tuple = ()):
         self.mean = np.zeros(shape, dtype=np.float64)
         self.var = np.ones(shape, dtype=np.float64)

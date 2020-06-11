@@ -7,6 +7,7 @@ import torch
 import torch.optim as opt
 from torch.autograd import Variable
 
+from ....environments import VecEnv
 from ...common import (
     PrioritizedBuffer,
     ReplayBuffer,
@@ -16,9 +17,6 @@ from ...common import (
     save_params,
     set_seeds,
 )
-
-from ....environments import VecEnv
-
 from .utils import (
     CategoricalDQNValue,
     CategoricalDQNValueCNN,

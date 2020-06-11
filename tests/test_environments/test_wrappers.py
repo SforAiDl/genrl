@@ -2,8 +2,7 @@ import shutil
 
 from genrl import SAC
 from genrl.deep.common import OffPolicyTrainer
-from genrl.environments import VectorEnv, GymEnv
-from genrl.environments import ClipAction, RescaleAction
+from genrl.environments import ClipAction, GymEnv, RescaleAction, VectorEnv
 
 
 class TestWrappers:
@@ -23,7 +22,7 @@ class TestWrappers:
         Tests working of Clip Action Wrapper
         """
         env = GymEnv("Pendulum-v0")
-        env = ClipAction(env, 1., 2.)
+        env = ClipAction(env, 1.0, 2.0)
 
         action = env.action_space.sample()
         assert action == 1.0

@@ -1,10 +1,10 @@
 from collections import deque
-import numpy as np
-import gym
-from gym.spaces import Box
-from gym.core import Wrapper
-
 from typing import List, Tuple
+
+import gym
+import numpy as np
+from gym.core import Wrapper
+from gym.spaces import Box
 
 
 class LazyFrames(object):

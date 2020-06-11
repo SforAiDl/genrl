@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from ....environments import VecEnv
 from ...common import (
     ReplayBuffer,
     get_env_properties,
@@ -14,7 +15,6 @@ from ...common import (
     save_params,
     set_seeds,
 )
-from ....environments import VecEnv
 
 
 class TD3:

@@ -9,8 +9,8 @@ import torch.optim as opt
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from ...common import get_model, ReplayBuffer, save_params, load_params, set_seeds
 from ....environments import VecEnv
+from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds
 
 
 class SAC:

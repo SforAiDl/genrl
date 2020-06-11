@@ -1,11 +1,10 @@
-from abc import ABC, abstractmethod
-
-import multiprocessing as mp
 import copy
-import numpy as np
-import gym
+import multiprocessing as mp
+from abc import ABC, abstractmethod
+from typing import Any, Iterator, List, Tuple
 
-from typing import List, Any, Iterator, Tuple
+import gym
+import numpy as np
 
 
 def worker(parent_conn: mp.Pipe, child_conn: mp.Pipe, env: VecEnv):
@@ -58,7 +57,7 @@ class VecEnv(ABC):
         self._n_envs = n_envs
 
     def __getattr__(self, name: str) -> Any:
-        single_env = super(VecEnv, self).__getattribute__('single_env')
+        single_env = super(VecEnv, self).__getattribute__("single_env")
         return getattr(single_env, name)
 
     def __iter__(self) -> Iterator:

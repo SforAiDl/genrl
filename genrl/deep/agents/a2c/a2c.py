@@ -7,8 +7,8 @@ import torch.nn.functional as F
 import torch.optim as opt
 from torch.autograd import Variable
 
-from ...common import get_model, save_params, load_params, set_seeds, RolloutBuffer
 from ....environments.vec_env import VecEnv
+from ...common import RolloutBuffer, get_model, load_params, save_params, set_seeds
 
 
 class A2C:
