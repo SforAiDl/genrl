@@ -1,11 +1,11 @@
 from genrl import (
-    GaussianBandit,
+    BayesianUCBPolicy,
     BernoulliBandit,
     EpsGreedyPolicy,
-    UCBPolicy,
+    GaussianBandit,
     SoftmaxActionSelectionPolicy,
-    BayesianUCBPolicy,
     ThompsonSamplingPolicy,
+    UCBPolicy,
 )
 
 

@@ -1,20 +1,21 @@
+from copy import deepcopy
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-import gym
-from copy import deepcopy
 
 from ...common import (
     ReplayBuffer,
-    get_model,
-    save_params,
-    load_params,
     get_env_properties,
+    get_model,
+    load_params,
+    save_params,
     set_seeds,
 )
 from ....environments import VecEnv
-from typing import Optional, Any, Tuple, Union, Dict
 
 
 class DDPG:
@@ -238,7 +239,7 @@ class DDPG:
         :returns: the Q loss value
         :rtype: float
         """
-        q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
+        quality = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
             q_pi_target = self.ac_target.get_value(
@@ -248,7 +249,7 @@ class DDPG:
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
 
-        return nn.MSELoss()(q, target)
+        return nn.MSELoss()(quality, target)
 
     def get_p_loss(self, state: np.ndarray) -> torch.Tensor:
         """
@@ -313,9 +314,9 @@ class DDPG:
         if self.noise is not None:
             self.noise.reset()
 
-        for t in range(0, total_steps, self.env.n_envs):
+        for timestep in range(0, total_steps, self.env.n_envs):
             # execute single transition
-            if t > self.start_steps:
+            if timestep > self.start_steps:
                 action = self.select_action(state, deterministic=True)
             else:
                 action = self.env.sample()
@@ -343,18 +344,18 @@ class DDPG:
                 if sum(episode) % 20 == 0:
                     print(
                         "Ep: {}, reward: {}, t: {}".format(
-                            sum(episode), np.mean(episode_reward), t
+                            sum(episode), np.mean(episode_reward), timestep
                         )
                     )
 
-                for i, d in enumerate(done):
-                    if d:
+                for i, di in enumerate(done):
+                    if di:
                         episode_reward[i] = 0
                         episode_len[i] = 0
                         episode += 1
 
             # update params
-            if t >= self.start_update and t % self.update_interval == 0:
+            if timestep >= self.start_update and timestep % self.update_interval == 0:
                 for _ in range(self.update_interval):
                     batch = self.replay_buffer.sample(self.batch_size)
                     states, actions, rewards, next_states, dones = (
@@ -365,9 +366,9 @@ class DDPG:
                     )
 
             if self.save_model is not None:
-                if t >= self.start_update and t % self.save_interval == 0:
+                if timestep >= self.start_update and timestep % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, t)
+                    self.save(self, timestep)
                     print("Saved current model")
 
         self.env.close()

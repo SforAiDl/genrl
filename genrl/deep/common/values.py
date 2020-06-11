@@ -1,7 +1,9 @@
-from .base import BaseValue
-from .utils import mlp, cnn
-from typing import Tuple, Union, Type
+from typing import Tuple, Type, Union
+
 import numpy as np
+
+from .base import BaseValue
+from .utils import cnn, mlp
 
 
 def _get_val_model(
@@ -11,8 +13,8 @@ def _get_val_model(
     Returns Neural Network given specifications
 
     :param arch: Specifies type of architecture "mlp" for MLP layers
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param state_dim: State dimensions of environment
     :param action_dim: Action dimensions of environment
     :param hidden: Sizes of hidden layers
@@ -39,8 +41,8 @@ class MlpValue(BaseValue):
 
     :param state_dim: State dimensions of environment
     :param action_dim: Action dimensions of environment
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param hidden: Sizes of hidden layers
     :type state_dim: int
     :type action_dim: int
@@ -70,8 +72,8 @@ class CNNValue(BaseValue):
     :param state_dim: State dimension of environment
     :param action_dim: Action dimension of environment
     :param framestack: Number of previous frames to stack together
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param hidden: Sizes of hidden layers
     :type state_dim: int
     :type action_dim: int

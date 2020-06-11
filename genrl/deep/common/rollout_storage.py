@@ -1,13 +1,8 @@
-from typing import (
-    Union,
-    Optional,
-    Generator,
-    NamedTuple,
-)
+from typing import Generator, NamedTuple, Optional, Union
 
-import torch
 import numpy as np
 from .utils import get_obs_action_shape
+import torch
 from gym import spaces
 
 
@@ -118,7 +113,7 @@ class BaseBuffer(object):
         """
         upper_bound = self.buffer_size if self.full else self.pos
         batch_inds = np.random.randint(0, upper_bound, size=batch_size)
-        return self._get_samples(batch_inds, env=env)
+        return self._get_samples(batch_inds)
 
     def _get_samples(
         self, batch_inds: np.ndarray,
@@ -144,14 +139,10 @@ class BaseBuffer(object):
 
     @staticmethod
     def _normalize_obs(obs: np.ndarray,) -> np.ndarray:
-        if env is not None:
-            return env.normalize_obs(obs).astype(np.float32)
         return obs
 
     @staticmethod
     def _normalize_reward(reward: np.ndarray,) -> np.ndarray:
-        if env is not None:
-            return env.normalize_reward(reward).astype(np.float32)
         return reward
 
 

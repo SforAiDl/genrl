@@ -1,12 +1,14 @@
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as opt
 from torch.autograd import Variable
-import gym
 
 from ...common import get_model, save_params, load_params, set_seeds, RolloutBuffer
-from typing import Union, Tuple, Any, Optional, Dict
+from ....environments.vec_env import VecEnv
 
 
 class A2C:
@@ -27,8 +29,8 @@ class A2C:
     :param layers: Number of neurons in hidden layers
     :param noise: Noise function to use
     :param noise_std: Standard deviation for action noise
-    :param tensorboard_log: The log location for Tensorboard\
-(if None, no logging)
+    :param tensorboard_log: (The log location for Tensorboard
+(if None, no logging))
     :param seed: Seed for reproducing results
     :param render: True if environment is to be rendered, else False
     :param device: Device to use for Tensor operation ['cpu', 'cuda']
@@ -65,7 +67,7 @@ class A2C:
     def __init__(
         self,
         network_type: str,
-        env: gym.Env,
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         actor_batch_size: int = 64,
         lr_actor: float = 0.01,
@@ -189,8 +191,8 @@ class A2C:
 
     def get_traj_loss(self, value, done) -> None:
         """
-        Get trajectory of agent to calculate discounted rewards and \
-calculate losses
+        (Get trajectory of agent to calculate discounted rewards and
+calculate losses)
         """
         self.rollout.compute_returns_and_advantage(value.detach().cpu().numpy(), done)
 
@@ -254,8 +256,8 @@ calculate losses
 
             state = next_state
 
-            for i, d in enumerate(done):
-                if d:
+            for i, di in enumerate(done):
+                if di:
                     self.rewards.append(self.epoch_reward[i])
                     self.epoch_reward[i] = 0
 
@@ -289,8 +291,8 @@ calculate losses
         """
         Helper function to extract the observation and action space
 
-        :returns: Observation space, Action Space and whether the action \
-space is discrete or not
+        :returns: (Observation space, Action Space and whether the action
+space is discrete or not)
         :rtype: int, float, ... ; int, float, ... ; bool
         """
         state_dim = self.env.observation_space.shape[0]

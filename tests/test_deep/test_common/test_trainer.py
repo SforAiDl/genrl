@@ -1,7 +1,6 @@
-from genrl import OffPolicyTrainer, OnPolicyTrainer
-from genrl.environments.suite import VectorEnv
 from genrl import PPO1, TD3
-
+from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
+from genrl.environments import VectorEnv
 
 def test_on_policy_trainer():
     env = VectorEnv("CartPole-v1", 2)

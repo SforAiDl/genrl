@@ -1,9 +1,11 @@
-import torch
-from collections import deque
 import random
-import numpy as np
+from collections import deque
 from typing import Tuple
-from .utils import get_obs_shape, get_action_dim
+
+import numpy as np
+import torch
+
+from .utils import get_action_dim, get_obs_shape
 
 
 class ReplayBuffer:
@@ -26,7 +28,7 @@ class ReplayBuffer:
         )
         self.pos = 0
 
-    def push(self, x):
+    def push(self, inp):
         if self.pos >= self.buffer_size:
             self.observations = np.roll(self.observations, -1, axis=0)
             self.actions = np.roll(self.actions, -1, axis=0)
@@ -36,11 +38,11 @@ class ReplayBuffer:
             pos = self.buffer_size - 1
         else:
             pos = self.pos
-        self.observations[pos] += np.array(x[0]).copy()
-        self.actions[pos] += np.array(x[1]).copy()
-        self.rewards[pos] += np.array(x[2]).copy()
-        self.next_observations[pos] += np.array(x[3]).copy()
-        self.dones[pos] += np.array(x[4]).copy()
+        self.observations[pos] += np.array(inp[0]).copy()
+        self.actions[pos] += np.array(inp[1]).copy()
+        self.rewards[pos] += np.array(inp[2]).copy()
+        self.next_observations[pos] += np.array(inp[3]).copy()
+        self.dones[pos] += np.array(inp[4]).copy()
         self.pos += 1
 
     def sample(self, batch_size):
@@ -58,8 +60,8 @@ class ReplayBuffer:
             for v in [state, action, reward, next_state, done]
         )
 
-    def extend(self, x):
-        for sample in x:
+    def extend(self, inp):
+        for sample in inp:
             if self.pos >= self.buffer_size:
                 self.observations = np.roll(self.observations, -1, axis=0)
                 self.actions = np.roll(self.actions, -1, axis=0)
@@ -89,18 +91,18 @@ class PushReplayBuffer:
         self.capacity = capacity
         self.memory = deque([], maxlen=capacity)
 
-    def push(self, x: Tuple) -> None:
+    def push(self, inp: Tuple) -> None:
         """
         Adds new experience to buffer
 
-        :param x: Tuple containing state, action, reward, next_state and done
-        :type x: tuple
+        :param inp: Tuple containing state, action, reward, next_state and done
+        :type inp: tuple
         :returns: None
         """
-        self.memory.append(x)
+        self.memory.append(inp)
 
-    def extend(self, x):
-        self.memory.extend(x)
+    def extend(self, inp):
+        self.memory.extend(inp)
 
     def sample(
         self, batch_size: int
@@ -110,8 +112,8 @@ class PushReplayBuffer:
 
         :param batch_size: Number of samples per batch
         :type batch_size: int
-        :returns: Tuple composing of `state`, `action`, `reward`, \
-`next_state` and `done`
+        :returns: (Tuple composing of `state`, `action`, `reward`,
+`next_state` and `done`)
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
@@ -146,17 +148,17 @@ class PrioritizedBuffer:
         self.buffer = deque([], maxlen=capacity)
         self.priorities = deque([], maxlen=capacity)
 
-    def push(self, x: Tuple) -> None:
+    def push(self, inp: Tuple) -> None:
         """
         Adds new experience to buffer
 
-        :param x: Tuple containing `state`, `action`, `reward`, \
-`next_state` and `done`
-        :type x: tuple
+        :param inp: (Tuple containing `state`, `action`, `reward`,
+`next_state` and `done`)
+        :type inp: tuple
         :returns: None
         """
         max_priority = max(self.priorities) if self.buffer else 1.0
-        self.buffer.append(x)
+        self.buffer.append(inp)
         self.priorities.append(max_priority)
 
     def sample(
@@ -173,16 +175,16 @@ class PrioritizedBuffer:
         ]
     ):
         """
-        Returns randomly sampled memories from replay memory along with their \
-respective indices and weights
+        (Returns randomly sampled memories from replay memory along with their
+respective indices and weights)
 
         :param batch_size: Number of samples per batch
-        :param beta: Bias exponent used to correct \
-Importance Sampling (IS) weights
+        :param beta: (Bias exponent used to correct
+Importance Sampling (IS) weights)
         :type batch_size: int
         :type beta: float
-        :returns: Tuple containing `states`, `actions`, `next_states`, \
-`rewards`, `dones`, `indices` and `weights`
+        :returns: (Tuple containing `states`, `actions`, `next_states`,
+`rewards`, `dones`, `indices` and `weights`)
         """
         total = len(self.buffer)
 
@@ -210,8 +212,8 @@ Importance Sampling (IS) weights
         Updates list of priorities with new order of priorities
 
         :param batch_indices: List of indices of batch
-        :param batch_priorities: List of priorities of the batch at the \
-specific indices
+        :param batch_priorities: (List of priorities of the batch at the
+specific indices)
         :type batch_indices: list or tuple
         :type batch_priorities: list or tuple
         """

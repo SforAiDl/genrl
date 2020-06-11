@@ -1,27 +1,28 @@
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.optim as opt
 from torch.autograd import Variable
-import gym
 
 from ...common import (
-    get_model,
-    save_params,
-    load_params,
-    get_env_properties,
-    set_seeds,
     RolloutBuffer,
+    get_env_properties,
+    get_model,
+    load_params,
+    save_params,
+    set_seeds,
 )
 from ....environments import VecEnv
-from typing import Tuple, Union, Optional, Any, Dict
 
 
 class VPG:
     """
     Vanilla Policy Gradient algorithm
-    
+
     Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
-    
+
     :param network_type: The deep neural network layer types ['mlp']
     :param env: The environment to learn from
     :param timesteps_per_actorbatch: timesteps per actor per update
@@ -120,7 +121,7 @@ class VPG:
 
     def create_model(self) -> None:
         """
-        Initialize the actor and critic networks 
+        Initialize the actor and critic networks
         """
         state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
         print(state_dim, action_dim, discrete)
@@ -152,13 +153,13 @@ class VPG:
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
         """
-        Select action for the given state 
+        Select action for the given state
 
         :param state: State for which action has to be sampled
-        :param deterministic: Whether the action is deterministic or not 
+        :param deterministic: Whether the action is deterministic or not
         :type state: int, float, ...
         :type deterministic: bool
-        :returns: The action 
+        :returns: The action
         :rtype: int, float, ...
         """
         state = Variable(torch.as_tensor(state).float().to(self.device))
@@ -174,7 +175,7 @@ class VPG:
 
     def get_traj_loss(self, value, done) -> None:
         """
-        Calculates the loss for the trajectory 
+        Calculates the loss for the trajectory
         """
         self.rollout.compute_returns_and_advantage(value.detach().cpu().numpy(), done)
 
@@ -225,8 +226,8 @@ class VPG:
 
             state = next_state
 
-            for i, d in enumerate(done):
-                if d:
+            for i, di in enumerate(done):
+                if di:
                     self.rewards.append(self.epoch_reward[i])
                     self.epoch_reward[i] = 0
 
@@ -254,9 +255,9 @@ class VPG:
                     self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if self.save_model is not None:
-                if episode % self.save_interval == 0:
+                if epoch % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, episode)
+                    self.save(self, epoch)
                     print("Saved current model")
 
         self.env.close()

@@ -1,17 +1,19 @@
-import torch
-import torch.nn as nn
 import os
 from shutil import rmtree
 
+import gym
+import torch
+import torch.nn as nn
+
+from genrl import PPO1
 from genrl.deep.common import (
+    CNNValue,
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
-    CNNValue,
+    OnPolicyTrainer
 )
 from genrl.deep.common.utils import *
-from genrl.environments import VectorEnv
-from genrl import PPO1, OnPolicyTrainer
 
 
 class TestUtils:
@@ -96,14 +98,14 @@ class TestUtils:
         state_dim, action_dim, discrete, _ = get_env_properties(env)
         assert state_dim == 4
         assert action_dim == 2
-        assert discrete == True
+        assert discrete is True
 
         env = VectorEnv("Pendulum-v0", 1)
 
         state_dim, action_dim, discrete, action_lim = get_env_properties(env)
         assert state_dim == 3
         assert action_dim == 1
-        assert discrete == False
+        assert discrete is False
         assert action_lim == 2.0
 
     def test_set_seeds(self):

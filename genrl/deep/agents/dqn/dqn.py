@@ -1,33 +1,32 @@
+from copy import deepcopy
+from typing import Any, Dict, List, Optional, Union
+
 import gym
 import numpy as np
-
 import torch
 import torch.optim as opt
 from torch.autograd import Variable
-from copy import deepcopy
 
 from ...common import (
-    ReplayBuffer,
     PrioritizedBuffer,
-    get_model,
-    save_params,
-    load_params,
+    ReplayBuffer,
     get_env_properties,
+    get_model,
+    load_params,
+    save_params,
     set_seeds,
 )
 
 from ....environments import VecEnv
 
 from .utils import (
-    DuelingDQNValueMlp,
-    DuelingDQNValueCNN,
-    NoisyDQNValue,
-    NoisyDQNValueCNN,
     CategoricalDQNValue,
     CategoricalDQNValueCNN,
+    DuelingDQNValueCNN,
+    DuelingDQNValueMlp,
+    NoisyDQNValue,
+    NoisyDQNValueCNN,
 )
-
-from typing import Union, Any, Optional, Dict, List
 
 
 class DQN:
@@ -105,8 +104,8 @@ class DQN:
         min_epsilon: float = 0.01,
         epsilon_decay: int = 1000,
         num_atoms: int = 51,
-        Vmin: int = -10,
-        Vmax: int = 10,
+        vmin: int = -10,
+        vmax: int = 10,
         tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
@@ -132,8 +131,8 @@ class DQN:
         self.gamma = gamma
         self.batch_size = batch_size
         self.num_atoms = num_atoms
-        self.Vmin = Vmin
-        self.Vmax = Vmax
+        self.Vmin = vmin
+        self.Vmax = vmax
         self.tensorboard_log = tensorboard_log
         self.render = render
         self.loss_hist = []
@@ -235,8 +234,8 @@ class DQN:
 
         :param state: Observation state
         :type state: int, float, ...
-        :returns: Action based on the state and epsilon value 
-        :rtype: int, float, ... 
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
         """
 
         if np.random.rand() > self.epsilon:
@@ -413,11 +412,11 @@ so no need to call the function explicitly.)
         dones = dones.expand_as(next_dist)
         support = support.unsqueeze(0).expand_as(next_dist)
 
-        Tz = rewards + (1 - dones) * 0.99 * support
-        Tz = Tz.clamp(min=self.Vmin, max=self.Vmax)
-        b = (Tz - self.Vmin) / delta_z
-        lower = b.floor().long()
-        upper = b.ceil().long()
+        tz = rewards + (1 - dones) * 0.99 * support
+        tz = tz.clamp(min=self.Vmin, max=self.Vmax)
+        bz = (tz - self.Vmin) / delta_z
+        lower = bz.floor().long()
+        upper = bz.ceil().long()
 
         offset = (
             torch.linspace(0, (batch_size - 1) * self.num_atoms, batch_size)
@@ -428,10 +427,10 @@ so no need to call the function explicitly.)
 
         projection_dist = torch.zeros(next_dist.size())
         projection_dist.view(-1).index_add_(
-            0, (lower + offset).view(-1), (next_dist * (upper.float() - b)).view(-1)
+            0, (lower + offset).view(-1), (next_dist * (upper.float() - bz)).view(-1)
         )
         projection_dist.view(-1).index_add_(
-            0, (upper + offset).view(-1), (next_dist * (b - lower.float())).view(-1)
+            0, (upper + offset).view(-1), (next_dist * (bz - lower.float())).view(-1)
         )
 
         return projection_dist

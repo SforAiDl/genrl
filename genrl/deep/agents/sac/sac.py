@@ -1,15 +1,16 @@
+from copy import deepcopy
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-import gym
-from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
 from ...common import get_model, ReplayBuffer, save_params, load_params, set_seeds
 from ....environments import VecEnv
-from typing import Union, Tuple, Any, Optional, Dict
 
 
 class SAC:
@@ -191,10 +192,10 @@ class SAC:
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
 
         # freeze target parameters
-        for p in self.q1_targ.parameters():
-            p.requires_grad = False
-        for p in self.q2_targ.parameters():
-            p.requires_grad = False
+        for param in self.q1_targ.parameters():
+            param.requires_grad = False
+        for param in self.q2_targ.parameters():
+            param.requires_grad = False
 
         # optimizers
         self.q1_optimizer = opt.Adam(self.q1.parameters(), self.lr)
@@ -416,12 +417,9 @@ class SAC:
                     writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
                 if self.save_model is not None:
-                    if (
-                        timestep >= self.start_update
-                        and timestep % self.save_interval == 0
-                    ):
+                    if i >= self.start_update and i % self.save_interval == 0:
                         self.checkpoint = self.get_hyperparams()
-                        self.save(self, timestep)
+                        self.save(self, i)
                         print("Saved current model")
 
                 # prepare transition for replay memory push
@@ -434,20 +432,20 @@ class SAC:
             ]
 
             if np.any(done) or np.any(episode_len == self.max_ep_len):
-                for l, d in enumerate(done):
-                    if d:
-                        episode_reward[l] = 0
-                        episode_len[l] = 0
+                for j, di in enumerate(done):
+                    if di:
+                        episode_reward[j] = 0
+                        episode_len[j] = 0
 
             self.replay_buffer.extend(zip(state, action, reward, next_state, done))
             state = next_state
 
-            if timestep > total_steps:
+            if i > total_steps:
                 break
 
             # write episode reward to tensorboard logs
             if self.tensorboard_log:
-                writer.add_scalar("reward/episode_reward", episode_reward, timestep)
+                writer.add_scalar("reward/episode_reward", episode_reward, i)
 
             if sum(episode_len) % (5 * self.env.n_envs) == 0 and sum(episode_len) != 0:
                 print(

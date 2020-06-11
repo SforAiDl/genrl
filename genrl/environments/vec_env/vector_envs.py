@@ -186,22 +186,21 @@ class SerialVecEnv(VecEnv):
         """
         Renders all envs in a tiles format similar to baselines
 
-        :param mode: Can either be 'human' or 'rgb_array'. Displays tiled \
-images in 'human' and returns tiled images in 'rgb_array'
+        :param mode: (Can either be 'human' or 'rgb_array'. Displays tiled
+images in 'human' and returns tiled images in 'rgb_array')
         :type mode: string
         """
         self.envs[0].render()
 
-        # Does not work need to debug how can vectorized envs be rendered
         # images = np.asarray(self.images())
-        # N, H, W, C = images.shape
-        # newW, newH = int(np.ceil(np.sqrt(W))), int(np.ceil(np.sqrt(H)))
-        # images = np.array(list(images) + [images[0] * 0 for _ in range(N, newH * newW)])
-        # out_image = images.reshape(newH, newW, H, W, C)
+        # batch, height, width, channel = images.shape
+        # newwidth, newheight = int(np.ceil(np.sqrt(width))), int(np.ceil(np.sqrt(height)))
+        # images = np.array(
+        #     list(images) + [images[0] * 0 for _ in range(batch, newheight * newwidth)])
+        # out_image = images.reshape(newheight, newwidth, height, width, channel)
         # out_image = out_image.transpose(0, 2, 1, 3, 4)
-        # out_image = out_image.reshape(newH * H, newW * W, C)
+        # out_image = out_image.reshape(newheight * height, newwidth * width, channel)
         # if mode == "human":
-        #     # make_grid(self.images())
         #     import cv2  # noqa
 
         #     cv2.imshow("vecenv", out_image[:, :, ::-1])

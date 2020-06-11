@@ -1,5 +1,7 @@
-from genrl.classical.bandit import *
+import matplotlib.pyplot as plt
 import numpy as np
+
+from genrl.classical.bandit import *
 
 
 def demo_policy(
@@ -33,8 +35,6 @@ def demo_policy(
     plt.savefig(f"{policy_type.__name__}-on-{bandit_type.__name__}.png")
     plt.cla()
 
-
-import matplotlib.pyplot as plt
 
 timesteps = 1000
 iterations = 2

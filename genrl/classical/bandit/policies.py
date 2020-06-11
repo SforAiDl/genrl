@@ -1,6 +1,8 @@
+from typing import Any, Dict, List
+
 import numpy as np
 from scipy import stats
-from typing import List, Dict, Any
+
 from .bandits import Bandit
 
 
@@ -9,8 +11,8 @@ class BanditPolicy(object):
     Base Class for Multi-armed Bandit solving Policy
 
     :param bandit: The Bandit to solve
-    :param requires_init_run: Indicated if initialisation of Q values is required
-    :type bandit: Bandit type object 
+    :param requires_init_run: Indicated if initialisation of quality values is required
+    :type bandit: Bandit type object
     """
 
     def __init__(self, bandit: Bandit, requires_init_run: bool = False):
@@ -72,14 +74,14 @@ class BanditPolicy(object):
         """
         return self._counts
 
-    def select_action(self, t: int) -> int:
+    def select_action(self, timestep: int) -> int:
         """
         Select an action
 
         This method needs to be implemented in the specific policy.
 
-        :param t: timestep to choose action for
-        :type t: int
+        :param timestep: timestep to choose action for
+        :type timestep: int
         :returns: Selected action
         :rtype: int
         """
@@ -107,7 +109,7 @@ class BanditPolicy(object):
         requires an initial run, it takes each action once before starting
 
         :param n_timesteps: number of steps to learn for
-        :type: int 
+        :type: int
         """
         if self._requires_init_run:
             for action in range(self._bandit.arms):
@@ -115,8 +117,8 @@ class BanditPolicy(object):
                 self.update_params(action, reward)
             n_timesteps -= self._bandit.arms
 
-        for t in range(n_timesteps):
-            action = self.select_action(t)
+        for timestep in range(n_timesteps):
+            action = self.select_action(timestep)
             reward = self._bandit.step(action)
             self.update_params(action, reward)
 
@@ -129,19 +131,19 @@ class EpsGreedyPolicy(BanditPolicy):
 
     :param bandit: The Bandit to solve
     :param eps: Probability with which a random action is to be selected.
-    :type bandit: Bandit type object 
-    :type eps: float 
+    :type bandit: Bandit type object
+    :type eps: float
     """
 
     def __init__(self, bandit: Bandit, eps: float = 0.05):
         super(EpsGreedyPolicy, self).__init__(bandit)
         self._eps = eps
-        self._Q = np.zeros(bandit.arms)
+        self._quality = np.zeros(bandit.arms)
 
     @property
     def eps(self) -> float:
         """
-        Get the asscoiated epsilon for the policy 
+        Get the asscoiated epsilon for the policy
 
         :returns: Probability with which a random action is to be selected
         :rtype: float
@@ -149,21 +151,21 @@ class EpsGreedyPolicy(BanditPolicy):
         return self._eps
 
     @property
-    def Q(self) -> np.ndarray:
+    def quality(self) -> np.ndarray:
         """
         Get the q values assigned by the policy to all actions
 
         :returns: Numpy array of q values for all actions
         :rtype: numpy.ndarray
         """
-        return self._Q
+        return self._quality
 
-    def select_action(self, t: int) -> int:
+    def select_action(self, timestep: int) -> int:
         """
         Select an action according to epsilon greedy startegy
 
         A random action is selected with espilon probability over
-        the optimal action according to the current Q values to
+        the optimal action according to the current quality values to
         encourage exploration of the policy.
 
         :param t: timestep to choose action for
@@ -174,7 +176,7 @@ class EpsGreedyPolicy(BanditPolicy):
         if np.random.random() < self.eps:
             action = np.random.randint(0, self._bandit.arms)
         else:
-            action = np.argmax(self.Q)
+            action = np.argmax(self.quality)
         self.action_hist.append(action)
         return action
 
@@ -182,8 +184,8 @@ class EpsGreedyPolicy(BanditPolicy):
         """
         Update parmeters for the policy
 
-        Updates the regret as the difference between max Q value and 
-        that of the action. Updates the Q values according to the
+        Updates the regret as the difference between max quality value and
+        that of the action. Updates the quality values according to the
         reward recieved in this step.
 
         :param action: action taken for the step
@@ -192,64 +194,67 @@ class EpsGreedyPolicy(BanditPolicy):
         :type reward: float
         """
         self.reward_hist.append(reward)
-        self._regret += max(self.Q) - self.Q[action]
+        self._regret += max(self.quality) - self.quality[action]
         self.regret_hist.append(self.regret)
-        self.Q[action] += (reward - self.Q[action]) / (self.counts[action] + 1)
+        self.quality[action] += (reward - self.quality[action]) / (
+            self.counts[action] + 1
+        )
         self.counts[action] += 1
 
 
 class UCBPolicy(BanditPolicy):
     """
-    Multi-Armed Bandit Solver with Upper Confidence Bound based 
+    Multi-Armed Bandit Solver with Upper Confidence Bound based
     Action Selection Strategy.
 
     Refer to Section 2.7 of Reinforcement Learning: An Introduction.
 
     :param bandit: The Bandit to solve
-    :param c: Confidence level which controls degree of exploration 
-    :type bandit: Bandit type object 
-    :type c: float 
+    :param c: Confidence level which controls degree of exploration
+    :type bandit: Bandit type object
+    :type c: float
     """
 
-    def __init__(self, bandit: Bandit, c: float = 1.0):
+    def __init__(self, bandit: Bandit, confidence: float = 1.0):
         super(UCBPolicy, self).__init__(bandit, requires_init_run=True)
-        self._c = c
-        self._Q = np.zeros(bandit.arms)
+        self._c = confidence
+        self._quality = np.zeros(bandit.arms)
 
     @property
     def c(self) -> float:
         """
-        Get the confidence level which weights the exploration term 
-        
-        :returns: Confidence level which controls degree of exploration 
+        Get the confidence level which weights the exploration term
+
+        :returns: Confidence level which controls degree of exploration
         :rtype: float
         """
         return self._c
 
     @property
-    def Q(self) -> np.ndarray:
+    def quality(self) -> np.ndarray:
         """
         Get the q values assigned by the policy to all actions
 
         :returns: Numpy array of q values for all actions
         :rtype: numpy.ndarray
         """
-        return self._Q
+        return self._quality
 
-    def select_action(self, t: int) -> int:
+    def select_action(self, timestep: int) -> int:
         """
         Select an action according to upper confidence bound action selction
 
-        Take action that maximises a weighted sum of the Q values for the action
+        Take action that maximises a weighted sum of the quality values for the action
         and an exploration encouragement term controlled by c.
 
-        :param t: timestep to choose action for
-        :type t: int
+        :param timestep: timestep to choose action for
+        :type timesteps: int
         :returns: Selected action
         :rtype: int
         """
         action = np.argmax(
-            self.Q + self.c * np.sqrt(2 * np.log(t + 1) / (self.counts + 1))
+            self.quality
+            + self.c * np.sqrt(2 * np.log(timestep + 1) / (self.counts + 1))
         )
         self.action_hist.append(action)
         return action
@@ -258,8 +263,8 @@ class UCBPolicy(BanditPolicy):
         """
         Update parmeters for the policy
 
-        Updates the regret as the difference between max Q value and 
-        that of the action. Updates the Q values according to the
+        Updates the regret as the difference between max quality value and
+        that of the action. Updates the quality values according to the
         reward recieved in this step.
 
         :param action: action taken for the step
@@ -268,9 +273,11 @@ class UCBPolicy(BanditPolicy):
         :type reward: float
         """
         self.reward_hist.append(reward)
-        self._regret += max(self.Q) - self.Q[action]
+        self._regret += max(self.quality) - self.quality[action]
         self.regret_hist.append(self.regret)
-        self.Q[action] += (reward - self.Q[action]) / (self.counts[action] + 1)
+        self.quality[action] += (reward - self.quality[action]) / (
+            self.counts[action] + 1
+        )
         self.counts[action] += 1
 
 
@@ -282,10 +289,10 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
 
     :param bandit: The Bandit to solve
     :param alpha: The step size parameter for gradient based update
-    :param temp: Temperature for softmax distribution over Q values of actions
-    :type bandit: Bandit type object 
+    :param temp: Temperature for softmax distribution over quality values of actions
+    :type bandit: Bandit type object
     :type alpha: float
-    :type temp: float 
+    :type temp: float
     """
 
     def __init__(self, bandit, alpha=0.1, temp=0.01):
@@ -294,14 +301,14 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         )
         self._alpha = alpha
         self._temp = temp
-        self._Q = np.zeros(bandit.arms)
+        self._quality = np.zeros(bandit.arms)
         self._probability_hist = []
 
     @property
     def alpha(self) -> float:
         """
         Get the step size parameter for gradient based update of policy
-        
+
         :returns: Step size which controls rate of learning for policy
         :rtype: float
         """
@@ -310,34 +317,34 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
     @property
     def temp(self) -> float:
         """
-        Get the temperature for softmax distribution over Q values of actions
-        
+        Get the temperature for softmax distribution over quality values of actions
+
         :returns: Temperature which controls softness of softmax distribution
         :rtype: float
         """
         return self._temp
 
     @property
-    def Q(self) -> np.ndarray:
+    def quality(self) -> np.ndarray:
         """
         Get the q values assigned by the policy to all actions
 
         :returns: Numpy array of q values for all actions
         :rtype: numpy.ndarray
         """
-        return self._Q
+        return self._quality
 
     @property
     def probability_hist(self) -> np.ndarray:
         """
-        Get the history of probabilty values assigned to each action for each timestep 
+        Get the history of probabilty values assigned to each action for each timestep
 
         :returns: Numpy array of probability values for all actions
         :rtype: numpy.ndarray
         """
         return self._probability_hist
 
-    def _softmax(self, x: np.ndarray) -> np.ndarray:
+    def _softmax(self, logits: np.ndarray) -> np.ndarray:
         r"""
         Softmax with temperature
         :math:`\text{Softmax}(x_{i}) = \frac{\exp(x_i / temp)}{\sum_j \exp(x_j / temp)}`
@@ -347,24 +354,24 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         :returns: Computed softmax over given values
         :rtype: numpy.ndarray
         """
-        exp = np.exp(x / self.temp)
+        exp = np.exp(logits / self.temp)
         total = np.sum(exp)
-        p = exp / total
-        return p
+        probabilities = exp / total
+        return probabilities
 
-    def select_action(self, t: int) -> int:
+    def select_action(self, timestep: int) -> int:
         """
         Select an action according by softmax action selection strategy
 
-        Action is sampled from softmax distribution computed over 
-        the Q values for all actions
+        Action is sampled from softmax distribution computed over
+        the quality values for all actions
 
-        :param t: timestep to choose action for
-        :type t: int
+        :param timestep: timestep to choose action for
+        :type timestep: int
         :returns: Selected action
         :rtype: int
         """
-        probabilities = self._softmax(self.Q)
+        probabilities = self._softmax(self.quality)
         action = np.random.choice(self._bandit.arms, 1, p=probabilities)[0]
         self.action_hist.append(action)
         self.probability_hist.append(probabilities)
@@ -374,8 +381,8 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         """
         Update parmeters for the policy
 
-        Updates the regret as the difference between max Q value and that 
-        of the action. Updates the Q values through a gradient ascent step
+        Updates the regret as the difference between max quality value and that
+        of the action. Updates the quality values through a gradient ascent step
 
         :param action: action taken for the step
         :param reward: reward obtained for the step
@@ -383,7 +390,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
         :type reward: float
         """
         self.reward_hist.append(reward)
-        self._regret += max(self.Q) - self.Q[action]
+        self._regret += max(self.quality) - self.quality[action]
         self.regret_hist.append(self.regret)
 
         # compute reward baseline by taking mean of all rewards till t-1
@@ -394,12 +401,12 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
 
         current_probailities = self.probability_hist[-1]
 
-        # update Q values for the action taken and those not taken seperately
-        self.Q[action] += (
+        # update quality values for the action taken and those not taken seperately
+        self.quality[action] += (
             self.alpha * (reward - reward_baseline) * (1 - current_probailities[action])
         )
         actions_not_taken = np.arange(self._bandit.arms) != action
-        self.Q[actions_not_taken] += (
+        self.quality[actions_not_taken] += (
             -1
             * self.alpha
             * (reward - reward_baseline)
@@ -409,31 +416,35 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
 
 class BayesianUCBPolicy(BanditPolicy):
     """
-    Multi-Armed Bandit Solver with Bayesian Upper Confidence Bound 
+    Multi-Armed Bandit Solver with Bayesian Upper Confidence Bound
     based Action Selection Strategy.
 
     Refer to Section 2.7 of Reinforcement Learning: An Introduction.
 
     :param bandit: The Bandit to solve
-    :param a: alpha value for beta distribution
-    :param b: beta values for beta distibution
-    :param c: Confidence level which controls degree of exploration 
-    :type bandit: Bandit type object 
-    :type a: float
-    :type b: float
-    :type c: float 
+    :param alpha: alpha value for beta distribution
+    :param beta: beta values for beta distibution
+    :param confidence: Confidence level which controls degree of exploration
+    :type bandit: Bandit type object
+    :type alpha: float
+    :type beta: float
+    :type confidence: float
     """
 
     def __init__(
-        self, bandit: Bandit, alpha: float = 1.0, beta: float = 1.0, c: float = 3.0,
+        self,
+        bandit: Bandit,
+        alpha: float = 1.0,
+        beta: float = 1.0,
+        confidence: float = 3.0,
     ):
         super(BayesianUCBPolicy, self).__init__(bandit)
-        self._c = c
+        self._c = confidence
         self._a = alpha * np.ones(self._bandit.arms)
         self._b = beta * np.ones(self._bandit.arms)
 
     @property
-    def Q(self) -> np.ndarray:
+    def quality(self) -> np.ndarray:
         """
         Compute the q values for all the actions for alpha, beta and c
 
@@ -448,7 +459,7 @@ class BayesianUCBPolicy(BanditPolicy):
         Get the alpha value of beta distribution associated with the policy
 
         :returns: alpha values of the beta distribution
-        :rtype: numpy.ndarray 
+        :rtype: numpy.ndarray
         """
         return self._a
 
@@ -458,34 +469,34 @@ class BayesianUCBPolicy(BanditPolicy):
         Get the beta value of beta distribution associated with the policy
 
         :returns: beta values of the beta distribution
-        :rtype: numpy.ndarray 
+        :rtype: numpy.ndarray
         """
         return self._b
 
     @property
     def c(self) -> float:
         """
-        Get the confidence level which weights the exploration term 
-        
-        :returns: Confidence level which controls degree of exploration 
+        Get the confidence level which weights the exploration term
+
+        :returns: Confidence level which controls degree of exploration
         :rtype: float
         """
         return self._c
 
-    def select_action(self, t: int) -> int:
+    def select_action(self, timestep: int) -> int:
         """
         Select an action according to bayesian upper confidence bound
 
-        Take action that maximises a weighted sum of the Q values and 
-        a beta distribution paramerterized by alpha and beta 
+        Take action that maximises a weighted sum of the quality values and
+        a beta distribution paramerterized by alpha and beta
         and weighted by c for each action.
 
-        :param t: timestep to choose action for
-        :type t: int
+        :param timestep: timestep to choose action for
+        :type timestep: int
         :returns: Selected action
         :rtype: int
         """
-        action = np.argmax(self.Q + stats.beta.std(self.a, self.b) * self.c)
+        action = np.argmax(self.quality + stats.beta.std(self.a, self.b) * self.c)
         self.action_hist.append(action)
         return action
 
@@ -493,8 +504,8 @@ class BayesianUCBPolicy(BanditPolicy):
         """
         Update parmeters for the policy
 
-        Updates the regret as the difference between max Q value and 
-        that of the action. Updates the Q values according to the
+        Updates the regret as the difference between max quality value and
+        that of the action. Updates the quality values according to the
         reward recieved in this step.
 
         :param action: action taken for the step
@@ -505,20 +516,20 @@ class BayesianUCBPolicy(BanditPolicy):
         self.reward_hist.append(reward)
         self.a[action] += reward
         self.b[action] += 1 - reward
-        self._regret += max(self.Q) - self.Q[action]
+        self._regret += max(self.quality) - self.quality[action]
         self.regret_hist.append(self.regret)
         self.counts[action] += 1
 
 
 class ThompsonSamplingPolicy(BanditPolicy):
     """
-    Multi-Armed Bandit Solver with Bayesian Upper Confidence Bound 
+    Multi-Armed Bandit Solver with Bayesian Upper Confidence Bound
     based Action Selection Strategy.
 
     :param bandit: The Bandit to solve
     :param a: alpha value for beta distribution
     :param b: beta values for beta distibution
-    :type bandit: Bandit type object 
+    :type bandit: Bandit type object
     :type a: float
     :type b: float
     """
@@ -529,7 +540,7 @@ class ThompsonSamplingPolicy(BanditPolicy):
         self._b = beta * np.ones(self._bandit.arms)
 
     @property
-    def Q(self) -> np.ndarray:
+    def quality(self) -> np.ndarray:
         """
         Compute the q values for all the actions for alpha, beta and c
 
@@ -544,7 +555,7 @@ class ThompsonSamplingPolicy(BanditPolicy):
         Get the alpha value of beta distribution associated with the policy
 
         :returns: alpha values of the beta distribution
-        :rtype: numpy.ndarray 
+        :rtype: numpy.ndarray
         """
         return self._a
 
@@ -554,11 +565,11 @@ class ThompsonSamplingPolicy(BanditPolicy):
         Get the alpha value of beta distribution associated with the policy
 
         :returns: alpha values of the beta distribution
-        :rtype: numpy.ndarray 
+        :rtype: numpy.ndarray
         """
         return self._b
 
-    def select_action(self, t: int) -> int:
+    def select_action(self, timestep: int) -> int:
         """
         Select an action according to Thompson Sampling
 
@@ -566,8 +577,8 @@ class ThompsonSamplingPolicy(BanditPolicy):
         alpha and beta for each action. The action with the highest
         sample is selected.
 
-        :param t: timestep to choose action for
-        :type t: int
+        :param timestep: timestep to choose action for
+        :type timestep: int
         :returns: Selected action
         :rtype: int
         """
@@ -580,7 +591,7 @@ class ThompsonSamplingPolicy(BanditPolicy):
         """
         Update parmeters for the policy
 
-        Updates the regret as the difference between max Q value and 
+        Updates the regret as the difference between max quality value and
         that of the action. Updates the alpha value of beta distribution
         by adding the reward while the beta value is updated by adding
         1 - reward. Update the counts the action taken.
@@ -593,126 +604,6 @@ class ThompsonSamplingPolicy(BanditPolicy):
         self.reward_hist.append(reward)
         self.a[action] += reward
         self.b[action] += 1 - reward
-        self._regret += max(self.Q) - self.Q[action]
+        self._regret += max(self.quality) - self.quality[action]
         self.regret_hist.append(self.regret)
         self.counts[action] += 1
-
-
-if __name__ == "__main__":
-
-    def demo_policy(
-        policy_type: BanditPolicy,
-        bandit_type: Bandit,
-        policy_args_collection: Dict[str, Any],
-        bandit_args: Dict[str, Any],
-        timesteps: int,
-        iterations: int,
-    ):
-        """ Plots rewards and regrets of a given policy on given bandit """
-
-        print(f"\nRunning {policy_type.__name__} on {bandit_type.__name__}")
-        fig, axs = plt.subplots(1, 2, figsize=(10, 4))
-        for policy_args in policy_args_collection:
-            print(f"Running with policy parameters: = {policy_args}")
-            average_reward = np.zeros(timesteps)
-            average_regret = np.zeros(timesteps)
-            for i in range(iterations):
-                bandit = bandit_type(**bandit_args)
-                policy = policy_type(bandit, **policy_args)
-                policy.learn(timesteps)
-                average_reward += np.array(policy.reward_hist) / iterations
-                average_regret += np.array(policy.regret_hist) / iterations
-            axs[0].plot(average_reward, label=f"{policy_args}")
-            axs[1].plot(average_regret, label=f"{policy_args}")
-        axs[0].legend()
-        axs[1].legend()
-        axs[0].set_title(f"{policy_type.__name__} Rewards on {bandit_type.__name__}")
-        axs[1].set_title(f"{policy_type.__name__} Regrets on {bandit_type.__name__}")
-        plt.savefig(f"{policy_type.__name__}-on-{bandit_type.__name__}.png")
-        plt.cla()
-
-    import matplotlib.pyplot as plt
-    from .bandits import GaussianBandit, BernoulliBandit
-
-    timesteps = 1000
-    iterations = 2
-    arms = 10
-    bandit_args = {"arms": arms}
-
-    eps_vals = [0.0, 0.01, 0.03, 0.1, 0.3]
-    policy_args_collection = [{"eps": i} for i in eps_vals]
-    demo_policy(
-        EpsGreedyPolicy,
-        GaussianBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
-    )
-
-    c_vals = [0.5, 0.9, 1.0, 2.0]
-    policy_args_collection = [{"c": i} for i in c_vals]
-    demo_policy(
-        UCBPolicy,
-        GaussianBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
-    )
-
-    alpha_vals = [0.1, 0.3]
-    temp_vals = [0.01, 0.1, 1.0]
-    policy_args_collection = [
-        {"alpha": i, "temp": j} for i, j in zip(alpha_vals, temp_vals)
-    ]
-    demo_policy(
-        SoftmaxActionSelectionPolicy,
-        GaussianBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
-    )
-
-    eps_vals = [0.0, 0.01, 0.03, 0.1, 0.3]
-    policy_args_collection = [{"eps": i} for i in eps_vals]
-    demo_policy(
-        EpsGreedyPolicy,
-        BernoulliBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
-    )
-
-    c_vals = [0.5, 0.9, 1.0, 2.0]
-    policy_args_collection = [{"c": i} for i in c_vals]
-    demo_policy(
-        UCBPolicy,
-        GaussianBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
-    )
-
-    policy_args_collection = [{"alpha": 1.0, "beta": 1.0, "c": 3.0}]
-    demo_policy(
-        BayesianUCBPolicy,
-        BernoulliBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
-    )
-
-    policy_args_collection = [{"alpha": 1.0, "beta": 1.0}]
-    demo_policy(
-        ThompsonSamplingPolicy,
-        BernoulliBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
-    )
