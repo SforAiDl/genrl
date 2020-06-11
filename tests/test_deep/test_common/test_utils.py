@@ -71,7 +71,7 @@ class TestUtils:
         env = VectorEnv("CartPole-v0", 1)
         algo = PPO1("mlp", env, epochs=1, save_model="test_ckpt")
         # algo.learn()
-        trainer = OnPolicyTrainer(algo, ["stdout"], save_interval=1, epochs=1)
+        trainer = OnPolicyTrainer(algo, env, ["stdout"], save_interval=1, epochs=1)
         trainer.train()
 
         assert len(os.listdir("test_ckpt/PPO1_CartPole-v0")) != 0

@@ -48,6 +48,6 @@ class TestAtari:
         env = VectorEnv("Pong-v0", env_type="atari")
         algo = DQN("cnn", env, noisy_dqn=True, prioritized_replay=True)
 
-        trainer = OffPolicyTrainer(algo, epochs=1, steps_per_epoch=200)
+        trainer = OffPolicyTrainer(algo, env, epochs=1, steps_per_epoch=200)
         trainer.train()
         shutil.rmtree("./logs")
