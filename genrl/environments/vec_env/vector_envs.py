@@ -3,9 +3,12 @@ from abc import ABC, abstractmethod
 import multiprocessing as mp
 import copy
 import numpy as np
+import gym
+
+from typing import List, Any, Iterator, Tuple
 
 
-def worker(parent_conn, child_conn, env):
+def worker(parent_conn: mp.Pipe, child_conn: mp.Pipe, env: VecEnv):
     """
     Worker class to facilitate multiprocessing
 
@@ -49,34 +52,38 @@ class VecEnv(ABC):
     :type n_envs: int
     """
 
-    def __init__(self, envs, n_envs=2):
+    def __init__(self, envs: List, n_envs: int = 2):
         self.envs = envs
         self.single_env = envs[0]
         self._n_envs = n_envs
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         single_env = super(VecEnv, self).__getattribute__('single_env')
         return getattr(single_env, name)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator:
         """
         Iterator object to iterate through each environment in vector
         """
         return (env for env in self.envs)
 
-    def sample(self):
+    def sample(self) -> List:
         """
         Return samples of actions from each environment
         """
         return [env.action_space.sample() for env in self.envs]
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> gym.Env:
         """
         Return environment at the given index
+
+        :param index: Index at which the environment is
+        :type index: int
+        :returns: Gym Environment at given index of Vectorized Environment
         """
         return self.envs[index]
 
-    def seed(self, seed):
+    def seed(self, seed: int):
         """
         Set seed for reproducibility in all environments
         """
@@ -130,7 +137,7 @@ class SerialVecEnv(VecEnv):
         self.dones = np.zeros((self.n_envs))
         self.infos = [{} for _ in range(self.n_envs)]
 
-    def step(self, actions):
+    def step(self, actions: np.ndarray) -> Tuple:
         """
         Steps through all envs serially
 
@@ -153,7 +160,7 @@ class SerialVecEnv(VecEnv):
             copy.deepcopy(self.infos),
         )
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         """
         Resets all envs
         """
@@ -169,7 +176,7 @@ class SerialVecEnv(VecEnv):
         for env in self.envs:
             env.close()
 
-    def images(self):
+    def images(self) -> List:
         """
         Returns an array of images from each env render
         """
@@ -227,7 +234,7 @@ class SubProcessVecEnv(VecEnv):
             self.procs.append(process)
             child_conn.close()
 
-    def get_spaces(self):
+    def get_spaces(self) -> Tuple:
         """
         Returns state and action spaces of environments
         """
@@ -235,7 +242,7 @@ class SubProcessVecEnv(VecEnv):
         observation_space, action_space = self.parent_conns[0].recv()
         return (observation_space, action_space)
 
-    def seed(self, seed=None):
+    def seed(self, seed: int = None):
         """
         Sets seed for reproducability
         """
@@ -244,7 +251,7 @@ class SubProcessVecEnv(VecEnv):
 
         return [parent_conn.recv() for parent_conn in self.parent_conns]
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         """
         Resets environments
 
@@ -256,7 +263,7 @@ class SubProcessVecEnv(VecEnv):
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
         return obs
 
-    def step(self, actions):
+    def step(self, actions: np.ndarray) -> Tuple:
         """
         Steps through environments serially
 

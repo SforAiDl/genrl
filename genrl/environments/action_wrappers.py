@@ -1,20 +1,39 @@
 import numpy as np
 from gym.spaces import Box
 from gym.core import ActionWrapper
+import gym
+from typing import Union
+from .vec_env import VecEnv
 
 
 class ClipAction(ActionWrapper):
-    def __init__(self, env):
+    """
+    Action Wrapper to clip actions
+    
+    :param env: The environment whose actions need to be clipped
+    :type env: object
+    """
+    def __init__(self, env: Union[gym.Env, VecEnv]):
         super(ClipAction, self).__init__(env)
         assert isinstance(self.env.action_space, Box)
 
     @property
-    def action(self, action):
+    def action(self, action: np.ndarray) -> np.ndarray:
         return np.clip(action, self.env.action_space.low, self.env.action_space.high)
 
 
 class RescaleAction(ActionWrapper):
-    def __init__(self, env, low, high):
+    """
+    Action Wrapper to rescale actions
+
+    :param env: The environment whose actions need to be rescaled
+    :param low: Lower limit of action
+    :param high: Upper limit of action
+    :type env: object
+    :type low: int
+    :type high: int
+    """
+    def __init__(self, env: Union[gym.Env, VecEnv], low: int, high: int):
         super(RescaleAction, self).__init__(env)
         assert isinstance(self.env.action_space, Box)
         assert high > low
@@ -31,7 +50,7 @@ class RescaleAction(ActionWrapper):
         )
 
     @property
-    def action(self, action):
+    def action(self, action: np.ndarray) -> np.ndarray:
         assert np.all(action >= self.low)
         assert np.all(action <= self.high)
         low = self.env.action_space.low

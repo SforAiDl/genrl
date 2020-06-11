@@ -77,7 +77,7 @@ def AtariEnv(env_id: str, atari_args: Dict) -> gym.Env:
         "screen_size": 84,
         "max_noops": 30,
         "framestack": 4,
-        "lz4_compress": False,
+        "lz4_compress": True,
     }
     for key in DEFAULT_ARGS:
         if key not in atari_args:

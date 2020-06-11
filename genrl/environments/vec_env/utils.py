@@ -1,13 +1,22 @@
 import numpy as np
+from typing import Tuple
 
 
 class RunningMeanStd:
-    def __init__(self, epsilon=1e-4, shape=()):
+    """
+    Utility Function to compute a running mean and variance calculator
+
+    :param epsilon: Small number to prevent division by zero for calculations
+    :param shape: Shape of the RMS object
+    :type epsilon: float
+    :type shape: Tuple
+    """
+    def __init__(self, epsilon: float = 1e-4, shape: Tuple = ()):
         self.mean = np.zeros(shape, dtype=np.float64)
         self.var = np.ones(shape, dtype=np.float64)
         self.count = epsilon
 
-    def update(self, batch):
+    def update(self, batch: np.ndarray):
         batch_mean = np.mean(batch, axis=0)
         batch_var = np.var(batch, axis=0)
         batch_count = batch.shape[0]
