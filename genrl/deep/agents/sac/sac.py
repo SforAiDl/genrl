@@ -392,13 +392,8 @@ class SAC:
                 and i % self.update_interval == 0
                 and self.replay_buffer.pos > self.batch_size
             ):
-                # get losses
-                batch = self.replay_buffer.sample(self.batch_size)
-                states, actions, rewards, next_states, dones = (
-                    x.to(self.device) for x in batch
-                )
                 q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
-                    states, actions, rewards, next_states, dones
+                    self.update_interval
                 )
 
                 # write loss logs to tensorboard

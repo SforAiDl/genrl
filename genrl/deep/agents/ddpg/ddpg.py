@@ -355,14 +355,7 @@ class DDPG:
 
             # update params
             if timestep >= self.start_update and timestep % self.update_interval == 0:
-                for _ in range(self.update_interval):
-                    batch = self.replay_buffer.sample(self.batch_size)
-                    states, actions, rewards, next_states, dones = (
-                        x.to(self.device) for x in batch
-                    )
-                    self.update_params(
-                        states, actions, rewards.unsqueeze(1), next_states, dones
-                    )
+                self.update_params(self.update_interval)
 
             if self.save_model is not None:
                 if timestep >= self.start_update and timestep % self.save_interval == 0:

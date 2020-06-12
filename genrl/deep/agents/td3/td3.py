@@ -378,8 +378,7 @@ class TD3:
 
             # update params
             if timestep >= self.start_update and timestep % self.update_interval == 0:
-                for _ in range(self.update_interval):
-                    self.update_params(t)
+                self.update_params(self.update_interval)
 
             if self.save_model is not None:
                 if timestep >= self.start_update and timestep % self.save_interval == 0:
