@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..bandits import Bandit
+from ...bandit import Bandit
 from .base import BanditPolicy
 
 

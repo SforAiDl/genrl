@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import stats
 
-from ..bandits import Bandit
+from ...bandit import Bandit
 from .base import BanditPolicy
 
 
