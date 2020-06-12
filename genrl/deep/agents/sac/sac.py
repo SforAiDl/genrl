@@ -268,34 +268,22 @@ class SAC:
 
     def update_params(
         self,
-        state: np.ndarray,
-        action: np.ndarray,
-        reward: float,
-        next_state: np.ndarray,
-        done: float,
+        timestep: int
     ) -> (Tuple[float]):
         """
         Computes loss and takes optimizer step
 
-        :param state: environment observation
-        :param action: agent action
-        :param: reward: environment reward
-        :param next_state: environment next observation
-        :param done: if episode is over
-        :type state: int, float, ...
-        :type action: float
-        :type: reward: float
-        :type next_state: int, float, ...
-        :type done: bool
-        :returns: Q1-loss
-        :rtype: float
-        :returns: Q2-loss
-        :rtype: float
+        :param timestep: timestep 
+        :type timestep: int
         :returns: policy loss
         :rtype: float
         :returns: entropy coefficient loss
         :rtype: float
         """
+        batch = self.replay_buffer.sample(self.batch_size)
+        state, action, reward, next_state, done = (
+            x.to(self.device) for x in batch
+        )
         # compute targets
         if self.env.n_envs == 1:
             state, action, next_state = (

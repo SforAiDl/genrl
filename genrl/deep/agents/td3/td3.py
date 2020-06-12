@@ -233,9 +233,9 @@ class TD3:
         self,
         state: np.ndarray,
         action: np.ndarray,
-        reward: float,
+        reward: np.ndarray,
         next_state: np.ndarray,
-        done: bool,
+        done: np.ndarray,
     ) -> torch.Tensor:
         q1 = self.ac.qf1.get_value(torch.cat([state, action], dim=-1))
         q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
@@ -274,15 +274,9 @@ class TD3:
         )
         return -torch.mean(q_pi)
 
-    def update_params(
-        self,
-        state: np.ndarray,
-        action: np.ndarray,
-        reward: float,
-        next_state: np.ndarray,
-        done: bool,
-        timestep: int,
-    ) -> None:
+    def update_params(self, timestep: int) -> None:
+        batch = self.replay_buffer.sample(self.batch_size)
+        state, action, reward, next_state, done = (x.to(self.device) for x in batch)
         self.optimizer_q.zero_grad()
         # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
@@ -384,13 +378,7 @@ class TD3:
             # update params
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 for _ in range(self.update_interval):
-                    batch = self.replay_buffer.sample(self.batch_size)
-                    states, actions, rewards, next_states, dones = (
-                        x.to(self.device) for x in batch
-                    )
-                    self.update_params(
-                        states, actions, rewards.unsqueeze(1), next_states, dones, t
-                    )
+                    self.update_params(t)
 
             if self.save_model is not None:
                 if timestep >= self.start_update and timestep % self.save_interval == 0:

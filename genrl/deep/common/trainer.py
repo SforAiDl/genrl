@@ -369,7 +369,7 @@ many steps)
             # update params for DQN
             if self.agent.__class__.__name__ == "DQN":
                 if self.agent.replay_buffer.pos > self.agent.batch_size:
-                    self.agent.update_params()
+                    self.agent.update_params(timestep)
 
                 if timestep % self.update_interval == 0:
                     self.agent.update_target_model()
@@ -381,22 +381,7 @@ many steps)
                     and timestep % self.update_interval == 0
                 ):
                     for _ in range(self.update_interval):
-                        batch = self.buffer.sample(self.batch_size)
-                        states, actions, rewards, next_states, dones = (
-                            x.to(self.device) for x in batch
-                        )
-                        if self.agent.__class__.__name__ == "TD3":
-                            self.agent.update_params(
-                                states, actions, rewards, next_states, dones, _
-                            )
-                        elif self.agent.__class__.__name__ == "DDPG":
-                            self.agent.update_params(
-                                states, actions, rewards, next_states, dones
-                            )
-                        else:
-                            self.agent.update_params(
-                                states, actions, rewards, next_states, dones
-                            )
+                            self.agent.update_params(_)
 
             if (
                 timestep >= self.start_update

@@ -374,7 +374,7 @@ class DQN:
 
         return loss
 
-    def update_params(self) -> None:
+    def update_params(self, timestep) -> None:
         """
         Takes the step for optimizer. This internally call get_td_loss(), so no need to call the function explicitly.
         """
@@ -386,6 +386,9 @@ class DQN:
         if self.noisy_dqn or self.categorical_dqn:
             self.model.reset_noise()
             self.target_model.reset_noise()
+
+        # with torch.no_grad():
+
 
     def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
         """
