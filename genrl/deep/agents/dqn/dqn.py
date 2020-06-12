@@ -378,14 +378,15 @@ class DQN:
         """
         Takes the step for optimizer. This internally call get_td_loss(), so no need to call the function explicitly.
         """
-        loss = self.get_td_loss()
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+        if self.replay_buffer.pos > self.batch_size:
+            loss = self.get_td_loss()
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
-        if self.noisy_dqn or self.categorical_dqn:
-            self.model.reset_noise()
-            self.target_model.reset_noise()
+            if self.noisy_dqn or self.categorical_dqn:
+                self.model.reset_noise()
+                self.target_model.reset_noise()
 
         # with torch.no_grad():
 

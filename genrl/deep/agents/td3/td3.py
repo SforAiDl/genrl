@@ -274,37 +274,38 @@ class TD3:
         )
         return -torch.mean(q_pi)
 
-    def update_params(self, timestep: int) -> None:
-        batch = self.replay_buffer.sample(self.batch_size)
-        state, action, reward, next_state, done = (x.to(self.device) for x in batch)
-        self.optimizer_q.zero_grad()
-        # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
-        loss_q = self.get_q_loss(state, action, reward, next_state, done)
-        loss_q.backward()
-        self.optimizer_q.step()
+    def update_params(self, update_interval: int) -> None:
+        for timestep in range(update_interval):
+            batch = self.replay_buffer.sample(self.batch_size)
+            state, action, reward, next_state, done = (x.to(self.device) for x in batch)
+            self.optimizer_q.zero_grad()
+            # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
+            loss_q = self.get_q_loss(state, action, reward, next_state, done)
+            loss_q.backward()
+            self.optimizer_q.step()
 
-        # Delayed Update
-        if timestep % self.policy_frequency == 0:
-            # freeze critic params for policy update
-            for param in self.q_params:
-                param.requires_grad = False
+            # Delayed Update
+            if timestep % self.policy_frequency == 0:
+                # freeze critic params for policy update
+                for param in self.q_params:
+                    param.requires_grad = False
 
-            self.optimizer_policy.zero_grad()
-            loss_p = self.get_p_loss(state)
-            loss_p.backward()
-            self.optimizer_policy.step()
+                self.optimizer_policy.zero_grad()
+                loss_p = self.get_p_loss(state)
+                loss_p.backward()
+                self.optimizer_policy.step()
 
-            # unfreeze critic params
-            for param in self.ac.critic.parameters():
-                param.requires_grad = True
+                # unfreeze critic params
+                for param in self.ac.critic.parameters():
+                    param.requires_grad = True
 
-            # update target network
-            with torch.no_grad():
-                for param, param_target in zip(
-                    self.ac.parameters(), self.ac_target.parameters()
-                ):
-                    param_target.data.mul_(self.polyak)
-                    param_target.data.add_((1 - self.polyak) * param.data)
+                # update target network
+                with torch.no_grad():
+                    for param, param_target in zip(
+                        self.ac.parameters(), self.ac_target.parameters()
+                    ):
+                        param_target.data.mul_(self.polyak)
+                        param_target.data.add_((1 - self.polyak) * param.data)
 
     def learn(self) -> None:  # pragma: no cover
         state, episode_reward, episode_len, episode = (

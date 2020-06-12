@@ -368,8 +368,7 @@ many steps)
 
             # update params for DQN
             if self.agent.__class__.__name__ == "DQN":
-                if self.agent.replay_buffer.pos > self.agent.batch_size:
-                    self.agent.update_params(timestep)
+                self.agent.update_params(timestep)
 
                 if timestep % self.update_interval == 0:
                     self.agent.update_target_model()
@@ -380,8 +379,7 @@ many steps)
                     timestep >= self.start_update
                     and timestep % self.update_interval == 0
                 ):
-                    for _ in range(self.update_interval):
-                        self.agent.update_params(_)
+                    self.agent.update_params(self.update_interval)
 
             if (
                 timestep >= self.start_update
