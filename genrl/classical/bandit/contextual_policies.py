@@ -1,6 +1,8 @@
+from typing import List, Tuple
+
 import numpy as np
 from scipy import stats
-from typing import List, Dict, Any, Tuple
+
 from .contextual_bandits import ContextualBandit
 
 
@@ -225,9 +227,9 @@ class UCBCBPolicy(CBPolicy):
     @property
     def c(self) -> float:
         """
-        Get the confidence level which weights the exploration term 
-        
-        :returns: Confidence level which controls degree of exploration 
+        Get the confidence level which weights the exploration term
+
+        :returns: Confidence level which controls degree of exploration
         :rtype: float
         """
         return self._c
@@ -267,7 +269,7 @@ class UCBCBPolicy(CBPolicy):
         """
         Update parmeters for the policy
 
-        Updates the regret as the difference between max Q value and 
+        Updates the regret as the difference between max Q value and
         that of the action. Updates the Q values according to the
         reward recieved in this step.
 
@@ -312,7 +314,7 @@ class GradientBasedCBPolicy(CBPolicy):
     def alpha(self) -> float:
         """
         Get the step size parameter for gradient based update of policy
-        
+
         :returns: Step size which controls rate of learning for policy
         :rtype: float
         """
@@ -322,7 +324,7 @@ class GradientBasedCBPolicy(CBPolicy):
     def temp(self) -> float:
         """
         Get the temperature for softmax distribution over Q values of actions
-        
+
         :returns: Temperature which controls softness of softmax distribution
         :rtype: float
         """
@@ -485,7 +487,7 @@ class BayesianUCBCBPolicy(CBPolicy):
     def c(self) -> float:
         """
         Get the confidence level which weights the exploration term
-        
+
         :returns: Confidence level which controls degree of exploration
         :rtype: float
         """
@@ -625,128 +627,3 @@ class ThompsonSamplingCBPolicy(CBPolicy):
         self._regret += max(self.Q[context]) - self.Q[context, action]
         self.regret_hist.append(self.regret)
         self.counts[context, action] += 1
-
-
-if __name__ == "__main__":
-
-    def demo_policy(
-        policy_type: CBPolicy,
-        bandit_type: ContextualBandit,
-        policy_args_collection: Dict[str, Any],
-        bandit_args: Dict[str, Any],
-        timesteps: int,
-        iterations: int,
-        verbose: bool = False,
-    ):
-        """ Plots rewards and regrets of a given policy on given bandit """
-
-        print(f"\nRunning {policy_type.__name__} on {bandit_type.__name__}")
-        _, axs = plt.subplots(1, 2, figsize=(10, 4))
-        for policy_args in policy_args_collection:
-            print(f"Running with policy parameters: = {policy_args}")
-            average_reward = np.zeros(timesteps)
-            average_regret = np.zeros(timesteps)
-            for i in range(iterations):
-                if verbose:
-                    print(f"Iteration: {i + 1}")
-                bandit = bandit_type(**bandit_args)
-                policy = policy_type(bandit, **policy_args)
-                policy.learn(timesteps)
-                average_reward += np.array(policy.reward_hist) / iterations
-                average_regret += np.array(policy.regret_hist) / iterations
-            axs[0].plot(average_reward, label=f"{policy_args}")
-            axs[1].plot(average_regret, label=f"{policy_args}")
-        axs[0].legend()
-        axs[1].legend()
-        axs[0].set_title(f"{policy_type.__name__} Rewards on {bandit_type.__name__}")
-        axs[1].set_title(f"{policy_type.__name__} Regrets on {bandit_type.__name__}")
-        plt.savefig(f"./logs/{policy_type.__name__}-on-{bandit_type.__name__}.png")
-        plt.cla()
-
-    import matplotlib.pyplot as plt
-    from .contextual_bandits import BernoulliCB, GaussianCB
-
-    TIMESTEPS = 5000
-    ITERATIONS = 500
-    BANDITS = 5
-    ARMS = 10
-    BANDIT_ARGS = {"bandits": BANDITS, "arms": ARMS}
-
-    eps_vals = [0.3]  # [0.0, 0.01, 0.03, 0.1, 0.3]
-    POLICY_ARGS_COLLECTION = [{"eps": i} for i in eps_vals]
-    demo_policy(
-        EpsGreedyCBPolicy,
-        BernoulliCB,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-    )
-
-    c_vals = [0.5]  # , 0.9, 1.0, 2.0]
-    POLICY_ARGS_COLLECTION = [{"c": i} for i in c_vals]
-    demo_policy(
-        UCBCBPolicy,
-        BernoulliCB,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-    )
-
-    eps_vals = [0.3]  # [0.0, 0.01, 0.03, 0.1, 0.3]
-    POLICY_ARGS_COLLECTION = [{"eps": i} for i in eps_vals]
-    demo_policy(
-        EpsGreedyCBPolicy,
-        GaussianCB,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-    )
-
-    c_vals = [0.5]  # , 0.9, 1.0, 2.0]
-    POLICY_ARGS_COLLECTION = [{"c": i} for i in c_vals]
-    demo_policy(
-        UCBCBPolicy,
-        GaussianCB,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-    )
-
-    alpha_vals = [0.1, 0.3]
-    temp_vals = [0.01, 0.1, 1.0]
-    POLICY_ARGS_COLLECTION = [
-        {"alpha": i, "temp": j} for i in alpha_vals for j in temp_vals
-    ]
-    demo_policy(
-        GradientBasedCBPolicy,
-        GaussianCB,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-        verbose=True,
-    )
-
-    POLICY_ARGS_COLLECTION = [{"alpha": 1.0, "beta": 1.0, "c": 3.0}]
-    demo_policy(
-        BayesianUCBCBPolicy,
-        BernoulliCB,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-    )
-
-    POLICY_ARGS_COLLECTION = [{"alpha": 1.0, "beta": 1.0}]
-    demo_policy(
-        ThompsonSamplingCBPolicy,
-        BernoulliCB,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-    )

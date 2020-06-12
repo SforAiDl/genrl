@@ -1,5 +1,6 @@
-import numpy as np
 from typing import Union
+
+import numpy as np
 
 
 class ContextualBandit(object):
@@ -41,7 +42,7 @@ class ContextualBandit(object):
     def reset(self):
         """
         Resets the current bandit randomly
-        
+
         :returns: The current bandit as observation
         :rtype: int
         """

@@ -1,18 +1,18 @@
 from genrl import (
-    GaussianBandit,
-    BernoulliBandit,
-    EpsGreedyPolicy,
-    UCBPolicy,
-    GradientBasedPolicy,
+    BayesianUCBCBPolicy,
     BayesianUCBPolicy,
-    ThompsonSamplingPolicy,
-    GaussianCB,
+    BernoulliBandit,
     BernoulliCB,
     EpsGreedyCBPolicy,
-    UCBCBPolicy,
+    EpsGreedyPolicy,
+    GaussianBandit,
+    GaussianCB,
     GradientBasedCBPolicy,
-    BayesianUCBCBPolicy,
+    GradientBasedPolicy,
     ThompsonSamplingCBPolicy,
+    ThompsonSamplingPolicy,
+    UCBCBPolicy,
+    UCBPolicy,
 )
 
 
