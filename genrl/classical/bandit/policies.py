@@ -274,9 +274,9 @@ class UCBPolicy(BanditPolicy):
         self.counts[action] += 1
 
 
-class SoftmaxActionSelectionPolicy(BanditPolicy):
+class GradientBasedPolicy(BanditPolicy):
     """
-    Multi-Armed Bandit Solver with Softmax Action Selection Strategy.
+    Multi-Armed Bandit Solver with Gradient Based Softmax Action Selection Strategy.
 
     Refer to Section 2.8 of Reinforcement Learning: An Introduction.
 
@@ -289,9 +289,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
     """
 
     def __init__(self, bandit, alpha=0.1, temp=0.01):
-        super(SoftmaxActionSelectionPolicy, self).__init__(
-            bandit, requires_init_run=False
-        )
+        super(GradientBasedPolicy, self).__init__(bandit)
         self._alpha = alpha
         self._temp = temp
         self._Q = np.zeros(bandit.arms)
@@ -409,19 +407,19 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
 
 class BayesianUCBPolicy(BanditPolicy):
     """
-    Multi-Armed Bandit Solver with Bayesian Upper Confidence Bound 
+    Multi-Armed Bandit Solver with Bayesian Upper Confidence Bound
     based Action Selection Strategy.
 
     Refer to Section 2.7 of Reinforcement Learning: An Introduction.
 
     :param bandit: The Bandit to solve
-    :param a: alpha value for beta distribution
-    :param b: beta values for beta distibution
-    :param c: Confidence level which controls degree of exploration 
-    :type bandit: Bandit type object 
-    :type a: float
-    :type b: float
-    :type c: float 
+    :param alpha: alpha value for beta distribution
+    :param beta: beta values for beta distibution
+    :param c: Confidence level which controls degree of exploration
+    :type bandit: Bandit type object
+    :type alpha: float
+    :type beta: float
+    :type c: float
     """
 
     def __init__(
@@ -607,16 +605,19 @@ if __name__ == "__main__":
         bandit_args: Dict[str, Any],
         timesteps: int,
         iterations: int,
+        verbose: bool = False,
     ):
         """ Plots rewards and regrets of a given policy on given bandit """
 
         print(f"\nRunning {policy_type.__name__} on {bandit_type.__name__}")
-        fig, axs = plt.subplots(1, 2, figsize=(10, 4))
+        _, axs = plt.subplots(1, 2, figsize=(10, 4))
         for policy_args in policy_args_collection:
             print(f"Running with policy parameters: = {policy_args}")
             average_reward = np.zeros(timesteps)
             average_regret = np.zeros(timesteps)
             for i in range(iterations):
+                if verbose:
+                    print(f"Iteration {i}")
                 bandit = bandit_type(**bandit_args)
                 policy = policy_type(bandit, **policy_args)
                 policy.learn(timesteps)
@@ -628,91 +629,91 @@ if __name__ == "__main__":
         axs[1].legend()
         axs[0].set_title(f"{policy_type.__name__} Rewards on {bandit_type.__name__}")
         axs[1].set_title(f"{policy_type.__name__} Regrets on {bandit_type.__name__}")
-        plt.savefig(f"{policy_type.__name__}-on-{bandit_type.__name__}.png")
+        plt.savefig(f"./logs/{policy_type.__name__}-on-{bandit_type.__name__}.png")
         plt.cla()
 
     import matplotlib.pyplot as plt
     from .bandits import GaussianBandit, BernoulliBandit
 
-    timesteps = 1000
-    iterations = 2
-    arms = 10
-    bandit_args = {"arms": arms}
+    TIMESTEPS = 1000
+    ITERATIONS = 500
+    ARMS = 10
+    BANDIT_ARGS = {"arms": ARMS}
 
     eps_vals = [0.0, 0.01, 0.03, 0.1, 0.3]
-    policy_args_collection = [{"eps": i} for i in eps_vals]
+    POLICY_ARGS_COLLECTION = [{"eps": i} for i in eps_vals]
     demo_policy(
         EpsGreedyPolicy,
         GaussianBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
+        POLICY_ARGS_COLLECTION,
+        BANDIT_ARGS,
+        TIMESTEPS,
+        ITERATIONS,
     )
 
     c_vals = [0.5, 0.9, 1.0, 2.0]
-    policy_args_collection = [{"c": i} for i in c_vals]
+    POLICY_ARGS_COLLECTION = [{"c": i} for i in c_vals]
     demo_policy(
         UCBPolicy,
         GaussianBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
+        POLICY_ARGS_COLLECTION,
+        BANDIT_ARGS,
+        TIMESTEPS,
+        ITERATIONS,
     )
 
     alpha_vals = [0.1, 0.3]
     temp_vals = [0.01, 0.1, 1.0]
-    policy_args_collection = [
-        {"alpha": i, "temp": j} for i, j in zip(alpha_vals, temp_vals)
+    POLICY_ARGS_COLLECTION = [
+        {"alpha": i, "temp": j} for i in alpha_vals for j in temp_vals
     ]
     demo_policy(
-        SoftmaxActionSelectionPolicy,
+        GradientBasedPolicy,
         GaussianBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
+        POLICY_ARGS_COLLECTION,
+        BANDIT_ARGS,
+        TIMESTEPS,
+        ITERATIONS,
     )
 
     eps_vals = [0.0, 0.01, 0.03, 0.1, 0.3]
-    policy_args_collection = [{"eps": i} for i in eps_vals]
+    POLICY_ARGS_COLLECTION = [{"eps": i} for i in eps_vals]
     demo_policy(
         EpsGreedyPolicy,
         BernoulliBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
+        POLICY_ARGS_COLLECTION,
+        BANDIT_ARGS,
+        TIMESTEPS,
+        ITERATIONS,
     )
 
     c_vals = [0.5, 0.9, 1.0, 2.0]
-    policy_args_collection = [{"c": i} for i in c_vals]
+    POLICY_ARGS_COLLECTION = [{"c": i} for i in c_vals]
     demo_policy(
         UCBPolicy,
         GaussianBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
+        POLICY_ARGS_COLLECTION,
+        BANDIT_ARGS,
+        TIMESTEPS,
+        ITERATIONS,
     )
 
-    policy_args_collection = [{"alpha": 1.0, "beta": 1.0, "c": 3.0}]
+    POLICY_ARGS_COLLECTION = [{"alpha": 1.0, "beta": 1.0, "c": 3.0}]
     demo_policy(
         BayesianUCBPolicy,
         BernoulliBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
+        POLICY_ARGS_COLLECTION,
+        BANDIT_ARGS,
+        TIMESTEPS,
+        ITERATIONS,
     )
 
-    policy_args_collection = [{"alpha": 1.0, "beta": 1.0}]
+    POLICY_ARGS_COLLECTION = [{"alpha": 1.0, "beta": 1.0}]
     demo_policy(
         ThompsonSamplingPolicy,
         BernoulliBandit,
-        policy_args_collection,
-        bandit_args,
-        timesteps,
-        iterations,
+        POLICY_ARGS_COLLECTION,
+        BANDIT_ARGS,
+        TIMESTEPS,
+        ITERATIONS,
     )

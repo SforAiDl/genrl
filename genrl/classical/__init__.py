@@ -1,19 +1,18 @@
 from genrl.classical.bandit import (
-    Bandit,
     GaussianBandit,
     BernoulliBandit,
-    BanditPolicy,
     EpsGreedyPolicy,
     UCBPolicy,
-    SoftmaxActionSelectionPolicy,
+    GradientBasedPolicy,
     BayesianUCBPolicy,
     ThompsonSamplingPolicy,
-    ContextualBandit,
     GaussianCB,
     BernoulliCB,
-    CBPolicy,
     EpsGreedyCBPolicy,
     UCBCBPolicy,
+    GradientBasedCBPolicy,
+    BayesianUCBCBPolicy,
+    ThompsonSamplingCBPolicy,
 )
 from genrl.classical.sarsa import SARSA
 from genrl.classical.qlearning import QLearning
