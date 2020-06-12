@@ -1,9 +1,6 @@
-from typing import Any, Dict, List
-
 import numpy as np
-from scipy import stats
 
-from ..bandits import Bandit
+from ..bandit import Bandit
 from .base import BanditPolicy
 
 
@@ -21,7 +18,7 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
     :type temp: float
     """
 
-    def __init__(self, bandit, alpha=0.1, temp=0.01):
+    def __init__(self, bandit: Bandit, alpha=0.1, temp=0.01):
         super(SoftmaxActionSelectionPolicy, self).__init__(
             bandit, requires_init_run=False
         )

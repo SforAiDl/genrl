@@ -1,7 +1,4 @@
-from typing import Any, Dict, List
-
 import numpy as np
-from scipy import stats
 
 from ..bandits import Bandit
 from .base import BanditPolicy

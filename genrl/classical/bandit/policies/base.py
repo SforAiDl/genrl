@@ -1,7 +1,6 @@
-from typing import Any, Dict, List
+from typing import List
 
 import numpy as np
-from scipy import stats
 
 from ..bandits import Bandit
 
