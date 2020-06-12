@@ -497,13 +497,13 @@ class OnPolicyTrainer(Trainer):
         """
         Run training.
         """
-        state = self.env.reset()
         for epoch in range(self.epochs):
             self.agent.epoch_reward = np.zeros(self.env.n_envs)
 
             self.agent.rollout.reset()
             self.agent.rewards = []
 
+            state = self.env.reset()
             values, done = self.agent.collect_rollouts(state)
 
             self.agent.get_traj_loss(values, done)
@@ -518,6 +518,9 @@ class OnPolicyTrainer(Trainer):
                         "Timestep": epoch * self.agent.rollout_size,
                     }
                 )
+
+            if self.render:
+                self.env.render()
 
             if self.save_interval != 0 and epoch % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()

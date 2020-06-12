@@ -121,13 +121,6 @@ class A2C:
         if seed is not None:
             set_seeds(seed, self.env)
 
-        # Setup tensorboard writer
-        self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
-
         self.create_model()
 
     def create_model(self) -> None:
@@ -228,9 +221,7 @@ calculate losses)
             torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.critic_optimizer.step()
 
-    def collect_rollouts(self, initial_state):
-
-        state = initial_state
+    def collect_rollouts(self, state):
 
         for i in range(2048):
             # with torch.no_grad():
@@ -326,6 +317,19 @@ space is discrete or not)
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+
+        logs = {
+            "timestep": self.timestep,
+            "policy_loss": self.logs["policy_loss"],
+            "value_loss": self.logs["value_loss"],
+            "policy_entropy": self.logs["entropy"],
+        }
 
 
 if __name__ == "__main__":

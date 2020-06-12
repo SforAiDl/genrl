@@ -109,13 +109,6 @@ class VPG:
         if seed is not None:
             set_seeds(seed, self.env)
 
-        # init writer if tensorboard
-        self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
-
         self.create_model()
 
     def create_model(self) -> None:
@@ -200,9 +193,7 @@ class VPG:
             torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
             self.optimizer_policy.step()
 
-    def collect_rollouts(self, initial_state):
-
-        state = initial_state
+    def collect_rollouts(self, state):
 
         for i in range(2048):
 
