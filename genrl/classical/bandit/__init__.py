@@ -7,4 +7,4 @@ from genrl.classical.bandit.policies import SoftmaxActionSelectionPolicy  # noqa
 from genrl.classical.bandit.policies import ThompsonSamplingPolicy  # noqa
 from genrl.classical.bandit.policies import UCBPolicy  # noqa
 
-from genrl.classical.bandit.policies import BanditPolicy  # noqa; noqa; noqa
+from genrl.classical.bandit.policies import BanditPolicy  # noqa; noqa
