@@ -1,26 +1,27 @@
+from copy import deepcopy
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-import gym
-from copy import deepcopy
 
 from ...common import (
     ReplayBuffer,
-    get_model,
-    save_params,
-    load_params,
     get_env_properties,
+    get_model,
+    load_params,
+    save_params,
     set_seeds,
     venv,
 )
-from typing import Optional, Any, Tuple, Union, Dict
 
 
 class DDPG:
     """
     Deep Deterministic Policy Gradient algorithm (DDPG)
-    
+
     Paper: https://arxiv.org/abs/1509.02971
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
@@ -182,7 +183,7 @@ class DDPG:
         for param in self.ac_target.parameters():
             param.requires_grad = False
 
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
@@ -196,8 +197,8 @@ class DDPG:
         :param deterministic: Action selection type
         :type state: int, float, ...
         :type deterministic: bool
-        :returns: Action based on the state and epsilon value 
-        :rtype: int, float, ... 
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
         """
         with torch.no_grad():
             action, _ = self.ac.get_action(
@@ -238,7 +239,7 @@ class DDPG:
         :returns: the Q loss value
         :rtype: float
         """
-        q = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
+        quality = self.ac.critic.get_value(torch.cat([state, action], dim=-1))
 
         with torch.no_grad():
             q_pi_target = self.ac_target.get_value(
@@ -248,7 +249,7 @@ class DDPG:
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
 
-        return nn.MSELoss()(q, target)
+        return nn.MSELoss()(quality, target)
 
     def get_p_loss(self, state: np.ndarray) -> torch.Tensor:
         """
@@ -301,19 +302,24 @@ class DDPG:
                 param_target.data.mul_(self.polyak)
                 param_target.data.add_((1 - self.polyak) * param.data)
 
-    def learn(self) -> None:  # pragma: no cover
-        state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
-        total_steps = self.steps_per_epoch * self.epochs
+    def learn(self):  # pragma: no cover
+        state, episode_reward, episode_len, episode = (
+            self.env.reset(),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+        )
+        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
         if self.noise is not None:
             self.noise.reset()
 
-        for t in range(total_steps):
+        for timestep in range(0, total_steps, self.env.n_envs):
             # execute single transition
-            if t > self.start_steps:
+            if timestep > self.start_steps:
                 action = self.select_action(state, deterministic=True)
             else:
-                action = self.env.action_space.sample()
+                action = self.env.sample()
 
             next_state, reward, done, _ = self.env.step(action)
             if self.render:
@@ -321,43 +327,48 @@ class DDPG:
             episode_reward += reward
             episode_len += 1
 
-            # don't set done to True if max_ep_len reached
-            done = False if episode_len == self.max_ep_len else done
+            # dont set d to True if max_ep_len reached
+            done = [
+                False if ep_len == self.max_ep_len else done for ep_len in episode_len
+            ]
 
-            self.replay_buffer.push((state, action, reward, next_state, done))
+            self.replay_buffer.extend(zip(state, action, reward, next_state, done))
 
             state = next_state
 
-            if done or (episode_len == self.max_ep_len):
+            if np.any(done) or np.any(episode_len == self.max_ep_len):
 
                 if self.noise is not None:
                     self.noise.reset()
 
-                if episode % 20 == 0:
+                if sum(episode) % 20 == 0:
                     print(
-                        "Episode: {}, Reward: {}, Timestep: {}".format(
-                            episode, episode_reward, t
+                        "Ep: {}, reward: {}, t: {}".format(
+                            sum(episode), np.mean(episode_reward), timestep
                         )
                     )
-                if self.tensorboard_log:
-                    self.writer.add_scalar("episode_reward", episode_reward, t)
 
-                state, episode_reward, episode_len = self.env.reset(), 0, 0
-                episode += 1
+                for i, di in enumerate(done):
+                    if di:
+                        episode_reward[i] = 0
+                        episode_len[i] = 0
+                        episode += 1
 
             # update params
-            if t >= self.start_update and t % self.update_interval == 0:
+            if timestep >= self.start_update and timestep % self.update_interval == 0:
                 for _ in range(self.update_interval):
                     batch = self.replay_buffer.sample(self.batch_size)
-                    states, actions, next_states, rewards, dones = (
+                    states, actions, rewards, next_states, dones = (
                         x.to(self.device) for x in batch
                     )
-                    self.update_params(states, actions, next_states, rewards, dones)
+                    self.update_params(
+                        states, actions, rewards.unsqueeze(1), next_states, dones
+                    )
 
             if self.save_model is not None:
-                if t >= self.start_update and t % self.save_interval == 0:
+                if timestep >= self.start_update and timestep % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, t)
+                    self.save(self, timestep)
                     print("Saved current model")
 
         self.env.close()

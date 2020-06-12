@@ -1,1 +1,1 @@
-from genrl.classical.sarsa.sarsa import SARSA
+from genrl.classical.sarsa.sarsa import SARSA  # noqa

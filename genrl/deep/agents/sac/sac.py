@@ -1,20 +1,21 @@
+from copy import deepcopy
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-import gym
-from copy import deepcopy
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from ...common import get_model, ReplayBuffer, save_params, load_params, set_seeds, venv
-from typing import Union, Tuple, Any, Optional, Dict
+from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds, venv
 
 
 class SAC:
     """
     Soft Actor Critic algorithm (SAC)
-    
+
     Paper: https://arxiv.org/abs/1812.05905
 
     :param network_type: The deep neural network layer types ['mlp', 'cnn']
@@ -155,16 +156,25 @@ class SAC:
         else:
             raise NotImplementedError
 
-        self.q1 = get_model("v", self.network_type)(
-            state_dim, action_dim, "Qsa", self.layers
-        ).to(self.device)
-        self.q2 = get_model("v", self.network_type)(
-            state_dim, action_dim, "Qsa", self.layers
-        ).to(self.device)
+        self.q1 = (
+            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+            .to(self.device)
+            .float()
+        )
 
-        self.policy = get_model("p", self.network_type)(
-            state_dim, action_dim, self.layers, disc, False, sac=True
-        ).to(self.device)
+        self.q2 = (
+            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+            .to(self.device)
+            .float()
+        )
+
+        self.policy = (
+            get_model("p", self.network_type)(
+                state_dim, action_dim, self.layers, disc, False, sac=True
+            )
+            .to(self.device)
+            .float()
+        )
 
         if self.load_model is not None:
             self.load(self)
@@ -177,14 +187,14 @@ class SAC:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.q1_targ = deepcopy(self.q1).to(self.device)
-        self.q2_targ = deepcopy(self.q2).to(self.device)
+        self.q1_targ = deepcopy(self.q1).to(self.device).float()
+        self.q2_targ = deepcopy(self.q2).to(self.device).float()
 
         # freeze target parameters
-        for p in self.q1_targ.parameters():
-            p.requires_grad = False
-        for p in self.q2_targ.parameters():
-            p.requires_grad = False
+        for param in self.q1_targ.parameters():
+            param.requires_grad = False
+        for param in self.q2_targ.parameters():
+            param.requires_grad = False
 
         # optimizers
         self.q1_optimizer = opt.Adam(self.q1.parameters(), self.lr)
@@ -198,7 +208,7 @@ class SAC:
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
 
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
 
         # set action scales
         if self.env.action_space is None:
@@ -215,7 +225,7 @@ class SAC:
     def sample_action(self, state: np.ndarray) -> np.ndarray:
         """
         sample action normal distribution parameterized by policy network
-        
+
         :param state: Observation state
         :type: int, float, ...
         :returns: action
@@ -241,9 +251,9 @@ class SAC:
         )
         log_pi = log_pi.sum(1, keepdim=True)
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
-        return action, log_pi, mean
+        return action.float(), log_pi, mean
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
+    def select_action(self, state):
         """
         select action given a state
 
@@ -252,9 +262,9 @@ class SAC:
         :returns: action
         :rtype: int, float, ...
         """
-        state = torch.FloatTensor(state).to(self.device).unsqueeze(0)
+        state = torch.FloatTensor(state).to(self.device)
         action, _, _ = self.sample_action(state)
-        return action.detach().cpu().numpy()[0]
+        return action.detach().cpu().numpy()
 
     def update_params(
         self,
@@ -286,9 +296,21 @@ class SAC:
         :returns: entropy coefficient loss
         :rtype: float
         """
-        reward = reward.unsqueeze(1)
-        done = done.unsqueeze(1)
         # compute targets
+        if self.env.n_envs == 1:
+            state, action, next_state = (
+                state.squeeze().float(),
+                action.squeeze(1).float(),
+                next_state.squeeze().float(),
+            )
+        else:
+            state, action, next_state = (
+                state.reshape(-1, *self.env.observation_space.shape).float(),
+                action.reshape(-1, *self.env.action_space.shape).float(),
+                next_state.reshape(-1, *self.env.observation_space.shape).float(),
+            )
+            reward, done = reward.reshape(-1, 1), done.reshape(-1, 1)
+
         with torch.no_grad():
             next_action, next_log_pi, _ = self.sample_action(next_state)
             next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
@@ -306,8 +328,8 @@ class SAC:
         q2_loss = nn.MSELoss()(q2, next_q)
 
         pi, log_pi, _ = self.sample_action(state)
-        q1_pi = self.q1(torch.cat([state, pi], dim=-1))
-        q2_pi = self.q2(torch.cat([state, pi], dim=-1))
+        q1_pi = self.q1(torch.cat([state, pi.float()], dim=-1).float())
+        q2_pi = self.q2(torch.cat([state, pi.float()], dim=-1).float())
         min_q_pi = torch.min(q1_pi, q2_pi)
         policy_loss = ((self.alpha * log_pi) - min_q_pi).mean()
 
@@ -355,80 +377,82 @@ class SAC:
         if self.tensorboard_log:
             writer = SummaryWriter(self.tensorboard_log)
 
-        timestep = 0
-        episode = 1
-        total_steps = self.steps_per_epoch * self.epochs
+        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
-        while episode >= 1:
-            episode_reward = 0
-            state = env.reset()
-            done = False
-            j = 0
+        episode_reward, episode_len = (
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+        )
+        state = self.env.reset()
+        for i in range(0, total_steps, self.env.n_envs):
+            # done = [False] * self.env.n_envs
 
-            while not done:
-                # sample action
-                if timestep > self.start_steps:
-                    action = self.select_action(state)
-                else:
-                    action = self.env.action_space.sample()
+            # while not done:
+            # sample action
+            if i > self.start_steps:
+                action = self.select_action(state)
+            else:
+                action = self.env.sample()
 
-                if (
-                    timestep >= self.start_update
-                    and timestep % self.update_interval == 0
-                    and self.replay_buffer.get_len() > self.batch_size
-                ):
-                    # get losses
-                    batch = self.replay_buffer.sample(self.batch_size)
-                    states, actions, next_states, rewards, dones = (
-                        x.to(self.device) for x in batch
-                    )
+            if (
+                i >= self.start_update
+                and i % self.update_interval == 0
+                and self.replay_buffer.pos > self.batch_size
+            ):
+                # get losses
+                batch = self.replay_buffer.sample(self.batch_size)
+                states, actions, rewards, next_states, dones = (
+                    x.to(self.device) for x in batch
+                )
+                q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
+                    states, actions, rewards, next_states, dones
+                )
 
-                    (q1_loss, q2_loss, policy_loss, alpha_loss) = self.update_params(
-                        states, actions, next_states, rewards, dones
-                    )
-
-                    # write loss logs to tensorboard
-                    if self.tensorboard_log:
-                        writer.add_scalar("loss/q1_loss", q1_loss, timestep)
-                        writer.add_scalar("loss/q2_loss", q2_loss, timestep)
-                        writer.add_scalar("loss/policy_loss", policy_loss, timestep)
-                        writer.add_scalar("loss/alpha_loss", alpha_loss, timestep)
+                # write loss logs to tensorboard
+                if self.tensorboard_log:
+                    writer.add_scalar("loss/q1_loss", q1_loss, i)
+                    writer.add_scalar("loss/q2_loss", q2_loss, i)
+                    writer.add_scalar("loss/policy_loss", policy_loss, i)
+                    writer.add_scalar("loss/alpha_loss", alpha_loss, i)
 
                 if self.save_model is not None:
-                    if (
-                        timestep >= self.start_update
-                        and timestep % self.save_interval == 0
-                    ):
+                    if i >= self.start_update and i % self.save_interval == 0:
                         self.checkpoint = self.get_hyperparams()
-                        self.save(self, timestep)
+                        self.save(self, i)
                         print("Saved current model")
 
                 # prepare transition for replay memory push
-                next_state, reward, done, _ = self.env.step(action)
-                if self.render:
-                    self.env.render()
-                timestep += 1
-                j += 1
-                episode_reward += reward
+            next_state, reward, done, _ = self.env.step(action)
+            if self.render:
+                self.env.render()
 
-                ndone = 1 if j == self.max_ep_len else float(not done)
-                self.replay_buffer.push((state, action, reward, next_state, 1 - ndone))
-                state = next_state
+            done = [
+                False if ep_len == self.max_ep_len else done for ep_len in episode_len
+            ]
 
-            if timestep > total_steps:
+            if np.any(done) or np.any(episode_len == self.max_ep_len):
+                for j, di in enumerate(done):
+                    if di:
+                        episode_reward[j] = 0
+                        episode_len[j] = 0
+
+            self.replay_buffer.extend(zip(state, action, reward, next_state, done))
+            state = next_state
+
+            if i > total_steps:
                 break
 
             # write episode reward to tensorboard logs
             if self.tensorboard_log:
-                writer.add_scalar("reward/episode_reward", episode_reward, timestep)
+                writer.add_scalar("reward/episode_reward", episode_reward, i)
 
-            if episode % 5 == 0:
+            if sum(episode_len) % (5 * self.env.n_envs) == 0 and sum(episode_len) != 0:
                 print(
-                    "Episode: {}, Total Timesteps: {}, Reward: {}".format(
-                        episode, timestep, episode_reward
+                    "Episode: {}, total numsteps: {}, reward: {}".format(
+                        sum(episode_len), i, episode_reward
                     )
                 )
-            episode += 1
+            # ep += 1
 
         self.env.close()
         if self.tensorboard_log:

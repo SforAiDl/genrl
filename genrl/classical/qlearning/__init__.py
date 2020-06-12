@@ -1,1 +1,1 @@
-from genrl.classical.qlearning.qlearning import QLearning
+from genrl.classical.qlearning.qlearning import QLearning  # noqa

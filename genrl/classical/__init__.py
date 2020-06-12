@@ -1,18 +1,16 @@
-from genrl.classical.bandit import (
-    GaussianBandit,
-    BernoulliBandit,
-    EpsGreedyPolicy,
-    UCBPolicy,
-    GradientBasedPolicy,
-    BayesianUCBPolicy,
-    ThompsonSamplingPolicy,
-    GaussianCB,
-    BernoulliCB,
-    EpsGreedyCBPolicy,
-    UCBCBPolicy,
-    GradientBasedCBPolicy,
-    BayesianUCBCBPolicy,
-    ThompsonSamplingCBPolicy,
-)
-from genrl.classical.sarsa import SARSA
-from genrl.classical.qlearning import QLearning
+from genrl.classical.sarsa import SARSA  # noqa
+from genrl.classical.qlearning import QLearning  # noqa
+from genrl.classical.bandit import GaussianBandit  # noqa
+from genrl.classical.bandit import BernoulliBandit  # noqa
+from genrl.classical.bandit import EpsGreedyPolicy  # noqa
+from genrl.classical.bandit import UCBPolicy  # noqa
+from genrl.classical.bandit import GradientBasedPolicy  # noqa
+from genrl.classical.bandit import BayesianUCBPolicy  # noqa
+from genrl.classical.bandit import ThompsonSamplingPolicy  # noqa
+from genrl.classical.bandit import GaussianCB  # noqa
+from genrl.classical.bandit import BernoulliCB  # noqa
+from genrl.classical.bandit import EpsGreedyCBPolicy  # noqa
+from genrl.classical.bandit import UCBCBPolicy  # noqa
+from genrl.classical.bandit import GradientBasedCBPolicy  # noqa
+from genrl.classical.bandit import BayesianUCBCBPolicy  # noqa
+from genrl.classical.bandit import ThompsonSamplingCBPolicy  # noqa

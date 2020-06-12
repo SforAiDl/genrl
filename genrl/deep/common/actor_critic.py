@@ -1,8 +1,10 @@
+from typing import Tuple
+
 from gym import spaces
+
 from .base import BaseActorCritic
 from .policies import MlpPolicy
 from .values import MlpValue
-from typing import Tuple
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -12,8 +14,8 @@ class MlpActorCritic(BaseActorCritic):
     :param state_dim: State dimensions of the environment
     :param action_dim: Action dimensions of the environment
     :param hidden: Sizes of hidden layers
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param discrete: True if action space is discrete, else False
     :type state_dim: int
     :type action_dim: int
