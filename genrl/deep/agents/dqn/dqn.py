@@ -389,7 +389,6 @@ class DQN:
 
         # with torch.no_grad():
 
-
     def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
         """
         A helper function to calculate the value of epsilon after every step.

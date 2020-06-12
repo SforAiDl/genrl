@@ -265,20 +265,15 @@ class DDPG:
         )
         return -torch.mean(q_pi)
 
-    def update_params(
-        self,
-        timestep: int
-    ) -> None:
+    def update_params(self, timestep: int) -> None:
         """
         Takes the step for optimizer.
 
-        :param timestep: timestep 
+        :param timestep: timestep
         :type timestep: int
         """
         batch = self.replay_buffer.sample(self.batch_size)
-        state, action, reward, next_state, done = (
-            x.to(self.device) for x in batch
-        )
+        state, action, reward, next_state, done = (x.to(self.device) for x in batch)
         self.optimizer_q.zero_grad()
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
         loss_q.backward()

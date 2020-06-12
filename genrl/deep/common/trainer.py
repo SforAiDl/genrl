@@ -381,7 +381,7 @@ many steps)
                     and timestep % self.update_interval == 0
                 ):
                     for _ in range(self.update_interval):
-                            self.agent.update_params(_)
+                        self.agent.update_params(_)
 
             if (
                 timestep >= self.start_update

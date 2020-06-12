@@ -266,14 +266,11 @@ class SAC:
         action, _, _ = self.sample_action(state)
         return action.detach().cpu().numpy()
 
-    def update_params(
-        self,
-        timestep: int
-    ) -> (Tuple[float]):
+    def update_params(self, timestep: int) -> (Tuple[float]):
         """
         Computes loss and takes optimizer step
 
-        :param timestep: timestep 
+        :param timestep: timestep
         :type timestep: int
         :returns: policy loss
         :rtype: float
@@ -281,9 +278,7 @@ class SAC:
         :rtype: float
         """
         batch = self.replay_buffer.sample(self.batch_size)
-        state, action, reward, next_state, done = (
-            x.to(self.device) for x in batch
-        )
+        state, action, reward, next_state, done = (x.to(self.device) for x in batch)
         # compute targets
         if self.env.n_envs == 1:
             state, action, next_state = (
