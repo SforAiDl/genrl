@@ -366,20 +366,8 @@ many steps)
                         episode_len[i] = 0
                         episode += 1
 
-            # update params for DQN
-            if self.agent.__class__.__name__ == "DQN":
-                self.agent.update_params(timestep)
-
-                if timestep % self.update_interval == 0:
-                    self.agent.update_target_model()
-
-            # update params for other agents
-            else:
-                if (
-                    timestep >= self.start_update
-                    and timestep % self.update_interval == 0
-                ):
-                    self.agent.update_params(self.update_interval)
+            if timestep >= self.start_update and timestep % self.update_interval == 0:
+                self.agent.update_params(self.update_interval)
 
             if (
                 timestep >= self.start_update

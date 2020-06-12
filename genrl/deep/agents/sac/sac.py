@@ -363,6 +363,7 @@ class SAC:
                     target_param.data * self.polyak + param.data * (1 - self.polyak)
                 )
 
+        # TO DO: Make a get_logging_params() for logging these
         # return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
     def learn(self) -> None:  # pragma: no cover
