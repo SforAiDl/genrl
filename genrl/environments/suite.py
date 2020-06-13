@@ -1,10 +1,10 @@
+from typing import Dict
+
 import gym
 
-from ..environments import GymWrapper, AtariPreprocessing, FrameStack, NoopReset
-from ..environments.vec_env.vector_envs import SubProcessVecEnv, SerialVecEnv
+from ..environments import AtariPreprocessing, FrameStack, GymWrapper, NoopReset
 from ..environments.vec_env import VecEnv, VecNormalize
-
-from typing import Dict
+from ..environments.vec_env.vector_envs import SerialVecEnv, SubProcessVecEnv
 
 
 def VectorEnv(
@@ -45,7 +45,7 @@ subprocesses, False if we want environments to run serially one after the other
     else:
         venv = SerialVecEnv(envs, n_envs)
 
-    # venv = VecNormalize(venv)
+    venv = VecNormalize(venv)
 
     return venv
 
@@ -99,7 +99,10 @@ def AtariEnv(env_id: str, atari_args: Dict) -> gym.Env:
     for wrapper in wrapper_list:
         if wrapper is AtariPreprocessing:
             env = wrapper(
-                env, atari_args["frameskip"], atari_args["grayscale"], atari_args["screen_size"]
+                env,
+                atari_args["frameskip"],
+                atari_args["grayscale"],
+                atari_args["screen_size"],
             )
         elif wrapper is NoopReset:
             env = wrapper(env, atari_args["max_noops"])

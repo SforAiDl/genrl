@@ -117,7 +117,6 @@ class PushReplayBuffer:
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
-        print(state.shape)
         return (
             torch.from_numpy(v).float()
             for v in [state, action, reward, next_state, done]

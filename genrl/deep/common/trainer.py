@@ -293,7 +293,6 @@ many steps)
                         action = self.agent.select_action(state)
 
             next_state, reward, done, _ = self.env.step(action)
-            print(next_state.shape)
 
             if self.render:
                 self.env.render()
