@@ -11,7 +11,7 @@ from genrl.deep.common import (
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
-    OnPolicyTrainer
+    OnPolicyTrainer,
 )
 from genrl.deep.common.utils import *
 

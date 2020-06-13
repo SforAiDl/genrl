@@ -1,7 +1,8 @@
-import pytest
 import numpy as np
+import pytest
+
 from genrl.environments.suite import VectorEnv
-from genrl.environments.vec_env import VecNormalize, RunningMeanStd
+from genrl.environments.vec_env import RunningMeanStd, VecNormalize
 
 
 class TestVecEnvs:
@@ -13,7 +14,7 @@ class TestVecEnvs:
         env.reset()
         env.step(env.sample())
         env.close()
-    
+
     def test_vecenv_serial(self):
         env = VectorEnv("CartPole-v1", 2, parallel=False)
         env.seed(0)

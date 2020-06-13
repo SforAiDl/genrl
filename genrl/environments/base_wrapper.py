@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-import numpy as np
+from typing import Any
 
-from typing import Any, Dict
+import numpy as np
 
 
 class BaseWrapper(ABC):

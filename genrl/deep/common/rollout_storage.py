@@ -1,9 +1,10 @@
 from typing import Generator, NamedTuple, Optional, Union
 
 import numpy as np
-from .utils import get_obs_action_shape
 import torch
 from gym import spaces
+
+from .utils import get_obs_action_shape
 
 
 class RolloutBufferSamples(NamedTuple):

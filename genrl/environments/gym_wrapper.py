@@ -1,9 +1,9 @@
-import numpy as np
+from typing import Any
+
 import gym
+import numpy as np
 
 from ..environments import BaseWrapper
-
-from typing import Any
 
 
 class GymWrapper(BaseWrapper, gym.Wrapper):

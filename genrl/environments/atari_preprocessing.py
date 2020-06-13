@@ -1,10 +1,10 @@
-import numpy as np
+from typing import Tuple, Union
+
 import cv2
 import gym
-from gym.spaces import Box
+import numpy as np
 from gym.core import Wrapper
-
-from typing import Union, Tuple
+from gym.spaces import Box
 
 
 class AtariPreprocessing(Wrapper):
