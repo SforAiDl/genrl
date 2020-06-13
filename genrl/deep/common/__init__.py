@@ -21,7 +21,6 @@ from genrl.deep.common.utils import set_seeds  # noqa
 from genrl.deep.common.values import MlpValue  # noqa
 from genrl.deep.common.values import _get_val_model  # noqa
 from genrl.deep.common.values import get_value_from_name  # noqa
-from genrl.deep.common.VecEnv import SerialVecEnv, SubProcessVecEnv, VecEnv  # noqa
 from genrl.deep.common.logger import CSVLogger  # noqa
 from genrl.deep.common.noise import ActionNoise  # noqa
 from genrl.deep.common.utils import cnn  # noqa

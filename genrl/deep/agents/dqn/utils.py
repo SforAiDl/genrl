@@ -67,9 +67,10 @@ class DuelingDQNValueCNN(nn.Module):
 
     :param action_dim: Action space
     :param framestack: Number of frames you're considering in your history
-    :param fc_layers: no of units in fc layers 
+    :param fc_layers: no of units in fc layers
     :type action_dim: int, float, ...
     :type framestack: int
+
     :type fc_layers: tuple
     """
 
@@ -210,7 +211,7 @@ class NoisyDQNValueCNN(nn.Module):
     :param noisy_layers: no of units in noisy layers
     :type action_dim: int, float, ...
     :type framestack: int
-    :type fc_layers: tuple  
+    :type fc_layers: tuple
     :type noisy_layers: tuple
     """
 
@@ -301,7 +302,7 @@ class CategoricalDQNValueCNN(nn.Module):
     :type action_dim: int, float, ...
     :type num_atoms: int
     :type framestack: int
-    :type fc_layers: tuple  
+    :type fc_layers: tuple
     :type noisy_layers: tuple
     """
 

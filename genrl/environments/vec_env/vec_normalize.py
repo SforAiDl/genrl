@@ -1,39 +1,46 @@
-import numpy as np
-from .vector_envs import VecEnv
-from .utils import RunningMeanStd
-from .vector_envs import VecEnv
 from typing import Any, Tuple
 
+import numpy as np
 
-class VecNormalize(VecEnv):
+from .utils import RunningMeanStd
+from .vec_wrappers import VecEnvWrapper
+from .vector_envs import VecEnv
+
+
+class VecNormalize(VecEnvWrapper):
     """
     Wrapper to implement Normalization of observations and rewards for VecEnvs
 
     :param venv: The Vectorized environment
+    :param n_envs: Number of environments in VecEnv
     :param norm_obs: True if observations should be normalized, else False
     :param norm_reward: True if rewards should be normalized, else False
     :param clip_obs: Maximum absolute value for observations
     :param clip_reward: Maximum absolute value for rewards
     :param gamma: Discount Factor used in calculation of returns
     :type venv: Vectorized Environment
+    :type n_envs: int
     :type norm_obs: bool
     :type norm_reward: bool
     :type clip_obs: float
     :type clip_reward: float
     :type gamma: float
     """
+
     def __init__(
         self,
         venv: VecEnv,
         norm_obs: bool = True,
         norm_reward: bool = False,
-        clip_obs: float = 10.,
-        clip_reward: float = 10.,
+        clip_obs: float = 10.0,
+        clip_reward: float = 10.0,
         gamma: float = 0.99,
     ):
         super(VecNormalize, self).__init__(venv)
 
-        self.obs_rms = RunningMeanStd(shape=self.observation_space.shape) if norm_obs else False
+        self.obs_rms = (
+            RunningMeanStd(shape=self.observation_space.shape) if norm_obs else False
+        )
         self.reward_rms = RunningMeanStd(shape=(1, 1)) if norm_reward else False
 
         self.clip_obs = clip_obs
@@ -49,8 +56,8 @@ class VecNormalize(VecEnv):
         :type name: string
         :returns: Corresponding attribute of parent class
         """
-        envs = super(VecNormalize, self).__getattribute__("envs")
-        return getattr(envs, name)
+        venv = super(VecNormalize, self).__getattribute__("venv")
+        return getattr(venv, name)
 
     def step(self, actions: np.ndarray) -> Tuple:
         """
@@ -60,17 +67,22 @@ class VecNormalize(VecEnv):
         :type actions: Numpy Array
         :returns: States, rewards, dones, infos
         """
-        states, rewards, dones, infos = self.envs.step(actions)
+        states, rewards, dones, infos = self.venv.step(actions)
 
-        self.returns = self.returns * self.gamma + rewards
+        self.returns = self.returns * self.gamma
+        self.returns += rewards
         states = self._normalize(self.obs_rms, self.clip_obs, states)
-        rewards = self._normalize(self.reward_rms, self.clip_reward, rewards).reshape(self.n_envs,)
+        rewards = self._normalize(self.reward_rms, self.clip_reward, rewards).reshape(
+            self.n_envs,
+        )
 
         self.returns[dones.astype(bool)] = 0
 
         return states, rewards, dones, infos
 
-    def _normalize(self, rms: RunningMeanStd, clip: float, batch: np.ndarray) -> np.ndarray:
+    def _normalize(
+        self, rms: RunningMeanStd, clip: float, batch: np.ndarray
+    ) -> np.ndarray:
         """
         Function to normalize and clip a given RMS
 
@@ -85,9 +97,7 @@ class VecNormalize(VecEnv):
         """
         if rms:
             rms.update(batch)
-            batch = np.clip(
-                (batch - rms.mean) / np.sqrt(rms.var + 1e-8), -clip, clip
-            )
+            batch = np.clip((batch - rms.mean) / np.sqrt(rms.var + 1e-8), -clip, clip)
         return batch
 
     def reset(self) -> np.ndarray:
@@ -97,12 +107,12 @@ class VecNormalize(VecEnv):
         :returns: Initial observations
         :rtype: Numpy Array
         """
-        self.returns = np.zeros(self.n_envs)
-        states = self.envs.reset()
+        self.returns = np.zeros((self.n_envs,), dtype=np.float32)
+        states = self.venv.reset()
         return self._normalize(self.obs_rms, self.clip_obs, states)
 
     def close(self):
         """
         Close all individual environments in the Vectorized Environment
         """
-        self.envs.close()
+        self.venv.close()

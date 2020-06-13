@@ -1,7 +1,8 @@
 import argparse
 
 from genrl import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
-from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer, venv
+from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
+from genrl.environments import VectorEnv
 
 
 def main():
@@ -11,6 +12,9 @@ def main():
     )
     parser.add_argument(
         "-e", "--env", help="Which env to train on", default="CartPole-v0", type=str
+    )
+    parser.add_argument(
+        "--env-type", help="What kind of env is it", default="gym", type=str
     )
     parser.add_argument(
         "-n",
@@ -64,7 +68,9 @@ def main():
     }
 
     algo = ALGOS[args.algo.lower()]
-    env = venv(args.env, args.n_envs, parallel=not args.serial)
+    env = VectorEnv(
+        args.env, n_envs=args.n_envs, parallel=not args.serial, env_type=args.env_type
+    )
 
     logger = get_logger(args.log)
 

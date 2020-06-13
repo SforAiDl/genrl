@@ -1,15 +1,14 @@
 from abc import ABC
-import torch
+from typing import Any, List, Optional, Type, Union
+
 import gym
 import numpy as np
+import torch
 
+from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
-from .buffers import ReplayBuffer, PrioritizedBuffer
-from ...environments import VecEnv
 from .utils import save_params, set_seeds
-
-from typing import Union, Type, List, Optional, Any
 
 
 class Trainer(ABC):
@@ -294,6 +293,7 @@ many steps)
                         action = self.agent.select_action(state)
 
             next_state, reward, done, _ = self.env.step(action)
+            print(next_state.shape)
 
             if self.render:
                 self.env.render()

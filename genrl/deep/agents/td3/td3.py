@@ -6,6 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from ....environments import VecEnv
 from ...common import (
     ReplayBuffer,
     get_env_properties,
@@ -14,7 +15,6 @@ from ...common import (
     save_params,
     set_seeds,
 )
-from ....environments import VecEnv
 
 
 class TD3:
@@ -284,7 +284,6 @@ class TD3:
         timestep: int,
     ) -> None:
         self.optimizer_q.zero_grad()
-        # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
         loss_q.backward()
         self.optimizer_q.step()
