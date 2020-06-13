@@ -7,12 +7,12 @@ from genrl.classical.bandit.contextual_bandits import GaussianCB  # noqa
 from genrl.classical.bandit.contextual_policies import BayesianUCBCBPolicy  # noqa
 from genrl.classical.bandit.contextual_policies import CBPolicy  # noqa
 from genrl.classical.bandit.contextual_policies import EpsGreedyCBPolicy  # noqa
-from genrl.classical.bandit.contextual_policies import GradientBasedCBPolicy  # noqa
+from genrl.classical.bandit.contextual_policies import GradientCBPolicy  # noqa
 from genrl.classical.bandit.contextual_policies import ThompsonSamplingCBPolicy  # noqa
 from genrl.classical.bandit.contextual_policies import UCBCBPolicy  # noqa
 from genrl.classical.bandit.policies import BanditPolicy  # noqa
 from genrl.classical.bandit.policies import BayesianUCBPolicy  # noqa
 from genrl.classical.bandit.policies import EpsGreedyPolicy  # noqa
-from genrl.classical.bandit.policies import GradientBasedPolicy  # noqa
+from genrl.classical.bandit.policies import GradientPolicy  # noqa
 from genrl.classical.bandit.policies import ThompsonSamplingPolicy  # noqa
 from genrl.classical.bandit.policies import UCBPolicy  # noqa

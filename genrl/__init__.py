@@ -7,8 +7,8 @@ from genrl.classical import EpsGreedyCBPolicy  # noqa
 from genrl.classical import EpsGreedyPolicy  # noqa
 from genrl.classical import GaussianBandit  # noqa
 from genrl.classical import GaussianCB  # noqa
-from genrl.classical import GradientBasedCBPolicy  # noqa
-from genrl.classical import GradientBasedPolicy  # noqa
+from genrl.classical import GradientCBPolicy  # noqa
+from genrl.classical import GradientPolicy  # noqa
 from genrl.classical import QLearning  # noqa
 from genrl.classical import ThompsonSamplingCBPolicy  # noqa
 from genrl.classical import ThompsonSamplingPolicy  # noqa

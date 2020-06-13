@@ -7,8 +7,8 @@ from genrl import (
     EpsGreedyPolicy,
     GaussianBandit,
     GaussianCB,
-    GradientBasedCBPolicy,
-    GradientBasedPolicy,
+    GradientCBPolicy,
+    GradientPolicy,
     ThompsonSamplingCBPolicy,
     ThompsonSamplingPolicy,
     UCBCBPolicy,
@@ -29,7 +29,7 @@ class TestBandit:
 
     def test_gradient_gaussian(self) -> None:
         bandit = GaussianBandit(arms=10)
-        policy = GradientBasedPolicy(bandit)
+        policy = GradientPolicy(bandit)
         policy.learn(10)
 
     def test_eps_greedy_bernoulli(self) -> None:
@@ -64,7 +64,7 @@ class TestBandit:
 
     def test_gradient_gaussian_cb(self) -> None:
         bandit = GaussianCB(bandits=10, arms=10)
-        policy = GradientBasedCBPolicy(bandit)
+        policy = GradientCBPolicy(bandit)
         policy.learn(10)
 
     def test_bayesian_ucv_bernoulli_cb(self) -> None:

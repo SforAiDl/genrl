@@ -6,8 +6,8 @@ from genrl.classical.bandit import EpsGreedyCBPolicy  # noqa
 from genrl.classical.bandit import EpsGreedyPolicy  # noqa
 from genrl.classical.bandit import GaussianBandit  # noqa
 from genrl.classical.bandit import GaussianCB  # noqa
-from genrl.classical.bandit import GradientBasedCBPolicy  # noqa
-from genrl.classical.bandit import GradientBasedPolicy  # noqa
+from genrl.classical.bandit import GradientCBPolicy  # noqa
+from genrl.classical.bandit import GradientPolicy  # noqa
 from genrl.classical.bandit import ThompsonSamplingCBPolicy  # noqa
 from genrl.classical.bandit import ThompsonSamplingPolicy  # noqa
 from genrl.classical.bandit import UCBCBPolicy  # noqa

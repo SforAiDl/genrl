@@ -37,14 +37,14 @@ def demo_policy(
     axs[1].legend()
     axs[0].set_title(f"{policy_type.__name__} Rewards on {bandit_type.__name__}")
     axs[1].set_title(f"{policy_type.__name__} Regrets on {bandit_type.__name__}")
-    plt.savefig(f"./logs/{policy_type.__name__}-on-{bandit_type.__name__}.png")
+    plt.savefig(f"{policy_type.__name__}-on-{bandit_type.__name__}.png")
     plt.cla()
 
 
 # Examples of regular bandits
 
 TIMESTEPS = 1000
-ITERATIONS = 500
+ITERATIONS = 2
 ARMS = 10
 BANDIT_ARGS = {"arms": ARMS}
 
@@ -60,7 +60,7 @@ demo_policy(
 )
 
 c_vals = [0.5, 0.9, 1.0, 2.0]
-POLICY_ARGS_COLLECTION = [{"c": i} for i in c_vals]
+POLICY_ARGS_COLLECTION = [{"confidence": i} for i in c_vals]
 demo_policy(
     UCBPolicy,
     GaussianBandit,
@@ -76,7 +76,7 @@ POLICY_ARGS_COLLECTION = [
     {"alpha": i, "temp": j} for i in alpha_vals for j in temp_vals
 ]
 demo_policy(
-    GradientBasedPolicy,
+    GradientPolicy,
     GaussianBandit,
     POLICY_ARGS_COLLECTION,
     BANDIT_ARGS,
@@ -96,17 +96,17 @@ demo_policy(
 )
 
 c_vals = [0.5, 0.9, 1.0, 2.0]
-POLICY_ARGS_COLLECTION = [{"c": i} for i in c_vals]
+POLICY_ARGS_COLLECTION = [{"confidence": i} for i in c_vals]
 demo_policy(
     UCBPolicy,
-    GaussianBandit,
+    BernoulliBandit,
     POLICY_ARGS_COLLECTION,
     BANDIT_ARGS,
     TIMESTEPS,
     ITERATIONS,
 )
 
-POLICY_ARGS_COLLECTION = [{"alpha": 1.0, "beta": 1.0, "c": 3.0}]
+POLICY_ARGS_COLLECTION = [{"alpha": 1.0, "beta": 1.0, "confidence": 3.0}]
 demo_policy(
     BayesianUCBPolicy,
     BernoulliBandit,
@@ -130,7 +130,7 @@ demo_policy(
 # Examples of contextual bandits
 
 TIMESTEPS = 5000
-ITERATIONS = 500
+ITERATIONS = 2
 BANDITS = 5
 ARMS = 10
 BANDIT_ARGS = {"bandits": BANDITS, "arms": ARMS}
@@ -147,7 +147,7 @@ demo_policy(
 )
 
 c_vals = [0.5]  # , 0.9, 1.0, 2.0]
-POLICY_ARGS_COLLECTION = [{"c": i} for i in c_vals]
+POLICY_ARGS_COLLECTION = [{"confidence": i} for i in c_vals]
 demo_policy(
     UCBCBPolicy,
     BernoulliCB,
@@ -169,7 +169,7 @@ demo_policy(
 )
 
 c_vals = [0.5]  # , 0.9, 1.0, 2.0]
-POLICY_ARGS_COLLECTION = [{"c": i} for i in c_vals]
+POLICY_ARGS_COLLECTION = [{"confidence": i} for i in c_vals]
 demo_policy(
     UCBCBPolicy, GaussianCB, POLICY_ARGS_COLLECTION, BANDIT_ARGS, TIMESTEPS, ITERATIONS,
 )
@@ -180,7 +180,7 @@ POLICY_ARGS_COLLECTION = [
     {"alpha": i, "temp": j} for i in alpha_vals for j in temp_vals
 ]
 demo_policy(
-    GradientBasedCBPolicy,
+    GradientCBPolicy,
     GaussianCB,
     POLICY_ARGS_COLLECTION,
     BANDIT_ARGS,
@@ -188,7 +188,7 @@ demo_policy(
     ITERATIONS,
 )
 
-POLICY_ARGS_COLLECTION = [{"alpha": 1.0, "beta": 1.0, "c": 3.0}]
+POLICY_ARGS_COLLECTION = [{"alpha": 1.0, "beta": 1.0, "confidence": 3.0}]
 demo_policy(
     BayesianUCBCBPolicy,
     BernoulliCB,
