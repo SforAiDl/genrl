@@ -37,6 +37,7 @@ class DDPG:
     :param steps_per_epoch: Number of steps per epoch
     :param noise_std: Standard deviation for action noise
     :param max_ep_len: Maximum steps per episode
+    :param deterministic_actions: True if actions are deterministic
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of steps between parameter updates
     :param save_interval: Number of steps between saves of models
@@ -61,6 +62,7 @@ class DDPG:
     :type steps_per_epoch: int
     :type noise_std: float
     :type max_ep_len: int
+    :type deterministic_actions: bool
     :type start_update: int
     :type update_interval: int
     :type save_interval: int
@@ -90,6 +92,7 @@ class DDPG:
         noise: Optional[Any] = None,
         noise_std: float = 0.1,
         max_ep_len: int = 1000,
+        deterministic_actions: bool = False,
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (32, 32),
@@ -117,6 +120,7 @@ class DDPG:
         self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
+        self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
         self.save_interval = save_interval
@@ -187,23 +191,28 @@ class DDPG:
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
-    def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """
+        Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        :param timestep: Timestep in the training process
+        :type timestep: int
+        """
+        pass
+
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         """
         Selection of action
 
         :param state: Observation state
-        :param deterministic: Action selection type
         :type state: int, float, ...
-        :type deterministic: bool
         :returns: Action based on the state and epsilon value
         :rtype: int, float, ...
         """
         with torch.no_grad():
             action, _ = self.ac.get_action(
                 torch.as_tensor(state, dtype=torch.float32).to(self.device),
-                deterministic=deterministic,
+                deterministic=self.deterministic_actions,
             )
             action = action.detach().cpu().numpy()
 

@@ -299,26 +299,19 @@ many steps)
         self.rewards = [0]
 
         for timestep in range(0, total_steps, self.env.n_envs):
+            self.agent.update_params_before_select_action(timestep)
             if self.network_type == "cnn":
                 self.state_history.append(self.transform(state))
                 phi_state = torch.stack(list(self.state_history), dim=1)
 
-            if self.agent.__class__.__name__ == "DQN":
-                self.agent.epsilon = self.agent.calculate_epsilon_by_frame(timestep)
-
-                if self.network_type == "cnn":
-                    action = self.agent.select_action(phi_state)
-                else:
-                    action = self.agent.select_action(state)
+            if self.network_type == "cnn":
+                action = self.agent.select_action(phi_state)
 
             else:
                 if timestep < self.warmup_steps:
                     action = np.array(self.env.sample())
                 else:
-                    if self.deterministic_actions:
-                        action = self.agent.select_action(state, deterministic=True)
-                    else:
-                        action = self.agent.select_action(state)
+                    action = self.agent.select_action(state)
 
             next_state, reward, done, _ = self.env.step(action)
 

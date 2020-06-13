@@ -255,6 +255,15 @@ class DQN:
         """
         self.target_model.load_state_dict(self.model.state_dict())
 
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """
+        Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        :param timestep: Timestep in the training process
+        :type timestep: int
+        """
+        self.epsilon = self.calculate_epsilon_by_frame(timestep)
+
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """
         Epsilon Greedy selection of action

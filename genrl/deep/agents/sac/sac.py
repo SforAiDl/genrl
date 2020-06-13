@@ -253,6 +253,15 @@ class SAC:
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
         return action.float(), log_pi, mean
 
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """
+        Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        :param timestep: Timestep in the training process
+        :type timestep: int
+        """
+        pass
+
     def select_action(self, state):
         """
         select action given a state

@@ -38,6 +38,7 @@ class TD3:
     :param steps_per_epoch: (int) Number of steps per epoch
     :param noise_std: (float) Standard deviation for action noise
     :param max_ep_len: (int) Maximum steps per episode
+    :param deterministic_actions: True if actions are deterministic
     :param start_update: (int) Number of steps before first parameter update
     :param update_interval: (int) Number of steps between parameter updates
     :param save_interval: (int) Number of steps between saves of models
@@ -70,6 +71,7 @@ class TD3:
     :type steps_per_epoch: int
     :type noise_std: float
     :type max_ep_len: int
+    :type deterministic_actions: bool
     :type start_update: int
     :type update_interval: int
     :type save_interval: int
@@ -103,6 +105,7 @@ class TD3:
         noise: Optional[Any] = None,
         noise_std: float = 0.1,
         max_ep_len: int = 1000,
+        deterministic_actions: bool = False,
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (256, 256),
@@ -131,6 +134,7 @@ class TD3:
         self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
+        self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
         self.save_interval = save_interval
@@ -212,13 +216,20 @@ class TD3:
             self.ac.actor.parameters(), lr=self.lr_p
         )
 
-    def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """
+        Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        :param timestep: Timestep in the training process
+        :type timestep: int
+        """
+        pass
+
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         with torch.no_grad():
             action = self.ac_target.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=deterministic,
+                deterministic=self.deterministic_actions,
             )[0].numpy()
 
         # add noise to output from policy network
