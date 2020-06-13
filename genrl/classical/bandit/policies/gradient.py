@@ -4,7 +4,7 @@ from ...bandit import Bandit
 from .base import BanditPolicy
 
 
-class SoftmaxActionSelectionPolicy(BanditPolicy):
+class GradientPolicy(BanditPolicy):
     """
     Multi-Armed Bandit Solver with Softmax Action Selection Strategy.
 
@@ -18,10 +18,8 @@ class SoftmaxActionSelectionPolicy(BanditPolicy):
     :type temp: float
     """
 
-    def __init__(self, bandit: Bandit, alpha=0.1, temp=0.01):
-        super(SoftmaxActionSelectionPolicy, self).__init__(
-            bandit, requires_init_run=False
-        )
+    def __init__(self, bandit: Bandit, alpha: float = 0.1, temp: float = 0.01):
+        super(GradientPolicy, self).__init__(bandit)
         self._alpha = alpha
         self._temp = temp
         self._quality = np.zeros(bandit.arms)

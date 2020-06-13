@@ -1,10 +1,10 @@
 import numpy as np
 
-from ...bandit import Bandit
-from .base import BanditPolicy
+from ..contextual_bandits import ContextualBandit
+from .base import CBPolicy
 
 
-class UCBPolicy(BanditPolicy):
+class UCBCBPolicy(CBPolicy):
     """
     Multi-Armed Bandit Solver with Upper Confidence Bound based
     Action Selection Strategy.
@@ -13,14 +13,15 @@ class UCBPolicy(BanditPolicy):
 
     :param bandit: The Bandit to solve
     :param c: Confidence level which controls degree of exploration
-    :type bandit: Bandit type object
+    :type bandit: ContextualBandit type object
     :type c: float
     """
 
-    def __init__(self, bandit: Bandit, confidence: float = 1.0):
-        super(UCBPolicy, self).__init__(bandit, requires_init_run=True)
+    def __init__(self, bandit: ContextualBandit, confidence: float = 1.0):
+        super(UCBCBPolicy, self).__init__(bandit)
         self._c = confidence
-        self._quality = np.zeros(bandit.arms)
+        self._quality = np.zeros(shape=(bandit.bandits, bandit.arms))
+        self._counts = np.zeros(shape=(bandit.bandits, bandit.arms))
 
     @property
     def confidence(self) -> float:
@@ -42,42 +43,46 @@ class UCBPolicy(BanditPolicy):
         """
         return self._quality
 
-    def select_action(self, timestep: int) -> int:
+    def select_action(self, context: int, t: int) -> int:
         """
         Select an action according to upper confidence bound action selction
 
-        Take action that maximises a weighted sum of the quality values for the action
+        Take action that maximises a weighted sum of the Q values for the action
         and an exploration encouragement term controlled by c.
 
-        :param timestep: timestep to choose action for
-        :type timesteps: int
+        :param context: the context to select action for
+        :param t: timestep to choose action for
+        :type context: int
+        :type t: int
         :returns: Selected action
         :rtype: int
         """
         action = np.argmax(
-            self.quality
-            + self.confidence * np.sqrt(2 * np.log(timestep + 1) / (self.counts + 1))
+            self.quality[context]
+            + self.confidence * np.sqrt(2 * np.log(t + 1) / (self.counts[context] + 1))
         )
-        self.action_hist.append(action)
+        self.action_hist.append((context, action))
         return action
 
-    def update_params(self, action: int, reward: float) -> None:
+    def update_params(self, context: int, action: int, reward: float) -> None:
         """
         Update parmeters for the policy
 
-        Updates the regret as the difference between max quality value and
-        that of the action. Updates the quality values according to the
+        Updates the regret as the difference between max Q value and
+        that of the action. Updates the Q values according to the
         reward recieved in this step.
 
+        :param context: context for which action is taken
         :param action: action taken for the step
         :param reward: reward obtained for the step
+        :type context: int
         :type action: int
         :type reward: float
         """
         self.reward_hist.append(reward)
-        self._regret += max(self.quality) - self.quality[action]
+        self._regret += max(self.quality[context]) - self.quality[context, action]
         self.regret_hist.append(self.regret)
-        self.quality[action] += (reward - self.quality[action]) / (
-            self.counts[action] + 1
+        self.quality[context, action] += (reward - self.quality[context, action]) / (
+            self.counts[context, action] + 1
         )
-        self.counts[action] += 1
+        self.counts[context, action] += 1
