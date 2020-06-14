@@ -397,9 +397,8 @@ class DQN:
                 self.model.reset_noise()
                 self.target_model.reset_noise()
 
-            with torch.no_grad():
-                if timestep % update_interval == 0:
-                    self.update_target_model()
+            if timestep % update_interval == 0:
+                self.update_target_model()
 
     def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
         """
