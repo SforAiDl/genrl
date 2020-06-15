@@ -2,9 +2,14 @@ from typing import Dict
 
 import gym
 
-from ..environments import AtariPreprocessing, FrameStack, GymWrapper, NoopReset
-from ..environments.vec_env import VecEnv, VecNormalize
-from ..environments.vec_env.vector_envs import SerialVecEnv, SubProcessVecEnv
+from ..environments import (
+    AtariPreprocessing,
+    ClipAction,
+    FrameStack,
+    GymWrapper,
+    NoopReset,
+)
+from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv, VecNormalize
 
 
 def VectorEnv(
@@ -46,6 +51,7 @@ subprocesses, False if we want environments to run serially one after the other
         venv = SerialVecEnv(envs, n_envs)
 
     venv = VecNormalize(venv)
+    # venv = VecMonitor(venv)
 
     return venv
 
@@ -59,7 +65,6 @@ def GymEnv(env_id: str) -> gym.Env:
     """
     gym_env = gym.make(env_id)
     env = GymWrapper(gym_env)
-
     return env
 
 

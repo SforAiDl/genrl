@@ -254,7 +254,7 @@ class SubProcessVecEnv(VecEnv):
             parent_conn.send(("reset", None))
 
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
-        return obs
+        return np.asarray(obs)
 
     def step(self, actions: np.ndarray) -> Tuple:
         """
@@ -273,7 +273,7 @@ class SubProcessVecEnv(VecEnv):
         self.waiting = False
 
         observations, rewards, dones, infos = zip(*result)
-        return observations, rewards, dones, infos
+        return (np.asarray(v) for v in [observations, rewards, dones, infos])
 
     def close(self):
         """

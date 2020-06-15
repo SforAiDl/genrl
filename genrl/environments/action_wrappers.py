@@ -20,7 +20,6 @@ class ClipAction(ActionWrapper):
         super(ClipAction, self).__init__(env)
         assert isinstance(self.env.action_space, Box)
 
-    @property
     def action(self, action: np.ndarray) -> np.ndarray:
         return np.clip(action, self.env.action_space.low, self.env.action_space.high)
 
@@ -53,7 +52,6 @@ class RescaleAction(ActionWrapper):
             dtype=env.action_space.dtype,
         )
 
-    @property
     def action(self, action: np.ndarray) -> np.ndarray:
         assert np.all(action >= self.low)
         assert np.all(action <= self.high)

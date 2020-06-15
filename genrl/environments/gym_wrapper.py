@@ -3,10 +3,8 @@ from typing import Any
 import gym
 import numpy as np
 
-from ..environments import BaseWrapper
 
-
-class GymWrapper(BaseWrapper, gym.Wrapper):
+class GymWrapper(gym.Wrapper):
     """
     Wrapper class for all Gym Environments
 
@@ -44,6 +42,15 @@ serially or parallelly
             return [1]
         elif isinstance(self.env.action_space, gym.spaces.Box):
             return self.env.action_space.shape
+
+    def sample(self) -> np.ndarray:
+        """
+        Shortcut method to directly sample from environment's action space
+
+        :returns: Random action from action space
+        :rtype: NumPy Array
+        """
+        return self.env.action_space.sample()
 
     def render(self, mode: str = "human") -> None:
         """
