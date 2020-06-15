@@ -14,6 +14,7 @@ from genrl.deep.common import (
     OnPolicyTrainer,
 )
 from genrl.deep.common.utils import *
+from genrl.environments import VectorEnv
 
 
 class TestUtils:

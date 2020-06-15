@@ -4,6 +4,7 @@ import gym
 
 from genrl import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
 from genrl.deep.common import (
+    NormalActionNoise,
     OffPolicyTrainer,
     OnPolicyTrainer,
     OrnsteinUhlenbeckActionNoise,
