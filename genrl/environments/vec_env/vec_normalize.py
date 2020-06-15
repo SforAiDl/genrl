@@ -15,16 +15,12 @@ class VecNormalize(VecEnvWrapper):
     :param n_envs: Number of environments in VecEnv
     :param norm_obs: True if observations should be normalized, else False
     :param norm_reward: True if rewards should be normalized, else False
-    :param clip_obs: Maximum absolute value for observations
     :param clip_reward: Maximum absolute value for rewards
-    :param gamma: Discount Factor used in calculation of returns
     :type venv: Vectorized Environment
     :type n_envs: int
     :type norm_obs: bool
     :type norm_reward: bool
-    :type clip_obs: float
     :type clip_reward: float
-    :type gamma: float
     """
 
     def __init__(
@@ -32,7 +28,6 @@ class VecNormalize(VecEnvWrapper):
         venv: VecEnv,
         norm_obs: bool = True,
         norm_reward: bool = True,
-        clip_obs: float = 10.0,
         clip_reward: float = 10.0,
     ):
         super(VecNormalize, self).__init__(venv)
@@ -42,7 +37,6 @@ class VecNormalize(VecEnvWrapper):
         )
         self.reward_rms = RunningMeanStd(shape=(1, 1)) if norm_reward else False
 
-        self.clip_obs = clip_obs
         self.clip_reward = clip_reward
         self.returns = np.zeros((self.n_envs,), dtype=np.float32)
         self.gamma = 0.99
@@ -69,7 +63,7 @@ class VecNormalize(VecEnvWrapper):
         states, rewards, dones, infos = self.venv.step(actions)
 
         self.returns = self.returns * self.gamma + rewards
-        states = self._normalize(self.obs_rms, self.clip_obs, states)
+        states = self._normalize(self.obs_rms, None, states)
         rewards = self._normalize(self.reward_rms, self.clip_reward, rewards).reshape(
             self.n_envs,
         )
@@ -95,7 +89,9 @@ class VecNormalize(VecEnvWrapper):
         """
         if rms:
             rms.update(batch)
-            batch = np.clip((batch - rms.mean) / np.sqrt(rms.var + 1e-8), -clip, clip)
+            batch = (batch - rms.mean) / np.sqrt(rms.var + 1e-8)
+        if clip:
+            batch = np.clip(batch, -clip, clip)
         return batch
 
     def reset(self) -> np.ndarray:
@@ -107,7 +103,7 @@ class VecNormalize(VecEnvWrapper):
         """
         self.returns = np.zeros((self.n_envs,), dtype=np.float32)
         states = self.venv.reset()
-        return self._normalize(self.obs_rms, self.clip_obs, states)
+        return self._normalize(self.obs_rms, None, states)
 
     def close(self):
         """

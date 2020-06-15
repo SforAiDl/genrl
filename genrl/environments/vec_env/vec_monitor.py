@@ -60,11 +60,9 @@ class VecMonitor(VecEnvWrapper):
         self.episode_returns += rewards
         self.episode_lens += 1
 
-        new_infos = list(infos)
+        new_infos = infos.copy()
         for i in range(self.n_envs):
             if dones[i]:
-                info = infos[i].copy()
-
                 episode_info = {
                     "r": self.episode_returns[i],
                     "l": self.episode_lens[i],
@@ -72,9 +70,9 @@ class VecMonitor(VecEnvWrapper):
                 }
 
                 for key in self.keys:
-                    episode_info[key] = info[key]
+                    episode_info[key] = new_infos[i][key]
 
-                info["episode"] = episode_info
+                new_infos[i]["episode"] = episode_info
 
                 if self.len:
                     self.returns_history.append(self.episode_returns[i])
@@ -83,6 +81,4 @@ class VecMonitor(VecEnvWrapper):
                 self.episode_count += 1
                 self.episode_returns[i] = 0
                 self.episode_lens[i] = 0
-
-                new_infos[i] = info
         return observations, rewards, dones, new_infos

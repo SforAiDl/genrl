@@ -71,6 +71,7 @@ grayscale
 done, info
         """
         frameskip = np.random.choice(range(*self.frameskip))
+        index = 0
 
         reward = 0
         for timestep in range(frameskip):
@@ -80,10 +81,9 @@ done, info
             if done:
                 break
 
-            if timestep == frameskip - 2:
-                self._get_screen(0)
-            elif timestep == frameskip - 1:
-                self._get_screen(1)
+            if timestep >= frameskip - 2:
+                self._get_screen(index)
+                index += 1
 
         return self._get_obs(), reward, done, info
 

@@ -1,6 +1,5 @@
 from abc import abstractmethod
 
-from ..gym_wrapper import GymWrapper
 from .vector_envs import VecEnv
 
 

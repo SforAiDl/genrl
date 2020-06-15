@@ -1,14 +1,8 @@
-from typing import Dict
+from typing import Dict, List
 
 import gym
 
-from ..environments import (
-    AtariPreprocessing,
-    ClipAction,
-    FrameStack,
-    GymWrapper,
-    NoopReset,
-)
+from ..environments import AtariPreprocessing, FrameStack, GymWrapper, NoopReset
 from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv, VecNormalize
 
 
