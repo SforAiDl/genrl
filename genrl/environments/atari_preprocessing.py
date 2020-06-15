@@ -40,6 +40,9 @@ grayscale
         self.screen_size = screen_size
         self.ale = self.env.unwrapped.ale
 
+        if isinstance(frameskip, int):
+            self.frameskip = (frameskip, frameskip + 1)
+
         # Redefine observation space for Atari environments
         if grayscale:
             self.observation_space = Box(
@@ -67,10 +70,7 @@ grayscale
         :returns: Current state, reward(for frameskip number of actions), \
 done, info
         """
-        if isinstance(self.frameskip, tuple):
-            frameskip = np.random.choice(range(*self.frameskip))
-        else:
-            frameskip = self.frameskip
+        frameskip = np.random.choice(range(*self.frameskip))
 
         reward = 0
         for timestep in range(frameskip):
@@ -84,9 +84,8 @@ done, info
                 self._get_screen(0)
             elif timestep == frameskip - 1:
                 self._get_screen(1)
-        observation = self._get_obs()
 
-        return observation, reward, done, info
+        return self._get_obs(), reward, done, info
 
     def reset(self) -> np.ndarray:
         """
@@ -98,9 +97,8 @@ done, info
         self.env.reset()
         self._get_screen(0)
         self._obs_buffer[1].fill(0)
-        observation = self._get_obs()
 
-        return observation
+        return self._get_obs()
 
     def _get_screen(self, index: int) -> None:
         """

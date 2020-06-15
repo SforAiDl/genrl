@@ -31,10 +31,9 @@ class VecNormalize(VecEnvWrapper):
         self,
         venv: VecEnv,
         norm_obs: bool = True,
-        norm_reward: bool = False,
+        norm_reward: bool = True,
         clip_obs: float = 10.0,
         clip_reward: float = 10.0,
-        gamma: float = 0.99,
     ):
         super(VecNormalize, self).__init__(venv)
 
@@ -46,7 +45,7 @@ class VecNormalize(VecEnvWrapper):
         self.clip_obs = clip_obs
         self.clip_reward = clip_reward
         self.returns = np.zeros((self.n_envs,), dtype=np.float32)
-        self.gamma = gamma
+        self.gamma = 0.99
 
     def __getattr__(self, name: str) -> Any:
         """
