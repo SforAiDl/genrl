@@ -49,10 +49,10 @@ def main():
 
     offpolicyargs = parser.add_argument_group("Off Policy Args")
     offpolicyargs.add_argument(
-        "-ws", "--warmup-steps", help="Warmup steps", default=1e5, type=int
+        "-ws", "--warmup-steps", help="Warmup steps", default=10000, type=int
     )
     offpolicyargs.add_argument(
-        "--replay-size", help="Replay Buffer Size", default=1e3, type=int
+        "--replay-size", help="Replay Buffer Size", default=1000, type=int
     )
 
     args = parser.parse_args()
@@ -91,11 +91,7 @@ def main():
 
     else:
         agent = algo(
-            args.arch,
-            env,
-            replay_size=args.replay_size,
-            batch_size=args.batch_size,
-            prioritized_replay=True,
+            args.arch, env, replay_size=args.replay_size, batch_size=args.batch_size
         )
         trainer = trainerclass(
             agent,
