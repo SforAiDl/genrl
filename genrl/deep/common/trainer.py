@@ -514,8 +514,8 @@ class OnPolicyTrainer(Trainer):
                 self.logger.write(
                     {
                         "Episode": epoch,
-                        "Reward": np.mean(self.agent.rewards),
                         "Timestep": epoch * self.agent.rollout_size,
+                        **self.agent.get_logging_params(),
                     }
                 )
 

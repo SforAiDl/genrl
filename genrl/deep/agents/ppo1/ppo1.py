@@ -109,7 +109,7 @@ class PPO1:
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
-        self.logs["entropy_loss"] = []
+        self.logs["policy_entropy"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -300,10 +300,12 @@ class PPO1:
         """
 
         logs = {
-            "policy_loss": np.mean(self.logs["policy_loss"]),
-            "value_loss": np.mean(self.logs["value_loss"]),
-            "policy_entropy": np.mean(self.logs["entropy_loss"]),
-            "mean_reward": np.mean(self.reward),
+            "policy_loss": np.around(np.mean(self.logs["policy_loss"]), decimals=4),
+            "value_loss": np.around(np.mean(self.logs["value_loss"]), decimals=4),
+            "policy_entropy": np.around(
+                np.mean(self.logs["policy_entropy"]), decimals=4
+            ),
+            "mean_reward": np.around(np.mean(self.rewards), decimals=4),
         }
 
         self.empty_logs()
