@@ -1,9 +1,12 @@
 from typing import Tuple
 
+import torch
 from gym import spaces
+from torch.distributions import Categorical
 
 from .base import BaseActorCritic
 from .policies import MlpPolicy
+from .utils import cnn
 from .values import MlpValue
 
 
@@ -40,7 +43,86 @@ class MlpActorCritic(BaseActorCritic):
         self.critic = MlpValue(state_dim, action_dim, val_type, hidden)
 
 
-actor_critic_registry = {"mlp": MlpActorCritic}
+class CNNActorCritic(BaseActorCritic):
+    """
+    CNN Actor Critic
+
+    :param framestack: Number of previous frames to stack together
+    :param action_dim: Action dimensions of the environment
+    :param fc_layers: Sizes of hidden layers
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
+    :param discrete: True if action space is discrete, else False
+    :param framestack: Number of previous frames to stack together
+    :type action_dim: int
+    :type fc_layers: tuple or list
+    :type val_type: str
+    :type discrete: bool
+    """
+
+    def __init__(
+        self,
+        framestack: int,
+        action_dim: spaces.Space,
+        fc_layers: Tuple = (256,),
+        val_type: str = "V",
+        discrete: bool = True,
+        *args,
+        **kwargs
+    ):
+        super(CNNActorCritic, self).__init__()
+
+        self.feature, output_size = cnn((framestack, 16, 32))
+        self.actor = MlpPolicy(output_size, action_dim, fc_layers, discrete, **kwargs)
+        self.critic = MlpValue(output_size, action_dim, val_type, fc_layers)
+
+    def get_action(
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
+        """
+        Get action from the Actor based on input
+
+        :param state: The state being passed as input to the Actor
+        :param deterministic: (True if the action space is deterministic,
+else False)
+        :type state: Tensor
+        :type deterministic: boolean
+        :returns: action
+        """
+        state = torch.as_tensor(state).float()
+
+        state = self.feature(state)
+        state = state.view(state.size(0), -1)
+
+        action_probs = self.actor(state)
+        action_probs = nn.Softmax(dim=-1)(action_probs)
+
+        if deterministic:
+            action = (torch.argmax(action_probs, dim=-1), None)
+        else:
+            distribution = Categorical(probs=action_probs)
+            action = (distribution.sample(), distribution)
+
+        return action
+
+    def get_value(self, state: torch.Tensor) -> torch.Tensor:
+        """
+        Get value from the Critic based on input
+
+        :param state: Input to the Critic
+        :type state: Tensor
+        :returns: value
+        """
+        state = torch.as_tensor(state).float()
+
+        state = self.feature(state)
+        state = state.view(state.size(0), -1)
+
+        value = self.critic(state).squeeze(-1)
+        return value
+
+
+actor_critic_registry = {"mlp": MlpActorCritic, "cnn": CNNActorCritic}
 
 
 def get_actor_critic_from_name(name_: str):

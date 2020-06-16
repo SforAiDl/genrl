@@ -8,7 +8,14 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments.vec_env import VecEnv
-from ...common import RolloutBuffer, get_model, load_params, save_params, set_seeds
+from ...common import (
+    RolloutBuffer,
+    get_env_properties,
+    get_model,
+    load_params,
+    save_params,
+    set_seeds,
+)
 
 
 class A2C:
@@ -136,7 +143,7 @@ class A2C:
         """
         Creates actor critic model and initialises optimizers
         """
-        (state_dim, action_dim, discrete, action_lim) = self.get_env_properties()
+        (state_dim, action_dim, discrete, action_lim) = get_env_properties(self.env)
 
         if self.noise is not None:
             self.noise = self.noise(
@@ -286,29 +293,6 @@ calculate losses)
         self.env.close()
         if self.tensorboard_log:
             self.writer.close()
-
-    def get_env_properties(self):
-        """
-        Helper function to extract the observation and action space
-
-        :returns: (Observation space, Action Space and whether the action
-space is discrete or not)
-        :rtype: int, float, ... ; int, float, ... ; bool
-        """
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-            action_lim = None
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc, action_lim
 
     def get_hyperparams(self) -> Dict[str, Any]:
         """

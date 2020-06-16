@@ -69,17 +69,15 @@ class CNNValue(BaseValue):
     """
     CNN Value Function class
 
-    :param state_dim: State dimension of environment
     :param action_dim: Action dimension of environment
     :param framestack: Number of previous frames to stack together
     :param val_type: Specifies type of value function: (
 "V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
-    :param hidden: Sizes of hidden layers
-    :type state_dim: int
+    :param fc_layers: Sizes of hidden layers
     :type action_dim: int
     :type framestack: int
     :type val_type: string
-    :type hidden: tuple or list
+    :type fc_layers: tuple or list
     """
 
     def __init__(

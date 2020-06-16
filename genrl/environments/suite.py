@@ -72,6 +72,8 @@ def AtariEnv(
         frameskip = (2, 5)
 
     for wrapper in wrapper_list:
-        env = wrapper(env, frameskip)
+        if wrapper is AtariPreprocessing:
+            env = wrapper(env, frameskip)
+        env = wrapper(env)
 
     return env
