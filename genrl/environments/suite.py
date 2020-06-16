@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import List
 
 import gym
 
@@ -22,9 +22,8 @@ subprocesses, False if we want environments to run serially one after the other)
     :type parallel: False
     :type env_type: string
     :returns: Vector Environment
-    :rtype: VecEnv
+    :rtype: object
     """
-    envs = []
     wrapper = AtariEnv if env_type == "atari" else GymEnv
 
     envs = [wrapper(env_id) for _ in range(n_envs)]
@@ -45,6 +44,8 @@ def GymEnv(env_id: str) -> gym.Env:
 
     :param env: Environment Name
     :type env: string
+    :returns: Gym Environment
+    :rtype: object
     """
     gym_env = gym.make(env_id)
     env = GymWrapper(gym_env)
@@ -60,6 +61,9 @@ def AtariEnv(
     :param env: Environment Name
     :type env: string
     :param wrapper_list: List of wrappers to use
+    :type wrapper_list: list or tuple
+    :returns: Gym Atari Environment
+    :rtype: object
     """
     env = gym.make(env_id)
     env = GymWrapper(env)
@@ -74,6 +78,7 @@ def AtariEnv(
     for wrapper in wrapper_list:
         if wrapper is AtariPreprocessing:
             env = wrapper(env, frameskip)
-        env = wrapper(env)
+        else:
+            env = wrapper(env)
 
     return env
