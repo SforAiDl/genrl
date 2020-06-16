@@ -144,18 +144,24 @@ def load_params(algo: Any) -> None:
         raise Exception("Invalid file name")
 
 
-def get_env_properties(env: Union[gym.Env, VecEnv]) -> (Tuple[int]):
+def get_env_properties(
+    env: Union[gym.Env, VecEnv], network_type: str = "mlp"
+) -> (Tuple[int]):
     """
     Finds important properties of environment
 
     :param env: Environment that the agent is interacting with
     :type env: Gym Environment
-
+    :param network_type: Type of network architecture, eg. "mlp", "cnn"
+    :type network_type: str
     :returns: (State space dimensions, Action space dimensions,
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
-    state_dim = env.observation_space.shape[0]
+    if network_type == "cnn":
+        input_dim = env.framestack
+    else:
+        input_dim = env.observation_space.shape[0]
 
     if isinstance(env.action_space, gym.spaces.Discrete):
         action_dim = env.action_space.n
@@ -168,7 +174,7 @@ discreteness of action space and action limit (highest action value)
     else:
         raise NotImplementedError
 
-    return state_dim, action_dim, discrete, action_lim
+    return input_dim, action_dim, discrete, action_lim
 
 
 def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
@@ -201,7 +207,7 @@ def get_obs_action_shape(obs, action):
     if isinstance(obs, gym.spaces.Discrete):
         return 1, 1
     elif isinstance(obs, gym.spaces.Box):
-        return obs.shape[0], int(np.prod(action.shape))
+        return obs.shape, int(np.prod(action.shape))
     else:
         raise NotImplementedError
 

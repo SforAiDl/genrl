@@ -2,6 +2,7 @@ from typing import Tuple
 
 import torch
 from gym import spaces
+from torch import nn
 from torch.distributions import Categorical
 
 from .base import BaseActorCritic
