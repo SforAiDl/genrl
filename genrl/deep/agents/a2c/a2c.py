@@ -205,7 +205,7 @@ calculate losses)
             vals, log_prob, entropy = self.get_value_log_probs(
                 rollout.observations, actions
             )
-            self.logs["policy_entropy"].append(entropy)
+            self.logs["policy_entropy"].append(torch.mean(entropy).item())
 
             policy_loss = rollout.advantages * log_prob
 
@@ -213,7 +213,7 @@ calculate losses)
             self.logs["policy_loss"].append(policy_loss.item())
 
             value_loss = F.mse_loss(rollout.returns, vals)
-            self.logs["value_loss"].append(value_loss.item())
+            self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             loss = policy_loss
 
@@ -321,10 +321,12 @@ space is discrete or not)
         """
 
         logs = {
-            "policy_loss": np.mean(self.logs["policy_loss"]),
-            "value_loss": np.mean(self.logs["value_loss"]),
-            "policy_entropy": np.mean(self.logs["entropy_loss"]),
-            "mean_reward": np.mean(self.reward),
+            "policy_loss": np.around(np.mean(self.logs["policy_loss"]), decimals=4),
+            "value_loss": np.around(np.mean(self.logs["value_loss"]), decimals=4),
+            "policy_entropy": np.around(
+                np.mean(self.logs["policy_entropy"]), decimals=4
+            ),
+            "mean_reward": np.around(np.mean(self.rewards), decimals=4),
         }
 
         self.empty_logs()

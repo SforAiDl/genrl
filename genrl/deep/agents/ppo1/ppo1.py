@@ -201,7 +201,7 @@ class PPO1:
             values = values.flatten()
 
             value_loss = nn.functional.mse_loss(rollout.returns, values)
-            self.logs["value_loss"].append(value_loss.item())
+            self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = -torch.mean(entropy)  # Change this to entropy
             self.logs["policy_entropy"].append(entropy_loss.item())

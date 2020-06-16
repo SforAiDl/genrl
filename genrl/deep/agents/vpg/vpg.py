@@ -266,8 +266,8 @@ class VPG:
         """
 
         logs = {
-            "policy_loss": np.mean(self.logs["policy_loss"]),
-            "mean_reward": np.mean(self.reward),
+            "policy_loss": np.around(np.mean(self.logs["policy_loss"]), decimals=4),
+            "mean_reward": np.around(np.mean(self.rewards), decimals=4),
         }
 
         self.empty_logs()
