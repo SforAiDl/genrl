@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 
+from ....environments import VecEnv
 from ...common import (
     ReplayBuffer,
     get_env_properties,
@@ -14,7 +15,6 @@ from ...common import (
     load_params,
     save_params,
     set_seeds,
-    venv,
 )
 
 
@@ -77,7 +77,7 @@ class DDPG:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 100,
