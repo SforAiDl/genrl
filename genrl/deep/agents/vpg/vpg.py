@@ -30,7 +30,6 @@ class VPG:
     :param actor_batchsize: trajectories per optimizer epoch
     :param epochs: the optimizer's number of epochs
     :param lr_policy: policy network learning rate
-    :param lr_value: value network learning rate
     :param save_interval: Number of episodes between saves of models
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
@@ -45,7 +44,6 @@ class VPG:
     :type actor_batchsize: int
     :type epochs: int
     :type lr_policy: float
-    :type lr_value: float
     :type save_interval: int
     :type seed: int
     :type device: str
@@ -64,8 +62,6 @@ class VPG:
         actor_batch_size: int = 4,
         epochs: int = 1000,
         lr_policy: float = 0.01,
-        lr_value: float = 0.0005,
-        policy_copy_interval: int = 20,
         layers: Tuple = (32, 32),
         seed: Optional[int] = None,
         render: bool = False,
@@ -83,7 +79,6 @@ class VPG:
         self.actor_batch_size = actor_batch_size
         self.epochs = epochs
         self.lr_policy = lr_policy
-        self.lr_value = lr_value
         self.seed = seed
         self.render = render
         self.save_interval = save_interval
@@ -94,6 +89,10 @@ class VPG:
         self.save = save_params
         self.load = load_params
         self.rollout_size = rollout_size
+
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.rewards = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -180,7 +179,8 @@ class VPG:
 
             policy_loss = rollout.returns * log_prob
 
-            policy_loss = -torch.sum(policy_loss)
+            policy_loss = -torch.mean(policy_loss)
+            self.logs["policy_loss"].append(policy_loss.item())
 
             loss = policy_loss
 
@@ -258,6 +258,29 @@ class VPG:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+
+        logs = {
+            "policy_loss": np.mean(self.logs["policy_loss"]),
+            "mean_reward": np.mean(self.reward),
+        }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
 
 
 if __name__ == "__main__":

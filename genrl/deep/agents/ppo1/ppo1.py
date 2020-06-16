@@ -106,6 +106,11 @@ class PPO1:
         self.ent_coef = 0.01
         self.vf_coef = 0.5
 
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["entropy_loss"] = []
+
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
@@ -191,12 +196,15 @@ class PPO1:
             policy_loss_1 = advantages * ratio
             policy_loss_2 = advantages * torch.clamp(ratio, 1 - 0.2, 1 + 0.2)
             policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
+            self.logs["policy_loss"].append(policy_loss.item())
 
             values = values.flatten()
 
             value_loss = nn.functional.mse_loss(rollout.returns, values)
+            self.logs["value_loss"].append(value_loss.item())
 
             entropy_loss = -torch.mean(entropy)  # Change this to entropy
+            self.logs["policy_entropy"].append(entropy_loss.item())
 
             loss = (
                 policy_loss + self.ent_coef * entropy_loss
@@ -284,6 +292,32 @@ class PPO1:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+
+        logs = {
+            "policy_loss": np.mean(self.logs["policy_loss"]),
+            "value_loss": np.mean(self.logs["value_loss"]),
+            "policy_entropy": np.mean(self.logs["entropy_loss"]),
+            "mean_reward": np.mean(self.reward),
+        }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
 
 
 if __name__ == "__main__":

@@ -106,6 +106,12 @@ class A2C:
         self.load = load_params
         self.rollout_size = rollout_size
 
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
+
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -185,7 +191,7 @@ calculate losses)
     def get_value_log_probs(self, state, action):
         a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state)
-        return val, c.log_prob(action)
+        return val, c.log_prob(action), c.entropy()
 
     def update_policy(self) -> None:
 
@@ -196,13 +202,18 @@ calculate losses)
             if isinstance(self.env.action_space, gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
-            vals, log_prob = self.get_value_log_probs(rollout.observations, actions)
+            vals, log_prob, entropy = self.get_value_log_probs(
+                rollout.observations, actions
+            )
+            self.logs["policy_entropy"].append(entropy)
 
             policy_loss = rollout.advantages * log_prob
 
-            policy_loss = -torch.sum(policy_loss)
+            policy_loss = -torch.mean(policy_loss)
+            self.logs["policy_loss"].append(policy_loss.item())
 
             value_loss = F.mse_loss(rollout.returns, vals)
+            self.logs["value_loss"].append(value_loss.item())
 
             loss = policy_loss
 
@@ -258,12 +269,6 @@ calculate losses)
             if episode % 5 == 0:
                 print("Episode: {}, Reward: {}".format(episode, episode_reward))
 
-            if self.save_model is not None:
-                if episode % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, episode)
-                    print("Saved current model")
-
         self.env.close()
 
     def get_env_properties(self):
@@ -316,11 +321,24 @@ space is discrete or not)
         """
 
         logs = {
-            "timestep": self.timestep,
-            "policy_loss": self.logs["policy_loss"],
-            "value_loss": self.logs["value_loss"],
-            "policy_entropy": self.logs["entropy"],
+            "policy_loss": np.mean(self.logs["policy_loss"]),
+            "value_loss": np.mean(self.logs["value_loss"]),
+            "policy_entropy": np.mean(self.logs["entropy_loss"]),
+            "mean_reward": np.mean(self.reward),
         }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
 
 
 if __name__ == "__main__":
