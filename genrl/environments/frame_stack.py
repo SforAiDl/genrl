@@ -89,7 +89,7 @@ to conserve memory usage
     :type compress: bool
     """
 
-    def __init__(self, env: gym.Env, framestack: int = 4, compress: bool = False):
+    def __init__(self, env: gym.Env, framestack: int = 4, compress: bool = True):
         super(FrameStack, self).__init__(env)
 
         self.env = env

@@ -14,7 +14,7 @@ a random number of some empty (noop) action to introduce some stochasticity.
     :type max_noops: int
     """
 
-    def __init__(self, env: gym.Env, max_noops: int = 25):
+    def __init__(self, env: gym.Env, max_noops: int = 30):
         super(NoopReset, self).__init__(env)
         self.max_noops = max_noops
         self.noop_action = 0

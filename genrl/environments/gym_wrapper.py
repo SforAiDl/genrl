@@ -89,8 +89,7 @@ Displays tiled images in 'human' and returns tiled images in 'rgb_array'
 
         :returns: Initial state
         """
-        self.state = self.env.reset()
-        return self.state
+        return self.env.reset()
 
     def close(self) -> None:
         """
