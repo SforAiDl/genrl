@@ -123,11 +123,13 @@ class VPG:
         """
         Initialize the actor and critic networks
         """
-        state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
-        print(state_dim, action_dim, discrete)
+        state_dim, action_dim, discrete, action_lim = get_env_properties(
+            self.env, self.network_type
+        )
+
         # Instantiate networks and optimizers
         self.actor = get_model("p", self.network_type)(
-            state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
+            state_dim, action_dim, self.layers, discrete, action_lim=action_lim
         ).to(self.device)
 
         # load paramaters if already trained

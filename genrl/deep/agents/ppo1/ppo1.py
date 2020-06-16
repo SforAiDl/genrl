@@ -131,30 +131,29 @@ class PPO1:
 
     def create_model(self) -> None:
         # Instantiate networks and optimizers
-        state_dim, action_dim, disc, action_lim = get_env_properties(self.env)
-        self.policy_new = get_model("p", self.network_type)(
-            state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
-        )
-        self.policy_new = self.policy_new.to(self.device)
+        state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
 
-        self.value_fn = get_model("v", self.network_type)(state_dim, action_dim).to(
-            self.device
-        )
+        self.ac = get_model("ac", self.network_type)(
+            state_dim,
+            action_dim,
+            self.layers,
+            "V",
+            discrete=discrete,
+            action_lim=action_lim,
+        ).to(self.device)
 
         # load paramaters if already trained
         if self.load_model is not None:
             self.load(self)
-            self.policy_new.load_state_dict(self.checkpoint["policy_weights"])
-            self.value_fn.load_state_dict(self.checkpoint["value_weights"])
+            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
+            self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
                 if key not in ["policy_weights", "value_weights", "save_model"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
-        self.optimizer_policy = opt.Adam(
-            self.policy_new.parameters(), lr=self.lr_policy
-        )
-        self.optimizer_value = opt.Adam(self.value_fn.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
         self.rollout = RolloutBuffer(
             self.rollout_size,
@@ -166,14 +165,14 @@ class PPO1:
     def select_action(self, state: np.ndarray) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
         # create distribution based on policy output
-        action, c_new = self.policy_new.get_action(state, deterministic=False)
-        value = self.value_fn.get_value(state)
+        action, c_new = self.ac.get_action(state, deterministic=False)
+        value = self.ac.get_value(state)
 
         return action.detach().cpu().numpy(), value, c_new.log_prob(action)
 
     def evaluate_actions(self, obs, old_actions):
-        value = self.value_fn.get_value(obs)
-        _, dist = self.policy_new.get_action(obs)
+        value = self.ac.get_value(obs)
+        _, dist = self.ac.get_action(obs)
         return value, dist.log_prob(old_actions), dist.entropy()
 
     # get clipped loss for single trajectory (episode)
@@ -215,12 +214,12 @@ class PPO1:
 
             self.optimizer_policy.zero_grad()
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.policy_new.parameters(), 0.5)
+            torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
             self.optimizer_policy.step()
 
             self.optimizer_value.zero_grad()
             value_loss.backward()
-            torch.nn.utils.clip_grad_norm_(self.value_fn.parameters(), 0.5)
+            torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.optimizer_value.step()
 
     def collect_rollouts(self, initial_state):
@@ -296,8 +295,8 @@ class PPO1:
             "actor_batch_size": self.actor_batch_size,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
-            "policy_weights": self.policy_new.state_dict(),
-            "value_weights": self.value_fn.state_dict(),
+            "policy_weights": self.ac.actor.state_dict(),
+            "value_weights": self.ac.critic.state_dict(),
         }
 
         return hyperparams

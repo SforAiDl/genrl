@@ -143,7 +143,9 @@ class A2C:
         """
         Creates actor critic model and initialises optimizers
         """
-        (state_dim, action_dim, discrete, action_lim) = get_env_properties(self.env)
+        (state_dim, action_dim, discrete, action_lim) = get_env_properties(
+            self.env, self.network_type
+        )
 
         if self.noise is not None:
             self.noise = self.noise(

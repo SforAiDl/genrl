@@ -23,11 +23,13 @@ class MlpPolicy(BasePolicy):
         state_dim: int,
         action_dim: int,
         hidden: Tuple = (32, 32),
-        disc: bool = True,
+        discrete: bool = True,
         *args,
         **kwargs
     ):
-        super(MlpPolicy, self).__init__(state_dim, action_dim, hidden, disc, **kwargs)
+        super(MlpPolicy, self).__init__(
+            state_dim, action_dim, hidden, discrete, **kwargs
+        )
 
         self.state_dim = state_dim
         self.action_dim = action_dim
