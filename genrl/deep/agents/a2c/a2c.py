@@ -7,14 +7,8 @@ import torch.nn.functional as F
 import torch.optim as opt
 from torch.autograd import Variable
 
-from genrl.deep.common import (
-    RolloutBuffer,
-    get_model,
-    load_params,
-    save_params,
-    set_seeds,
-    venv,
-)
+from ....environments.vec_env import VecEnv
+from ...common import RolloutBuffer, get_model, load_params, save_params, set_seeds
 
 
 class A2C:
@@ -42,6 +36,8 @@ class A2C:
     :param save_model: Directory the user wants to save models to
     :param save_interval: Number of steps between saves of models
     :param rollout_size: Rollout Buffer Size
+    :param val_coeff: Coefficient of value loss in overall loss function
+    :param entropy_coeff: Coefficient of entropy loss in overall loss function
     :type network_type: string
     :type env: Gym Environment
     :type gamma: float
@@ -61,12 +57,14 @@ class A2C:
     :type save_model: string
     :type save_interval: int
     :type rollout_size: int
+    :type val_coeff: float
+    :type entropy_coeff: float
     """
 
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         actor_batch_size: int = 64,
         lr_actor: float = 0.01,
@@ -84,6 +82,8 @@ class A2C:
         save_model: str = None,
         save_interval: int = 1000,
         rollout_size: int = 2048,
+        val_coeff: float = 0.5,
+        entropy_coeff: float = 0.01,
     ):
         self.network_type = network_type
         self.env = env
@@ -105,6 +105,8 @@ class A2C:
         self.save = save_params
         self.load = load_params
         self.rollout_size = rollout_size
+        self.val_coeff = val_coeff
+        self.entropy_coeff = entropy_coeff
 
         self.logs = {}
         self.logs["policy_loss"] = []
@@ -191,7 +193,7 @@ calculate losses)
     def get_value_log_probs(self, state, action):
         a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state)
-        return val, c.log_prob(action), c.entropy()
+        return val, c.log_prob(action)
 
     def update_policy(self) -> None:
 
@@ -202,23 +204,22 @@ calculate losses)
             if isinstance(self.env.action_space, gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
-            vals, log_prob, entropy = self.get_value_log_probs(
-                rollout.observations, actions
-            )
-            self.logs["policy_entropy"].append(torch.mean(entropy).item())
+            values, log_prob = self.get_value_log_probs(rollout.observations, actions)
 
             policy_loss = rollout.advantages * log_prob
-
             policy_loss = -torch.mean(policy_loss)
             self.logs["policy_loss"].append(policy_loss.item())
 
-            value_loss = F.mse_loss(rollout.returns, vals)
+            value_loss = self.val_coeff * F.mse_loss(rollout.returns, values)
             self.logs["value_loss"].append(torch.mean(value_loss).item())
 
-            loss = policy_loss
+            entropy_loss = (torch.exp(log_prob) * log_prob).sum()
+            self.logs["policy_entropy"].append(entropy.item())
+            
+            actor_loss = policy_loss + self.entropy_coeff * entropy_loss
 
             self.actor_optimizer.zero_grad()
-            loss.backward()
+            actor_loss.backward()
             torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
             self.actor_optimizer.step()
 

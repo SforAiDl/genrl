@@ -11,5 +11,6 @@ checkpoints/
 *.log
 htmlcov
 logs/
+.coverage
 .mypy*
 *.pt

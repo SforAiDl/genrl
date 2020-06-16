@@ -117,7 +117,6 @@ class PushReplayBuffer:
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
-        print(state.shape)
         return (
             torch.from_numpy(v).float()
             for v in [state, action, reward, next_state, done]
@@ -226,4 +225,13 @@ specific indices)
 
         :returns: Length of replay memory
         """
+        return len(self.buffer)
+
+    def extend(self, inp):
+        max_priority = [max(self.priorities) if self.buffer else 1.0 for i in inp]
+        self.buffer.extend(inp)
+        self.priorities.extend(max_priority)
+
+    @property
+    def pos(self):
         return len(self.buffer)

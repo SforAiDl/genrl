@@ -9,7 +9,8 @@ import torch.optim as opt
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds, venv
+from ....environments import VecEnv
+from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds
 
 
 class SAC:
@@ -67,7 +68,7 @@ class SAC:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 256,

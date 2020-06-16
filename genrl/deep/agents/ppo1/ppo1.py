@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 
+from ....environments import VecEnv
 from ...common import (
     RolloutBuffer,
     get_env_properties,
@@ -13,7 +14,6 @@ from ...common import (
     load_params,
     save_params,
     set_seeds,
-    venv,
 )
 
 
@@ -63,7 +63,7 @@ class PPO1:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         timesteps_per_actorbatch: int = 256,
         gamma: float = 0.99,
         clip_param: float = 0.2,
