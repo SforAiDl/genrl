@@ -68,6 +68,8 @@ def AtariEnv(
         frameskip = 1
     elif "Deterministic" in env_id:
         frameskip = 4
+    else:
+        frameskip = (2, 5)
 
     for wrapper in wrapper_list:
         env = wrapper(env, frameskip)
