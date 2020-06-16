@@ -35,8 +35,6 @@ class PPO1:
     :param policy_copy_interval: number of optimizer before copying
         params from new policy to old policy
     :param save_interval: Number of episodes between saves of models
-    :param tensorboard_log: the log location for tensorboard (if None,
-        no logging)
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
@@ -54,7 +52,6 @@ class PPO1:
     :type lr_value: float
     :type policy_copy_interval: int
     :type save_interval: int
-    :type tensorboard_log: string
     :type seed: int
     :type device: string
     :type run_num: boolean
@@ -76,7 +73,6 @@ class PPO1:
         lr_value: float = 0.001,
         layers: Tuple = (64, 64),
         policy_copy_interval: int = 20,
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -96,7 +92,6 @@ class PPO1:
         self.lr_policy = lr_policy
         self.lr_value = lr_value
         self.layers = layers
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
@@ -266,8 +261,6 @@ class PPO1:
             if epoch % 1 == 0:
                 print("Episode: {}, reward: {}".format(epoch, np.mean(self.rewards)))
                 self.rewards = []
-                if self.tensorboard_log:
-                    self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if self.save_model is not None:
                 if epoch % self.save_interval == 0:
@@ -276,8 +269,6 @@ class PPO1:
                     print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {

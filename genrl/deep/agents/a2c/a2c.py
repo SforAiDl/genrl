@@ -35,8 +35,6 @@ class A2C:
     :param layers: Number of neurons in hidden layers
     :param noise: Noise function to use
     :param noise_std: Standard deviation for action noise
-    :param tensorboard_log: (The log location for Tensorboard
-(if None, no logging))
     :param seed: Seed for reproducing results
     :param render: True if environment is to be rendered, else False
     :param device: Device to use for Tensor operation ['cpu', 'cuda']
@@ -56,7 +54,6 @@ class A2C:
     :type layers: tuple or list
     :type noise: function
     :type noise_std: float
-    :type tensorboard_log: string
     :type seed: int
     :type render: boolean
     :type device: string
@@ -80,7 +77,6 @@ class A2C:
         layers: Tuple = (32, 32),
         noise: Any = None,
         noise_std: float = 0.1,
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -101,7 +97,6 @@ class A2C:
         self.layers = layers
         self.noise = noise
         self.noise_std = noise_std
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
@@ -262,8 +257,6 @@ calculate losses)
 
             if episode % 5 == 0:
                 print("Episode: {}, Reward: {}".format(episode, episode_reward))
-                if self.tensorboard_log:
-                    self.writer.add_scalar("reward", episode_reward, episode)
 
             if self.save_model is not None:
                 if episode % self.save_interval == 0:
@@ -272,8 +265,6 @@ calculate losses)
                     print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_env_properties(self):
         """

@@ -42,8 +42,6 @@ class TD3:
     :param update_interval: (int) Number of steps between parameter updates
     :param save_interval: (int) Number of steps between saves of models
     :param layers: (tuple or list) Number of neurons in hidden layers
-    :param tensorboard_log: (str) the log location for tensorboard (if None,
-        no logging)
     :param seed (int): seed for torch and gym
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
@@ -74,7 +72,6 @@ class TD3:
     :type update_interval: int
     :type save_interval: int
     :type layers: tuple or list
-    :type tensorboard_log: str
     :type seed: int
     :type render: boolean
     :type device: str
@@ -106,7 +103,6 @@ class TD3:
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (256, 256),
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -135,7 +131,6 @@ class TD3:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
@@ -153,13 +148,6 @@ class TD3:
         # Assign seed
         if seed is not None:
             set_seeds(seed, self.env)
-
-        # Setup tensorboard writer
-        self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
         self.checkpoint = self.get_hyperparams()
@@ -369,11 +357,6 @@ class TD3:
                 if self.noise is not None:
                     self.noise.reset()
 
-                if self.tensorboard_log:
-                    self.writer.add_scalar(
-                        "episode_reward", np.mean(episode_reward), timestep
-                    )
-
                 state, episode_reward, episode_len = (
                     self.env.reset(),
                     np.zeros(self.env.n_envs),
@@ -399,8 +382,6 @@ class TD3:
                     print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {

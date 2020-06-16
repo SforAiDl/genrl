@@ -32,7 +32,6 @@ class VPG:
     :param lr_policy: policy network learning rate
     :param lr_value: value network learning rate
     :param save_interval: Number of episodes between saves of models
-    :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
     :param run_num: if model has already been trained
@@ -48,7 +47,6 @@ class VPG:
     :type lr_policy: float
     :type lr_value: float
     :type save_interval: int
-    :type tensorboard_log: str
     :type seed: int
     :type device: str
     :type run_num: bool
@@ -69,7 +67,6 @@ class VPG:
         lr_value: float = 0.0005,
         policy_copy_interval: int = 20,
         layers: Tuple = (32, 32),
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -87,7 +84,6 @@ class VPG:
         self.epochs = epochs
         self.lr_policy = lr_policy
         self.lr_value = lr_value
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.save_interval = save_interval
@@ -241,8 +237,6 @@ class VPG:
             if epoch % 1 == 0:
                 print("Episode: {}, reward: {}".format(epoch, np.mean(self.rewards)))
                 self.rewards = []
-                if self.tensorboard_log:
-                    self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if self.save_model is not None:
                 if epoch % self.save_interval == 0:
@@ -251,8 +245,6 @@ class VPG:
                     print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {

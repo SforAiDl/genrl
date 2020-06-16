@@ -41,7 +41,6 @@ class DDPG:
     :param update_interval: Number of steps between parameter updates
     :param save_interval: Number of steps between saves of models
     :param layers: Number of neurons in hidden layers
-    :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
@@ -65,7 +64,6 @@ class DDPG:
     :type update_interval: int
     :type save_interval: int
     :type layers: tuple
-    :type tensorboard_log: string
     :type seed: int
     :type render: bool
     :type device: string
@@ -93,7 +91,6 @@ class DDPG:
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (32, 32),
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -121,7 +118,6 @@ class DDPG:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
@@ -142,10 +138,6 @@ class DDPG:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
@@ -372,8 +364,6 @@ class DDPG:
                     print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {

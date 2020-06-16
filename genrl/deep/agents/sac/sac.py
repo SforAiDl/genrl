@@ -34,7 +34,6 @@ class SAC:
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of step between updates
     :param layers: Neural network layer dimensions
-    :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
@@ -57,7 +56,6 @@ class SAC:
     :type start_update: int
     :type update_interval: int
     :type layers: tuple
-    :type tensorboard_log: string
     :type seed: int
     :type render: bool
     :type device: string
@@ -84,7 +82,6 @@ class SAC:
         start_update: int = 256,
         update_interval: int = 1,
         layers: Tuple = (256, 256),
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -111,7 +108,6 @@ class SAC:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
@@ -132,10 +128,6 @@ class SAC:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
@@ -374,8 +366,6 @@ class SAC:
         return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
     def learn(self) -> None:  # pragma: no cover
-        if self.tensorboard_log:
-            writer = SummaryWriter(self.tensorboard_log)
 
         total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
@@ -408,13 +398,6 @@ class SAC:
                     states, actions, rewards, next_states, dones
                 )
 
-                # write loss logs to tensorboard
-                if self.tensorboard_log:
-                    writer.add_scalar("loss/q1_loss", q1_loss, i)
-                    writer.add_scalar("loss/q2_loss", q2_loss, i)
-                    writer.add_scalar("loss/policy_loss", policy_loss, i)
-                    writer.add_scalar("loss/alpha_loss", alpha_loss, i)
-
                 if self.save_model is not None:
                     if i >= self.start_update and i % self.save_interval == 0:
                         self.checkpoint = self.get_hyperparams()
@@ -442,10 +425,6 @@ class SAC:
             if i > total_steps:
                 break
 
-            # write episode reward to tensorboard logs
-            if self.tensorboard_log:
-                writer.add_scalar("reward/episode_reward", episode_reward, i)
-
             if sum(episode_len) % (5 * self.env.n_envs) == 0 and sum(episode_len) != 0:
                 print(
                     "Episode: {}, total numsteps: {}, reward: {}".format(
@@ -455,8 +434,6 @@ class SAC:
             # ep += 1
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
