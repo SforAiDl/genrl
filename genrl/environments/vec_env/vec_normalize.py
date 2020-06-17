@@ -28,7 +28,7 @@ class VecNormalize(VecEnvWrapper):
         venv: VecEnv,
         norm_obs: bool = True,
         norm_reward: bool = True,
-        clip_reward: float = 10.0,
+        clip_reward: float = 20.0,
     ):
         super(VecNormalize, self).__init__(venv)
 

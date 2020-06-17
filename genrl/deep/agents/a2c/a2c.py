@@ -192,26 +192,45 @@ class A2C:
         """
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
-        # create distribution based on policy_fn output
+        # create distribution based on actor output
         a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state).unsqueeze(0)
 
         return a, val, c.log_prob(a)
 
-    def get_traj_loss(self, value, done) -> None:
+    def get_traj_loss(self, value: np.ndarray, done: bool) -> None:
         """
         (Get trajectory of agent to calculate discounted rewards and
 calculate losses)
+
+        :param value: Value of a state
+        :param done: True if the state is terminal, else False
+        :type value: NumPy Array
+        :type done: boolean
         """
         self.rollout.compute_returns_and_advantage(value.detach().cpu().numpy(), done)
 
-    def get_value_log_probs(self, state, action):
+    def get_value_log_probs(
+        self, state: np.ndarray, action: np.ndarray
+    ) -> Tuple[np.ndarray, float]:
+        """
+        Calculate the value of a given state and the log probability of taking a given action in the given state
+
+        :param state: State value
+        :param action: Action to be taken
+        :type state: NumPy Array
+        :type action: NumPy Array
+        :returns: Value and Log probability of Action
+        :rtype: NumPy Array, NumPy Array
+        """
         a, c = self.ac.get_action(state, deterministic=False)
         val = self.ac.get_value(state)
         return val, c.log_prob(action)
 
     def update_policy(self) -> None:
-
+        """
+        Function to calculate loss from rollouts and update the policy
+        """
         for rollout in self.rollout.get(256):
 
             actions = rollout.actions
@@ -241,7 +260,12 @@ calculate losses)
             self.critic_optimizer.step()
 
     def collect_rollouts(self, initial_state):
+        """
+        Function to calculate rollouts
 
+        :param initial_state: Initial state before calculating rollouts
+        :type initial_state: NumPy Array
+        """
         state = initial_state
 
         for i in range(2048):

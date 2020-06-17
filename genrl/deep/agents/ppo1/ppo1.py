@@ -130,6 +130,9 @@ class PPO1:
         self.create_model()
 
     def create_model(self) -> None:
+        """
+        Creates actor critic model and initialises optimizers
+        """
         # Instantiate networks and optimizers
         state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
 
@@ -163,26 +166,54 @@ class PPO1:
         )
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
+        """
+        Selection of action
+
+        :param state: Observation state
+        :type state: int, float, ...
+        :returns: Action based on the state and epsilon value
+        :rtype: int, float, ...
+        """
         state = torch.as_tensor(state).float().to(self.device)
-        # create distribution based on policy output
+        # create distribution based on actor output
         action, c_new = self.ac.get_action(state, deterministic=False)
         value = self.ac.get_value(state)
 
         return action.detach().cpu().numpy(), value, c_new.log_prob(action)
 
-    def evaluate_actions(self, obs, old_actions):
-        value = self.ac.get_value(obs)
-        _, dist = self.ac.get_action(obs)
+    def evaluate_actions(self, old_states, old_actions):
+        """
+        Evaluate the performance of older actions
+
+        :param old_states: Previous states
+        :param old_actions: Previous actions
+        :type old_states: NumPy Array
+        :type old_actions: NumPy Array
+        :returns: Value, Log Probabilities of old actions, Entropy
+        """
+        value = self.ac.get_value(old_states)
+        _, dist = self.ac.get_action(old_states)
         return value, dist.log_prob(old_actions), dist.entropy()
 
     # get clipped loss for single trajectory (episode)
-    def get_traj_loss(self, values, dones):
+    def get_traj_loss(self, values: np.ndarray, dones: bool):
+        """
+        (Get trajectory of agent to calculate discounted rewards and
+calculate losses)
+
+        :param value: Value of a state
+        :param done: True if the state is terminal, else False
+        :type value: NumPy Array
+        :type done: boolean
+        """
         self.rollout.compute_returns_and_advantage(
             values.detach().cpu().numpy(), dones, use_gae=True
         )
 
     def update_policy(self):
-
+        """
+        Function to calculate loss from rollouts and update the policy
+        """
         for rollout in self.rollout.get(256):
             actions = rollout.actions
 
@@ -223,7 +254,12 @@ class PPO1:
             self.optimizer_value.step()
 
     def collect_rollouts(self, initial_state):
+        """
+        Function to calculate rollouts
 
+        :param initial_state: Initial state before calculating rollouts
+        :type initial_state: NumPy Array
+        """
         state = initial_state
 
         for i in range(2048):
@@ -256,6 +292,9 @@ class PPO1:
         return values, dones
 
     def learn(self):  # pragma: no cover
+        """
+        Trains actor critic model
+        """
         # training loop
         state = self.env.reset()
         for epoch in range(self.epochs):
@@ -287,6 +326,12 @@ class PPO1:
             self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
+        """
+        Loads important hyperparameters that need to be loaded or saved
+
+        :returns: Hyperparameters that need to be saved or loaded
+        :rtype: dict
+        """
         hyperparams = {
             "network_type": self.network_type,
             "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
