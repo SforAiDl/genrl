@@ -9,7 +9,8 @@ import torch.optim as opt
 from torch.distributions import Normal
 from torch.utils.tensorboard import SummaryWriter
 
-from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds, venv
+from ....environments import VecEnv
+from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds
 
 
 class SAC:
@@ -67,7 +68,7 @@ class SAC:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 256,
@@ -250,6 +251,15 @@ class SAC:
         mean = torch.tanh(mean) * self.action_scale + self.action_bias
         return action.float(), log_pi, mean
 
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """
+        Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        :param timestep: Timestep in the training process
+        :type timestep: int
+        """
+        pass
+
     def select_action(self, state):
         """
         select action given a state
@@ -263,117 +273,105 @@ class SAC:
         action, _, _ = self.sample_action(state)
         return action.detach().cpu().numpy()
 
-    def update_params(
-        self,
-        state: np.ndarray,
-        action: np.ndarray,
-        reward: float,
-        next_state: np.ndarray,
-        done: float,
-    ) -> (Tuple[float]):
+    def update_params(self, update_interval: int) -> (Tuple[float]):
         """
         Computes loss and takes optimizer step
 
-        :param state: environment observation
-        :param action: agent action
-        :param: reward: environment reward
-        :param next_state: environment next observation
-        :param done: if episode is over
-        :type state: int, float, ...
-        :type action: float
-        :type: reward: float
-        :type next_state: int, float, ...
-        :type done: bool
-        :returns: Q1-loss
-        :rtype: float
-        :returns: Q2-loss
-        :rtype: float
+        :param timestep: timestep
+        :type timestep: int
         :returns: policy loss
         :rtype: float
         :returns: entropy coefficient loss
         :rtype: float
         """
-        # compute targets
-        if self.env.n_envs == 1:
-            state, action, next_state = (
-                state.squeeze().float(),
-                action.squeeze(1).float(),
-                next_state.squeeze().float(),
-            )
-        else:
-            state, action, next_state = (
-                state.reshape(-1, *self.env.observation_space.shape).float(),
-                action.reshape(-1, *self.env.action_space.shape).float(),
-                next_state.reshape(-1, *self.env.observation_space.shape).float(),
-            )
-            reward, done = reward.reshape(-1, 1), done.reshape(-1, 1)
+        for timestep in range(update_interval):
+            batch = self.replay_buffer.sample(self.batch_size)
+            state, action, reward, next_state, done = (x.to(self.device) for x in batch)
+            # compute targets
+            if self.env.n_envs == 1:
+                state, action, next_state = (
+                    state.squeeze().float(),
+                    action.squeeze(1).float(),
+                    next_state.squeeze().float(),
+                )
+            else:
+                state, action, next_state = (
+                    state.reshape(-1, *self.env.observation_space.shape).float(),
+                    action.reshape(-1, *self.env.action_space.shape).float(),
+                    next_state.reshape(-1, *self.env.observation_space.shape).float(),
+                )
+                reward, done = reward.reshape(-1, 1), done.reshape(-1, 1)
 
-        with torch.no_grad():
-            next_action, next_log_pi, _ = self.sample_action(next_state)
-            next_q1_targ = self.q1_targ(torch.cat([next_state, next_action], dim=-1))
-            next_q2_targ = self.q2_targ(torch.cat([next_state, next_action], dim=-1))
-            next_q_targ = (
-                torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
-            )
-            next_q = reward + self.gamma * (1 - done) * next_q_targ
+            with torch.no_grad():
+                next_action, next_log_pi, _ = self.sample_action(next_state)
+                next_q1_targ = self.q1_targ(
+                    torch.cat([next_state, next_action], dim=-1)
+                )
+                next_q2_targ = self.q2_targ(
+                    torch.cat([next_state, next_action], dim=-1)
+                )
+                next_q_targ = (
+                    torch.min(next_q1_targ, next_q2_targ) - self.alpha * next_log_pi
+                )
+                next_q = reward + self.gamma * (1 - done) * next_q_targ
 
-        # compute losses
-        q1 = self.q1(torch.cat([state, action], dim=-1))
-        q2 = self.q2(torch.cat([state, action], dim=-1))
+            # compute losses
+            q1 = self.q1(torch.cat([state, action], dim=-1))
+            q2 = self.q2(torch.cat([state, action], dim=-1))
 
-        q1_loss = nn.MSELoss()(q1, next_q)
-        q2_loss = nn.MSELoss()(q2, next_q)
+            q1_loss = nn.MSELoss()(q1, next_q)
+            q2_loss = nn.MSELoss()(q2, next_q)
 
-        pi, log_pi, _ = self.sample_action(state)
-        q1_pi = self.q1(torch.cat([state, pi.float()], dim=-1).float())
-        q2_pi = self.q2(torch.cat([state, pi.float()], dim=-1).float())
-        min_q_pi = torch.min(q1_pi, q2_pi)
-        policy_loss = ((self.alpha * log_pi) - min_q_pi).mean()
+            pi, log_pi, _ = self.sample_action(state)
+            q1_pi = self.q1(torch.cat([state, pi.float()], dim=-1).float())
+            q2_pi = self.q2(torch.cat([state, pi.float()], dim=-1).float())
+            min_q_pi = torch.min(q1_pi, q2_pi)
+            policy_loss = ((self.alpha * log_pi) - min_q_pi).mean()
 
-        # gradient step
-        self.q1_optimizer.zero_grad()
-        q1_loss.backward()
-        self.q1_optimizer.step()
+            # gradient step
+            self.q1_optimizer.zero_grad()
+            q1_loss.backward()
+            self.q1_optimizer.step()
 
-        self.q2_optimizer.zero_grad()
-        q2_loss.backward()
-        self.q2_optimizer.step()
+            self.q2_optimizer.zero_grad()
+            q2_loss.backward()
+            self.q2_optimizer.step()
 
-        self.policy_optimizer.zero_grad()
-        policy_loss.backward()
-        self.policy_optimizer.step()
+            self.policy_optimizer.zero_grad()
+            policy_loss.backward()
+            self.policy_optimizer.step()
 
-        # alpha loss
-        if self.entropy_tuning:
-            alpha_loss = -(
-                self.log_alpha * (log_pi + self.target_entropy).detach()
-            ).mean()
-
-            self.alpha_optim.zero_grad()
-            alpha_loss.backward()
-            self.alpha_optim.step()
-
-            self.alpha = self.log_alpha.exp()
-        else:
+            # alpha loss
             alpha_loss = torch.tensor(0.0).to(self.device)
 
-        # soft update target params
-        for target_param, param in zip(self.q1_targ.parameters(), self.q1.parameters()):
-            target_param.data.copy_(
-                target_param.data * self.polyak + param.data * (1 - self.polyak)
-            )
+            if self.entropy_tuning:
+                alpha_loss = -(
+                    self.log_alpha * (log_pi + self.target_entropy).detach()
+                ).mean()
 
-        for target_param, param in zip(self.q2_targ.parameters(), self.q2.parameters()):
-            target_param.data.copy_(
-                target_param.data * self.polyak + param.data * (1 - self.polyak)
-            )
+                self.alpha_optim.zero_grad()
+                alpha_loss.backward()
+                self.alpha_optim.step()
 
-        self.logs["q1_loss"].append(q1_loss.item())
-        self.logs["q2_loss"].append(q2_loss.item())
-        self.logs["policy_loss"].append(policy_loss.item())
-        self.logs["alpha_loss"].append(alpha_loss.item())
+                self.alpha = self.log_alpha.exp()
 
-        return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
+            # soft update target params
+            for target_param, param in zip(
+                self.q1_targ.parameters(), self.q1.parameters()
+            ):
+                target_param.data.copy_(
+                    target_param.data * self.polyak + param.data * (1 - self.polyak)
+                )
+
+            for target_param, param in zip(
+                self.q2_targ.parameters(), self.q2.parameters()
+            ):
+                target_param.data.copy_(
+                    target_param.data * self.polyak + param.data * (1 - self.polyak)
+                )
+
+        # TO DO: Make a get_logging_params() for logging these
+        # return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
     def learn(self) -> None:  # pragma: no cover
 
@@ -399,13 +397,8 @@ class SAC:
                 and i % self.update_interval == 0
                 and self.replay_buffer.pos > self.batch_size
             ):
-                # get losses
-                batch = self.replay_buffer.sample(self.batch_size)
-                states, actions, rewards, next_states, dones = (
-                    x.to(self.device) for x in batch
-                )
                 q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
-                    states, actions, rewards, next_states, dones
+                    self.update_interval
                 )
 
                 if self.save_model is not None:
