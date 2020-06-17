@@ -1,12 +1,13 @@
 import copy
 import multiprocessing as mp
 from abc import ABC, abstractmethod
+from typing import Any, Iterator, List, Tuple
 
 import gym
 import numpy as np
 
 
-def worker(parent_conn, child_conn, env):
+def worker(parent_conn: mp.Pipe, child_conn: mp.Pipe, env: gym.Env):
     """
     Worker class to facilitate multiprocessing
 
@@ -40,23 +41,6 @@ def worker(parent_conn, child_conn, env):
             raise NotImplementedError
 
 
-def create_envs(env_name, n_envs):
-    """
-    Helper function to return list of environments
-
-    :param env_name: Name of environment to be vectorised
-    :param n_envs: Number of environments per VecEnv
-    :type env_name: string
-    :type n_envs: int
-    :returns: Multiple of the same gym environment
-    :rtype: list
-    """
-    envs = []
-    for _i in range(n_envs):
-        envs.append(gym.make(env_name))
-    return envs
-
-
 class VecEnv(ABC):
     """
     Base class for multiple environments.
@@ -67,29 +51,41 @@ class VecEnv(ABC):
     :type n_envs: int
     """
 
-    def __init__(self, env, n_envs=2):
-        self.envs = create_envs(env, n_envs)
-        self._n_envs = len(self.envs)
+    def __init__(self, envs: List, n_envs: int = 2):
+        self.envs = envs
+        self.env = envs[0]
+        self._n_envs = n_envs
 
-    def __iter__(self):
+        self.observation_space = self.env.observation_space
+        self.action_space = self.env.action_space
+
+    def __getattr__(self, name: str) -> Any:
+        env = super(VecEnv, self).__getattribute__("env")
+        return getattr(env, name)
+
+    def __iter__(self) -> Iterator:
         """
         Iterator object to iterate through each environment in vector
         """
         return (env for env in self.envs)
 
-    def sample(self):
+    def sample(self) -> List:
         """
         Return samples of actions from each environment
         """
         return [env.action_space.sample() for env in self.envs]
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> gym.Env:
         """
         Return environment at the given index
+
+        :param index: Index at which the environment is
+        :type index: int
+        :returns: Gym Environment at given index of Vectorized Environment
         """
         return self.envs[index]
 
-    def seed(self, seed):
+    def seed(self, seed: int):
         """
         Set seed for reproducibility in all environments
         """
@@ -110,14 +106,6 @@ class VecEnv(ABC):
     @property
     def n_envs(self):
         return self._n_envs
-
-    @property
-    def observation_space(self):
-        return self.envs[0].observation_space
-
-    @property
-    def action_space(self):
-        return self.envs[0].action_space
 
     @property
     def observation_spaces(self):
@@ -143,7 +131,7 @@ class SerialVecEnv(VecEnv):
         self.dones = np.zeros((self.n_envs))
         self.infos = [{} for _ in range(self.n_envs)]
 
-    def step(self, actions):
+    def step(self, actions: np.ndarray) -> Tuple:
         """
         Steps through all envs serially
 
@@ -166,7 +154,7 @@ class SerialVecEnv(VecEnv):
             copy.deepcopy(self.infos),
         )
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         """
         Resets all envs
         """
@@ -182,7 +170,7 @@ class SerialVecEnv(VecEnv):
         for env in self.envs:
             env.close()
 
-    def images(self):
+    def images(self) -> List:
         """
         Returns an array of images from each env render
         """
@@ -239,7 +227,7 @@ class SubProcessVecEnv(VecEnv):
             self.procs.append(process)
             child_conn.close()
 
-    def get_spaces(self):
+    def get_spaces(self) -> Tuple:
         """
         Returns state and action spaces of environments
         """
@@ -247,7 +235,7 @@ class SubProcessVecEnv(VecEnv):
         observation_space, action_space = self.parent_conns[0].recv()
         return (observation_space, action_space)
 
-    def seed(self, seed=None):
+    def seed(self, seed: int = None):
         """
         Sets seed for reproducability
         """
@@ -256,7 +244,7 @@ class SubProcessVecEnv(VecEnv):
 
         return [parent_conn.recv() for parent_conn in self.parent_conns]
 
-    def reset(self):
+    def reset(self) -> np.ndarray:
         """
         Resets environments
 
@@ -266,9 +254,9 @@ class SubProcessVecEnv(VecEnv):
             parent_conn.send(("reset", None))
 
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
-        return obs
+        return np.asarray(obs)
 
-    def step(self, actions):
+    def step(self, actions: np.ndarray) -> Tuple:
         """
         Steps through environments serially
 
@@ -285,8 +273,7 @@ class SubProcessVecEnv(VecEnv):
         self.waiting = False
 
         observations, rewards, dones, infos = zip(*result)
-        print(observations, rewards, dones)
-        return observations, rewards, dones, infos
+        return (np.asarray(v) for v in [observations, rewards, dones, infos])
 
     def close(self):
         """
@@ -299,28 +286,3 @@ class SubProcessVecEnv(VecEnv):
             parent_conn.send(("close", None))
         for proc in self.procs:
             proc.join()
-
-
-def venv(env, n_envs, parallel=False):
-    """
-    Chooses the kind of Vector Environment that is required
-
-    :param env: Gym environment to be vectorised
-    :param n_envs: Number of environments
-    :param parallel: (True if we want environments to run parallely and
-subprocesses, False if we want environments to run serially one after the other)
-    :returns: Vector Environment
-    :rtype: VecEnv
-    """
-    if parallel:
-        return SubProcessVecEnv(env, n_envs)
-    else:
-        return SerialVecEnv(env, n_envs)
-
-
-if __name__ == "__main__":
-    env = venv("CartPole-v1", 32, parallel=False)
-    env.seed(0)
-    print(env.reset())
-    env.step(env.sample())
-    print(env.action_spaces())

@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from gym import spaces
 
-from genrl.deep.common.utils import get_obs_action_shape
+from .utils import get_obs_action_shape
 
 
 class RolloutBufferSamples(NamedTuple):
