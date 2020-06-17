@@ -1,16 +1,14 @@
 from abc import ABC
-from collections import deque
 from typing import Any, List, Optional, Type, Union
 
 import gym
 import numpy as np
 import torch
-from torchvision import transforms
 
+from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
 from .utils import save_params, set_seeds
-from .VecEnv import venv
 
 
 class Trainer(ABC):
@@ -18,7 +16,7 @@ class Trainer(ABC):
     Base Trainer class. To be inherited specific usecases.
 
     :param agent: Algorithm object
-    :param env: Standard gym environment
+    :param env: Environment
     :param logger: Logger object
     :param buffer: Buffer Object
     :param off_policy: Is the algorithm off-policy?
@@ -57,7 +55,7 @@ False (To be implemented))
     def __init__(
         self,
         agent: Any,
-        env: Union[gym.Env, Type[venv]],
+        env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = False,
@@ -113,7 +111,7 @@ False (To be implemented))
         """
         raise NotImplementedError
 
-    def evaluate(self):
+    def evaluate(self) -> None:
         """
         Evaluate function
         """
@@ -161,7 +159,7 @@ class OffPolicyTrainer(Trainer):
     Off-Policy Trainer class
 
     :param agent: Algorithm object
-    :param env: Standard gym environment
+    :param env: Environment
     :param logger: Logger object
     :param buffer: Buffer Object. Cannot be None for Off-policy
     :param off_policy: Is the algorithm off-policy?
@@ -208,7 +206,7 @@ many steps)
     def __init__(
         self,
         agent: Any,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = True,
@@ -256,26 +254,6 @@ many steps)
         self.start_update = start_update
         self.network_type = self.agent.network_type
 
-        if self.network_type == "cnn":
-            if self.transform is None:
-                self.transform = transforms.Compose(
-                    [
-                        transforms.ToPILImage(),
-                        transforms.Grayscale(),
-                        transforms.Resize((110, 84)),
-                        transforms.CenterCrop(84),
-                        transforms.ToTensor(),
-                    ]
-                )
-
-            self.state_history = deque(
-                [
-                    self.transform(self.env.observation_space.sample())
-                    for _ in range(self.history_length)
-                ],
-                maxlen=self.history_length,
-            )
-
     def train(self) -> None:
         """
         Run training
@@ -300,18 +278,11 @@ many steps)
 
         for timestep in range(0, total_steps, self.env.n_envs):
             self.agent.update_params_before_select_action(timestep)
-            if self.network_type == "cnn":
-                self.state_history.append(self.transform(state))
-                phi_state = torch.stack(list(self.state_history), dim=1)
 
-            if self.network_type == "cnn":
-                action = self.agent.select_action(phi_state)
-
+            if timestep < self.warmup_steps:
+                action = np.array(self.env.sample())
             else:
-                if timestep < self.warmup_steps:
-                    action = np.array(self.env.sample())
-                else:
-                    action = self.agent.select_action(state)
+                action = self.agent.select_action(state)
 
             next_state, reward, done, _ = self.env.step(action)
 
@@ -326,14 +297,8 @@ many steps)
                 for i, ep_len in enumerate(episode_len)
             ]
 
-            if self.agent.__class__.__name__ == "DQN" and self.network_type == "cnn":
-                self.state_history.append(self.transform(next_state))
-                phi_next_state = torch.stack(list(self.state_history), dim=1)
-                self.buffer.extend(zip(phi_state, action, reward, phi_next_state, done))
-                phi_state = phi_next_state.copy()
-            else:
-                self.buffer.extend(zip(state, action, reward, next_state, done))
-                state = next_state.copy()
+            self.buffer.extend(zip(state, action, reward, next_state, done))
+            state = next_state.copy()
 
             if np.any(done) or np.any(episode_len == self.max_ep_len):
                 if "noise" in self.agent.__dict__ and self.agent.noise is not None:
@@ -379,7 +344,7 @@ class OnPolicyTrainer(Trainer):
     Base Trainer class. To be inherited specific usecases.
 
     :param agent: Algorithm object
-    :param env: Standard gym environment
+    :param env: Environment
     :param logger: Logger Object
     :param buffer: Buffer Object
     :param off_policy: Is the algorithm off-policy?
@@ -418,7 +383,7 @@ class OnPolicyTrainer(Trainer):
     def __init__(
         self,
         agent: Any,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
         save_interval: int = 0,
         render: bool = False,
