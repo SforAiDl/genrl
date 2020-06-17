@@ -485,8 +485,8 @@ so no need to call the function explicitly.)
                 state, episode_reward, episode_len = self.env.reset(), 0, 0
                 episode += 1
 
-            if self.replay_buffer.get_len() > self.batch_size:
-                self.update_params()
+            if frame_idx >= self.start_update and frame_idx % self.update_interval == 0:
+                self.agent.update_params(self.update_interval)
 
             if self.save_model is not None:
                 if frame_idx % self.save_interval == 0:
