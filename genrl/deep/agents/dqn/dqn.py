@@ -226,6 +226,15 @@ class DQN:
         """
         self.target_model.load_state_dict(self.model.state_dict())
 
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """
+        Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        :param timestep: Timestep in the training process
+        :type timestep: int
+        """
+        self.epsilon = self.calculate_epsilon_by_frame(timestep)
+
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """
         Epsilon Greedy selection of action
@@ -350,19 +359,23 @@ class DQN:
 
         return loss
 
-    def update_params(self) -> None:
+    def update_params(self, update_interval: int) -> None:
         """
         (Takes the step for optimizer. This internally call get_td_loss(),
 so no need to call the function explicitly.)
         """
-        loss = self.get_td_loss()
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
+        for timestep in range(update_interval):
+            loss = self.get_td_loss()
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
-        if self.noisy_dqn or self.categorical_dqn:
-            self.model.reset_noise()
-            self.target_model.reset_noise()
+            if self.noisy_dqn or self.categorical_dqn:
+                self.model.reset_noise()
+                self.target_model.reset_noise()
+
+            if timestep % update_interval == 0:
+                self.update_target_model()
 
     def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
         """
@@ -472,8 +485,8 @@ so no need to call the function explicitly.)
                 state, episode_reward, episode_len = self.env.reset(), 0, 0
                 episode += 1
 
-            if self.replay_buffer.get_len() > self.batch_size:
-                self.update_params()
+            if frame_idx >= self.start_update and frame_idx % self.update_interval == 0:
+                self.agent.update_params(self.update_interval)
 
             if self.save_model is not None:
                 if frame_idx % self.save_interval == 0:
