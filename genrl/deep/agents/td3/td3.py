@@ -333,7 +333,7 @@ class TD3:
         for timestep in range(0, total_steps, self.env.n_envs):
             # execute single transition
             if timestep > self.start_steps:
-                action = self.select_action(state, deterministic=True)
+                action = self.select_action(state)
             else:
                 action = self.env.sample()
 

@@ -345,6 +345,8 @@ class SAC:
             self.policy_optimizer.step()
 
             # alpha loss
+            alpha_loss = torch.tensor(0.0).to(self.device)
+
             if self.entropy_tuning:
                 alpha_loss = -(
                     self.log_alpha * (log_pi + self.target_entropy).detach()
@@ -355,8 +357,6 @@ class SAC:
                 self.alpha_optim.step()
 
                 self.alpha = self.log_alpha.exp()
-            else:
-                alpha_loss = torch.tensor(0.0).to(self.device)
 
             # soft update target params
             for target_param, param in zip(
