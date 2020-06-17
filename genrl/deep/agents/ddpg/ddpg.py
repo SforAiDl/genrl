@@ -126,6 +126,10 @@ class DDPG:
         self.save = save_params
         self.load = load_params
 
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
@@ -270,6 +274,7 @@ class DDPG:
         """
         self.optimizer_q.zero_grad()
         loss_q = self.get_q_loss(state, action, reward, next_state, done)
+        self.logs["value_loss"].append(loss_q.item())
         loss_q.backward()
         self.optimizer_q.step()
 
@@ -279,6 +284,7 @@ class DDPG:
 
         self.optimizer_policy.zero_grad()
         loss_p = self.get_p_loss(state)
+        self.logs["policy_loss"].append(loss_q.item())
         loss_p.backward()
         self.optimizer_policy.step()
 
@@ -379,6 +385,28 @@ class DDPG:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+        logs = {
+            "policy_loss": np.around(np.mean(self.logs["policy_loss"]), decimals=4),
+            "value_loss": np.around(np.mean(self.logs["value_loss"]), decimals=4),
+        }
+
+        self.empty_logs()
+
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
 
 
 if __name__ == "__main__":

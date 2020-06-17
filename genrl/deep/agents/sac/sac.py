@@ -116,6 +116,11 @@ class SAC:
         self.save = save_params
         self.load = load_params
 
+        self.logs["q1_loss"] = []
+        self.logs["q2_loss"] = []
+        self.logs["policy_loss"] = []
+        self.logs["alpha_loss"] = []
+
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
@@ -363,6 +368,11 @@ class SAC:
                 target_param.data * self.polyak + param.data * (1 - self.polyak)
             )
 
+        self.logs["q1_loss"].append(q1_loss.item())
+        self.logs["q2_loss"].append(q2_loss.item())
+        self.logs["policy_loss"].append(policy_loss.item())
+        self.logs["alpha_loss"].append(alpha_loss.item())
+
         return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
 
     def learn(self) -> None:  # pragma: no cover
@@ -450,6 +460,32 @@ class SAC:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+        logs = {
+            "policy_loss": np.around(np.mean(self.logs["policy_loss"]), decimals=4),
+            "q1_loss": np.around(np.mean(self.logs["q1_loss"]), decimals=4),
+            "q2_loss": np.around(np.mean(self.logs["q2_loss"]), decimals=4),
+            "alpha_loss": np.around(np.mean(self.logs["alpha_loss"]), decimals=4),
+        }
+
+        self.empty_logs()
+
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["q1_loss"] = []
+        self.logs["q2_loss"] = []
+        self.logs["policy_loss"] = []
+        self.logs["alpha_loss"] = []
 
 
 if __name__ == "__main__":

@@ -131,7 +131,6 @@ class DQN:
         self.Vmin = vmin
         self.Vmax = vmax
         self.render = render
-        self.loss_hist = []
         self.reward_hist = []
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
@@ -145,6 +144,9 @@ class DQN:
         self.network_type = network_type
         self.history_length = None
         self.transform = transform
+
+        self.logs = {}
+        self.logs["value_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -362,7 +364,7 @@ class DQN:
             else:
                 loss = (q_value - expected_q_value.detach()).pow(2).mean()
 
-        self.loss_hist.append(loss)
+        self.logs["value_loss"].append(loss)
 
         return loss
 
@@ -530,6 +532,26 @@ class DQN:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+        logs = {
+            "value_loss": np.around(np.mean(self.logs["value_loss"]), decimals=4),
+        }
+
+        self.empty_logs()
+
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["value_loss"] = []
 
 
 if __name__ == "__main__":
