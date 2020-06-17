@@ -290,17 +290,17 @@ class DDPG:
         for timestep in range(update_interval):
             batch = self.replay_buffer.sample(self.batch_size)
             state, action, reward, next_state, done = (x.to(self.device) for x in batch)
-            
+
             # freeze critic params for policy update
             for param in self.ac.critic.parameters():
                 param.requires_grad = False
 
             self.optimizer_policy.zero_grad()
             self.optimizer_q.zero_grad()
-            
+
             loss = self.get_q_loss(state, action, reward, next_state, done)
             loss.backward()
-            
+
             self.optimizer_q.step()
             self.optimizer_policy.step()
 
