@@ -37,6 +37,7 @@ class DDPG:
     :param steps_per_epoch: Number of steps per epoch
     :param noise_std: Standard deviation for action noise
     :param max_ep_len: Maximum steps per episode
+    :param deterministic_actions: True if actions are deterministic
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of steps between parameter updates
     :param save_interval: Number of steps between saves of models
@@ -61,6 +62,7 @@ class DDPG:
     :type steps_per_epoch: int
     :type noise_std: float
     :type max_ep_len: int
+    :type deterministic_actions: bool
     :type start_update: int
     :type update_interval: int
     :type save_interval: int
@@ -90,6 +92,7 @@ class DDPG:
         noise: Optional[Any] = None,
         noise_std: float = 0.1,
         max_ep_len: int = 1000,
+        deterministic_actions: bool = False,
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (32, 32),
@@ -117,6 +120,7 @@ class DDPG:
         self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
+        self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
         self.save_interval = save_interval
@@ -187,23 +191,28 @@ class DDPG:
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
 
-    def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """
+        Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        :param timestep: Timestep in the training process
+        :type timestep: int
+        """
+        pass
+
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         """
         Selection of action
 
         :param state: Observation state
-        :param deterministic: Action selection type
         :type state: int, float, ...
-        :type deterministic: bool
         :returns: Action based on the state and epsilon value
         :rtype: int, float, ...
         """
         with torch.no_grad():
             action, _ = self.ac.get_action(
                 torch.as_tensor(state, dtype=torch.float32).to(self.device),
-                deterministic=deterministic,
+                deterministic=self.deterministic_actions,
             )
             action = action.detach().cpu().numpy()
 
@@ -249,7 +258,13 @@ class DDPG:
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
 
-        return nn.MSELoss()(quality, target)
+        q_pi = self.ac.get_value(
+            torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
+        )
+
+        total_loss = nn.MSELoss()(quality, target) - torch.mean(q_pi)
+        return total_loss
+        # return nn.MSELoss()(quality, target)
 
     def get_p_loss(self, state: np.ndarray) -> torch.Tensor:
         """
@@ -265,42 +280,55 @@ class DDPG:
         )
         return -torch.mean(q_pi)
 
-    def update_params(
-        self,
-        state: np.ndarray,
-        action: np.ndarray,
-        reward: float,
-        next_state: np.ndarray,
-        done: bool,
-    ) -> None:
+    def update_params(self, update_interval: int) -> None:
         """
         Takes the step for optimizer.
+
+        :param timestep: timestep
+        :type timestep: int
         """
-        self.optimizer_q.zero_grad()
-        loss_q = self.get_q_loss(state, action, reward, next_state, done)
-        loss_q.backward()
-        self.optimizer_q.step()
+        for timestep in range(update_interval):
+            batch = self.replay_buffer.sample(self.batch_size)
+            state, action, reward, next_state, done = (x.to(self.device) for x in batch)
 
-        # freeze critic params for policy update
-        for param in self.ac.critic.parameters():
-            param.requires_grad = False
+            # freeze critic params for policy update
+            for param in self.ac.critic.parameters():
+                param.requires_grad = False
 
-        self.optimizer_policy.zero_grad()
-        loss_p = self.get_p_loss(state)
-        loss_p.backward()
-        self.optimizer_policy.step()
+            self.optimizer_policy.zero_grad()
+            self.optimizer_q.zero_grad()
 
-        # unfreeze critic params
-        for param in self.ac.critic.parameters():
-            param.requires_grad = True
+            loss = self.get_q_loss(state, action, reward, next_state, done)
+            loss.backward()
 
-        # update target network
-        with torch.no_grad():
-            for param, param_target in zip(
-                self.ac.parameters(), self.ac_target.parameters()
-            ):
-                param_target.data.mul_(self.polyak)
-                param_target.data.add_((1 - self.polyak) * param.data)
+            self.optimizer_q.step()
+            self.optimizer_policy.step()
+
+            # self.optimizer_q.zero_grad()
+            # loss_q = self.get_q_loss(state, action, reward, next_state, done)
+            # loss_q.backward()
+            # self.optimizer_q.step()
+
+            # freeze critic params for policy update
+            # for param in self.ac.critic.parameters():
+            #     param.requires_grad = False
+
+            # self.optimizer_policy.zero_grad()
+            # loss_p = self.get_p_loss(state)
+            # loss_p.backward()
+            # self.optimizer_policy.step()
+
+            # unfreeze critic params
+            for param in self.ac.critic.parameters():
+                param.requires_grad = True
+
+            # update target network
+            with torch.no_grad():
+                for param, param_target in zip(
+                    self.ac.parameters(), self.ac_target.parameters()
+                ):
+                    param_target.data.mul_(self.polyak)
+                    param_target.data.add_((1 - self.polyak) * param.data)
 
     def learn(self):  # pragma: no cover
         state, episode_reward, episode_len, episode = (
@@ -317,7 +345,7 @@ class DDPG:
         for timestep in range(0, total_steps, self.env.n_envs):
             # execute single transition
             if timestep > self.start_steps:
-                action = self.select_action(state, deterministic=True)
+                action = self.select_action(state)
             else:
                 action = self.env.sample()
 
@@ -356,14 +384,7 @@ class DDPG:
 
             # update params
             if timestep >= self.start_update and timestep % self.update_interval == 0:
-                for _ in range(self.update_interval):
-                    batch = self.replay_buffer.sample(self.batch_size)
-                    states, actions, rewards, next_states, dones = (
-                        x.to(self.device) for x in batch
-                    )
-                    self.update_params(
-                        states, actions, rewards.unsqueeze(1), next_states, dones
-                    )
+                self.update_params(self.update_interval)
 
             if self.save_model is not None:
                 if timestep >= self.start_update and timestep % self.save_interval == 0:

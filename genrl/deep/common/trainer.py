@@ -277,20 +277,12 @@ many steps)
         self.rewards = [0]
 
         for timestep in range(0, total_steps, self.env.n_envs):
+            self.agent.update_params_before_select_action(timestep)
 
-            if self.agent.__class__.__name__ == "DQN":
-                self.agent.epsilon = self.agent.calculate_epsilon_by_frame(timestep)
-
-                action = self.agent.select_action(state)
-
+            if timestep < self.warmup_steps:
+                action = np.array(self.env.sample())
             else:
-                if timestep < self.warmup_steps:
-                    action = np.array(self.env.sample())
-                else:
-                    if self.deterministic_actions:
-                        action = self.agent.select_action(state, deterministic=True)
-                    else:
-                        action = self.agent.select_action(state)
+                action = self.agent.select_action(state)
 
             next_state, reward, done, _ = self.env.step(action)
 
@@ -332,37 +324,8 @@ many steps)
                         episode_len[i] = 0
                         episode += 1
 
-            # update params for DQN
-            if self.agent.__class__.__name__ == "DQN":
-                if self.agent.replay_buffer.pos > self.agent.batch_size:
-                    self.agent.update_params()
-
-                if timestep % self.update_interval == 0:
-                    self.agent.update_target_model()
-
-            # update params for other agents
-            else:
-                if (
-                    timestep >= self.start_update
-                    and timestep % self.update_interval == 0
-                ):
-                    for _ in range(self.update_interval):
-                        batch = self.buffer.sample(self.batch_size)
-                        states, actions, rewards, next_states, dones = (
-                            x.to(self.device) for x in batch
-                        )
-                        if self.agent.__class__.__name__ == "TD3":
-                            self.agent.update_params(
-                                states, actions, rewards, next_states, dones, _
-                            )
-                        elif self.agent.__class__.__name__ == "DDPG":
-                            self.agent.update_params(
-                                states, actions, rewards, next_states, dones
-                            )
-                        else:
-                            self.agent.update_params(
-                                states, actions, rewards, next_states, dones
-                            )
+            if timestep >= self.start_update and timestep % self.update_interval == 0:
+                self.agent.update_params(self.update_interval)
 
             if (
                 timestep >= self.start_update
