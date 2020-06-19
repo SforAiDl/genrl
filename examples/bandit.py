@@ -2,6 +2,7 @@ from typing import Any, Dict, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
+import torch
 
 from genrl.classical.bandit import *
 
@@ -241,7 +242,7 @@ demo_policy(
 # Examples of deep contextual bandits
 
 TIMESTEPS = 100
-ITERATIONS = 10
+ITERATIONS = 2
 BANDIT_ARGS = {}
 
 POLICY_ARGS_COLLECTION = [
