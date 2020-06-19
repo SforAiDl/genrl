@@ -3,12 +3,16 @@ from genrl.classical import BayesianUCBCBPolicy  # noqa
 from genrl.classical import BayesianUCBPolicy  # noqa
 from genrl.classical import BernoulliBandit  # noqa
 from genrl.classical import BernoulliCB  # noqa
+from genrl.classical import CovertypeDataBandit  # noqa
+from genrl.classical import DataBasedBandit  # noqa
 from genrl.classical import EpsGreedyCBPolicy  # noqa
 from genrl.classical import EpsGreedyPolicy  # noqa
 from genrl.classical import GaussianBandit  # noqa
 from genrl.classical import GaussianCB  # noqa
 from genrl.classical import GradientCBPolicy  # noqa
 from genrl.classical import GradientPolicy  # noqa
+from genrl.classical import LinearPosteriorAgent  # noqa
+from genrl.classical import NeuralLinearPosteriorAgent  # noqa
 from genrl.classical import QLearning  # noqa
 from genrl.classical import ThompsonSamplingCBPolicy  # noqa
 from genrl.classical import ThompsonSamplingPolicy  # noqa

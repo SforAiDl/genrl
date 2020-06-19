@@ -41,6 +41,36 @@ def demo_policy(
     plt.cla()
 
 
+def demo_dcb_policy(
+    policy_type: DCBAgent,
+    bandit_type: DataBasedBandit,
+    policy_args_collection: Dict[str, Any],
+    bandit_args: Dict[str, Any],
+    timesteps: int,
+    iterations: int,
+    verbose: bool = False,
+):
+    """ Plots rewards and regrets of a given policy on given bandit """
+
+    print(f"\nRunning {policy_type.__name__} on {bandit_type.__name__}")
+    _, axs = plt.subplots(1, 1, figsize=(5, 4))
+    for policy_args in policy_args_collection:
+        print(f"Running with policy parameters: = {policy_args}")
+        average_reward = torch.zeros(timesteps)
+        for i in range(iterations):
+            if verbose:
+                print(f"Iteration {i + 1}")
+            bandit = bandit_type(**bandit_args)
+            policy = policy_type(bandit, **policy_args)
+            policy.learn(timesteps)
+            average_reward += torch.tensor(policy.reward_hist) / float(iterations)
+        axs.plot(average_reward, label=f"{policy_args}")
+    axs.legend()
+    axs.set_title(f"{policy_type.__name__} Rewards on {bandit_type.__name__}")
+    plt.savefig(f"./logs/{policy_type.__name__}-on-{bandit_type.__name__}.png")
+    plt.cla()
+
+
 # Examples of regular bandits
 
 TIMESTEPS = 1000
@@ -206,4 +236,52 @@ demo_policy(
     BANDIT_ARGS,
     TIMESTEPS,
     ITERATIONS,
+)
+
+# Examples of deep contextual bandits
+
+TIMESTEPS = 100
+ITERATIONS = 10
+BANDIT_ARGS = {}
+
+POLICY_ARGS_COLLECTION = [
+    {
+        "init_pulls": 2,
+        "lambda_prior": 0.5,
+        "a0": 0.0,
+        "b0": 0.0,
+        "hidden_dims": [128],
+        "train_epochs": 5,
+        "lr": 1e-3,
+        "bayesian_update_interval": 1,
+        "nn_update_interval": 1,
+    }
+]
+demo_dcb_policy(
+    NeuralLinearPosteriorAgent,
+    CovertypeDataBandit,
+    POLICY_ARGS_COLLECTION,
+    BANDIT_ARGS,
+    TIMESTEPS,
+    ITERATIONS,
+    verbose=True,
+)
+
+POLICY_ARGS_COLLECTION = [
+    {
+        "init_pulls": 2,
+        "lambda_prior": 0.5,
+        "a0": 0.0,
+        "b0": 0.0,
+        "bayesian_update_interval": 1,
+    }
+]
+demo_dcb_policy(
+    LinearPosteriorAgent,
+    CovertypeDataBandit,
+    POLICY_ARGS_COLLECTION,
+    BANDIT_ARGS,
+    TIMESTEPS,
+    ITERATIONS,
+    verbose=True,
 )

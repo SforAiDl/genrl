@@ -10,6 +10,13 @@ from genrl.classical.bandit.contextual_policies import EpsGreedyCBPolicy  # noqa
 from genrl.classical.bandit.contextual_policies import GradientCBPolicy  # noqa
 from genrl.classical.bandit.contextual_policies import ThompsonSamplingCBPolicy  # noqa
 from genrl.classical.bandit.contextual_policies import UCBCBPolicy  # noqa
+from genrl.classical.bandit.data_bandits import CovertypeDataBandit  # noqa
+from genrl.classical.bandit.data_bandits import DataBasedBandit  # noqa
+from genrl.classical.bandit.dcb_agents import DCBAgent  # noqa
+from genrl.classical.bandit.dcb_agents import LinearPosteriorAgent  # noqa
+from genrl.classical.bandit.dcb_agents import NeuralBanditModel  # noqa
+from genrl.classical.bandit.dcb_agents import NeuralLinearPosteriorAgent  # noqa
+from genrl.classical.bandit.dcb_agents import TransitionDB  # noqa
 from genrl.classical.bandit.policies import BanditPolicy  # noqa
 from genrl.classical.bandit.policies import BayesianUCBPolicy  # noqa
 from genrl.classical.bandit.policies import EpsGreedyPolicy  # noqa
