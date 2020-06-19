@@ -1,15 +1,14 @@
-import torch
-from torchvision import transforms
-import numpy as np
-from collections import deque
-import gym
 from abc import ABC
+from typing import Any, List, Optional, Type, Union
 
-from .utils import set_seeds, save_params
+import gym
+import numpy as np
+import torch
+
+from ...environments import VecEnv
+from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
-from .VecEnv import venv
-from .buffers import ReplayBuffer, PrioritizedBuffer
-from typing import Union, Type, List, Optional, Any
+from .utils import save_params, set_seeds
 
 
 class Trainer(ABC):
@@ -17,15 +16,15 @@ class Trainer(ABC):
     Base Trainer class. To be inherited specific usecases.
 
     :param agent: Algorithm object
-    :param env: Standard gym environment
+    :param env: Environment
     :param logger: Logger object
     :param buffer: Buffer Object
     :param off_policy: Is the algorithm off-policy?
     :param save_interval: Model to save in each of these many timesteps
     :param render: Should the Environment render
     :param max_ep_len: Max Episode Length
-    :param distributed: True if distributed training is enabled, else \
-False (To be implemented)
+    :param distributed: (True if distributed training is enabled, else
+False (To be implemented))
     :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
@@ -56,7 +55,7 @@ False (To be implemented)
     def __init__(
         self,
         agent: Any,
-        env: Union[gym.Env, Type[venv]],
+        env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = False,
@@ -112,35 +111,40 @@ False (To be implemented)
         """
         raise NotImplementedError
 
-    def evaluate(self):
+    def evaluate(self) -> None:
         """
         Evaluate function
         """
-        ep, ep_r = 0, 0
+        ep, ep_r = 0, np.zeros(self.env.n_envs)
         ep_rews = []
         state = self.env.reset()
         while True:
-            if self.agent.__class__.__name__ == "DQN":
-                action = self.agent.select_action(state, explore=False)
-            else:
+            if self.off_policy:
                 action = self.agent.select_action(state)
+            else:
+                action, _, _ = self.agent.select_action(state)
+
+            if isinstance(action, torch.Tensor):
+                action = action.numpy()
+
             next_state, reward, done, _ = self.env.step(action)
             ep_r += reward
             state = next_state
-            if done:
-                ep += 1
-                ep_rews.append(ep_r)
-                state = self.env.reset()
-                ep_r = 0
-                if ep == self.evaluate_episodes:
-                    print(
-                        "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                            self.evaluate_episodes,
-                            np.around(np.mean(ep_rews), decimals=4),
-                            np.around(np.std(ep_rews), decimals=4),
-                        )
+            if np.any(done):
+                for i, di in enumerate(done):
+                    if di:
+                        ep += 1
+                        ep_rews.append(ep_r[i])
+                        ep_r[i] = 0
+            if ep == self.evaluate_episodes:
+                print(
+                    "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                        self.evaluate_episodes,
+                        np.around(np.mean(ep_rews), decimals=4),
+                        np.around(np.std(ep_rews), decimals=4),
                     )
-                    break
+                )
+                return
 
     @property
     def n_envs(self) -> int:
@@ -155,15 +159,15 @@ class OffPolicyTrainer(Trainer):
     Off-Policy Trainer class
 
     :param agent: Algorithm object
-    :param env: Standard gym environment
+    :param env: Environment
     :param logger: Logger object
     :param buffer: Buffer Object. Cannot be None for Off-policy
     :param off_policy: Is the algorithm off-policy?
     :param save_interval: Model to save in each of these many timesteps
     :param render: Should the Environment render
     :param max_ep_len: Max Episode Length
-    :param distributed: Should distributed training be enabled? \
-(To be implemented)
+    :param distributed: (Should distributed training be enabled?
+(To be implemented))
     :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
@@ -172,10 +176,10 @@ class OffPolicyTrainer(Trainer):
     :param batch_size: Size of batch
     :param seed: Set seed for reproducibility
     :param deterministic_actions: Take deterministic actions during training.
-    :param warmup_steps: Observe the environment for these many steps \
-with randomly sampled actions to store in buffer.
-    :param start_update: Starting updating the policy after these \
-many steps
+    :param warmup_steps: (Observe the environment for these many steps
+with randomly sampled actions to store in buffer.)
+    :param start_update: (Starting updating the policy after these
+many steps)
     :param update_interval: Update model policies after number of steps.
     :type agent: object
     :type env: object
@@ -202,7 +206,7 @@ many steps
     def __init__(
         self,
         agent: Any,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = True,
@@ -250,33 +254,17 @@ many steps
         self.start_update = start_update
         self.network_type = self.agent.network_type
 
-        if self.network_type == "cnn":
-            if self.transform is None:
-                self.transform = transforms.Compose(
-                    [
-                        transforms.ToPILImage(),
-                        transforms.Grayscale(),
-                        transforms.Resize((110, 84)),
-                        transforms.CenterCrop(84),
-                        transforms.ToTensor(),
-                    ]
-                )
-
-            self.state_history = deque(
-                [
-                    self.transform(self.env.observation_space.sample())
-                    for _ in range(self.history_length)
-                ],
-                maxlen=self.history_length,
-            )
-
     def train(self) -> None:
         """
         Run training
         """
-        state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
-        total_steps = self.steps_per_epoch * self.epochs
-        # self.agent.learn()
+        state, episode_reward, episode_len, episode = (
+            self.env.reset(),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+        )
+        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
@@ -284,94 +272,68 @@ many steps
         if self.agent.__class__.__name__ == "DQN":
             self.agent.update_target_model()
 
-            if self.network_type == "cnn":
-                self.state_history.append(self.transform(state))
-                phi_state = torch.stack(list(self.state_history), dim=1)
+        assert self.update_interval % self.env.n_envs == 0
 
-        for t in range(total_steps):
-            if self.agent.__class__.__name__ == "DQN":
-                self.agent.epsilon = self.agent.calculate_epsilon_by_frame(t)
+        self.rewards = [0]
 
-                if self.network_type == "cnn":
-                    action = self.agent.select_action(phi_state)
-                else:
-                    action = self.agent.select_action(state)
+        for timestep in range(0, total_steps, self.env.n_envs):
+            self.agent.update_params_before_select_action(timestep)
 
+            if timestep < self.warmup_steps:
+                action = np.array(self.env.sample())
             else:
-                if t < self.warmup_steps:
-                    action = self.env.action_space.sample()
-                else:
-                    if self.deterministic_actions:
-                        action = self.agent.select_action(state, deterministic=True)
-                    else:
-                        action = self.agent.select_action(state)
+                action = self.agent.select_action(state)
 
-            next_state, reward, done, info = self.env.step(action)
+            next_state, reward, done, _ = self.env.step(action)
+
             if self.render:
                 self.env.render()
 
             episode_reward += reward
             episode_len += 1
 
-            done = False if episode_len == self.max_ep_len else done
+            done = [
+                False if episode_len[i] == self.max_ep_len else done[i]
+                for i, ep_len in enumerate(episode_len)
+            ]
 
-            if self.agent.__class__.__name__ == "DQN" and self.network_type == "cnn":
-                self.state_history.append(self.transform(next_state))
-                phi_next_state = torch.stack(list(self.state_history), dim=1)
-                self.buffer.push((phi_state, action, reward, phi_next_state, done))
-                phi_state = phi_next_state
-            else:
-                self.buffer.push((state, action, reward, next_state, done))
-                state = next_state
+            self.buffer.extend(zip(state, action, reward, next_state, done))
+            state = next_state.copy()
 
-            if done or (episode_len == self.max_ep_len):
+            if np.any(done) or np.any(episode_len == self.max_ep_len):
                 if "noise" in self.agent.__dict__ and self.agent.noise is not None:
                     self.agent.noise.reset()
 
-                if episode % self.log_interval == 0:
+                if sum(episode) % self.log_interval == 0:
+                    # print(self.rewards)
                     self.logger.write(
                         {
-                            "timestep": t,
-                            "Episode": episode,
-                            "Episode Reward": np.around(episode_reward, decimals=4),
+                            "timestep": timestep,
+                            "Episode": sum(episode),
+                            "Episode Reward": np.around(
+                                np.mean(self.rewards), decimals=4
+                            ),
                         }
                     )
+                    self.rewards = [0]
 
-                state, episode_reward, episode_len = self.env.reset(), 0, 0
-                episode += 1
+                for i, di in enumerate(done):
+                    if di:
+                        self.rewards.append(episode_reward[i])
+                        episode_reward[i] = 0
+                        episode_len[i] = 0
+                        episode += 1
 
-            # update params for DQN
-            if self.agent.__class__.__name__ == "DQN":
-                if self.agent.replay_buffer.get_len() > self.agent.batch_size:
-                    self.agent.update_params()
-
-                if t % self.update_interval == 0:
-                    self.agent.update_target_model()
-
-            # update params for other agents
-            else:
-                if t >= self.start_update and t % self.update_interval == 0:
-                    for _ in range(self.update_interval):
-                        batch = self.buffer.sample(self.batch_size)
-                        states, actions, next_states, rewards, dones = (
-                            x.to(self.device) for x in batch
-                        )
-                        if self.agent.__class__.__name__ == "TD3":
-                            self.agent.update_params(
-                                states, actions, next_states, rewards, dones, _
-                            )
-                        else:
-                            self.agent.update_params(
-                                states, actions, next_states, rewards, dones
-                            )
+            if timestep >= self.start_update and timestep % self.update_interval == 0:
+                self.agent.update_params(self.update_interval)
 
             if (
-                t >= self.start_update
+                timestep >= self.start_update
                 and self.save_interval != 0
-                and t % self.save_interval == 0
+                and timestep % self.save_interval == 0
             ):
                 self.checkpoint = self.agent.get_hyperparams()
-                save_params(self.agent, t)
+                save_params(self.agent, timestep)
 
         self.env.close()
         self.logger.close()
@@ -382,15 +344,15 @@ class OnPolicyTrainer(Trainer):
     Base Trainer class. To be inherited specific usecases.
 
     :param agent: Algorithm object
-    :param env: Standard gym environment
+    :param env: Environment
     :param logger: Logger Object
     :param buffer: Buffer Object
     :param off_policy: Is the algorithm off-policy?
     :param save_interval: Model to save in each of these many timesteps
     :param render: Should the Environment render
     :param max_ep_len: Max Episode Length
-    :param distributed: Should distributed training be enabled? \
-(To be implemented)
+    :param distributed: (Should distributed training be enabled?
+(To be implemented))
     :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
@@ -421,7 +383,7 @@ class OnPolicyTrainer(Trainer):
     def __init__(
         self,
         agent: Any,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
         save_interval: int = 0,
         render: bool = False,
@@ -464,56 +426,31 @@ class OnPolicyTrainer(Trainer):
         """
         Run training.
         """
-        for episode in range(self.epochs):
+        state = self.env.reset()
+        for epoch in range(self.epochs):
+            self.agent.epoch_reward = np.zeros(self.env.n_envs)
 
-            epoch_reward = 0
+            self.agent.rollout.reset()
+            self.agent.rewards = []
 
-            for i in range(self.agent.actor_batch_size):
+            values, done = self.agent.collect_rollouts(state)
 
-                state = self.env.reset()
-                done = False
+            self.agent.get_traj_loss(values, done)
 
-                for t in range(self.agent.timesteps_per_actorbatch):
-                    if self.deterministic_actions:
-                        action = self.agent.select_action(state, deterministic=True)
-                    else:
-                        action = self.agent.select_action(state)
-                    state, reward, done, _ = self.env.step(np.array(action))
+            self.agent.update_policy()
 
-                    if self.render:
-                        self.env.render()
-
-                    self.agent.traj_reward.append(reward)
-
-                    if done:
-                        break
-
-                epoch_reward += (
-                    np.sum(self.agent.traj_reward) / self.agent.actor_batch_size
-                )
-                self.agent.get_traj_loss()
-
-            if self.agent.__class__.__name__ == "PPO1":
-                self.agent.update(
-                    episode, episode % self.agent.policy_copy_interval == 0
-                )
-            else:
-                self.agent.update(episode)
-
-            if episode % self.log_interval == 0:
+            if epoch % self.log_interval == 0:
                 self.logger.write(
                     {
-                        "Episode": episode,
-                        "Reward": np.around(epoch_reward, decimals=4),
-                        "Timestep": (i * episode * self.agent.timesteps_per_actorbatch),
+                        "Episode": epoch,
+                        "Reward": np.mean(self.agent.rewards),
+                        "Timestep": epoch * self.agent.rollout_size,
                     }
                 )
 
-            if self.save_interval != 0 and episode % self.save_interval == 0:
+            if self.save_interval != 0 and epoch % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
-                save_params(
-                    self.agent, i * episode * self.agent.timesteps_per_actorbatch
-                )
+                save_params(self.agent, epoch * self.agent.timesteps_per_actorbatch)
 
         self.env.close()
         self.logger.close()

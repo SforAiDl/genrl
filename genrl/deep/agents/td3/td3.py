@@ -1,19 +1,20 @@
+from copy import deepcopy
+from typing import Any, Dict, Optional, Tuple, Union
+
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
-import gym
-from copy import deepcopy
 
+from ....environments import VecEnv
 from ...common import (
     ReplayBuffer,
-    get_model,
-    save_params,
-    load_params,
     get_env_properties,
+    get_model,
+    load_params,
+    save_params,
     set_seeds,
-    venv,
 )
-from typing import Tuple, Union, Dict, Optional, Any
 
 
 class TD3:
@@ -21,7 +22,7 @@ class TD3:
     Twin Delayed DDPG
 
     Paper: https://arxiv.org/abs/1509.02971
-    
+
     :param network_type: (str) The deep neural network layer types ['mlp']
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
@@ -37,6 +38,7 @@ class TD3:
     :param steps_per_epoch: (int) Number of steps per epoch
     :param noise_std: (float) Standard deviation for action noise
     :param max_ep_len: (int) Maximum steps per episode
+    :param deterministic_actions: True if actions are deterministic
     :param start_update: (int) Number of steps before first parameter update
     :param update_interval: (int) Number of steps between parameter updates
     :param save_interval: (int) Number of steps between saves of models
@@ -55,6 +57,32 @@ class TD3:
     :param run_num: model run number if it has already been trained
     :param save_model: model save directory
     :param load_model: model loading path
+    :type network_type: str
+    :type env: Gym environment
+    :type gamma: float
+    :type replay_size: int
+    :type batch_size: int
+    :type lr_p: float
+    :type lr_q: float
+    :type polyak: float
+    :type policy_frequency: int
+    :type epochs: int
+    :type start_steps: int
+    :type steps_per_epoch: int
+    :type noise_std: float
+    :type max_ep_len: int
+    :type deterministic_actions: bool
+    :type start_update: int
+    :type update_interval: int
+    :type save_interval: int
+    :type layers: tuple or list
+    :type tensorboard_log: str
+    :type seed: int
+    :type render: boolean
+    :type device: str
+    :type run_num: boolean
+    :type save_name: str
+    :type save_version: int
     :type run_num: int
     :type save_model: string
     :type load_model: string
@@ -63,7 +91,7 @@ class TD3:
     def __init__(
         self,
         network_type: str,
-        env: Union[gym.Env, venv],
+        env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 100,
@@ -77,6 +105,7 @@ class TD3:
         noise: Optional[Any] = None,
         noise_std: float = 0.1,
         max_ep_len: int = 1000,
+        deterministic_actions: bool = False,
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (256, 256),
@@ -105,6 +134,7 @@ class TD3:
         self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
+        self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
         self.save_interval = save_interval
@@ -140,11 +170,10 @@ class TD3:
 
     def create_model(self) -> None:
         state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete == True:
+        if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
             )
-
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
@@ -179,7 +208,7 @@ class TD3:
         for param in self.ac_target.parameters():
             param.requires_grad = False
 
-        self.replay_buffer = ReplayBuffer(self.replay_size)
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
         self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
@@ -187,13 +216,20 @@ class TD3:
             self.ac.actor.parameters(), lr=self.lr_p
         )
 
-    def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """
+        Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        :param timestep: Timestep in the training process
+        :type timestep: int
+        """
+        pass
+
+    def select_action(self, state: np.ndarray) -> np.ndarray:
         with torch.no_grad():
             action = self.ac_target.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=deterministic,
+                deterministic=self.deterministic_actions,
             )[0].numpy()
 
         # add noise to output from policy network
@@ -208,9 +244,9 @@ class TD3:
         self,
         state: np.ndarray,
         action: np.ndarray,
-        reward: float,
+        reward: np.ndarray,
         next_state: np.ndarray,
-        done: bool,
+        done: np.ndarray,
     ) -> torch.Tensor:
         q1 = self.ac.qf1.get_value(torch.cat([state, action], dim=-1))
         q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
@@ -234,9 +270,9 @@ class TD3:
                     dim=-1,
                 )
             )
-            target_q = torch.min(target_q1, target_q2)
+            target_q = torch.min(target_q1, target_q2).unsqueeze(1)
 
-            target = reward + self.gamma * (1 - done) * target_q
+            target = reward.squeeze(1) + self.gamma * (1 - done) * target_q.squeeze(1)
 
         l1 = nn.MSELoss()(q1, target)
         l2 = nn.MSELoss()(q2, target)
@@ -249,56 +285,57 @@ class TD3:
         )
         return -torch.mean(q_pi)
 
-    def update_params(
-        self,
-        state: np.ndarray,
-        action: np.ndarray,
-        reward: float,
-        next_state: np.ndarray,
-        done: bool,
-        timestep: int,
-    ) -> None:
-        self.optimizer_q.zero_grad()
-        loss_q = self.get_q_loss(state, action, reward, next_state, done)
-        loss_q.backward()
-        self.optimizer_q.step()
+    def update_params(self, update_interval: int) -> None:
+        for timestep in range(update_interval):
+            batch = self.replay_buffer.sample(self.batch_size)
+            state, action, reward, next_state, done = (x.to(self.device) for x in batch)
+            self.optimizer_q.zero_grad()
+            # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
+            loss_q = self.get_q_loss(state, action, reward, next_state, done)
+            loss_q.backward()
+            self.optimizer_q.step()
 
-        # Delayed Update
-        if timestep % self.policy_frequency == 0:
-            # freeze critic params for policy update
-            for param in self.q_params:
-                param.requires_grad = False
+            # Delayed Update
+            if timestep % self.policy_frequency == 0:
+                # freeze critic params for policy update
+                for param in self.q_params:
+                    param.requires_grad = False
 
-            self.optimizer_policy.zero_grad()
-            loss_p = self.get_p_loss(state)
-            loss_p.backward()
-            self.optimizer_policy.step()
+                self.optimizer_policy.zero_grad()
+                loss_p = self.get_p_loss(state)
+                loss_p.backward()
+                self.optimizer_policy.step()
 
-            # unfreeze critic params
-            for param in self.ac.critic.parameters():
-                param.requires_grad = True
+                # unfreeze critic params
+                for param in self.ac.critic.parameters():
+                    param.requires_grad = True
 
-            # update target network
-            with torch.no_grad():
-                for param, param_target in zip(
-                    self.ac.parameters(), self.ac_target.parameters()
-                ):
-                    param_target.data.mul_(self.polyak)
-                    param_target.data.add_((1 - self.polyak) * param.data)
+                # update target network
+                with torch.no_grad():
+                    for param, param_target in zip(
+                        self.ac.parameters(), self.ac_target.parameters()
+                    ):
+                        param_target.data.mul_(self.polyak)
+                        param_target.data.add_((1 - self.polyak) * param.data)
 
     def learn(self) -> None:  # pragma: no cover
-        state, episode_reward, episode_len, episode = self.env.reset(), 0, 0, 0
-        total_steps = self.steps_per_epoch * self.epochs
+        state, episode_reward, episode_len, episode = (
+            self.env.reset(),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+            np.zeros(self.env.n_envs),
+        )
+        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
         if self.noise is not None:
             self.noise.reset()
 
-        for t in range(total_steps):
+        for timestep in range(0, total_steps, self.env.n_envs):
             # execute single transition
-            if t > self.start_steps:
-                action = self.select_action(state, deterministic=True)
+            if timestep > self.start_steps:
+                action = self.select_action(state)
             else:
-                action = self.env.action_space.sample()
+                action = self.env.sample()
 
             next_state, reward, done, _ = self.env.step(action)
             if self.render:
@@ -306,43 +343,58 @@ class TD3:
             episode_reward += reward
             episode_len += 1
 
-            # dont set done to True if max_ep_len reached
-            done = False if episode_len == self.max_ep_len else done
+            # dont set d to True if max_ep_len reached
+            # done = self.env.n_envs*[False] if np.any(episode_len == self.max_ep_len) else done
+            done = np.array(
+                [
+                    False if episode_len[i] == self.max_ep_len else done[i]
+                    for i, ep_len in enumerate(episode_len)
+                ]
+            )
 
-            self.replay_buffer.push((state, action, reward, next_state, done))
+            self.replay_buffer.extend(zip(state, action, reward, next_state, done))
 
             state = next_state
 
-            if done or (episode_len == self.max_ep_len):
+            if np.any(done) or np.any(episode_len == self.max_ep_len):
+
+                if sum(episode) % 20 == 0:
+                    print(
+                        "Ep: {}, reward: {}, t: {}".format(
+                            sum(episode), np.mean(episode_reward), timestep
+                        )
+                    )
+
+                for i, di in enumerate(done):
+                    # print(d)
+                    if di or episode_len[i] == self.max_ep_len:
+                        episode_reward[i] = 0
+                        episode_len[i] = 0
+                        episode += 1
 
                 if self.noise is not None:
                     self.noise.reset()
 
-                if episode % 20 == 0:
-                    print(
-                        "Episode: {}, Reward: {}, Timestep: {}".format(
-                            episode, episode_reward, t
-                        )
-                    )
                 if self.tensorboard_log:
-                    self.writer.add_scalar("episode_reward", episode_reward, t)
+                    self.writer.add_scalar(
+                        "episode_reward", np.mean(episode_reward), timestep
+                    )
 
-                state, episode_reward, episode_len = self.env.reset(), 0, 0
+                state, episode_reward, episode_len = (
+                    self.env.reset(),
+                    np.zeros(self.env.n_envs),
+                    np.zeros(self.env.n_envs),
+                )
                 episode += 1
 
             # update params
-            if t >= self.start_update and t % self.update_interval == 0:
-                for _ in range(self.update_interval):
-                    batch = self.replay_buffer.sample(self.batch_size)
-                    states, actions, next_states, rewards, dones = (
-                        x.to(self.device) for x in batch
-                    )
-                    self.update_params(states, actions, next_states, rewards, dones, t)
+            if timestep >= self.start_update and timestep % self.update_interval == 0:
+                self.update_params(self.update_interval)
 
             if self.save_model is not None:
-                if t >= self.start_update and t % self.save_interval == 0:
+                if timestep >= self.start_update and timestep % self.save_interval == 0:
                     self.checkpoint = self.get_hyperparams()
-                    self.save(self, t)
+                    self.save(self, timestep)
                     print("Saved current model")
 
         self.env.close()

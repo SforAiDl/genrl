@@ -1,9 +1,10 @@
-import numpy as np
+from typing import Any, List, Optional, Tuple
+
 import gym
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .models import get_model_from_name
-from typing import Any, Optional, Tuple, List
 
 
 class Trainer:
@@ -66,7 +67,7 @@ class Trainer:
         if seed is not None:
             np.random.seed(seed)
 
-        if self.planning == True and model is not None:
+        if self.planning is True and model is not None:
             self.model = get_model_from_name(model)(
                 self.env.observation_space.n, self.env.action_space.n
             )
@@ -84,10 +85,10 @@ class Trainer:
         """
         plans on samples drawn from model
         """
-        for i in range(self.plan_n_steps):
-            s, a = self.model.sample()
-            r, s_ = self.model.step(s, a)
-            self.agent.update((s, a, r, s_))
+        for _ in range(self.plan_n_steps):
+            state, action = self.model.sample()
+            reward, next_state = self.model.step(state, action)
+            self.agent.update((state, action, reward, next_state))
 
     def train(self) -> List[float]:
         """
@@ -106,20 +107,20 @@ class Trainer:
                 action = self.agent.get_action(state)
 
             next_state, reward, done, _ = self.env.step(action)
-            if self.render == True:
+            if self.render:
                 self.env.render()
             ep_rew += reward
 
-            if self.learning == True:
+            if self.learning:
                 self.learn((state, action, reward, next_state))
 
-            if self.planning == True and timestep > self.start_plan:
+            if self.planning is True and timestep > self.start_plan:
                 self.model.add(state, action, reward, next_state)
                 if not self.model.is_empty():
                     self.plan()
 
             state = next_state
-            if done == True:
+            if done:
                 ep_rews.append(ep_rew)
                 if ep % self.evaluate_frequency == 0:
                     print("Evaluating at the episode number: {}".format(ep))
@@ -155,7 +156,7 @@ class Trainer:
 
             state = next_state
             ep_rew += reward
-            if done == True:
+            if done:
                 ep_rews.append(ep_rew)
                 ep += 1
                 if ep == 100:
@@ -187,19 +188,19 @@ class Trainer:
 
 if __name__ == "__main__":
     env = gym.make("FrozenLake-v0")
-    agent = QLearning(env, epsilon=0.6, lr=0.1)
-    trainer = Trainer(
-        agent,
-        env,
-        mode="dyna",
-        model="tabular",
-        seed=42,
-        n_episodes=1000,
-        start_steps=0,
-        evaluate_frequency=500,
-    )
-    ep_rs = trainer.train()
-    print("-" * 82)
-    print("Evaluating the learned model")
-    trainer.evaluate()
-    trainer.plot(ep_rs)
+    # agent = QLearning(env, epsilon=0.6, lr=0.1)
+    # trainer = Trainer(
+    #     agent,
+    #     env,
+    #     mode="dyna",
+    #     model="tabular",
+    #     seed=42,
+    #     n_episodes=1000,
+    #     start_steps=0,
+    #     evaluate_frequency=500,
+    # )
+    # ep_rs = trainer.train()
+    # print("-" * 82)
+    # print("Evaluating the learned model")
+    # trainer.evaluate()
+    # trainer.plot(ep_rs)

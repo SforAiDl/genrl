@@ -1,7 +1,9 @@
-from .base import BaseValue
-from .utils import mlp, cnn
-from typing import Tuple, Union, Type
+from typing import Tuple, Type, Union
+
 import numpy as np
+
+from .base import BaseValue
+from .utils import cnn, mlp
 
 
 def _get_val_model(
@@ -11,8 +13,8 @@ def _get_val_model(
     Returns Neural Network given specifications
 
     :param arch: Specifies type of architecture "mlp" for MLP layers
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param state_dim: State dimensions of environment
     :param action_dim: Action dimensions of environment
     :param hidden: Sizes of hidden layers
@@ -39,8 +41,8 @@ class MlpValue(BaseValue):
 
     :param state_dim: State dimensions of environment
     :param action_dim: Action dimensions of environment
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param hidden: Sizes of hidden layers
     :type state_dim: int
     :type action_dim: int
@@ -69,13 +71,13 @@ class CNNValue(BaseValue):
 
     :param state_dim: State dimension of environment
     :param action_dim: Action dimension of environment
-    :param history_length: Length of history of states
-    :param val_type: Specifies type of value function: \
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a)
+    :param framestack: Number of previous frames to stack together
+    :param val_type: Specifies type of value function: (
+"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param hidden: Sizes of hidden layers
     :type state_dim: int
     :type action_dim: int
-    :type history_length: int
+    :type framestack: int
     :type val_type: string
     :type hidden: tuple or list
     """
@@ -83,7 +85,7 @@ class CNNValue(BaseValue):
     def __init__(
         self,
         action_dim: int,
-        history_length: int = 4,
+        framestack: int = 4,
         val_type: str = "Qs",
         fc_layers: Tuple = (256,),
     ):
@@ -91,7 +93,7 @@ class CNNValue(BaseValue):
 
         self.action_dim = action_dim
 
-        self.conv, output_size = cnn((history_length, 16, 32))
+        self.conv, output_size = cnn((framestack, 16, 32))
 
         self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
 

@@ -1,8 +1,9 @@
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 from gym import spaces
 from torch.distributions import Categorical, Normal
-from typing import Tuple, Optional
 
 
 class BasePolicy(nn.Module):
@@ -70,8 +71,8 @@ class BasePolicy(nn.Module):
         Get action from policy based on input
 
         :param state: The state being passed as input to the policy
-        :param deterministic: True if the action space is deterministic, \
-else False
+        :param deterministic: (True if the action space is deterministic,
+else False)
         :type state: Tensor
         :type deterministic: boolean
         :returns: action
@@ -105,16 +106,16 @@ class BaseValue(nn.Module):
 
         self.model = None
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, inp: torch.Tensor) -> torch.Tensor:
         """
         Defines the computation performed at every call.
 
         :param x: Input to value function
         :type x: Tensor
         """
-        return self.model.forward(x)
+        return self.model.forward(inp)
 
-    def get_value(self, x: torch.Tensor) -> torch.Tensor:
+    def get_value(self, inp: torch.Tensor) -> torch.Tensor:
         """
         Get value from value function based on input
 
@@ -122,7 +123,7 @@ class BaseValue(nn.Module):
         :type x: Tensor
         :returns: Value
         """
-        return self.forward(x).squeeze(-1)
+        return self.forward(inp).squeeze(-1)
 
 
 class BaseActorCritic(nn.Module):
@@ -143,8 +144,8 @@ class BaseActorCritic(nn.Module):
         Get action from the Actor based on input
 
         :param state: The state being passed as input to the Actor
-        :param deterministic: True if the action space is deterministic, \
-else False
+        :param deterministic: (True if the action space is deterministic,
+else False)
         :type state: Tensor
         :type deterministic: boolean
         :returns: action

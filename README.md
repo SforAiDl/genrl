@@ -11,6 +11,7 @@
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/SforAiDl/genrl.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SforAiDl/genrl/context:python)
 [![codecov](https://codecov.io/gh/SforAiDl/genrl/branch/master/graph/badge.svg)](https://codecov.io/gh/SforAiDl/genrl)
 [![image](https://img.shields.io/badge/dynamic/json.svg?label=docs&url=https%3A%2F%2Fpypi.org%2Fpypi%2Fgenrl%2Fjson&query=%24.info.version&colorB=brightgreen&prefix=v)](https://sforaidl.github.io/genrl/)
+[![Maintainability](https://api.codeclimate.com/v1/badges/c3f6e7d31c078528e0e1/maintainability)](https://codeclimate.com/github/SforAiDl/genrl/maintainability)
 
 **GenRL is a PyTorch reinforcement learning library centered around reproducible and generalizable algorithm implementations.** 
 
@@ -45,9 +46,11 @@ If you intend to install the latest unreleased version of the library (i.e from 
 ## Usage
 To train a Soft Actor-Critic model from scratch on the `CartPole-v0` gym environment and log rewards on tensorboard
 ```python
-from genrl.deep.common import OffPolicyTrainer
-from genrl import SAC
 import gym
+
+from genrl import SAC, QLearning
+from genrl.classical.common import Trainer
+from genrl.deep.common import OffPolicyTrainer
 
 env = gym.make("CartPole-v0")
 agent = SAC('mlp', env)
@@ -57,9 +60,6 @@ trainer.train()
 
 To train a Tabular Dyna-Q model from scratch on the `FrozenLake-v0` gym environment and plot rewards:
 ```python
-from genrl.classical.common import Trainer
-from genrl import QLearning
-import gym
 
 env = gym.make("FrozenLake-v0")
 agent = QLearning(env)

@@ -95,8 +95,8 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
 
     def __call__(self) -> float:
         """
-        Return action noise randomly sampled from noise distribution \
-according to the Ornstein Uhlenbeck process
+        (Return action noise randomly sampled from noise distribution
+according to the Ornstein Uhlenbeck process)
         """
         noise = (
             self.noise_prev

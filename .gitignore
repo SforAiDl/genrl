@@ -9,4 +9,8 @@ checkpoints/
 .DS_Store
 *.csv
 *.log
+htmlcov
 logs/
+.coverage
+.mypy*
+*.pt
