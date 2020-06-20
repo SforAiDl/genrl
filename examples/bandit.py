@@ -243,7 +243,7 @@ demo_policy(
 
 TIMESTEPS = 100
 ITERATIONS = 2
-BANDIT_ARGS = {}
+BANDIT_ARGS = {"download": True}
 
 POLICY_ARGS_COLLECTION = [
     {

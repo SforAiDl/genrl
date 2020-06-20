@@ -1,4 +1,2 @@
-from genrl.classical.bandit.data_bandits.data_bandit import (
-    CovertypeDataBandit,
-    DataBasedBandit,
-)
+from genrl.classical.bandit.data_bandits.covertype_bandit import CovertypeDataBandit
+from genrl.classical.bandit.data_bandits.data_bandit import DataBasedBandit

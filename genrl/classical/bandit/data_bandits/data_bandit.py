@@ -1,46 +1,46 @@
-import pathlib
+import urllib.request
+from pathlib import Path
+from typing import Tuple, Union
 
 import pandas as pd
 import torch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
-current_path = pathlib.Path(__file__).parent.absolute()
+
+
+def download_data(
+    path: str, url: str, force: bool = False, filename: Union[str, None] = None
+) -> str:
+    path = Path(path)
+    path.mkdir(parents=True, exist_ok=True)
+    if filename is None:
+        filename = Path(url).name
+    fpath = path.joinpath(filename)
+    if fpath.is_file() and not force:
+        return str(fpath)
+
+    try:
+        print(f"Downloading {url} to {fpath}")
+        urllib.request.urlretrieve(url, fpath)
+    except (urllib.error.URLError, IOError) as e:
+        if url[:5] == "https":
+            url = url.replace("https:", "http:")
+            print("Failed download. Trying https -> http instead.")
+            print(f" Downloading {url} to {path}")
+            urllib.request.urlretrieve(url, fpath)
+        else:
+            raise e
+
+    return str(fpath)
 
 
 class DataBasedBandit(object):
-    def __init__(self, path: str):
-        self.path = path
-        self.df = pd.read_csv(path, header=None)
+    def __init__(self):
         self.idx = 0
 
     def reset(self) -> torch.Tensor:
         raise NotImplementedError
 
-    def step(self, action: int) -> int:
+    def step(self, action: int) -> Tuple[torch.Tensor, int]:
         raise NotImplementedError
-
-
-class CovertypeDataBandit(DataBasedBandit):
-    def __init__(
-        self, path: pathlib.Path = current_path / "data/Covertype/covtype.data"
-    ):
-        super(CovertypeDataBandit, self).__init__(path)
-        self.n_actions = len(self.df.iloc[:, -1].unique())
-        self.context_dim = self.df.shape[1] - 1
-
-    def reset(self) -> torch.Tensor:
-        self.df = self.df.sample(frac=1).reset_index(drop=True)
-        self.idx = 0
-        return self._get_context()
-
-    def step(self, action: int) -> int:
-        label = self.df.iloc[self.idx, self.context_dim]
-        r = int(label == (action + 1))
-        self.idx += 1
-        return self._get_context(), r
-
-    def _get_context(self) -> torch.Tensor:
-        return torch.tensor(
-            self.df.iloc[self.idx, : self.context_dim], device=device, dtype=dtype
-        )

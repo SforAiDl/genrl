@@ -81,11 +81,11 @@ class TestBandit:
         policy.learn(10)
 
     def test_linear_posterior_agent(self) -> None:
-        bandit = CovertypeDataBandit()
+        bandit = CovertypeDataBandit(download=True)
         policy = LinearPosteriorAgent(bandit)
         policy.learn(10)
 
     def test_neural_linear_posterior_agent(self) -> None:
-        bandit = CovertypeDataBandit()
+        bandit = CovertypeDataBandit(download=True)
         policy = NeuralLinearPosteriorAgent(bandit)
         policy.learn(10)
