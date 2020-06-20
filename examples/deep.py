@@ -1,7 +1,8 @@
 import argparse
 
 from genrl import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
-from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer, venv
+from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
+from genrl.environments import VectorEnv
 
 
 def main():
@@ -11,6 +12,9 @@ def main():
     )
     parser.add_argument(
         "-e", "--env", help="Which env to train on", default="CartPole-v0", type=str
+    )
+    parser.add_argument(
+        "--env-type", help="What kind of env is it", default="gym", type=str
     )
     parser.add_argument(
         "-n",
@@ -45,10 +49,10 @@ def main():
 
     offpolicyargs = parser.add_argument_group("Off Policy Args")
     offpolicyargs.add_argument(
-        "-ws", "--warmup-steps", help="Warmup steps", default=1e5, type=int
+        "-ws", "--warmup-steps", help="Warmup steps", default=10000, type=int
     )
     offpolicyargs.add_argument(
-        "--replay-size", help="Replay Buffer Size", default=1e3, type=int
+        "--replay-size", help="Replay Buffer Size", default=1000, type=int
     )
 
     args = parser.parse_args()
@@ -64,7 +68,9 @@ def main():
     }
 
     algo = ALGOS[args.algo.lower()]
-    env = venv(args.env, args.n_envs, parallel=not args.serial)
+    env = VectorEnv(
+        args.env, n_envs=args.n_envs, parallel=not args.serial, env_type=args.env_type
+    )
 
     logger = get_logger(args.log)
 
@@ -85,11 +91,7 @@ def main():
 
     else:
         agent = algo(
-            args.arch,
-            env,
-            replay_size=args.replay_size,
-            batch_size=args.batch_size,
-            prioritized_replay=True,
+            args.arch, env, replay_size=args.replay_size, batch_size=args.batch_size
         )
         trainer = trainerclass(
             agent,
