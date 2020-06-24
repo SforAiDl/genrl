@@ -81,6 +81,7 @@ class HumanOutputFormat:
             print("\n", file=file)
             print("-" * 25, file=sys.stdout)
             for key, value in kvs.items():
+                value = round(value, 3)
                 len1 = len(str(key)) + 3
                 len2 = len(str(value))
                 final_len = 25 - len1 - len2

@@ -3,7 +3,7 @@ from typing import Any, Tuple
 import numpy as np
 
 from .utils import RunningMeanStd
-from .vec_wrappers import VecEnvWrapper
+from .wrappers import VecEnvWrapper
 from .vector_envs import VecEnv
 
 
@@ -101,7 +101,6 @@ class VecNormalize(VecEnvWrapper):
         :returns: Initial observations
         :rtype: Numpy Array
         """
-        self.returns = np.zeros((self.n_envs,), dtype=np.float32)
         states = self.venv.reset()
         return self._normalize(self.obs_rms, None, states)
 
