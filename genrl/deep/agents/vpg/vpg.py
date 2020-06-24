@@ -181,6 +181,7 @@ class VPG:
 
     def update_policy(self) -> None:
 
+        # what  is 256 
         for rollout in self.rollout.get(256):
 
             actions = rollout.actions
@@ -205,7 +206,7 @@ class VPG:
 
         state = initial_state
 
-        for i in range(2048):
+        for i in range(self.rollout_size):
 
             action, old_log_probs, _ = self.select_action(state)
 

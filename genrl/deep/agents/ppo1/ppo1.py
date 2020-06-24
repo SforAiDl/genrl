@@ -227,7 +227,7 @@ class PPO1:
 
         state = initial_state
 
-        for i in range(2048):
+        for i in range(self.rollout_size):
 
             with torch.no_grad():
                 action, values, old_log_probs = self.select_action(state)

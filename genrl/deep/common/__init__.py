@@ -25,3 +25,4 @@ from genrl.deep.common.values import CNNValue  # noqa
 from genrl.deep.common.values import MlpValue  # noqa
 from genrl.deep.common.values import _get_val_model  # noqa
 from genrl.deep.common.values import get_value_from_name  # noqa
+from genrl.deep.common.base_class import BaseAgent  # noqa

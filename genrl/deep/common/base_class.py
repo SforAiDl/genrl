@@ -1,15 +1,10 @@
-import gym
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as opt
 
 from abc import ABC, abstractmethod
-from genrl.environments import VecEnv
-from genrl.deep.common.buffers import *
-from genrl.deep.common.utils import *
-
 from typing import Optional, Dict, Any
+
+from genrl.deep.common.utils import set_seeds
 
 
 class BaseAgent(ABC):
