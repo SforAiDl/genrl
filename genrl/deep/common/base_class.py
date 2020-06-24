@@ -46,7 +46,7 @@ class BaseAgent(ABC):
     def create_model(self) -> None:
         """
         Initialize all the policy networks in this method, and also \
-        initialize the optimizers and the buffers. 
+        initialize the optimizers and the buffers.
         """
         raise NotImplementedError()
 
@@ -78,14 +78,14 @@ class BaseAgent(ABC):
 
     def update_params(self, update_interval: int) -> None:
         """
-        Takes the step for optimizer. 
+        Takes the step for optimizer.
         This internally call _get_loss().
         """
         raise NotImplementedError()
 
     def get_hyperparameters(self) -> Dict[str, Any]:
         """
-        Hyperparameters you want to return 
+        Hyperparameters you want to return
         """
         raise NotImplementedError()
 

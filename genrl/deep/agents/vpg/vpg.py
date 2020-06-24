@@ -181,7 +181,7 @@ class VPG:
 
     def update_policy(self) -> None:
 
-        # what  is 256 
+        # what  is 256
         for rollout in self.rollout.get(256):
 
             actions = rollout.actions
