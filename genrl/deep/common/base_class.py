@@ -1,8 +1,8 @@
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional, Tuple, Union
+
 import numpy as np
 import torch
-
-from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, Union, Tuple
 
 from genrl.deep.common.utils import set_seeds
 

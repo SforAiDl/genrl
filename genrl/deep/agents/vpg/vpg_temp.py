@@ -8,13 +8,13 @@ from torch.autograd import Variable
 
 from ....environments import VecEnv
 from ...common import (
+    BaseOnPolicyAgent,
     RolloutBuffer,
     get_env_properties,
     get_model,
     load_params,
     save_params,
     set_seeds,
-    BaseOnPolicyAgent,
 )
 
 
