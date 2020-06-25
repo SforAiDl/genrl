@@ -7,23 +7,15 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments import VecEnv
-from ...common import (
-    BaseOnPolicyAgent,
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    save_params,
-    set_seeds,
-)
+from ...common import OnPolicyAgent, RolloutBuffer, get_env_properties, get_model
 
 
-class VPG(BaseOnPolicyAgent):
+class VPG(OnPolicyAgent):
     def __init__(
         self,
         network_type: str,
         env: Union[gym.Env, VecEnv],
-        timesteps_per_actorbatch: int = 1000,
+        batch_size: int = 256,
         gamma: float = 0.99,
         actor_batch_size: int = 4,
         epochs: int = 1000,
@@ -44,7 +36,7 @@ class VPG(BaseOnPolicyAgent):
         super(VPG, self).__init__(
             network_type,
             env,
-            timesteps_per_actorbatch,
+            batch_size,
             layers,
             gamma,
             lr_policy,
@@ -60,7 +52,6 @@ class VPG(BaseOnPolicyAgent):
             save_interval,
             rollout_size,
         )
-        self.policy_copy_interval = policy_copy_interval
 
         self.create_model()
 
@@ -70,6 +61,7 @@ class VPG(BaseOnPolicyAgent):
         """
         state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
         # print(state_dim, action_dim, discrete)
+        # print(self.load)
         # Instantiate networks and optimizers
         self.actor = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
@@ -120,7 +112,7 @@ class VPG(BaseOnPolicyAgent):
         a, c = self.actor.get_action(state, deterministic=False)
         return c.log_prob(action)
 
-    def get__traj_loss(self, value, done):
+    def get_traj_loss(self, value, done):
         """
         Calculates the loss for the trajectory
         """
@@ -128,8 +120,7 @@ class VPG(BaseOnPolicyAgent):
 
     def update_policy(self) -> None:
 
-        # what  is 256
-        for rollout in self.rollout.get(256):
+        for rollout in self.rollout.get(self.batch_size):
 
             actions = rollout.actions
 
@@ -157,7 +148,7 @@ class VPG(BaseOnPolicyAgent):
 
             action, old_log_probs, _ = self.select_action(state)
 
-            next_state, reward, done, _ = self.env.step(action.numpy())
+            next_state, reward, dones, _ = self.env.step(action.numpy())
             self.epoch_reward += reward
 
             if self.render:
@@ -167,24 +158,21 @@ class VPG(BaseOnPolicyAgent):
                 state,
                 action.reshape(self.env.n_envs, 1),
                 reward,
-                done,
+                dones,
                 torch.Tensor([0] * self.env.n_envs),
                 old_log_probs.detach(),
             )
 
             state = next_state
 
-            for i, di in enumerate(done):
-                if di:
-                    self.rewards.append(self.epoch_reward[i])
-                    self.epoch_reward[i] = 0
+            self.collect_rewards(dones)
 
-        return torch.Tensor([0] * self.env.n_envs), done
+        return torch.Tensor([0] * self.env.n_envs), dones
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
-            "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
+            "batch_size": self.batch_size,
             "gamma": self.gamma,
             "actor_batch_size": self.actor_batch_size,
             "lr_policy": self.lr_policy,

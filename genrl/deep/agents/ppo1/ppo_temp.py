@@ -5,26 +5,17 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as opt
-from torch.autograd import Variable
 
 from ....environments import VecEnv
-from ...common import (
-    BaseOnPolicyAgent,
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    save_params,
-    set_seeds,
-)
+from ...common import OnPolicyAgent, RolloutBuffer, get_env_properties, get_model
 
 
-class PPO1(BaseOnPolicyAgent):
+class PPO1(OnPolicyAgent):
     def __init__(
         self,
         network_type: str,
         env: Union[gym.Env, VecEnv],
-        timesteps_per_actorbatch: int = 256,
+        batch_size: int = 256,
         gamma: float = 0.99,
         clip_param: float = 0.2,
         actor_batch_size: int = 64,
@@ -48,7 +39,7 @@ class PPO1(BaseOnPolicyAgent):
         super(PPO1, self).__init__(
             network_type,
             env,
-            timesteps_per_actorbatch,
+            batch_size,
             layers,
             gamma,
             lr_policy,
@@ -66,7 +57,6 @@ class PPO1(BaseOnPolicyAgent):
         )
 
         self.clip_param = clip_param
-        self.policy_copy_interval = policy_copy_interval
         self.entropy_coeff = entropy_coeff
         self.value_coeff = value_coeff
 
@@ -126,7 +116,7 @@ class PPO1(BaseOnPolicyAgent):
 
     def update_policy(self):
 
-        for rollout in self.rollout.get(256):
+        for rollout in self.rollout.get(self.batch_size):
             actions = rollout.actions
 
             if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -152,7 +142,7 @@ class PPO1(BaseOnPolicyAgent):
             entropy_loss = -torch.mean(entropy)  # Change this to entropy
 
             loss = (
-                policy_loss + self.ent_coef * entropy_loss
+                policy_loss + self.entropy_coeff * entropy_loss
             )  # + self.vf_coef * value_loss
 
             self.optimizer_policy.zero_grad()
@@ -164,3 +154,18 @@ class PPO1(BaseOnPolicyAgent):
             value_loss.backward()
             torch.nn.utils.clip_grad_norm_(self.value_fn.parameters(), 0.5)
             self.optimizer_value.step()
+
+    def get_hyperparams(self) -> Dict[str, Any]:
+        hyperparams = {
+            "network_type": self.network_type,
+            "batch_size": self.batch_size,
+            "gamma": self.gamma,
+            "clip_param": self.clip_param,
+            "actor_batch_size": self.actor_batch_size,
+            "lr_policy": self.lr_policy,
+            "lr_value": self.lr_value,
+            "policy_weights": self.policy_new.state_dict(),
+            "value_weights": self.value_fn.state_dict(),
+        }
+
+        return hyperparams

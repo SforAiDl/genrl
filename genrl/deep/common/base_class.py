@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Any, Dict, Optional, Tuple, Union
 
 import numpy as np
 import torch
 
-from genrl.deep.common.utils import set_seeds
+from genrl.deep.common.utils import load_params, save_params, set_seeds
 
 
 class BaseAgent(ABC):
@@ -90,12 +90,12 @@ class BaseAgent(ABC):
         raise NotImplementedError()
 
 
-class BaseOnPolicyAgent(BaseAgent):
+class OnPolicyAgent(BaseAgent):
     def __init__(
         self,
         network_type: str,
         env: Any,
-        timesteps_per_actorbatch: int = 256,
+        batch_size: int = 256,
         layers: Tuple = (64, 64),
         gamma: float = 0.99,
         lr_policy: float = 0.01,
@@ -111,7 +111,7 @@ class BaseOnPolicyAgent(BaseAgent):
         save_interval: int = 50,
         rollout_size: int = 2048,
     ):
-        super(BaseOnPolicyAgent, self).__init__(
+        super(OnPolicyAgent, self).__init__(
             network_type,
             env,
             epochs,
@@ -123,13 +123,21 @@ class BaseOnPolicyAgent(BaseAgent):
             load_model,
             save_interval,
         )
-        self.timesteps_per_actorbatch = timesteps_per_actorbatch
+        self.batch_size = batch_size
         self.gamma = gamma
         self.actor_batch_size = actor_batch_size
         self.lr_policy = lr_policy
         self.lr_value = lr_value
         self.layers = layers
         self.rollout_size = rollout_size
+        self.load = load_params
+        self.save = save_params
+
+    def collect_rewards(self, dones):
+        for i, done in enumerate(dones):
+            if done:
+                self.rewards.append(self.epoch_reward[i])
+                self.epoch_reward[i] = 0
 
     def collect_rollouts(self, initial_state):
 
@@ -151,14 +159,11 @@ class BaseOnPolicyAgent(BaseAgent):
                 reward,
                 dones,
                 values.detach(),
-                old_log_probs,
+                old_log_probs.detach(),
             )
 
             state = next_state
 
-            for i, done in enumerate(dones):
-                if done:
-                    self.rewards.append(self.epoch_reward[i])
-                    self.epoch_reward[i] = 0
+            self.collect_rewards(dones)
 
-        return values, done
+        return values, dones
