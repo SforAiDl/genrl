@@ -40,8 +40,8 @@ class PPO1(OnPolicyAgent):
         )
 
         self.clip_param = clip_param
-        self.entropy_coeff = kwargs.get('entropy_coeff', 0.01)
-        self.value_coeff = kwargs.get('value_coeff', 0.5)
+        self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
+        self.value_coeff = kwargs.get("value_coeff", 0.5)
 
         self.create_model()
 
@@ -115,7 +115,9 @@ class PPO1(OnPolicyAgent):
             ratio = torch.exp(log_prob - rollout.old_log_prob)
 
             policy_loss_1 = advantages * ratio
-            policy_loss_2 = advantages * torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
+            policy_loss_2 = advantages * torch.clamp(
+                ratio, 1 - self.clip_param, 1 + self.clip_param
+            )
             policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
 
             values = values.flatten()

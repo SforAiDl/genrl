@@ -8,27 +8,21 @@ from genrl.deep.common.utils import load_params, save_params, set_seeds
 
 
 class BaseAgent(ABC):
-    def __init__(
-        self,
-        network_type: str,
-        env: Any,
-        epochs: int = 100,
-        **kwargs
-    ):
+    def __init__(self, network_type: str, env: Any, epochs: int = 100, **kwargs):
         self.network_type = network_type
         self.env = env
         self.epochs = epochs
-        self.seed = kwargs.get('seed', None)
-        self.render = kwargs.get('render', False)
-        self.run_num = kwargs.get('run_num', None)
-        self.save_model = kwargs.get('save_model', None)
-        self.load_model = kwargs.get('load_model', None)
-        self.save_interval = kwargs.get('save_interval', 50)
+        self.seed = kwargs.get("seed", None)
+        self.render = kwargs.get("render", False)
+        self.run_num = kwargs.get("run_num", None)
+        self.save_model = kwargs.get("save_model", None)
+        self.load_model = kwargs.get("load_model", None)
+        self.save_interval = kwargs.get("save_interval", 50)
         self.observation_space = None
         self.action_space = None
 
         # Assign device
-        device = kwargs.get('device', "cpu")
+        device = kwargs.get("device", "cpu")
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
         else:
@@ -99,12 +93,7 @@ class OnPolicyAgent(BaseAgent):
         rollout_size: int = 2048,
         **kwargs
     ):
-        super(OnPolicyAgent, self).__init__(
-            network_type,
-            env,
-            epochs,
-            **kwargs
-        )
+        super(OnPolicyAgent, self).__init__(network_type, env, epochs, **kwargs)
         self.batch_size = batch_size
         self.gamma = gamma
         self.lr_policy = lr_policy

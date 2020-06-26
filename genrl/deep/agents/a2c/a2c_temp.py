@@ -45,8 +45,8 @@ class A2C(OnPolicyAgent):
         self.max_ep_len = max_ep_len
         self.noise = noise
         self.noise_std = noise_std
-        self.value_coeff = kwargs.get('value_coeff', 0.5)
-        self.entropy_coeff = kwargs.get('entropy_coeff', 0.01)
+        self.value_coeff = kwargs.get("value_coeff", 0.5)
+        self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
 
         self.create_model()
 
