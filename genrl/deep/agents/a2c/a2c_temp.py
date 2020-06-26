@@ -18,7 +18,6 @@ class A2C(OnPolicyAgent):
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
-        actor_batch_size: int = 64,
         lr_policy: float = 0.01,
         lr_value: float = 0.1,
         epochs: int = 100,
@@ -26,16 +25,8 @@ class A2C(OnPolicyAgent):
         layers: Tuple = (32, 32),
         noise: Any = None,
         noise_std: float = 0.1,
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 1000,
         rollout_size: int = 2048,
-        value_coeff: float = 0.5,
-        entropy_coeff: float = 0.01,
+        **kwargs
     ):
 
         super(A2C, self).__init__(
@@ -46,23 +37,16 @@ class A2C(OnPolicyAgent):
             gamma,
             lr_policy,
             lr_value,
-            actor_batch_size,
             epochs,
-            seed,
-            render,
-            device,
-            run_num,
-            save_model,
-            load_model,
-            save_interval,
             rollout_size,
+            **kwargs
         )
 
         self.max_ep_len = max_ep_len
         self.noise = noise
         self.noise_std = noise_std
-        self.value_coeff = value_coeff
-        self.entropy_coeff = entropy_coeff
+        self.value_coeff = kwargs.get('value_coeff', 0.5)
+        self.entropy_coeff = kwargs.get('entropy_coeff', 0.01)
 
         self.create_model()
 
@@ -176,7 +160,6 @@ calculate losses)
             "network_type": self.network_type,
             "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
             "gamma": self.gamma,
-            "actor_batch_size": self.actor_batch_size,
             "lr_actor": self.lr_actor,
             "lr_critic": self.lr_critic,
             "actor_weights": self.ac.actor.state_dict(),

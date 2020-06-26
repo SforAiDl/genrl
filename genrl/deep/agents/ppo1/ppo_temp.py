@@ -18,22 +18,12 @@ class PPO1(OnPolicyAgent):
         batch_size: int = 256,
         gamma: float = 0.99,
         clip_param: float = 0.2,
-        actor_batch_size: int = 64,
         epochs: int = 1000,
         lr_policy: float = 0.001,
         lr_value: float = 0.001,
         layers: Tuple = (64, 64),
-        policy_copy_interval: int = 20,
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 50,
         rollout_size: int = 2048,
-        entropy_coeff: float = 0.01,
-        value_coeff: float = 0.5,
+        **kwargs
     ):
 
         super(PPO1, self).__init__(
@@ -44,21 +34,14 @@ class PPO1(OnPolicyAgent):
             gamma,
             lr_policy,
             lr_value,
-            actor_batch_size,
             epochs,
-            seed,
-            render,
-            device,
-            run_num,
-            save_model,
-            load_model,
-            save_interval,
             rollout_size,
+            **kwargs
         )
 
         self.clip_param = clip_param
-        self.entropy_coeff = entropy_coeff
-        self.value_coeff = value_coeff
+        self.entropy_coeff = kwargs.get('entropy_coeff', 0.01)
+        self.value_coeff = kwargs.get('value_coeff', 0.5)
 
         self.create_model()
 
@@ -132,7 +115,7 @@ class PPO1(OnPolicyAgent):
             ratio = torch.exp(log_prob - rollout.old_log_prob)
 
             policy_loss_1 = advantages * ratio
-            policy_loss_2 = advantages * torch.clamp(ratio, 1 - 0.2, 1 + 0.2)
+            policy_loss_2 = advantages * torch.clamp(ratio, 1 - self.clip_param, 1 + self.clip_param)
             policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
 
             values = values.flatten()
@@ -161,7 +144,6 @@ class PPO1(OnPolicyAgent):
             "batch_size": self.batch_size,
             "gamma": self.gamma,
             "clip_param": self.clip_param,
-            "actor_batch_size": self.actor_batch_size,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
             "policy_weights": self.policy_new.state_dict(),

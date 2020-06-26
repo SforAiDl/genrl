@@ -17,20 +17,13 @@ class VPG(OnPolicyAgent):
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
-        actor_batch_size: int = 4,
         epochs: int = 1000,
         lr_policy: float = 0.01,
         lr_value: float = 0.0005,
         policy_copy_interval: int = 20,
         layers: Tuple = (32, 32),
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 50,
         rollout_size: int = 2048,
+        **kwargs
     ):
 
         super(VPG, self).__init__(
@@ -41,16 +34,9 @@ class VPG(OnPolicyAgent):
             gamma,
             lr_policy,
             lr_value,
-            actor_batch_size,
             epochs,
-            seed,
-            render,
-            device,
-            run_num,
-            save_model,
-            load_model,
-            save_interval,
             rollout_size,
+            **kwargs
         )
 
         self.create_model()
@@ -174,7 +160,6 @@ class VPG(OnPolicyAgent):
             "network_type": self.network_type,
             "batch_size": self.batch_size,
             "gamma": self.gamma,
-            "actor_batch_size": self.actor_batch_size,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
             "weights": self.ac.state_dict(),

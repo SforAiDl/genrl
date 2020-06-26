@@ -13,35 +13,30 @@ class BaseAgent(ABC):
         network_type: str,
         env: Any,
         epochs: int = 100,
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 50,
+        **kwargs
     ):
         self.network_type = network_type
         self.env = env
         self.epochs = epochs
-        self.seed = seed
-        self.render = render
-        self.run_num = run_num
-        self.save_model = save_model
-        self.load_model = load_model
-        self.save_interval = save_interval
+        self.seed = kwargs.get('seed', None)
+        self.render = kwargs.get('render', False)
+        self.run_num = kwargs.get('run_num', None)
+        self.save_model = kwargs.get('save_model', None)
+        self.load_model = kwargs.get('load_model', None)
+        self.save_interval = kwargs.get('save_interval', 50)
         self.observation_space = None
         self.action_space = None
 
         # Assign device
+        device = kwargs.get('device', "cpu")
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
         else:
             self.device = torch.device("cpu")
 
         # Assign seed
-        if seed is not None:
-            set_seeds(seed, self.env)
+        if self.seed is not None:
+            set_seeds(self.seed, self.env)
 
     def create_model(self) -> None:
         """
@@ -100,32 +95,18 @@ class OnPolicyAgent(BaseAgent):
         gamma: float = 0.99,
         lr_policy: float = 0.01,
         lr_value: float = 0.0005,
-        actor_batch_size: int = 64,
         epochs: int = 100,
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 50,
         rollout_size: int = 2048,
+        **kwargs
     ):
         super(OnPolicyAgent, self).__init__(
             network_type,
             env,
             epochs,
-            seed,
-            render,
-            device,
-            run_num,
-            save_model,
-            load_model,
-            save_interval,
+            **kwargs
         )
         self.batch_size = batch_size
         self.gamma = gamma
-        self.actor_batch_size = actor_batch_size
         self.lr_policy = lr_policy
         self.lr_value = lr_value
         self.layers = layers
