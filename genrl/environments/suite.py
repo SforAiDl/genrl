@@ -33,8 +33,6 @@ subprocesses, False if we want environments to run serially one after the other)
     else:
         venv = SerialVecEnv(envs, n_envs)
 
-    venv = VecNormalize(venv)
-
     return venv
 
 
