@@ -1,1 +1,1 @@
-from genrl.deep.agents.ppo1.ppo_temp import PPO1  # noqa
+from genrl.deep.agents.ppo1.ppo1 import PPO1  # noqa
