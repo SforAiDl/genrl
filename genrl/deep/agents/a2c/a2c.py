@@ -207,7 +207,7 @@ calculate losses)
             values, log_prob = self.get_value_log_probs(rollout.observations, actions)
 
             policy_loss = rollout.advantages * log_prob
-            policy_loss = -torch.sum(policy_loss)
+            policy_loss = -torch.mean(policy_loss)
             self.logs["policy_loss"].append(policy_loss.item())
 
             value_loss = self.val_coeff * F.mse_loss(rollout.returns, values)
