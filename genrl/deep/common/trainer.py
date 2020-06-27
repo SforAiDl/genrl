@@ -139,9 +139,7 @@ False (To be implemented))
             if ep == self.evaluate_episodes:
                 print(
                     "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                        self.evaluate_episodes,
-                        np.around(np.mean(ep_rews), decimals=4),
-                        np.around(np.std(ep_rews), decimals=4),
+                        self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews),
                     )
                 )
                 return
@@ -310,9 +308,7 @@ many steps)
                         {
                             "timestep": timestep,
                             "Episode": sum(episode),
-                            "Episode Reward": np.around(
-                                np.mean(self.rewards), decimals=4
-                            ),
+                            "Episode Reward": np.mean(self.rewards),
                         }
                     )
                     self.rewards = [0]

@@ -514,7 +514,7 @@ so no need to call the function explicitly.)
         :rtype: dict
         """
         logs = {
-            "value_loss": np.around(np.mean(self.logs["value_loss"]), decimals=4),
+            "value_loss": np.mean(self.logs["value_loss"]),
         }
 
         self.empty_logs()

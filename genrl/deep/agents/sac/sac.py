@@ -458,10 +458,10 @@ class SAC:
         :rtype: dict
         """
         logs = {
-            "policy_loss": np.around(np.mean(self.logs["policy_loss"]), decimals=4),
-            "q1_loss": np.around(np.mean(self.logs["q1_loss"]), decimals=4),
-            "q2_loss": np.around(np.mean(self.logs["q2_loss"]), decimals=4),
-            "alpha_loss": np.around(np.mean(self.logs["alpha_loss"]), decimals=4),
+            "policy_loss": np.mean(self.logs["policy_loss"]),
+            "q1_loss": np.mean(self.logs["q1_loss"]),
+            "q2_loss": np.mean(self.logs["q2_loss"]),
+            "alpha_loss": np.mean(self.logs["alpha_loss"]),
         }
 
         self.empty_logs()

@@ -408,8 +408,8 @@ class TD3:
         :rtype: dict
         """
         logs = {
-            "policy_loss": np.around(np.mean(self.logs["policy_loss"]), decimals=4),
-            "value_loss": np.around(np.mean(self.logs["value_loss"]), decimals=4),
+            "policy_loss": np.mean(self.logs["policy_loss"]),
+            "value_loss": np.mean(self.logs["value_loss"]),
         }
 
         self.empty_logs()
