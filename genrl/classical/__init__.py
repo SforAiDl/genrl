@@ -11,7 +11,10 @@ from genrl.classical.bandit import GaussianCB  # noqa
 from genrl.classical.bandit import GradientCBPolicy  # noqa
 from genrl.classical.bandit import GradientPolicy  # noqa
 from genrl.classical.bandit import LinearPosteriorAgent  # noqa
+from genrl.classical.bandit import MushroomDataBandit  # noqa
+from genrl.classical.bandit import NeuralGreedyAgent  # noqa
 from genrl.classical.bandit import NeuralLinearPosteriorAgent  # noqa
+from genrl.classical.bandit import StatlogDataBandit  # noqa
 from genrl.classical.bandit import ThompsonSamplingCBPolicy  # noqa
 from genrl.classical.bandit import ThompsonSamplingPolicy  # noqa
 from genrl.classical.bandit import UCBCBPolicy  # noqa

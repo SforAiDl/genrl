@@ -1,48 +1,45 @@
-import gzip
-import shutil
+import subprocess
 from pathlib import Path
 from typing import Tuple, Union
 
+import numpy as np
 import pandas as pd
 import torch
 
 from .data_bandit import DataBasedBandit, download_data
 
-URL = (
-    "https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz"
-)
+URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/shuttle/shuttle.trn.Z"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
 
 
-class CovertypeDataBandit(DataBasedBandit):
+class StatlogDataBandit(DataBasedBandit):
     def __init__(
         self,
-        path: str = "./data/Covertype/",
+        path: str = "./data/Statlog/",
         download: bool = False,
         force_download: bool = False,
         url: Union[str, None] = None,
     ):
-        super(CovertypeDataBandit, self).__init__()
+        super(StatlogDataBandit, self).__init__()
 
         if download:
             if url is None:
                 url = URL
-            gz_fpath = download_data(path, url, force_download)
-            with gzip.open(gz_fpath, "rb") as f_in:
-                fpath = Path(gz_fpath).parent.joinpath("covtype.data")
-                with open(fpath, "wb") as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            self.df = pd.read_csv(fpath, header=None, na_values=["?"]).dropna()
+            z_fpath = download_data(path, url, force_download)
+            subprocess.run(["uncompress", "-f", "-k", z_fpath])
+            fpath = Path(z_fpath).parent.joinpath("shuttle.trn")
+            self.df = pd.read_csv(fpath, header=None, delimiter=" ")
         else:
             if Path(path).is_dir():
-                path = Path(path).joinpath("covtype.data")
+                path = Path(path).joinpath("shuttle.trn")
             if Path(path).is_file():
-                self.df = pd.read_csv(path, header=None, na_values=["?"]).dropna()
+                self.df = pd.read_csv(path, header=None, delimiter=" ")
             else:
                 raise FileNotFoundError(
                     "File not found at location {path}, use download flag"
                 )
+
         self.n_actions = len(self.df.iloc[:, -1].unique())
         self.context_dim = self.df.shape[1] - 1
         self.len = len(self.df)
@@ -54,7 +51,7 @@ class CovertypeDataBandit(DataBasedBandit):
 
     def _compute_reward(self, action: int) -> Tuple[int, int]:
         label = self.df.iloc[self.idx, self.context_dim]
-        r = int(label == (action + 1))
+        r = int(label == action)
         return r, 1
 
     def _get_context(self) -> torch.Tensor:

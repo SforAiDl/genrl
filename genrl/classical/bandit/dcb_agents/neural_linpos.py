@@ -20,19 +20,19 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         a0: float = 0.0,
         b0: float = 0.0,
         hidden_dims: List[int] = [128],
-        train_epochs: int = 1,
+        train_epochs: int = 20,
         lr: float = 1e-3,
+        batch_size: int = 512,
         bayesian_update_interval: int = 1,
-        nn_update_interval: int = 1,
+        nn_update_interval: int = 20,
     ):
         super(NeuralLinearPosteriorAgent, self).__init__(bandit)
-        self.context_dim = self._bandit.context_dim
-        self.n_actions = self._bandit.n_actions
         self.init_pulls = init_pulls
         self.lambda_prior = lambda_prior
         self.a0 = a0
         self.b0 = b0
         self.latent_dim = hidden_dims[-1]
+        self.batch_size = batch_size
         self.model = NeuralBanditModel(
             self.context_dim, hidden_dims, self.n_actions, lr
         )
@@ -106,21 +106,15 @@ class NeuralLinearPosteriorAgent(DCBAgent):
 
     def update_params(self, context: torch.Tensor, action: int, reward: int):
         self.update_count += 1
-        self.reward_hist.append(reward)
         self.db.add(context, action, reward)
         latent_context, _ = self.model(context)
         self.latent_db.add(latent_context, action, reward)
 
         if self.update_count % self.nn_update_interval == 0:
-            x, y = self.db.get_data(action)
-            reward_vec = torch.zeros(
-                size=(y.shape[0], self.n_actions), device=device, dtype=dtype
-            )
-            reward_vec[:, action] = y.view(-1)
-            self.model.train(x, reward_vec, self.train_epochs)
+            self.model.train(self.db, self.train_epochs, self.batch_size)
 
         if self.update_count % self.bayesian_update_interval == 0:
-            z, y = self.latent_db.get_data(action)
+            z, y = self.latent_db.get_data_for_action(action)
             z = torch.cat([z, torch.ones(z.shape[0], 1)], dim=1)
             inv_cov = torch.mm(z.T, z) + self.lambda_prior * torch.eye(
                 self.latent_dim + 1

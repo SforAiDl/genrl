@@ -11,7 +11,10 @@ from genrl import (
     GradientCBPolicy,
     GradientPolicy,
     LinearPosteriorAgent,
+    MushroomDataBandit,
+    NeuralGreedyAgent,
     NeuralLinearPosteriorAgent,
+    StatlogDataBandit,
     ThompsonSamplingCBPolicy,
     ThompsonSamplingPolicy,
     UCBCBPolicy,
@@ -70,7 +73,7 @@ class TestBandit:
         policy = GradientCBPolicy(bandit)
         policy.learn(10)
 
-    def test_bayesian_ucv_bernoulli_cb(self) -> None:
+    def test_bayesian_ucb_bernoulli_cb(self) -> None:
         bandit = BernoulliCB(bandits=10, arms=10)
         policy = BayesianUCBCBPolicy(bandit)
         policy.learn(10)
@@ -80,6 +83,24 @@ class TestBandit:
         policy = ThompsonSamplingCBPolicy(bandit)
         policy.learn(10)
 
+    def test_covertype_data_bandit(self) -> None:
+        bandit = CovertypeDataBandit(download=True)
+        _ = bandit.reset()
+        for i in range(bandit.n_actions):
+            _, _ = bandit.step(i)
+
+    def test_mushroom_data_bandit(self) -> None:
+        bandit = MushroomDataBandit(download=True)
+        _ = bandit.reset()
+        for i in range(bandit.n_actions):
+            _, _ = bandit.step(i)
+
+    def test_statlog_data_bandit(self) -> None:
+        bandit = StatlogDataBandit(download=True)
+        _ = bandit.reset()
+        for i in range(bandit.n_actions):
+            _, _ = bandit.step(i)
+
     def test_linear_posterior_agent(self) -> None:
         bandit = CovertypeDataBandit(download=True)
         policy = LinearPosteriorAgent(bandit)
@@ -88,4 +109,9 @@ class TestBandit:
     def test_neural_linear_posterior_agent(self) -> None:
         bandit = CovertypeDataBandit(download=True)
         policy = NeuralLinearPosteriorAgent(bandit)
+        policy.learn(10)
+
+    def test_neural_greedy_agent(self) -> None:
+        bandit = CovertypeDataBandit(download=True)
+        policy = NeuralGreedyAgent(bandit)
         policy.learn(10)
