@@ -7,7 +7,8 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments import VecEnv
-from ...common import OnPolicyAgent, RolloutBuffer, get_env_properties, get_model
+from ...common import RolloutBuffer, get_env_properties, get_model
+from ..base import OnPolicyAgent
 
 
 class VPG(OnPolicyAgent):

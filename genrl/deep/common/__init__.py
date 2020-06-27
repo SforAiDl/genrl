@@ -1,6 +1,5 @@
 from genrl.deep.common.actor_critic import MlpActorCritic  # noqa
 from genrl.deep.common.actor_critic import get_actor_critic_from_name  # noqa
-from genrl.deep.common.base_class import BaseAgent, OnPolicyAgent  # noqa
 from genrl.deep.common.buffers import PrioritizedBuffer  # noqa
 from genrl.deep.common.buffers import PushReplayBuffer  # noqa
 from genrl.deep.common.buffers import ReplayBuffer  # noqa
