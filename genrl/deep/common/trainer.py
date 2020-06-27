@@ -322,7 +322,7 @@ many steps)
                         self.rewards.append(episode_reward[i])
                         episode_reward[i] = 0
                         episode_len[i] = 0
-                        episode += 1
+                        episode[i] += 1
 
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.agent.update_params(self.update_interval)

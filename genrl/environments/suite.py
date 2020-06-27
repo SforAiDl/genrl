@@ -3,7 +3,7 @@ from typing import List
 import gym
 
 from ..environments import AtariPreprocessing, FrameStack, GymWrapper, NoopReset
-from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv, VecNormalize
+from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
 def VectorEnv(

@@ -110,7 +110,6 @@ class HumanOutputFormat:
             self.maxlen = 15
 
     def round(self, num):
-        vlen = len(str(num))
         exponent_len = len(str(num // 1.0)[:-2])
         return round(num, self.maxlen - exponent_len)
 

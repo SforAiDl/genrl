@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 from torch.distributions import Normal
-from torch.utils.tensorboard import SummaryWriter
 
 from ....environments import VecEnv
 from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds
@@ -117,6 +116,7 @@ class SAC:
         self.save = save_params
         self.load = load_params
 
+        self.logs = {}
         self.logs["q1_loss"] = []
         self.logs["q2_loss"] = []
         self.logs["policy_loss"] = []
@@ -397,9 +397,7 @@ class SAC:
                 and i % self.update_interval == 0
                 and self.replay_buffer.pos > self.batch_size
             ):
-                q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
-                    self.update_interval
-                )
+                self.update_params(self.update_interval)
 
                 if self.save_model is not None:
                     if i >= self.start_update and i % self.save_interval == 0:

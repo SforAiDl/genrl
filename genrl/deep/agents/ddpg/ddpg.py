@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as opt
 
 from ....environments import VecEnv
