@@ -14,6 +14,7 @@ from ...common import (
     get_env_properties,
     get_model,
     load_params,
+    safe_mean,
     save_params,
     set_seeds,
 )
@@ -349,7 +350,7 @@ class DQN:
             else:
                 loss = (q_value - expected_q_value.detach()).pow(2).mean()
 
-        self.logs["value_loss"].append(loss)
+        self.logs["value_loss"].append(loss.item())
 
         return loss
 
@@ -514,7 +515,7 @@ so no need to call the function explicitly.)
         :rtype: dict
         """
         logs = {
-            "value_loss": np.mean(self.logs["value_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
         }
 
         self.empty_logs()

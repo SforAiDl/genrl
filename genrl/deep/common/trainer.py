@@ -222,7 +222,7 @@ many steps)
         batch_size: int = 50,
         seed: Optional[int] = 0,
         deterministic_actions: bool = False,
-        warmup_steps: int = 10000,
+        warmup_steps: int = 1000,
         start_update: int = 1000,
         update_interval: int = 50,
     ):
@@ -309,6 +309,7 @@ many steps)
                             "timestep": timestep,
                             "Episode": sum(episode),
                             "Episode Reward": np.mean(self.rewards),
+                            **self.agent.get_logging_params(),
                         }
                     )
                     self.rewards = [0]

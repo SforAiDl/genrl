@@ -12,6 +12,7 @@ from ...common import (
     get_env_properties,
     get_model,
     load_params,
+    safe_mean,
     save_params,
     set_seeds,
 )
@@ -310,6 +311,9 @@ class TD3:
                         param_target.data.mul_(self.polyak)
                         param_target.data.add_((1 - self.polyak) * param.data)
 
+                self.logs["policy_loss"].append(loss_p.item())
+                self.logs["value_loss"].append(loss_q.item())
+
     def learn(self) -> None:  # pragma: no cover
         state, episode_reward, episode_len, episode = (
             self.env.reset(),
@@ -408,8 +412,8 @@ class TD3:
         :rtype: dict
         """
         logs = {
-            "policy_loss": np.mean(self.logs["policy_loss"]),
-            "value_loss": np.mean(self.logs["value_loss"]),
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
         }
 
         self.empty_logs()

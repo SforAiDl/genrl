@@ -9,7 +9,14 @@ import torch.optim as opt
 from torch.distributions import Normal
 
 from ....environments import VecEnv
-from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds
+from ...common import (
+    ReplayBuffer,
+    get_model,
+    load_params,
+    safe_mean,
+    save_params,
+    set_seeds,
+)
 
 
 class SAC:
@@ -370,8 +377,10 @@ class SAC:
                     target_param.data * self.polyak + param.data * (1 - self.polyak)
                 )
 
-        # TO DO: Make a get_logging_params() for logging these
-        # return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
+        self.logs["q1_loss"].append(q1_loss.item())
+        self.logs["q2_loss"].append(q2_loss.item())
+        self.logs["policy_loss"].append(policy_loss.item())
+        self.logs["alpha_loss"].append(alpha_loss.item())
 
     def learn(self) -> None:  # pragma: no cover
 
@@ -458,10 +467,10 @@ class SAC:
         :rtype: dict
         """
         logs = {
-            "policy_loss": np.mean(self.logs["policy_loss"]),
-            "q1_loss": np.mean(self.logs["q1_loss"]),
-            "q2_loss": np.mean(self.logs["q2_loss"]),
-            "alpha_loss": np.mean(self.logs["alpha_loss"]),
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "q1_loss": safe_mean(self.logs["q1_loss"]),
+            "q2_loss": safe_mean(self.logs["q2_loss"]),
+            "alpha_loss": safe_mean(self.logs["alpha_loss"]),
         }
 
         self.empty_logs()

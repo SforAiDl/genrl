@@ -80,38 +80,61 @@ class HumanOutputFormat:
         :param kvs: Entries to be logged
         :type kvs: dict
         """
+        self.write_to_file(kvs, sys.stdout)
         with open(self.file, "a") as file:
-            if self.first:
-                self.first = False
-                self.max_key_len(kvs)
-                for key, value in kvs.items():
-                    # print('{}'.format(str(key)))
-                    print(
-                        "{}{}".format(str(key), " " * (self.maxlen - len(str(key)))),
-                        end="  ",
-                        file=sys.stdout,
-                    )
-                print()
+            self.write_to_file(kvs, file)
+
+    def write_to_file(self, kvs: Dict[str, Any], file=sys.stdout) -> None:
+        """
+        Log the entry out in human readable format
+
+        :param kvs: Entries to be logged
+        :param file: Name of file to write logs to
+        :type kvs: dict
+        :type file: io.TextIOWrapper
+        """
+        if self.first:
+            self.first = False
+            self.max_key_len(kvs)
             for key, value in kvs.items():
                 print(
-                    "{}{}".format(
-                        self.round(value), " " * (self.maxlen - len(str(value)))
-                    ),
+                    "{}{}".format(str(key), " " * (self.maxlen - len(str(key)))),
                     end="  ",
-                    file=sys.stdout,
+                    file=file,
                 )
-        print()
+            print()
+        for key, value in kvs.items():
+            rounded = self.round(value)
+            print(
+                "{}{}".format(rounded, " " * (self.maxlen - len(str(rounded)))),
+                end="  ",
+                file=file,
+            )
+        print("", file=file)
 
-    def max_key_len(self, kvs):
+    def max_key_len(self, kvs: Dict[str, Any]) -> None:
+        """
+        Finds max key length
+
+        :param kvs: Entries to be logged
+        :type kvs: dict
+        """
         self.lens = [len(str(key)) for key, value in kvs.items()]
         maxlen = max(self.lens)
         self.maxlen = maxlen
         if maxlen < 15:
             self.maxlen = 15
 
-    def round(self, num):
+    def round(self, num: float) -> float:
+        """
+        Returns a rounded float value depending on self.maxlen
+
+        :param num: Value to round
+        :type num: float
+        """
         exponent_len = len(str(num // 1.0)[:-2])
-        return round(num, self.maxlen - exponent_len)
+        rounding_len = min(self.maxlen - exponent_len, 4)
+        return round(num, rounding_len)
 
     def close(self) -> None:
         pass

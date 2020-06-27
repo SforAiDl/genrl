@@ -8,7 +8,14 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments.vec_env import VecEnv
-from ...common import RolloutBuffer, get_model, load_params, save_params, set_seeds
+from ...common import (
+    RolloutBuffer,
+    get_model,
+    load_params,
+    safe_mean,
+    save_params,
+    set_seeds,
+)
 
 
 class A2C:
@@ -322,10 +329,10 @@ space is discrete or not)
         """
 
         logs = {
-            "policy_loss": np.mean(self.logs["policy_loss"]),
-            "value_loss": np.mean(self.logs["value_loss"]),
-            "policy_entropy": np.mean(self.logs["policy_entropy"]),
-            "mean_reward": np.mean(self.rewards),
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
+            "policy_entropy": safe_mean(self.logs["policy_entropy"]),
+            "mean_reward": safe_mean(self.rewards),
         }
 
         self.empty_logs()
