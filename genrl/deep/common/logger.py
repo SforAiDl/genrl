@@ -69,6 +69,9 @@ class HumanOutputFormat:
 
     def __init__(self, logdir: str):
         self.file = os.path.join(logdir, "train.log")
+        self.first = True
+        self.lens = []
+        self.maxlen = 0
 
     def write(self, kvs: Dict[str, Any]) -> None:
         """
@@ -78,21 +81,38 @@ class HumanOutputFormat:
         :type kvs: dict
         """
         with open(self.file, "a") as file:
-            print("\n", file=file)
-            print("-" * 30, file=sys.stdout)
+            if self.first:
+                self.first = False
+                self.max_key_len(kvs)
+                for key, value in kvs.items():
+                    # print('{}'.format(str(key)))
+                    print(
+                        "{}{}".format(str(key), " " * (self.maxlen - len(str(key)))),
+                        end="  ",
+                        file=sys.stdout,
+                    )
+                print()
             for key, value in kvs.items():
-                len1 = len(str(key)) + 3
-                len2 = len(str(value))
-                final_len = 30 - len1 - len2
-                print("{}:{}".format(key, value), file=file)
                 print(
-                    "| {}:{}".format(key, value),
-                    " " * (final_len - 3),
-                    "|",
+                    "{}{}".format(
+                        self.round(value), " " * (self.maxlen - len(str(value)))
+                    ),
+                    end="  ",
                     file=sys.stdout,
                 )
-            print("-" * 30, file=sys.stdout)
-            print("\n", file=file)
+        print()
+
+    def max_key_len(self, kvs):
+        self.lens = [len(str(key)) for key, value in kvs.items()]
+        maxlen = max(self.lens)
+        self.maxlen = maxlen
+        if maxlen < 15:
+            self.maxlen = 15
+
+    def round(self, num):
+        vlen = len(str(num))
+        exponent_len = len(str(num // 1.0)[:-2])
+        return round(num, self.maxlen - exponent_len)
 
     def close(self) -> None:
         pass
