@@ -56,6 +56,7 @@ class VPG(OnPolicyAgent):
         gamma: float = 0.99,
         epochs: int = 1000,
         lr_policy: float = 0.01,
+        lr_value: float = 0.5,
         layers: Tuple = (32, 32),
         rollout_size: int = 2048,
         **kwargs
