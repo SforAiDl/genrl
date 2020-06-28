@@ -258,13 +258,13 @@ class DDPG:
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
 
-        q_pi = self.ac.get_value(
-            torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
-        )
+        # q_pi = self.ac.get_value(
+        #     torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
+        # )
 
-        total_loss = nn.MSELoss()(quality, target) - torch.mean(q_pi)
-        return total_loss
-        # return nn.MSELoss()(quality, target)
+        # total_loss = nn.MSELoss()(quality, target) - torch.mean(q_pi)
+        # return total_loss
+        return nn.MSELoss()(quality, target)
 
     def get_p_loss(self, state: np.ndarray) -> torch.Tensor:
         """
@@ -292,31 +292,31 @@ class DDPG:
             state, action, reward, next_state, done = (x.to(self.device) for x in batch)
 
             # freeze critic params for policy update
-            for param in self.ac.critic.parameters():
-                param.requires_grad = False
-
-            self.optimizer_policy.zero_grad()
-            self.optimizer_q.zero_grad()
-
-            loss = self.get_q_loss(state, action, reward, next_state, done)
-            loss.backward()
-
-            self.optimizer_q.step()
-            self.optimizer_policy.step()
-
-            # self.optimizer_q.zero_grad()
-            # loss_q = self.get_q_loss(state, action, reward, next_state, done)
-            # loss_q.backward()
-            # self.optimizer_q.step()
-
-            # freeze critic params for policy update
             # for param in self.ac.critic.parameters():
             #     param.requires_grad = False
 
             # self.optimizer_policy.zero_grad()
-            # loss_p = self.get_p_loss(state)
-            # loss_p.backward()
+            # self.optimizer_q.zero_grad()
+
+            # loss = self.get_q_loss(state, action, reward, next_state, done)
+            # loss.backward()
+
+            # self.optimizer_q.step()
             # self.optimizer_policy.step()
+
+            self.optimizer_q.zero_grad()
+            loss_q = self.get_q_loss(state, action, reward, next_state, done)
+            loss_q.backward()
+            self.optimizer_q.step()
+
+            # freeze critic params for policy update
+            for param in self.ac.critic.parameters():
+                param.requires_grad = False
+
+            self.optimizer_policy.zero_grad()
+            loss_p = self.get_p_loss(state)
+            loss_p.backward()
+            self.optimizer_policy.step()
 
             # unfreeze critic params
             for param in self.ac.critic.parameters():
