@@ -1,6 +1,6 @@
 import os
 import random
-from typing import Any, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import gym
 import numpy as np
@@ -243,3 +243,10 @@ def get_action_dim(action_space):
         return 1
     else:
         raise NotImplementedError()
+
+
+def safe_mean(log: List[int]):
+    """
+    Returns 0 if there are no elements in logs
+    """
+    return np.mean(log) if len(log) > 0 else 0

@@ -139,9 +139,7 @@ False (To be implemented))
             if ep == self.evaluate_episodes:
                 print(
                     "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                        self.evaluate_episodes,
-                        np.around(np.mean(ep_rews), decimals=4),
-                        np.around(np.std(ep_rews), decimals=4),
+                        self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews),
                     )
                 )
                 return
@@ -224,7 +222,7 @@ many steps)
         batch_size: int = 50,
         seed: Optional[int] = 0,
         deterministic_actions: bool = False,
-        warmup_steps: int = 10000,
+        warmup_steps: int = 1000,
         start_update: int = 1000,
         update_interval: int = 50,
     ):
@@ -305,9 +303,8 @@ many steps)
                         {
                             "timestep": timestep,
                             "Episode": sum(episode),
-                            "Episode Reward": np.around(
-                                np.mean(self.rewards), decimals=4
-                            ),
+                            "Episode Reward": np.mean(self.rewards),
+                            **self.agent.get_logging_params(),
                         }
                     )
                     self.rewards = [0]
@@ -317,7 +314,7 @@ many steps)
                         self.rewards.append(episode_reward[i])
                         episode_reward[i] = 0
                         episode_len[i] = 0
-                        episode += 1
+                        episode[i] += 1
 
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.agent.update_params(self.update_interval)
@@ -421,13 +418,13 @@ class OnPolicyTrainer(Trainer):
         """
         Run training.
         """
-        state = self.env.reset()
         for epoch in range(self.epochs):
             self.agent.epoch_reward = np.zeros(self.env.n_envs)
 
             self.agent.rollout.reset()
             self.agent.rewards = []
 
+            state = self.env.reset()
             values, done = self.agent.collect_rollouts(state)
 
             self.agent.get_traj_loss(values, done)
@@ -438,10 +435,13 @@ class OnPolicyTrainer(Trainer):
                 self.logger.write(
                     {
                         "Episode": epoch,
-                        "Reward": np.mean(self.agent.rewards),
                         "Timestep": epoch * self.agent.rollout_size,
+                        **self.agent.get_logging_params(),
                     }
                 )
+
+            if self.render:
+                self.env.render()
 
             if self.save_interval != 0 and epoch % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()

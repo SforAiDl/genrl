@@ -10,9 +10,9 @@ from torch.autograd import Variable
 from ....environments.vec_env import VecEnv
 from ...common import (
     RolloutBuffer,
-    get_env_properties,
     get_model,
     load_params,
+    safe_mean,
     save_params,
     set_seeds,
 )
@@ -36,8 +36,6 @@ class A2C:
     :param layers: Number of neurons in hidden layers
     :param noise: Noise function to use
     :param noise_std: Standard deviation for action noise
-    :param tensorboard_log: (The log location for Tensorboard
-(if None, no logging))
     :param seed: Seed for reproducing results
     :param render: True if environment is to be rendered, else False
     :param device: Device to use for Tensor operation ['cpu', 'cuda']
@@ -59,7 +57,6 @@ class A2C:
     :type layers: tuple or list
     :type noise: function
     :type noise_std: float
-    :type tensorboard_log: string
     :type seed: int
     :type render: boolean
     :type device: string
@@ -85,7 +82,6 @@ class A2C:
         layers: Tuple = (32, 32),
         noise: Any = None,
         noise_std: float = 0.1,
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -108,7 +104,6 @@ class A2C:
         self.layers = layers
         self.noise = noise
         self.noise_std = noise_std
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
@@ -120,6 +115,12 @@ class A2C:
         self.val_coeff = val_coeff
         self.entropy_coeff = entropy_coeff
 
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
+
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -129,13 +130,6 @@ class A2C:
         # Assign seed
         if seed is not None:
             set_seeds(seed, self.env)
-
-        # Setup tensorboard writer
-        self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
@@ -241,11 +235,14 @@ calculate losses)
             values, log_prob = self.get_value_log_probs(rollout.observations, actions)
 
             policy_loss = rollout.advantages * log_prob
-            policy_loss = -torch.sum(policy_loss)
+            policy_loss = -torch.mean(policy_loss)
+            self.logs["policy_loss"].append(policy_loss.item())
 
             value_loss = self.val_coeff * F.mse_loss(rollout.returns, values)
+            self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = (torch.exp(log_prob) * log_prob).sum()
+            self.logs["policy_entropy"].append(entropy_loss.item())
 
             actor_loss = policy_loss + self.entropy_coeff * entropy_loss
 
@@ -259,15 +256,13 @@ calculate losses)
             torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.critic_optimizer.step()
 
-    def collect_rollouts(self, initial_state):
+    def collect_rollouts(self, state: np.ndarray) -> Tuple[np.ndarray, bool]:
         """
         Function to calculate rollouts
 
-        :param initial_state: Initial state before calculating rollouts
-        :type initial_state: NumPy Array
+        :param state: Initial state before calculating rollouts
+        :type state: NumPy Array
         """
-        state = initial_state
-
         for i in range(2048):
             # with torch.no_grad():
             action, values, old_log_probs = self.select_action(state)
@@ -307,18 +302,8 @@ calculate losses)
 
             if episode % 5 == 0:
                 print("Episode: {}, Reward: {}".format(episode, episode_reward))
-                if self.tensorboard_log:
-                    self.writer.add_scalar("reward", episode_reward, episode)
-
-            if self.save_model is not None:
-                if episode % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, episode)
-                    print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         """
@@ -339,6 +324,32 @@ calculate losses)
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
+            "policy_entropy": safe_mean(self.logs["policy_entropy"]),
+            "mean_reward": safe_mean(self.rewards),
+        }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
 
 
 if __name__ == "__main__":

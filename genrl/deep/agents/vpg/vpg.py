@@ -12,6 +12,7 @@ from ...common import (
     get_env_properties,
     get_model,
     load_params,
+    safe_mean,
     save_params,
     set_seeds,
 )
@@ -30,9 +31,7 @@ class VPG:
     :param actor_batchsize: trajectories per optimizer epoch
     :param epochs: the optimizer's number of epochs
     :param lr_policy: policy network learning rate
-    :param lr_value: value network learning rate
     :param save_interval: Number of episodes between saves of models
-    :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; \
 'cpu' for cpu and 'cuda' for gpu
@@ -47,9 +46,7 @@ class VPG:
     :type actor_batchsize: int
     :type epochs: int
     :type lr_policy: float
-    :type lr_value: float
     :type save_interval: int
-    :type tensorboard_log: str
     :type seed: int
     :type device: str
     :type run_num: bool
@@ -67,10 +64,7 @@ class VPG:
         actor_batch_size: int = 4,
         epochs: int = 1000,
         lr_policy: float = 0.01,
-        lr_value: float = 0.0005,
-        policy_copy_interval: int = 20,
         layers: Tuple = (32, 32),
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -87,8 +81,6 @@ class VPG:
         self.actor_batch_size = actor_batch_size
         self.epochs = epochs
         self.lr_policy = lr_policy
-        self.lr_value = lr_value
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.save_interval = save_interval
@@ -100,6 +92,10 @@ class VPG:
         self.load = load_params
         self.rollout_size = rollout_size
 
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.rewards = []
+
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
@@ -109,13 +105,6 @@ class VPG:
         # Assign seed
         if seed is not None:
             set_seeds(seed, self.env)
-
-        # init writer if tensorboard
-        self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
@@ -194,7 +183,8 @@ class VPG:
 
             policy_loss = rollout.returns * log_prob
 
-            policy_loss = -torch.sum(policy_loss)
+            policy_loss = -torch.mean(policy_loss)
+            self.logs["policy_loss"].append(policy_loss.item())
 
             loss = policy_loss
 
@@ -203,9 +193,7 @@ class VPG:
             torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
             self.optimizer_policy.step()
 
-    def collect_rollouts(self, initial_state):
-
-        state = initial_state
+    def collect_rollouts(self, state):
 
         for i in range(2048):
 
@@ -253,8 +241,6 @@ class VPG:
             if epoch % 1 == 0:
                 print("Episode: {}, reward: {}".format(epoch, np.mean(self.rewards)))
                 self.rewards = []
-                if self.tensorboard_log:
-                    self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if self.save_model is not None:
                 if epoch % self.save_interval == 0:
@@ -263,8 +249,6 @@ class VPG:
                     print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
@@ -278,6 +262,29 @@ class VPG:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "mean_reward": safe_mean(self.rewards),
+        }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
 
 
 if __name__ == "__main__":
