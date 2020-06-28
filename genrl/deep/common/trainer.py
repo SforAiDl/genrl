@@ -308,8 +308,8 @@ many steps)
                         {
                             "timestep": timestep,
                             "Episode": sum(episode),
-                            "Episode Reward": np.mean(self.rewards),
                             **self.agent.get_logging_params(),
+                            "Episode Reward": np.mean(self.rewards),
                         }
                     )
                     self.rewards = [0]
@@ -439,8 +439,8 @@ class OnPolicyTrainer(Trainer):
             if epoch % self.log_interval == 0:
                 self.logger.write(
                     {
-                        "Episode": epoch,
                         "Timestep": epoch * self.agent.rollout_size,
+                        "Episode": epoch,
                         **self.agent.get_logging_params(),
                     }
                 )
