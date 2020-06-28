@@ -284,7 +284,8 @@ many steps)
             else:
                 action = self.agent.select_action(state)
 
-            next_state, reward, done, _ = self.env.step(action)
+            next_state, reward, done, info = self.env.step(action)
+            true_done = [i['done'] for i in info]
 
             if self.render:
                 self.env.render()
@@ -292,20 +293,14 @@ many steps)
             episode_reward += reward
             episode_len += 1
 
-            done = [
-                False if episode_len[i] == self.max_ep_len else done[i]
-                for i, ep_len in enumerate(episode_len)
-            ]
-
-            self.buffer.extend(zip(state, action, reward, next_state, done))
+            self.buffer.extend(zip(state, action, reward, next_state, true_done))
             state = next_state.copy()
 
-            if np.any(done) or np.any(episode_len == self.max_ep_len):
+            if np.any(done):
                 if "noise" in self.agent.__dict__ and self.agent.noise is not None:
                     self.agent.noise.reset()
 
                 if sum(episode) % self.log_interval == 0:
-                    # print(self.rewards)
                     self.logger.write(
                         {
                             "timestep": timestep,
@@ -317,8 +312,8 @@ many steps)
                     )
                     self.rewards = [0]
 
-                for i, di in enumerate(done):
-                    if di:
+                for i, done_i in enumerate(true_done):
+                    if done_i:
                         self.rewards.append(episode_reward[i])
                         episode_reward[i] = 0
                         episode_len[i] = 0

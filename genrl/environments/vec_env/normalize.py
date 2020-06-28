@@ -62,13 +62,10 @@ class VecNormalize(VecEnvWrapper):
         """
         states, rewards, dones, infos = self.venv.step(actions)
 
-        self.returns = self.returns * self.gamma + rewards
         states = self._normalize(self.obs_rms, None, states)
         rewards = self._normalize(self.reward_rms, self.clip_reward, rewards).reshape(
             self.n_envs,
         )
-
-        self.returns[dones.astype(bool)] = 0
 
         return states, rewards, dones, infos
 
