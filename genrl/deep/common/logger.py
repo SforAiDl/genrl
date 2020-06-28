@@ -69,6 +69,9 @@ class HumanOutputFormat:
 
     def __init__(self, logdir: str):
         self.file = os.path.join(logdir, "train.log")
+        self.first = True
+        self.lens = []
+        self.maxlen = 0
 
     def write(self, kvs: Dict[str, Any]) -> None:
         """
@@ -77,22 +80,61 @@ class HumanOutputFormat:
         :param kvs: Entries to be logged
         :type kvs: dict
         """
+        self.write_to_file(kvs, sys.stdout)
         with open(self.file, "a") as file:
-            print("\n", file=file)
-            print("-" * 25, file=sys.stdout)
+            self.write_to_file(kvs, file)
+
+    def write_to_file(self, kvs: Dict[str, Any], file=sys.stdout) -> None:
+        """
+        Log the entry out in human readable format
+
+        :param kvs: Entries to be logged
+        :param file: Name of file to write logs to
+        :type kvs: dict
+        :type file: io.TextIOWrapper
+        """
+        if self.first:
+            self.first = False
+            self.max_key_len(kvs)
             for key, value in kvs.items():
-                len1 = len(str(key)) + 3
-                len2 = len(str(value))
-                final_len = 25 - len1 - len2
-                print("{}:{}".format(key, value), file=file)
                 print(
-                    "| {}:{}".format(key, value),
-                    " " * (final_len - 3),
-                    "|",
-                    file=sys.stdout,
+                    "{}{}".format(str(key), " " * (self.maxlen - len(str(key)))),
+                    end="  ",
+                    file=file,
                 )
-            print("-" * 25, file=sys.stdout)
-            print("\n", file=file)
+            print()
+        for key, value in kvs.items():
+            rounded = self.round(value)
+            print(
+                "{}{}".format(rounded, " " * (self.maxlen - len(str(rounded)))),
+                end="  ",
+                file=file,
+            )
+        print("", file=file)
+
+    def max_key_len(self, kvs: Dict[str, Any]) -> None:
+        """
+        Finds max key length
+
+        :param kvs: Entries to be logged
+        :type kvs: dict
+        """
+        self.lens = [len(str(key)) for key, value in kvs.items()]
+        maxlen = max(self.lens)
+        self.maxlen = maxlen
+        if maxlen < 15:
+            self.maxlen = 15
+
+    def round(self, num: float) -> float:
+        """
+        Returns a rounded float value depending on self.maxlen
+
+        :param num: Value to round
+        :type num: float
+        """
+        exponent_len = len(str(num // 1.0)[:-2])
+        rounding_len = min(self.maxlen - exponent_len, 4)
+        return round(num, rounding_len)
 
     def close(self) -> None:
         pass
@@ -119,7 +161,7 @@ class TensorboardLogger:
         :type kvs: dict
         """
         for key, value in kvs.items():
-            self.writer.add_scalar(key, value, kvs["timestep"])
+            self.writer.add_scalar(key, value, kvs["Timestep"])
 
     def close(self) -> None:
         """
