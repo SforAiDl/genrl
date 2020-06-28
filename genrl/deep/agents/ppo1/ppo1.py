@@ -12,6 +12,7 @@ from ...common import (
     get_env_properties,
     get_model,
     load_params,
+    safe_mean,
     save_params,
     set_seeds,
 )
@@ -35,8 +36,6 @@ class PPO1:
     :param policy_copy_interval: number of optimizer before copying
         params from new policy to old policy
     :param save_interval: Number of episodes between saves of models
-    :param tensorboard_log: the log location for tensorboard (if None,
-        no logging)
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
@@ -54,7 +53,6 @@ class PPO1:
     :type lr_value: float
     :type policy_copy_interval: int
     :type save_interval: int
-    :type tensorboard_log: string
     :type seed: int
     :type device: string
     :type run_num: boolean
@@ -76,7 +74,6 @@ class PPO1:
         lr_value: float = 0.001,
         layers: Tuple = (64, 64),
         policy_copy_interval: int = 20,
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -96,7 +93,6 @@ class PPO1:
         self.lr_policy = lr_policy
         self.lr_value = lr_value
         self.layers = layers
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.policy_copy_interval = policy_copy_interval
@@ -111,6 +107,11 @@ class PPO1:
         self.ent_coef = 0.01
         self.vf_coef = 0.5
 
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
@@ -121,12 +122,6 @@ class PPO1:
         if seed is not None:
             set_seeds(seed, self.env)
 
-        # init writer if tensorboard
-        self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
         self.create_model()
 
     def create_model(self) -> None:
@@ -202,12 +197,15 @@ class PPO1:
             policy_loss_1 = advantages * ratio
             policy_loss_2 = advantages * torch.clamp(ratio, 1 - 0.2, 1 + 0.2)
             policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
+            self.logs["policy_loss"].append(policy_loss.item())
 
             values = values.flatten()
 
             value_loss = nn.functional.mse_loss(rollout.returns, values)
+            self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = -torch.mean(entropy)  # Change this to entropy
+            self.logs["policy_entropy"].append(entropy_loss.item())
 
             loss = (
                 policy_loss + self.ent_coef * entropy_loss
@@ -223,9 +221,7 @@ class PPO1:
             torch.nn.utils.clip_grad_norm_(self.value_fn.parameters(), 0.5)
             self.optimizer_value.step()
 
-    def collect_rollouts(self, initial_state):
-
-        state = initial_state
+    def collect_rollouts(self, state):
 
         for i in range(2048):
 
@@ -274,8 +270,6 @@ class PPO1:
             if epoch % 1 == 0:
                 print("Episode: {}, reward: {}".format(epoch, np.mean(self.rewards)))
                 self.rewards = []
-                if self.tensorboard_log:
-                    self.writer.add_scalar("reward", self.epoch_reward, epoch)
 
             if self.save_model is not None:
                 if epoch % self.save_interval == 0:
@@ -284,8 +278,6 @@ class PPO1:
                     print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
@@ -301,6 +293,32 @@ class PPO1:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
+            "policy_entropy": safe_mean(self.logs["policy_entropy"]),
+            "mean_reward": safe_mean(self.rewards),
+        }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
 
 
 if __name__ == "__main__":
