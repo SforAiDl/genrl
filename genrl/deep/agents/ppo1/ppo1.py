@@ -12,6 +12,48 @@ from ..base import OnPolicyAgent
 
 
 class PPO1(OnPolicyAgent):
+    """
+    Proximal Policy Optimization algorithm (Clipped policy).
+
+    Paper: https://arxiv.org/abs/1707.06347
+
+    :param network_type: The deep neural network layer types ['mlp']
+    :param env: The environment to learn from
+    :param timesteps_per_actorbatch: timesteps per actor per update
+    :param gamma: discount factor
+    :param clip_param: clipping parameter epsilon
+    :param actor_batchsize: trajectories per optimizer epoch
+    :param epochs: the optimizer's number of epochs
+    :param lr_policy: policy network learning rate
+    :param lr_value: value network learning rate
+    :param policy_copy_interval: number of optimizer before copying
+        params from new policy to old policy
+    :param save_interval: Number of episodes between saves of models
+    :param seed: seed for torch and gym
+    :param device: device to use for tensor operations; 'cpu' for cpu
+        and 'cuda' for gpu
+    :param run_num: if model has already been trained
+    :param save_model: directory the user wants to save models to
+    :param load_model: model loading path
+    :type network_type: str
+    :type env: Gym environment
+    :type timesteps_per_actorbatch: int
+    :type gamma: float
+    :type clip_param: float
+    :type actor_batchsize: int
+    :type epochs: int
+    :type lr_policy: float
+    :type lr_value: float
+    :type policy_copy_interval: int
+    :type save_interval: int
+    :type seed: int
+    :type device: string
+    :type run_num: boolean
+    :type save_model: string
+    :type load_model: string
+    :type rollout_size: int
+    """
+
     def __init__(
         self,
         network_type: str,
@@ -120,12 +162,15 @@ class PPO1(OnPolicyAgent):
                 ratio, 1 - self.clip_param, 1 + self.clip_param
             )
             policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
+            self.logs["policy_loss"].append(policy_loss.item())
 
             values = values.flatten()
 
             value_loss = nn.functional.mse_loss(rollout.returns, values)
+            self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = -torch.mean(entropy)  # Change this to entropy
+            self.logs["policy_entropy"].append(entropy_loss.item())
 
             loss = (
                 policy_loss + self.entropy_coeff * entropy_loss
@@ -154,3 +199,29 @@ class PPO1(OnPolicyAgent):
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
+            "policy_entropy": safe_mean(self.logs["policy_entropy"]),
+            "mean_reward": safe_mean(self.rewards),
+        }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []

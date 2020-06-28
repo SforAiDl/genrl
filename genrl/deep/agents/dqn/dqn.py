@@ -14,6 +14,7 @@ from ...common import (
     get_env_properties,
     get_model,
     load_params,
+    safe_mean,
     save_params,
     set_seeds,
 )
@@ -49,7 +50,6 @@ class DQN:
     :param lr: learing rate for the optimizer
     :param batch_size: Update batch size
     :param replay_size: Replay memory size
-    :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
@@ -71,7 +71,6 @@ class DQN:
     :type lr: float
     :type batch_size: int
     :type replay_size: int
-    :type tensorboard_log: string
     :type seed: int
     :type render: bool
     :type device: string
@@ -104,7 +103,6 @@ class DQN:
         num_atoms: int = 51,
         vmin: int = -10,
         vmax: int = 10,
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -131,9 +129,7 @@ class DQN:
         self.num_atoms = num_atoms
         self.Vmin = vmin
         self.Vmax = vmax
-        self.tensorboard_log = tensorboard_log
         self.render = render
-        self.loss_hist = []
         self.reward_hist = []
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
@@ -147,6 +143,9 @@ class DQN:
         self.network_type = network_type
         self.transform = transform
 
+        self.logs = {}
+        self.logs["value_loss"] = []
+
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
@@ -159,10 +158,6 @@ class DQN:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
@@ -355,7 +350,7 @@ class DQN:
             else:
                 loss = (q_value - expected_q_value.detach()).pow(2).mean()
 
-        self.loss_hist.append(loss)
+        self.logs["value_loss"].append(loss.item())
 
         return loss
 
@@ -478,8 +473,6 @@ so no need to call the function explicitly.)
                             episode, episode_reward, frame_idx
                         )
                     )
-                if self.tensorboard_log:
-                    self.writer.add_scalar("episode_reward", episode_reward, frame_idx)
 
                 self.reward_hist.append(episode_reward)
                 state, episode_reward, episode_len = self.env.reset(), 0, 0
@@ -498,8 +491,6 @@ so no need to call the function explicitly.)
                 self.update_target_model()
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
@@ -517,6 +508,26 @@ so no need to call the function explicitly.)
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+        logs = {
+            "value_loss": safe_mean(self.logs["value_loss"]),
+        }
+
+        self.empty_logs()
+
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["value_loss"] = []
 
 
 if __name__ == "__main__":

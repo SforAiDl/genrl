@@ -13,6 +13,55 @@ from ..base import OnPolicyAgent
 
 
 class A2C(OnPolicyAgent):
+    """
+    Advantage Actor Critic algorithm (A2C)
+    The synchronous version of A3C
+    Paper: https://arxiv.org/abs/1602.01783
+
+    :param network_type: The deep neural network layer types ['mlp']
+    :param env: The environment to learn from
+    :param gamma: Discount factor
+    :param actor_batch_size: Update batch size
+    :param lr_actor: Policy Network learning rate
+    :param lr_critic: Value Network learning rate
+    :param num_episodes: Number of episodes
+    :param timesteps_per_actorbatch: Number of timesteps per epoch
+    :param max_ep_len: Maximum timesteps in an episode
+    :param layers: Number of neurons in hidden layers
+    :param noise: Noise function to use
+    :param noise_std: Standard deviation for action noise
+    :param seed: Seed for reproducing results
+    :param render: True if environment is to be rendered, else False
+    :param device: Device to use for Tensor operation ['cpu', 'cuda']
+    :param run_num: Model run number if it has already been trained
+    :param save_model: Directory the user wants to save models to
+    :param save_interval: Number of steps between saves of models
+    :param rollout_size: Rollout Buffer Size
+    :param val_coeff: Coefficient of value loss in overall loss function
+    :param entropy_coeff: Coefficient of entropy loss in overall loss function
+    :type network_type: string
+    :type env: Gym Environment
+    :type gamma: float
+    :type actor_batch_size: int
+    :type lr_a: float
+    :type lr_c: float
+    :type num_episodes: int
+    :type timesteps_per_actorbatch: int
+    :type max_ep_len: int
+    :type layers: tuple or list
+    :type noise: function
+    :type noise_std: float
+    :type seed: int
+    :type render: boolean
+    :type device: string
+    :type run_num: int
+    :type save_model: string
+    :type save_interval: int
+    :type rollout_size: int
+    :type val_coeff: float
+    :type entropy_coeff: float
+    """
+
     def __init__(
         self,
         network_type: str,
@@ -132,11 +181,14 @@ calculate losses)
             values, log_prob = self.get_value_log_probs(rollout.observations, actions)
 
             policy_loss = rollout.advantages * log_prob
-            policy_loss = -torch.sum(policy_loss)
+            policy_loss = -torch.mean(policy_loss)
+            self.logs["policy_loss"].append(policy_loss.item())
 
-            value_loss = self.value_coeff * F.mse_loss(rollout.returns, values)
+            value_loss = self.val_coeff * F.mse_loss(rollout.returns, values)
+            self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = (torch.exp(log_prob) * log_prob).sum()
+            self.logs["policy_entropy"].append(entropy_loss.item())
 
             actor_loss = policy_loss + self.entropy_coeff * entropy_loss
 
@@ -168,3 +220,29 @@ calculate losses)
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
+            "policy_entropy": safe_mean(self.logs["policy_entropy"]),
+            "mean_reward": safe_mean(self.rewards),
+        }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []
