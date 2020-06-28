@@ -308,8 +308,8 @@ many steps)
                         {
                             "timestep": timestep,
                             "Episode": sum(episode),
-                            "Episode Reward": np.mean(self.rewards),
                             **self.agent.get_logging_params(),
+                            "Episode Reward": np.mean(self.rewards),
                         }
                     )
                     self.rewards = [0]
@@ -439,8 +439,8 @@ class OnPolicyTrainer(Trainer):
             if epoch % self.log_interval == 0:
                 self.logger.write(
                     {
-                        "Episode": epoch,
                         "Timestep": epoch * self.agent.rollout_size,
+                        "Episode": epoch,
                         **self.agent.get_logging_params(),
                     }
                 )
@@ -450,7 +450,8 @@ class OnPolicyTrainer(Trainer):
 
             if self.save_interval != 0 and epoch % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
-                save_params(self.agent, epoch * self.agent.timesteps_per_actorbatch)
+                save_params(self.agent, epoch * self.agent.batch_size)
+                # save_params(self.agent, epoch * self.agent.timesteps_per_actorbatch)
 
         self.env.close()
         self.logger.close()
