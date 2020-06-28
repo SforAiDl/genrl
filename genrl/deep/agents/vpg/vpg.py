@@ -56,7 +56,6 @@ class VPG(OnPolicyAgent):
         gamma: float = 0.99,
         epochs: int = 1000,
         lr_policy: float = 0.01,
-        lr_value: float = 0.5,
         layers: Tuple = (32, 32),
         rollout_size: int = 2048,
         **kwargs
@@ -69,7 +68,7 @@ class VPG(OnPolicyAgent):
             layers,
             gamma,
             lr_policy,
-            lr_value,
+            None,
             epochs,
             rollout_size,
             **kwargs
@@ -194,7 +193,6 @@ class VPG(OnPolicyAgent):
             "batch_size": self.batch_size,
             "gamma": self.gamma,
             "lr_policy": self.lr_policy,
-            "lr_value": self.lr_value,
             "weights": self.ac.state_dict(),
         }
 
