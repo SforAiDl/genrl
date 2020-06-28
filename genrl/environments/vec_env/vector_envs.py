@@ -58,6 +58,7 @@ class VecEnv(ABC):
 
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
+        self.action_shape = self.env.action_shape
 
     def __getattr__(self, name: str) -> Any:
         env = super(VecEnv, self).__getattribute__("env")
