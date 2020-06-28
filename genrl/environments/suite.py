@@ -4,12 +4,12 @@ import gym
 
 from ..environments import (
     AtariPreprocessing,
+    AtariTimeLimit,
+    FireReset,
     FrameStack,
     GymWrapper,
     NoopReset,
-    FireReset,
     TimeLimit,
-    AtariTimeLimit,
 )
 from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv, VecNormalize
 
@@ -63,7 +63,13 @@ def GymEnv(env_id: str) -> gym.Env:
 
 def AtariEnv(
     env_id: str,
-    wrapper_list: List = [AtariPreprocessing, NoopReset, FireReset, AtariTimeLimit, FrameStack]
+    wrapper_list: List = [
+        AtariPreprocessing,
+        NoopReset,
+        FireReset,
+        AtariTimeLimit,
+        FrameStack,
+    ],
 ) -> gym.Env:
     """
     Function to apply wrappers for all Atari envs by Trainer class

@@ -285,7 +285,7 @@ many steps)
                 action = self.agent.select_action(state)
 
             next_state, reward, done, info = self.env.step(action)
-            true_done = [i['done'] for i in info]
+            true_done = [i["done"] for i in info]
 
             if self.render:
                 self.env.render()

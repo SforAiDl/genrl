@@ -1,5 +1,5 @@
-import numpy as np
 import gym
+import numpy as np
 
 
 class TimeLimit(gym.Wrapper):
@@ -17,10 +17,10 @@ class TimeLimit(gym.Wrapper):
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
         self._steps_taken += 1
-        info['done'] = done
+        info["done"] = done
         if self._steps_taken >= self._max_episode_len:
             done = True
-            info['done'] = False
+            info["done"] = False
 
         # if done:
         #     print("Steps taken: {}".format(self._steps_taken))
@@ -46,12 +46,12 @@ class AtariTimeLimit(gym.Wrapper):
         observation, reward, done, info = self.env.step(action)
         self._steps_taken += 1
         if done:
-            info['done'] = True
+            info["done"] = True
         if self._steps_taken >= self._max_episode_len:
             done = True
-            info['done'] = False
+            info["done"] = False
         if done:
-            if info['ale.lives'] != 0:
+            if info["ale.lives"] != 0:
                 done = False
         return observation, reward, done, info
 
