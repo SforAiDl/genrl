@@ -8,7 +8,7 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments.vec_env import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model
+from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
 from ..base import OnPolicyAgent
 
 
@@ -98,6 +98,7 @@ class A2C(OnPolicyAgent):
         self.value_coeff = kwargs.get("value_coeff", 0.5)
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
@@ -184,7 +185,7 @@ calculate losses)
             policy_loss = -torch.mean(policy_loss)
             self.logs["policy_loss"].append(policy_loss.item())
 
-            value_loss = self.val_coeff * F.mse_loss(rollout.returns, values)
+            value_loss = self.value_coeff * F.mse_loss(rollout.returns, values)
             self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = (torch.exp(log_prob) * log_prob).sum()
@@ -242,6 +243,7 @@ calculate losses)
         Empties logs
         """
 
+        self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
         self.logs["policy_entropy"] = []

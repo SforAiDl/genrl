@@ -7,7 +7,7 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model
+from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
 from ..base import OnPolicyAgent
 
 
@@ -74,6 +74,7 @@ class VPG(OnPolicyAgent):
             **kwargs
         )
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self):
@@ -81,8 +82,7 @@ class VPG(OnPolicyAgent):
         Initialize the actor and critic networks
         """
         state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
-        # print(state_dim, action_dim, discrete)
-        # print(self.load)
+
         # Instantiate networks and optimizers
         self.actor = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
@@ -106,8 +106,6 @@ class VPG(OnPolicyAgent):
             self.env.action_space,
             n_envs=self.env.n_envs,
         )
-
-        # print(self.actor)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
@@ -219,7 +217,7 @@ class VPG(OnPolicyAgent):
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["policy_entropy"] = []
         self.rewards = []

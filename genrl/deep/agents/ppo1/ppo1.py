@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as opt
 
 from ....environments import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model
+from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
 from ..base import OnPolicyAgent
 
 
@@ -86,6 +86,7 @@ class PPO1(OnPolicyAgent):
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
         self.value_coeff = kwargs.get("value_coeff", 0.5)
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self):
@@ -220,7 +221,7 @@ class PPO1(OnPolicyAgent):
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
         self.logs["policy_entropy"] = []
