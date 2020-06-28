@@ -21,9 +21,6 @@ class TimeLimit(gym.Wrapper):
         if self._steps_taken >= self._max_episode_len:
             done = True
             info["done"] = False
-
-        # if done:
-        #     print("Steps taken: {}".format(self._steps_taken))
         return observation, reward, done, info
 
     def reset(self, **kwargs):
@@ -45,8 +42,7 @@ class AtariTimeLimit(gym.Wrapper):
     def step(self, action):
         observation, reward, done, info = self.env.step(action)
         self._steps_taken += 1
-        if done:
-            info["done"] = True
+        info["done"] = done
         if self._steps_taken >= self._max_episode_len:
             done = True
             info["done"] = False

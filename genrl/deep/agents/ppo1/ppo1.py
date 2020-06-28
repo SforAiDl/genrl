@@ -258,7 +258,7 @@ calculate losses)
         :param state: Initial state before calculating rollouts
         :type state: NumPy Array
         """
-        for i in range(2048):
+        for i in range(self.rollout_size):
 
             with torch.no_grad():
                 action, values, old_log_probs = self.select_action(state)

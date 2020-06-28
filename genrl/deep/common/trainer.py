@@ -272,7 +272,7 @@ many steps)
 
         assert self.update_interval % self.env.n_envs == 0
 
-        self.rewards = [0]
+        self.rewards = []
 
         for timestep in range(0, total_steps, self.env.n_envs):
             self.agent.update_params_before_select_action(timestep)

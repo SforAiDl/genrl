@@ -10,6 +10,7 @@ from torch.autograd import Variable
 from ....environments.vec_env import VecEnv
 from ...common import (
     RolloutBuffer,
+    get_env_properties,
     get_model,
     load_params,
     safe_mean,
@@ -263,7 +264,7 @@ calculate losses)
         :param state: Initial state before calculating rollouts
         :type state: NumPy Array
         """
-        for i in range(2048):
+        for i in range(self.rollout_size):
             # with torch.no_grad():
             action, values, old_log_probs = self.select_action(state)
 
@@ -286,6 +287,7 @@ calculate losses)
 
             for i, di in enumerate(done):
                 if di:
+                    # print("Epoch Reward: {}".format(self.epoch_reward))
                     self.rewards.append(self.epoch_reward[i])
                     self.epoch_reward[i] = 0
 
