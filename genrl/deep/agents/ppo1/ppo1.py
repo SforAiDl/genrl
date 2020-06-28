@@ -195,6 +195,7 @@ class PPO1(OnPolicyAgent):
             "clip_param": self.clip_param,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
+            "rollout_size": self.rollout_size,
             "policy_weights": self.policy_new.state_dict(),
             "value_weights": self.value_fn.state_dict(),
         }

@@ -193,6 +193,7 @@ class VPG(OnPolicyAgent):
             "batch_size": self.batch_size,
             "gamma": self.gamma,
             "lr_policy": self.lr_policy,
+            "rollout_size": self.rollout_size,
             "weights": self.ac.state_dict(),
         }
 

@@ -212,10 +212,11 @@ calculate losses)
         """
         hyperparams = {
             "network_type": self.network_type,
-            "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
+            "batch_size": self.batch_size,
             "gamma": self.gamma,
             "lr_actor": self.lr_actor,
             "lr_critic": self.lr_critic,
+            "rollout_size": self.rollout_size,
             "actor_weights": self.ac.actor.state_dict(),
             "critic_weights": self.ac.critic.state_dict(),
         }

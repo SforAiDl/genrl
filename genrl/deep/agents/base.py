@@ -109,9 +109,7 @@ class OnPolicyAgent(BaseAgent):
                 self.rewards.append(self.epoch_reward[i])
                 self.epoch_reward[i] = 0
 
-    def collect_rollouts(self, initial_state):
-
-        state = initial_state
+    def collect_rollouts(self, state):
 
         for i in range(self.rollout_size):
             # with torch.no_grad():
