@@ -47,9 +47,10 @@ jobs:
 
       install:
         - pip install -r docs/requirements.txt
+        - python setup.py install
 
       script:
-        - make -C docs/
+        - make clean -C docs/ html
       after_success: # Nothing to do
 
       # Deploy built docs : a) when PR is merged to master, b) when a tag is built
