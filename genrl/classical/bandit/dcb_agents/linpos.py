@@ -87,7 +87,7 @@ class LinearPosteriorAgent(DCBAgent):
                 .to(device)
                 .to(dtype)
             )
-        values = torch.mv(beta, torch.cat([context.squeeze(0), torch.ones(1)]))
+        values = torch.mv(beta, torch.cat([context.view(-1), torch.ones(1)]))
         return torch.argmax(values).to(torch.int)
 
     def update_params(self, context: torch.Tensor, action: int, reward: int):
@@ -119,14 +119,14 @@ if __name__ == "__main__":
     from ..data_bandits.statlog_bandit import StatlogDataBandit
     from ..contextual_bandits import BernoulliCB
 
-    TIMESTEPS = 50_000
-    ITERATIONS = 1
-    BANDIT_ARGS = {"download": True}
-    # BANDIT_ARGS = {"bandits": 10, "arms": 10}
+    TIMESTEPS = 1000
+    ITERATIONS = 50
+    # BANDIT_ARGS = {"download": True}
+    BANDIT_ARGS = {"bandits": 5, "arms": 10}
 
     POLICY_ARGS_COLLECTION = [
         {
-            "init_pulls": 2,
+            "init_pulls": 3,
             "lambda_prior": 0.25,
             "a0": 0.0,
             "b0": 0.0,
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
     demo_dcb_policy(
         LinearPosteriorAgent,
-        MushroomDataBandit,
+        BernoulliCB,
         POLICY_ARGS_COLLECTION,
         BANDIT_ARGS,
         TIMESTEPS,

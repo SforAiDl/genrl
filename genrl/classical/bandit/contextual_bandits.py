@@ -1,6 +1,8 @@
-from typing import Union
+from typing import Union, Tuple, List
 
 import numpy as np
+import torch
+import torch.nn.functional as F
 
 
 class ContextualBandit(object):
@@ -16,8 +18,29 @@ class ContextualBandit(object):
     def __init__(self, bandits: int = 1, arms: int = 1):
         self._nbandits = bandits
         self._narms = arms
-
+        self.n_actions = arms
+        self.context_dim = bandits
         self.reset()
+        self._regret_hist = []
+        self._reward_hist = []
+
+    @property
+    def reward_hist(self) -> List[float]:
+        """
+        Get the history of rewards received at each step
+        :returns: List of rewards
+        :rtype: list
+        """
+        return self._reward_hist
+
+    @property
+    def regret_hist(self) -> List[float]:
+        """
+        Get the history of regrets incurred at each step
+        :returns: List of regrest
+        :rtype: list
+        """
+        return self._regret_hist
 
     @property
     def arms(self) -> int:
@@ -39,17 +62,18 @@ class ContextualBandit(object):
         """
         return self._nbandits
 
-    def reset(self):
+    def reset(self) -> torch.Tensor:
         """
         Resets the current bandit randomly
 
         :returns: The current bandit as observation
         :rtype: int
         """
-        self.curr_bandit = np.random.randint(self.bandits)
-        return self.curr_bandit
+        self.curr_bandit = torch.randint(self.bandits, (1,))
+        self.curr_context = F.one_hot(self.curr_bandit, num_classes=self.context_dim).to(torch.float)
+        return self.curr_context
 
-    def step(self, action: int) -> Union[int, float]:
+    def step(self, action: int) -> Tuple[torch.Tensor, int]:
         """
         Takes an action in the bandit and returns the sampled reward
 
@@ -60,7 +84,11 @@ class ContextualBandit(object):
         :returns: Reward sampled for the action taken
         :rtype: int, float ...
         """
-        raise NotImplementedError
+        reward, max_reward = self._compute_reward(action)
+        self.regret_hist.append(max_reward - reward)
+        self.reward_hist.append(reward)
+        self.reset()
+        return self.curr_context.view(-1), reward
 
 
 class BernoulliCB(ContextualBandit):
@@ -84,7 +112,7 @@ class BernoulliCB(ContextualBandit):
         else:
             self.reward_probs = np.random.random(size=(bandits, arms))
 
-    def step(self, action: int) -> int:
+    def _compute_reward(self, action: int) -> Tuple[int, int]:
         """
         Takes an action in the bandit and returns the sampled reward
 
@@ -97,8 +125,7 @@ class BernoulliCB(ContextualBandit):
         """
         reward_prob = self.reward_probs[self.curr_bandit, action]
         reward = int(np.random.random() > reward_prob)
-        self.reset()
-        return self.curr_bandit, reward
+        return reward, 1
 
 
 class GaussianCB(ContextualBandit):
@@ -122,7 +149,7 @@ class GaussianCB(ContextualBandit):
         else:
             self.reward_means = np.random.random(size=(bandits, arms))
 
-    def step(self, action: int) -> float:
+    def _compute_reward(self, action: int) -> Tuple[float, float]:
         """
         Takes an action in the bandit and returns the sampled reward
 
@@ -135,5 +162,4 @@ class GaussianCB(ContextualBandit):
         """
         reward_mean = self.reward_means[self.curr_bandit, action]
         reward = np.random.normal(reward_mean)
-        self.reset()
-        return self.curr_bandit, reward
+        return reward, max(self.reward_means[self.curr_bandit])
