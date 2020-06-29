@@ -1,9 +1,9 @@
-.. genrl documentation master file, created by
-   sphinx-quickstart on Sun May  3 20:22:36 2020.
+.. GenRL documentation master file, created by
+   sphinx-quickstart on Mon Jun 29 23:38:56 2020.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to genrl's documentation!
+Welcome to GenRL's documentation!
 =================================
 
 .. toctree::
