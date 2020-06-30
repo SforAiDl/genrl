@@ -49,7 +49,7 @@ class VecMonitor(VecEnvWrapper):
 
     def step(self, actions: np.ndarray) -> Tuple:
         """
-        Steps through all the environments and normalizes the observations and rewards (if enabled)
+        Steps through all the environments and records important information
 
         :param actions: Actions to be taken for the Vectorized Environment
         :type actions: Numpy Array
@@ -64,9 +64,9 @@ class VecMonitor(VecEnvWrapper):
         for i in range(self.n_envs):
             if dones[i]:
                 episode_info = {
-                    "r": self.episode_returns[i],
-                    "l": self.episode_lens[i],
-                    "t": round(time.time() - self.tstart, 4),
+                    "Episode Rewards": self.episode_returns[i],
+                    "Episode Length": self.episode_lens[i],
+                    "Time taken": round(time.time() - self.tstart, 4),
                 }
 
                 for key in self.keys:

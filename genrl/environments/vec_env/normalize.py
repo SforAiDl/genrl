@@ -3,8 +3,8 @@ from typing import Any, Tuple
 import numpy as np
 
 from .utils import RunningMeanStd
-from .wrappers import VecEnvWrapper
 from .vector_envs import VecEnv
+from .wrappers import VecEnvWrapper
 
 
 class VecNormalize(VecEnvWrapper):
@@ -38,8 +38,7 @@ class VecNormalize(VecEnvWrapper):
         self.reward_rms = RunningMeanStd(shape=(1, 1)) if norm_reward else False
 
         self.clip_reward = clip_reward
-        self.returns = np.zeros((self.n_envs,), dtype=np.float32)
-        self.gamma = 0.99
+        self.rewards = np.zeros((self.n_envs,))
 
     def __getattr__(self, name: str) -> Any:
         """
@@ -61,6 +60,8 @@ class VecNormalize(VecEnvWrapper):
         :returns: States, rewards, dones, infos
         """
         states, rewards, dones, infos = self.venv.step(actions)
+
+        self.rewards += rewards
 
         states = self._normalize(self.obs_rms, None, states)
         rewards = self._normalize(self.reward_rms, self.clip_reward, rewards).reshape(
@@ -99,6 +100,7 @@ class VecNormalize(VecEnvWrapper):
         :rtype: Numpy Array
         """
         states = self.venv.reset()
+        self.rewards = np.zeros((self.n_envs,))
         return self._normalize(self.obs_rms, None, states)
 
     def close(self):

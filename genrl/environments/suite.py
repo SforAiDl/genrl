@@ -11,7 +11,13 @@ from ..environments import (
     NoopReset,
     TimeLimit,
 )
-from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
+from ..environments.vec_env import (
+    SerialVecEnv,
+    SubProcessVecEnv,
+    VecEnv,
+    VecMonitor,
+    VecNormalize,
+)
 
 
 def VectorEnv(
@@ -40,6 +46,8 @@ subprocesses, False if we want environments to run serially one after the other)
         venv = SubProcessVecEnv(envs, n_envs)
     else:
         venv = SerialVecEnv(envs, n_envs)
+
+    venv = VecNormalize(venv, norm_reward=False, clip_reward=None)
 
     return venv
 
