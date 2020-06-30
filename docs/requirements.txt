@@ -24,3 +24,4 @@ setuptools==41.0.0
 # Docs dependencies
 sphinx
 sphinxcontrib-napoleon==0.7
+sphinx-rtd-theme==0.4.3
