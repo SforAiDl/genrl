@@ -47,8 +47,6 @@ subprocesses, False if we want environments to run serially one after the other)
     else:
         venv = SerialVecEnv(envs, n_envs)
 
-    venv = VecNormalize(venv, norm_reward=False, clip_reward=None)
-
     return venv
 
 
@@ -62,9 +60,7 @@ def GymEnv(env_id: str) -> gym.Env:
     :rtype: object
     """
     env = gym.make(env_id)
-    env = GymWrapper(env)
-    env = TimeLimit(env)
-    return env
+    return GymWrapper(TimeLimit(env))
 
 
 def AtariEnv(

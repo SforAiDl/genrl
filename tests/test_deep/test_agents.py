@@ -45,6 +45,18 @@ class TestAlgos:
         trainer.evaluate()
         shutil.rmtree("./logs")
 
+    def test_ppo1_cnn(self):
+        env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
+
+        # PPO1
+        algo = PPO1("cnn", env)
+
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
+
     def test_vpg(self):
         env = VectorEnv("CartPole-v0", 2)
         algo = VPG("mlp", env, layers=[1, 1])
@@ -54,6 +66,18 @@ class TestAlgos:
         )
         trainer.train()
         trainer.evaluate()
+        shutil.rmtree("./logs")
+
+    def test_vpg_cnn(self):
+        env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
+
+        # VPG
+        algo = VPG("cnn", env)
+
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
         shutil.rmtree("./logs")
 
     def test_ddpg(self):
@@ -79,14 +103,14 @@ class TestAlgos:
         trainer.evaluate()
         shutil.rmtree("./logs")
 
-        # # Double DQN with prioritized replay buffer
-        # algo1 = DQN("mlp", env, double_dqn=True, prioritized_replay=True)
+        # Double DQN with prioritized replay buffer
+        algo1 = DQN("mlp", env, double_dqn=True, prioritized_replay=True)
 
-        # trainer = OffPolicyTrainer(
-        #     algo1, log_mode=["csv"], logdir="./logs", epochs=1, render=False
-        # )
-        # trainer.train()
-        # shutil.rmtree("./logs")
+        trainer = OffPolicyTrainer(
+            algo1, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
         # Noisy DQN
         algo2 = DQN("mlp", env, noisy_dqn=True)
@@ -97,8 +121,8 @@ class TestAlgos:
         trainer.train()
         shutil.rmtree("./logs")
 
-        # Dueling DDQN
-        algo3 = DQN("mlp", env, dueling_dqn=True, double_dqn=True)
+        # Dueling DQN
+        algo3 = DQN("mlp", env, dueling_dqn=True)
 
         trainer = OffPolicyTrainer(
             algo3, env, log_mode=["csv"], logdir="./logs", epochs=1, render=False
@@ -120,6 +144,18 @@ class TestAlgos:
 
         # A2C
         algo = A2C("mlp", env)
+
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
+
+    def test_a2c_cnn(self):
+        env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
+
+        # A2C
+        algo = A2C("cnn", env)
 
         trainer = OnPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", epochs=1
@@ -157,7 +193,7 @@ class TestAlgos:
         trainer.train()
         shutil.rmtree("./logs")
 
-        # Dueling DDQN
+        # Dueling DQN
         algo3 = DQN("cnn", env, dueling_dqn=True, double_dqn=True)
 
         trainer = OffPolicyTrainer(

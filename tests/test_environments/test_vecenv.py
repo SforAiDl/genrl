@@ -60,9 +60,9 @@ class TestVecEnvs:
 
         info = infos[0]["episode"]
 
-        assert info["r"]
-        assert info["l"]
-        assert info["t"]
+        assert info["Episode Rewards"]
+        assert info["Episode Length"]
+        assert info["Time taken"]
 
     def test_rms(self):
         """

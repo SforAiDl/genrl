@@ -17,7 +17,6 @@ serially or parallelly
     :type parallel: boolean
     """
 
-    # TODO(zeus3101) Add functionality for VecEnvs
     def __init__(self, env: gym.Env):
         super(GymWrapper, self).__init__(env)
         self.env = env

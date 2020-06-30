@@ -98,8 +98,8 @@ class CNNValue(BaseValue):
     def forward(self, state: np.ndarray) -> np.ndarray:
         state = self.conv(state)
         state = state.view(state.size(0), -1)
-        state = self.fc(state)
-        return state
+        value = self.fc(state)
+        return value
 
 
 value_registry = {"mlp": MlpValue, "cnn": CNNValue}

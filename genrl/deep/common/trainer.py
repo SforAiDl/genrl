@@ -422,7 +422,7 @@ class OnPolicyTrainer(Trainer):
             self.agent.epoch_reward = np.zeros(self.env.n_envs)
 
             self.agent.rollout.reset()
-            self.agent.rewards = []
+            # self.agent.rewards = []
 
             state = self.env.reset()
             values, done = self.agent.collect_rollouts(state)
@@ -446,7 +446,6 @@ class OnPolicyTrainer(Trainer):
             if self.save_interval != 0 and epoch % self.save_interval == 0:
                 self.checkpoint = self.agent.get_hyperparams()
                 save_params(self.agent, epoch * self.agent.batch_size)
-                # save_params(self.agent, epoch * self.agent.timesteps_per_actorbatch)
 
         self.env.close()
         self.logger.close()
