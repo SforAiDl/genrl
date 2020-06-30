@@ -8,7 +8,7 @@ import torch
 from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
-from .utils import save_params, set_seeds
+from .utils import safe_mean, save_params, set_seeds
 
 
 class Trainer(ABC):
@@ -301,13 +301,13 @@ many steps)
                 if sum(episode) % self.log_interval == 0:
                     self.logger.write(
                         {
-                            "timestep": timestep,
                             "Episode": sum(episode),
+                            "Timestep": timestep,
                             **self.agent.get_logging_params(),
-                            "Episode Reward": np.mean(self.rewards),
+                            "Episode Reward": safe_mean(self.rewards),
                         }
                     )
-                    self.rewards = [0]
+                    self.rewards = []
 
                 for i, done_i in enumerate(true_done):
                     if done_i:
