@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import gym
 import numpy as np
@@ -7,18 +7,11 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments import VecEnv
-from ...common import (
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    safe_mean,
-    save_params,
-    set_seeds,
-)
+from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from ..base import OnPolicyAgent
 
 
-class VPG:
+class VPG(OnPolicyAgent):
     """
     Vanilla Policy Gradient algorithm
 
@@ -59,56 +52,32 @@ class VPG:
         self,
         network_type: str,
         env: Union[gym.Env, VecEnv],
-        timesteps_per_actorbatch: int = 1000,
+        batch_size: int = 256,
         gamma: float = 0.99,
-        actor_batch_size: int = 4,
         epochs: int = 1000,
         lr_policy: float = 0.01,
         layers: Tuple = (32, 32),
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 50,
         rollout_size: int = 2048,
+        **kwargs
     ):
-        self.network_type = network_type
-        self.env = env
-        self.timesteps_per_actorbatch = timesteps_per_actorbatch
-        self.gamma = gamma
-        self.actor_batch_size = actor_batch_size
-        self.epochs = epochs
-        self.lr_policy = lr_policy
-        self.seed = seed
-        self.render = render
-        self.save_interval = save_interval
-        self.layers = layers
-        self.run_num = run_num
-        self.save_model = save_model
-        self.load_model = load_model
-        self.save = save_params
-        self.load = load_params
-        self.rollout_size = rollout_size
 
-        self.logs = {}
-        self.logs["policy_loss"] = []
-        self.rewards = []
+        super(VPG, self).__init__(
+            network_type,
+            env,
+            batch_size,
+            layers,
+            gamma,
+            lr_policy,
+            None,
+            epochs,
+            rollout_size,
+            **kwargs
+        )
 
-        # Assign device
-        if "cuda" in device and torch.cuda.is_available():
-            self.device = torch.device(device)
-        else:
-            self.device = torch.device("cpu")
-
-        # Assign seed
-        if seed is not None:
-            set_seeds(seed, self.env)
-
+        self.empty_logs()
         self.create_model()
 
-    def create_model(self) -> None:
+    def create_model(self):
         """
         Initialize the actor and critic networks
         """
@@ -164,7 +133,7 @@ class VPG:
         a, c = self.actor.get_action(state, deterministic=False)
         return c.log_prob(action)
 
-    def get_traj_loss(self, value, done) -> None:
+    def get_traj_loss(self, value, done):
         """
         Calculates the loss for the trajectory
         """
@@ -172,7 +141,7 @@ class VPG:
 
     def update_policy(self) -> None:
 
-        for rollout in self.rollout.get(256):
+        for rollout in self.rollout.get(self.batch_size):
 
             actions = rollout.actions
 
@@ -195,11 +164,11 @@ class VPG:
 
     def collect_rollouts(self, state):
 
-        for i in range(2048):
+        for i in range(self.rollout_size):
 
             action, old_log_probs, _ = self.select_action(state)
 
-            next_state, reward, done, _ = self.env.step(action.numpy())
+            next_state, reward, dones, _ = self.env.step(action.numpy())
             self.epoch_reward += reward
 
             if self.render:
@@ -209,55 +178,24 @@ class VPG:
                 state,
                 action.reshape(self.env.n_envs, 1),
                 reward,
-                done,
+                dones,
                 torch.Tensor([0] * self.env.n_envs),
                 old_log_probs.detach(),
             )
 
             state = next_state
 
-            for i, di in enumerate(done):
-                if di:
-                    self.rewards.append(self.epoch_reward[i])
-                    self.epoch_reward[i] = 0
+            self.collect_rewards(dones)
 
-        return torch.Tensor([0] * self.env.n_envs), done
-
-    def learn(self) -> None:  # pragma: no cover
-        # training loop
-        state = self.env.reset()
-        for epoch in range(self.epochs):
-            self.epoch_reward = np.zeros(self.env.n_envs)
-
-            self.rollout.reset()
-            self.rewards = []
-
-            values, done = self.collect_rollouts(state)
-
-            self.get_traj_loss(values, done)
-
-            self.update_policy()
-
-            if epoch % 1 == 0:
-                print("Episode: {}, reward: {}".format(epoch, np.mean(self.rewards)))
-                self.rewards = []
-
-            if self.save_model is not None:
-                if epoch % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, epoch)
-                    print("Saved current model")
-
-        self.env.close()
+        return torch.Tensor([0] * self.env.n_envs), dones
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,
-            "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
+            "batch_size": self.batch_size,
             "gamma": self.gamma,
-            "actor_batch_size": self.actor_batch_size,
             "lr_policy": self.lr_policy,
-            "lr_value": self.lr_value,
+            "rollout_size": self.rollout_size,
             "weights": self.ac.state_dict(),
         }
 
@@ -281,14 +219,7 @@ class VPG:
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["policy_entropy"] = []
         self.rewards = []
-
-
-if __name__ == "__main__":
-    env = gym.make("CartPole-v0")
-    algo = VPG("mlp", env)
-    algo.learn()
-    algo.evaluate(algo)

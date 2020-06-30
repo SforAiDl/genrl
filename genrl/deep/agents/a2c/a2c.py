@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import gym
 import numpy as np
@@ -8,18 +8,11 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments.vec_env import VecEnv
-from ...common import (
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    safe_mean,
-    save_params,
-    set_seeds,
-)
+from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from ..base import OnPolicyAgent
 
 
-class A2C:
+class A2C(OnPolicyAgent):
     """
     Advantage Actor Critic algorithm (A2C)
     The synchronous version of A3C
@@ -73,65 +66,39 @@ class A2C:
         self,
         network_type: str,
         env: Union[gym.Env, VecEnv],
+        batch_size: int = 256,
         gamma: float = 0.99,
-        actor_batch_size: int = 64,
-        lr_actor: float = 0.01,
-        lr_critic: float = 0.1,
-        num_episodes: int = 100,
-        timesteps_per_actorbatch: int = 4000,
+        lr_policy: float = 0.01,
+        lr_value: float = 0.1,
+        epochs: int = 100,
         max_ep_len: int = 1000,
         layers: Tuple = (32, 32),
         noise: Any = None,
         noise_std: float = 0.1,
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        save_interval: int = 1000,
         rollout_size: int = 2048,
-        val_coeff: float = 0.5,
-        entropy_coeff: float = 0.01,
+        **kwargs
     ):
-        self.network_type = network_type
-        self.env = env
-        self.gamma = gamma
-        self.actor_batch_size = actor_batch_size
-        self.lr_actor = lr_actor
-        self.lr_critic = lr_critic
-        self.num_episodes = num_episodes
-        self.timesteps_per_actorbatch = timesteps_per_actorbatch
+
+        super(A2C, self).__init__(
+            network_type,
+            env,
+            batch_size,
+            layers,
+            gamma,
+            lr_policy,
+            lr_value,
+            epochs,
+            rollout_size,
+            **kwargs
+        )
+
         self.max_ep_len = max_ep_len
-        self.layers = layers
         self.noise = noise
         self.noise_std = noise_std
-        self.seed = seed
-        self.render = render
-        self.run_num = run_num
-        self.save_interval = save_interval
-        self.save_model = None
-        self.save = save_params
-        self.load = load_params
-        self.rollout_size = rollout_size
-        self.val_coeff = val_coeff
-        self.entropy_coeff = entropy_coeff
+        self.value_coeff = kwargs.get("value_coeff", 0.5)
+        self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
 
-        self.logs = {}
-        self.logs["policy_loss"] = []
-        self.logs["value_loss"] = []
-        self.logs["policy_entropy"] = []
-        self.rewards = []
-
-        # Assign device
-        if "cuda" in device and torch.cuda.is_available():
-            self.device = torch.device("cuda")
-        else:
-            self.device = torch.device("cpu")
-
-        # Assign seed
-        if seed is not None:
-            set_seeds(seed, self.env)
-
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
@@ -151,9 +118,9 @@ class A2C:
             state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
-        self.actor_optimizer = opt.Adam(self.ac.actor.parameters(), lr=self.lr_actor)
+        self.actor_optimizer = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
 
-        self.critic_optimizer = opt.Adam(self.ac.critic.parameters(), lr=self.lr_critic)
+        self.critic_optimizer = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
         self.rollout = RolloutBuffer(
             self.rollout_size,
@@ -226,7 +193,7 @@ calculate losses)
         """
         Function to calculate loss from rollouts and update the policy
         """
-        for rollout in self.rollout.get(256):
+        for rollout in self.rollout.get(self.batch_size):
 
             actions = rollout.actions
 
@@ -239,7 +206,7 @@ calculate losses)
             policy_loss = -torch.mean(policy_loss)
             self.logs["policy_loss"].append(policy_loss.item())
 
-            value_loss = self.val_coeff * F.mse_loss(rollout.returns, values)
+            value_loss = self.value_coeff * F.mse_loss(rollout.returns, values)
             self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = (torch.exp(log_prob) * log_prob).sum()
@@ -257,56 +224,6 @@ calculate losses)
             torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.critic_optimizer.step()
 
-    def collect_rollouts(self, state: np.ndarray) -> Tuple[np.ndarray, bool]:
-        """
-        Function to calculate rollouts
-
-        :param state: Initial state before calculating rollouts
-        :type state: NumPy Array
-        """
-        for i in range(self.rollout_size):
-            # with torch.no_grad():
-            action, values, old_log_probs = self.select_action(state)
-
-            next_state, reward, done, _ = self.env.step(np.array(action))
-            self.epoch_reward += reward
-
-            if self.render:
-                self.env.render()
-
-            self.rollout.add(
-                state,
-                action.reshape(self.env.n_envs, 1),
-                reward,
-                done,
-                values.detach(),
-                old_log_probs.detach(),
-            )
-
-            state = next_state
-
-            for i, di in enumerate(done):
-                if di:
-                    # print("Epoch Reward: {}".format(self.epoch_reward))
-                    self.rewards.append(self.epoch_reward[i])
-                    self.epoch_reward[i] = 0
-
-        return values, done
-
-    def learn(self):  # pragma: no cover
-        """
-        Trains actor critic model
-        """
-        for episode in range(self.num_episodes):
-            episode_reward = 0
-
-            self.update(episode)
-
-            if episode % 5 == 0:
-                print("Episode: {}, Reward: {}".format(episode, episode_reward))
-
-        self.env.close()
-
     def get_hyperparams(self) -> Dict[str, Any]:
         """
         Loads important hyperparameters that need to be loaded or saved
@@ -316,11 +233,11 @@ calculate losses)
         """
         hyperparams = {
             "network_type": self.network_type,
-            "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
+            "batch_size": self.batch_size,
             "gamma": self.gamma,
-            "actor_batch_size": self.actor_batch_size,
             "lr_actor": self.lr_actor,
             "lr_critic": self.lr_critic,
+            "rollout_size": self.rollout_size,
             "actor_weights": self.ac.actor.state_dict(),
             "critic_weights": self.ac.critic.state_dict(),
         }
@@ -348,13 +265,8 @@ calculate losses)
         Empties logs
         """
 
+        self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
         self.logs["policy_entropy"] = []
         self.rewards = []
-
-
-if __name__ == "__main__":
-    env = gym.make("CartPole-v0")
-    algo = A2C("mlp", env)
-    algo.learn()
