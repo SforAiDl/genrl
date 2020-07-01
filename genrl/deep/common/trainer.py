@@ -120,7 +120,7 @@ False (To be implemented))
         state = self.env.reset()
         while True:
             if self.off_policy:
-                action = self.agent.select_action(state)
+                action = self.agent.select_action(state, explore=False)
             else:
                 action, _, _ = self.agent.select_action(state)
 
@@ -424,12 +424,13 @@ class OnPolicyTrainer(Trainer):
         Run training.
         """
         for epoch in range(self.epochs):
-            self.agent.epoch_reward = np.zeros(self.env.n_envs)
+            self.agent.epoch_reward = np.zeros(self.env.num_envs)
 
             self.agent.rollout.reset()
             self.agent.rewards = []
 
             state = self.env.reset()
+            # print(state)
             values, done = self.agent.collect_rollouts(state)
 
             self.agent.get_traj_loss(values, done)

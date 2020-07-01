@@ -8,6 +8,7 @@ import torch.optim as opt
 
 from ....environments import VecEnv
 from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from genrl.deep.common.utils import get_env_properties_2
 from ..base import OnPolicyAgent
 
 
@@ -92,6 +93,8 @@ class PPO1(OnPolicyAgent):
     def create_model(self):
         # Instantiate networks and optimizers
         state_dim, action_dim, disc, action_lim = get_env_properties(self.env)
+        # state_dim, action_dim, disc, action_lim = get_env_properties_2(self.env)
+        # print(state_dim, action_dim, disc, action_lim)
         self.policy_new = get_model("p", self.network_type)(
             state_dim, action_dim, self.layers, disc=disc, action_lim=action_lim
         )
@@ -119,8 +122,10 @@ class PPO1(OnPolicyAgent):
         self.rollout = RolloutBuffer(
             self.rollout_size,
             self.env.observation_space,
-            self.env.action_space,
-            n_envs=self.env.n_envs,
+            self.env.action_space[0],
+            # self.env.action_space,
+            n_envs=self.env.num_envs,
+            # n_envs=self.env.n_envs,
         )
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
@@ -146,7 +151,7 @@ class PPO1(OnPolicyAgent):
         for rollout in self.rollout.get(self.batch_size):
             actions = rollout.actions
 
-            if isinstance(self.env.action_space, gym.spaces.Discrete):
+            if isinstance(self.env.action_space[0], gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
             values, log_prob, entropy = self.evaluate_actions(

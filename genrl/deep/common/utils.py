@@ -155,6 +155,33 @@ def get_env_properties(env: Union[gym.Env, VecEnv]) -> (Tuple[int]):
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
+    state_dim = env.observation_space.shape[1]
+
+    if isinstance(env.action_space[0], gym.spaces.Discrete):
+        action_dim = env.action_space[0].n
+        discrete = True
+        action_lim = None
+    elif isinstance(env.action_space[0], gym.spaces.Box):
+        action_dim = env.action_space[0].shape[0]
+        action_lim = env.action_space[0].high[0]
+        discrete = False
+    else:
+        raise NotImplementedError
+
+    return state_dim, action_dim, discrete, action_lim
+
+
+def get_env_properties_2(env: Union[gym.Env, VecEnv]) -> (Tuple[int]):
+    """
+    Finds important properties of environment
+
+    :param env: Environment that the agent is interacting with
+    :type env: Gym Environment
+
+    :returns: (State space dimensions, Action space dimensions,
+discreteness of action space and action limit (highest action value)
+    :rtype: int, float, ...; int, float, ...; bool; int, float, ...
+    """
     state_dim = env.observation_space.shape[0]
 
     if isinstance(env.action_space, gym.spaces.Discrete):
@@ -190,6 +217,22 @@ def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
 
 
 def get_obs_action_shape(obs, action):
+    """
+    Get the shapes of observation and action
+
+    :param obs: State space of environment
+    :param action: Action
+    :type obs: gym.Space
+    :type action: np.array
+    """
+    if isinstance(obs, gym.spaces.Discrete):
+        return 1, 1
+    elif isinstance(obs, gym.spaces.Box):
+        return obs.shape[1], int(np.prod(action.shape))
+    else:
+        raise NotImplementedError
+
+def get_obs_action_shape_2(obs, action):
     """
     Get the shapes of observation and action
 

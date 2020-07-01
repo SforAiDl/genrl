@@ -114,7 +114,7 @@ class OnPolicyAgent(BaseAgent):
         for i in range(self.rollout_size):
             # with torch.no_grad():
             action, values, old_log_probs = self.select_action(state)
-
+            # print(action.shape, values.shape)
             next_state, reward, dones, _ = self.env.step(np.array(action))
             self.epoch_reward += reward
 
@@ -123,7 +123,8 @@ class OnPolicyAgent(BaseAgent):
 
             self.rollout.add(
                 state,
-                action.reshape(self.env.n_envs, 1),
+                # action.reshape(self.env.n_envs, 1),
+                action.reshape(self.env.num_envs, 1),
                 reward,
                 dones,
                 values.detach(),
