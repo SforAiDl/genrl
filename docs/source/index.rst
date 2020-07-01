@@ -11,10 +11,38 @@ Welcome to GenRL's documentation!
    :caption: Contents:
 
 
+Features 
+========
+* Unified Trainer and Logging class: code reusability and high-level UI
+* Ready-made algorithm implementations: ready-made implementations of popular RL algorithms.
+* Extensive Benchmarking
+* Environment implementations
+* Heavy Encapsulation useful for new algorithms
 
-Indices and tables
-==================
+Algorithms
+===========
+GenRL currently supports the following algorithms:
+* Deep
+   1. :mod:`genrl.VPG`: Vanilla Policy Gradients 
+   2. :mod:`genrl.A2C`: Advantage Actor-Critic
+   3. :mod:`genrl.PPO1`: Proximal Policy Optimization
+   4. :mod:`genrl.DQN`: Deep Q-Learning
+   5. :mod:`genrl.DDPG`: Deep Deterministic Policy Gradients
+   6. :mod:`genrl.TD3`: Twin Delayed Deep Determinsitic Policy Gradients
+   7. :mod:`genrl.SAC`: Soft Actor-Critic
+* Classical
+   1. :mod:`genrl.classical.bandits`: Multi-armed Bandits
+      a. :mod:`genrl.EpsGreedyPolicy`: Eps-Greedy
+      b. :mod:`genrl.UCBPolicy`: Upper Confidence Bound
+      c. :mod:`genrl.BayesianPolicy`: Bayesian Bandit
+      d. :mod:`genrl.ThompsonSamplingPolicy`: Thompson Sampling
+      e. :mod:`genrl.GradientPolicy`: Softmax Explorer
+   2. Contextual Bandits
+      a. :mod:`genrl.EpsGreedyCBPolicy`: Eps-Greedy
+      b. :mod:`genrl.UCBCBPolicy`: Upper Confidence Bound
+      c. :mod:`genrl.BayesianCBPolicy`: Bayesian Bandit
+      d. :mod:`genrl.ThompsonSamplingCBPolicy`: Thompson Sampling
+      e. :mod:`genrl.GradientCBPolicy`: Softmax Explorer
+   3. :mod:`genrl.classical.SARSA`: SARSA
+   4. :mod:`genrl.classical.QLearning`: Q-Learning
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
