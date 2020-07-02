@@ -1,13 +1,13 @@
-genrl.classical.sarsa package
-=============================
+genrl.deep.agents.ppo1
+======================
 
 Submodules
 ----------
 
-genrl.classical.sarsa.sarsa module
+genrl.deep.agents.ppo1.ppo1 module
 ----------------------------------
 
-.. automodule:: genrl.classical.sarsa.sarsa
+.. automodule:: genrl.deep.agents.ppo1.ppo1
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.classical.sarsa.sarsa module
 Module contents
 ---------------
 
-.. automodule:: genrl.classical.sarsa
+.. automodule:: genrl.deep.agents.ppo1
    :members:
    :undoc-members:
    :show-inheritance:

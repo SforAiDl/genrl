@@ -11,6 +11,7 @@ Welcome to GenRL's documentation!
    :caption: Contents:
    
    tutorials/index
+   algorithms/index
 
 .. Features 
 .. ========
