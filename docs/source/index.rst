@@ -19,7 +19,8 @@ Contents
 .. toctree::
    :maxdepth: 2
    
-   tutorials/index
+   install
+   getting_started
    algorithms/index
 
 .. Algorithms
