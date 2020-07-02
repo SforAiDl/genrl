@@ -5,3 +5,4 @@ Algorithms
 
     deep/index
     classical/index
+    bandits/index
