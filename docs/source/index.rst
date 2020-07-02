@@ -10,6 +10,9 @@ Welcome to GenRL's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+Reinforcement Learning is moving faster than ever before. Our goal in creating GenRL is to 
+create modular reusable code spanning all of Reinforcement Learning. At the same time, we also
+want to keep up good software engineering and open source software practices.
 
 Features 
 ========
@@ -54,3 +57,86 @@ GenRL currently supports the following algorithms:
       3. :mod:`genrl.classical.SARSA`: SARSA
       4. :mod:`genrl.classical.QLearning`: Q-Learning
 
+Examples
+========
+
+Train Vanilla Policy Gradient on Vectorized CartPole-v1
+
+.. code-block:: python
+
+      from genrl import VPG
+      from genrl.deep.common import OnPolicyTrainer
+      from genrl.environments import VectorEnv
+
+      # Specify some hyperparameters
+      n_envs = 10
+      epochs = 15
+      eval_episodes = 10
+      arch = "mlp"
+      log = ["stdout,tensorboard"] # Specify logging type as a comma-separated list
+      
+      # Initialize Agent and Environment
+      env = VectorEnv("CartPole-v1", n_envs)
+      agent = VPG("mlp", env)
+
+      # Trainer
+      trainer = OnPolicyTrainer(agent, env, log, epochs = epochs, evaluate_episodes = eval_episodes)
+      trainer.train()
+
+      # Evaluation
+      trainer.render = True
+      trainer.evaluate()
+
+Train Proximal Policy Optimization (PPO) on Vectorized LunarLander-v2
+
+.. code-block:: python
+
+      from genrl import PPO1
+      from genrl.deep.common import OnPolicyTrainer
+      from genrl.environments import VectorEnv
+
+      # Specify some hyperparameters
+      n_envs = 10
+      epochs = 40
+      eval_episodes = 20
+      arch = "mlp"
+      log = ["stdout,tensorboard"] # Specify logging type as a comma-separated list
+      
+      # Initialize Agent and Environment
+      env = VectorEnv("CartPole-v1", n_envs)
+      agent = PPO1("mlp", env)
+
+      # Trainer
+      trainer = OnPolicyTrainer(agent, env, log, epochs = epochs, evaluate_episodes = eval_episodes)
+      trainer.train()
+
+      # Evaluation
+      trainer.render = True
+      trainer.evaluate()
+
+Train Soft Actor-Critic (SAC) on Vectorized Pendulum-v0
+
+.. code-block:: python
+
+      from genrl import PPO1
+      from genrl.deep.common import OffPolicyTrainer
+      from genrl.environments import VectorEnv
+
+      # Specify some hyperparameters
+      n_envs = 10
+      epochs = 40
+      eval_episodes = 20
+      arch = "mlp"
+      log = ["stdout,tensorboard"] # Specify logging type as a comma-separated list
+      
+      # Initialize Agent and Environment
+      env = VectorEnv("Pendulum-v0", n_envs)
+      agent = SAC("mlp", env)
+
+      # Trainer
+      trainer = OffPolicyTrainer(agent, env, log, epochs = epochs, evaluate_episodes = eval_episodes)
+      trainer.train()
+
+      # Evaluation
+      trainer.render = True
+      trainer.evaluate()
