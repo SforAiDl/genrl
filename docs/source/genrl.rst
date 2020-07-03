@@ -9,6 +9,7 @@ Subpackages
 
    genrl.classical
    genrl.deep
+   genrl.environments
 
 Module contents
 ---------------
