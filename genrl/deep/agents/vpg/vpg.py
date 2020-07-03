@@ -103,8 +103,8 @@ class VPG(OnPolicyAgent):
         self.rollout = RolloutBuffer(
             self.rollout_size,
             self.env.observation_space,
-            self.env.action_space,
-            n_envs=self.env.n_envs,
+            self.env.action_space[0],
+            n_envs=self.env.num_envs,
         )
 
     def select_action(
@@ -143,7 +143,7 @@ class VPG(OnPolicyAgent):
 
             actions = rollout.actions
 
-            if isinstance(self.env.action_space, gym.spaces.Discrete):
+            if isinstance(self.env.action_space[0], gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
             log_prob = self.get_value_log_probs(rollout.observations, actions)
@@ -174,10 +174,10 @@ class VPG(OnPolicyAgent):
 
             self.rollout.add(
                 state,
-                action.reshape(self.env.n_envs, 1),
+                action.reshape(self.env.num_envs, 1),
                 reward,
                 dones,
-                torch.Tensor([0] * self.env.n_envs),
+                torch.Tensor([0] * self.env.num_envs),
                 old_log_probs.detach(),
             )
 
@@ -185,7 +185,7 @@ class VPG(OnPolicyAgent):
 
             self.collect_rewards(dones)
 
-        return torch.Tensor([0] * self.env.n_envs), dones
+        return torch.Tensor([0] * self.env.num_envs), dones
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
