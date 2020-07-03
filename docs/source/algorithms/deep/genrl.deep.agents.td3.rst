@@ -1,5 +1,5 @@
-genrl.deep.agents.td3 package
-=============================
+genrl.deep.agents.td3
+=====================
 
 Submodules
 ----------
