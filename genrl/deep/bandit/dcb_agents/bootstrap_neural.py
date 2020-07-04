@@ -1,7 +1,7 @@
 from typing import List
 
-import torch
 import numpy as np
+import torch
 
 from ..data_bandits import DataBasedBandit
 from .common import NeuralBanditModel, TransitionDB

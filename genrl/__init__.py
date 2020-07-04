@@ -14,14 +14,15 @@ from genrl.classical import ThompsonSamplingCBPolicy  # noqa
 from genrl.classical import ThompsonSamplingPolicy  # noqa
 from genrl.classical import UCBCBPolicy  # noqa
 from genrl.classical import UCBPolicy  # noqa
-from genrl.deep import AdultDataBandit  # noqa; noqa
+from genrl.deep import BootstrapNeural  # noqa
 from genrl.deep import CovertypeDataBandit  # noqa
 from genrl.deep import DataBasedBandit  # noqa
 from genrl.deep import LinearPosteriorAgent  # noqa
-from genrl.deep import VariationalAgent  # noqa
 from genrl.deep import MushroomDataBandit  # noqa
 from genrl.deep import NeuralGreedyAgent  # noqa
 from genrl.deep import NeuralLinearPosteriorAgent  # noqa
 from genrl.deep import StatlogDataBandit  # noqa
-from genrl.deep import BootstrapNeural  # noqa
+from genrl.deep import VariationalAgent  # noqa
 from genrl.deep import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
+
+from genrl.deep import AdultDataBandit  # noqa; noqa

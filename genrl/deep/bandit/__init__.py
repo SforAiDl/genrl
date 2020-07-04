@@ -3,6 +3,7 @@ from genrl.deep.bandit.data_bandits import CovertypeDataBandit  # noqa
 from genrl.deep.bandit.data_bandits import DataBasedBandit  # noqa
 from genrl.deep.bandit.data_bandits import MushroomDataBandit  # noqa
 from genrl.deep.bandit.data_bandits import StatlogDataBandit  # noqa
+from genrl.deep.bandit.dcb_agents import BootstrapNeural  # noqa
 from genrl.deep.bandit.dcb_agents import DCBAgent  # noqa
 from genrl.deep.bandit.dcb_agents import LinearPosteriorAgent  # noqa
 from genrl.deep.bandit.dcb_agents import NeuralBanditModel  # noqa
@@ -10,4 +11,3 @@ from genrl.deep.bandit.dcb_agents import NeuralGreedyAgent  # noqa
 from genrl.deep.bandit.dcb_agents import NeuralLinearPosteriorAgent  # noqa
 from genrl.deep.bandit.dcb_agents import TransitionDB  # noqa
 from genrl.deep.bandit.dcb_agents import VariationalAgent  # noqa
-from genrl.deep.bandit.dcb_agents import BootstrapNeural  # noqa
