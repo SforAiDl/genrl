@@ -6,9 +6,10 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 
+from genrl.deep.common.utils import get_env_properties_2
+
 from ....environments import VecEnv
 from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
-from genrl.deep.common.utils import get_env_properties_2
 from ..base import OnPolicyAgent
 
 

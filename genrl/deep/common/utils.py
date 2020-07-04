@@ -232,6 +232,7 @@ def get_obs_action_shape(obs, action):
     else:
         raise NotImplementedError
 
+
 def get_obs_action_shape_2(obs, action):
     """
     Get the shapes of observation and action

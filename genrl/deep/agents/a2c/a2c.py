@@ -123,8 +123,8 @@ class A2C(OnPolicyAgent):
         self.rollout = RolloutBuffer(
             self.rollout_size,
             self.env.observation_space,
-            self.env.action_space,
-            n_envs=self.env.n_envs,
+            self.env.action_space[0],
+            n_envs=self.env.num_envs,
         )
 
         # load paramaters if already trained
@@ -176,7 +176,7 @@ calculate losses)
 
             actions = rollout.actions
 
-            if isinstance(self.env.action_space, gym.spaces.Discrete):
+            if isinstance(self.env.action_space[0], gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
             values, log_prob = self.get_value_log_probs(rollout.observations, actions)
