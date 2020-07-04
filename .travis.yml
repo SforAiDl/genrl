@@ -18,13 +18,13 @@ jobs:
   include:
     #Run tests
     - stage: Lint Check
-      python: "3.6"
+      python: "3.7"
       install:
         - pip install black flake8 isort black
       script:
         - flake8 .
         - black --check .
-        - isort -rc .
+        - isort -rc -c .
       after_success:
         
     - stage: test
