@@ -11,13 +11,7 @@ from ..environments import (
     NoopReset,
     TimeLimit,
 )
-from ..environments.vec_env import (
-    SerialVecEnv,
-    SubProcessVecEnv,
-    VecEnv,
-    VecMonitor,
-    VecNormalize,
-)
+from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
 def VectorEnv(
