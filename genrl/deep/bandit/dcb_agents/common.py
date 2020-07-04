@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union, Optional
 
 import torch
 import torch.nn as nn
@@ -63,7 +63,7 @@ class TransitionDB(object):
 
 class NeuralBanditModel(nn.Module):
     def __init__(
-        self, context_dim: int, hidden_dims: List[int], n_actions: int, lr: float
+        self, context_dim: int, hidden_dims: List[int], n_actions: int, lr: float,
     ):
         super(NeuralBanditModel, self).__init__()
         self.context_dim = context_dim
@@ -79,7 +79,7 @@ class NeuralBanditModel(nn.Module):
     def forward(self, context: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         x = context
         for layer in self.layers[:-1]:
-            x = nn.functional.relu(layer(x))
+            x = F.relu(layer(x))
         pred_rewards = self.layers[-1](x)
         return x, pred_rewards
 
@@ -91,11 +91,122 @@ class NeuralBanditModel(nn.Module):
             )
             reward_vec[:, a] = y.view(-1)
             _, rewards_pred = self.forward(x)
-            action_one_hot = F.one_hot(a, num_classes=self.n_actions)
+            action_mask = F.one_hot(a, num_classes=self.n_actions)
             loss = (
-                torch.sum(action_one_hot * (reward_vec - rewards_pred) ** 2)
-                / batch_size
+                torch.sum(action_mask * (reward_vec - rewards_pred) ** 2) / batch_size
             )
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
+
+
+class BayesianLinear(nn.Module):
+    def __init__(self, in_features: int, out_features: int, bias: bool = True) -> None:
+        super(BayesianLinear, self).__init__()
+
+        self.in_features = in_features
+        self.out_features = out_features
+        self.bias = bias
+
+        self.w_mu = nn.Parameter(torch.Tensor(out_features, in_features))
+        self.w_sigma = nn.Parameter(torch.Tensor(out_features, in_features))
+        if self.bias:
+            self.b_mu = nn.Parameter(torch.Tensor(out_features))
+            self.b_sigma = nn.Parameter(torch.Tensor(out_features))
+
+        self.reset_parameters()
+
+    def reset_parameters(self) -> None:
+        self.w_mu.data.normal_(0, 0.1)
+        self.w_sigma.data.normal_(0, 0.1)
+        if self.bias:
+            self.b_mu.data.normal_(0, 0.1)
+            self.b_sigma.data.normal_(0, 0.1)
+
+    def forward(
+        self, x: torch.Tensor, kl: bool = True, frozen: bool = False
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        kl_val = None
+        if frozen:
+            w = self.w_mu
+            if bias:
+                b = self.b_mu
+        else:
+            w_dist = torch.distributions.Normal(self.w_mu, self.w_sigma)
+            w = w_dist.rsample()
+            if kl:
+                kl_val = torch.sum(
+                    w_dist.log_prob(w) - torch.distributions.Normal(0, 0.1).log_prob(w)
+                )
+            if self.bias:
+                b_dist = torch.distributions.Normal(self.b_mu, self.b_sigma)
+                b = b_dist.rsample()
+                if kl:
+                    kl_val += torch.sum(
+                        b_dist.log_prob(b)
+                        - torch.distributions.Normal(0, 0.1).log_prob(b)
+                    )
+            else:
+                b = 0.0
+                b_logprob = None
+
+        return F.linear(x, w, b), kl_val
+
+
+class BayesianNNBanditModel(nn.Module):
+    def __init__(
+        self,
+        context_dim: int,
+        hidden_dims: List[int],
+        n_actions: int,
+        lr: float,
+        noise_sigma: float = 0.1,
+    ):
+        super(BayesianNNBanditModel, self).__init__()
+        self.context_dim = context_dim
+        self.hidden_dims = hidden_dims
+        self.n_actions = n_actions
+        self.noise_sigma = noise_sigma
+        hidden_dims.insert(0, context_dim)
+        hidden_dims.append(n_actions)
+        self.layers = nn.ModuleList([])
+        for i in range(len(hidden_dims) - 1):
+            self.layers.append(BayesianLinear(hidden_dims[i], hidden_dims[i + 1]))
+        self.optimizer = torch.optim.Adam(self.layers.parameters(), lr=lr)
+
+    def forward(
+        self, context: torch.Tensor, kl: bool = True
+    ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
+        kl_val = 0.0
+        x = context
+        for layer in self.layers[:-1]:
+            x, kl_v = layer(x)
+            x = F.relu(x)
+            if kl:
+                kl_val += kl_v
+        pred_rewards, kl_v = self.layers[-1](x)
+        if kl:
+            kl_val += kl_v
+        return x, pred_rewards, kl_val
+
+    def train(self, db: TransitionDB, epochs: int, batch_size: int):
+        for e in range(epochs):
+            x, a, y = db.get_data(batch_size)
+            reward_vec = torch.zeros(
+                size=(y.shape[0], self.n_actions), device=device, dtype=dtype
+            )
+            reward_vec[:, a] = y.view(-1)
+            _, rewards_pred, kl_val = self.forward(x)
+            action_mask = F.one_hot(a, num_classes=self.n_actions)
+
+            log_likelihood = torch.distributions.Normal(
+                rewards_pred, self.noise_sigma
+            ).log_prob(reward_vec)
+
+            loss = torch.sum(action_mask * log_likelihood) / batch_size - (
+                kl_val / db.db_size
+            )
+
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

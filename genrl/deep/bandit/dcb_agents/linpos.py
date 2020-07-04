@@ -117,12 +117,13 @@ if __name__ == "__main__":
     from ..data_bandits.covertype_bandit import CovertypeDataBandit
     from ..data_bandits.mushroom_bandit import MushroomDataBandit
     from ..data_bandits.statlog_bandit import StatlogDataBandit
-    from ..contextual_bandits import BernoulliCB
+    from ..data_bandits.adult_bandit import AdultDataBandit
+    from ....classical.bandit.contextual_bandits import BernoulliCB
 
     TIMESTEPS = 1000
-    ITERATIONS = 50
-    # BANDIT_ARGS = {"download": True}
-    BANDIT_ARGS = {"bandits": 5, "arms": 10}
+    ITERATIONS = 10
+    BANDIT_ARGS = {"download": True}
+    # BANDIT_ARGS = {"bandits": 5, "arms": 10}
 
     POLICY_ARGS_COLLECTION = [
         {
@@ -136,7 +137,7 @@ if __name__ == "__main__":
 
     demo_dcb_policy(
         LinearPosteriorAgent,
-        BernoulliCB,
+        AdultDataBandit,
         POLICY_ARGS_COLLECTION,
         BANDIT_ARGS,
         TIMESTEPS,

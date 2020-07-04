@@ -31,7 +31,7 @@ class MushroomDataBandit(DataBasedBandit):
             if url is None:
                 url = URL
             fpath = download_data(path, url, force_download)
-            self.df = pd.read_csv(fpath)
+            self.df = pd.read_csv(fpath, header=None)
         else:
             if Path(path).is_dir():
                 path = Path(path).joinpath("agaricus-lepiota.data")

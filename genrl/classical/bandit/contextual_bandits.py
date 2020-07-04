@@ -1,4 +1,4 @@
-from typing import Union, Tuple, List
+from typing import List, Tuple, Union
 
 import numpy as np
 import torch
@@ -70,7 +70,9 @@ class ContextualBandit(object):
         :rtype: int
         """
         self.curr_bandit = torch.randint(self.bandits, (1,))
-        self.curr_context = F.one_hot(self.curr_bandit, num_classes=self.context_dim).to(torch.float)
+        self.curr_context = F.one_hot(
+            self.curr_bandit, num_classes=self.context_dim
+        ).to(torch.float)
         return self.curr_context
 
     def step(self, action: int) -> Tuple[torch.Tensor, int]:
