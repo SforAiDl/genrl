@@ -36,7 +36,13 @@ class MlpPolicy(BasePolicy):
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = mlp([state_dim] + list(hidden) + [action_dim], sac=self.sac)
+        self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
+
+        self.model = mlp(
+            [state_dim] + list(hidden) + [action_dim],
+            activation=self.activation,
+            sac=self.sac,
+        )
 
 
 class CNNPolicy(BasePolicy):

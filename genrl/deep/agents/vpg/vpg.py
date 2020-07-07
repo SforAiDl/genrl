@@ -125,13 +125,14 @@ class VPG(OnPolicyAgent):
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
-        a, c = self.actor.get_action(state, deterministic=False)
+        action, c = self.actor.get_action(state, deterministic=False)
 
-        return a, c.log_prob(a), None
+        return action.detach().cpu().numpy(), c.log_prob(action).cpu(), None
 
     def get_value_log_probs(self, state, action):
-        a, c = self.actor.get_action(state, deterministic=False)
-        return c.log_prob(action)
+        state, action = state.to(self.device), action.to(self.device)
+        _, c = self.actor.get_action(state, deterministic=False)
+        return c.log_prob(action).cpu()
 
     def get_traj_loss(self, value, done):
         """
@@ -168,7 +169,7 @@ class VPG(OnPolicyAgent):
 
             action, old_log_probs, _ = self.select_action(state)
 
-            next_state, reward, dones, _ = self.env.step(action.numpy())
+            next_state, reward, dones, _ = self.env.step(action)
             self.epoch_reward += reward
 
             if self.render:
@@ -196,7 +197,7 @@ class VPG(OnPolicyAgent):
             "gamma": self.gamma,
             "lr_policy": self.lr_policy,
             "rollout_size": self.rollout_size,
-            "weights": self.ac.state_dict(),
+            "weights": self.actor.state_dict(),
         }
 
         return hyperparams

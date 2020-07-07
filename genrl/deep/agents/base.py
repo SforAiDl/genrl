@@ -106,17 +106,15 @@ class OnPolicyAgent(BaseAgent):
     def collect_rewards(self, dones):
         for i, done in enumerate(dones):
             if done:
-                self.rewards.append(self.epoch_reward[i])
-                self.epoch_reward[i] = 0
+                self.rewards.append(self.env.episode_reward[i])
+                self.env.episode_reward[i] = 0
 
     def collect_rollouts(self, state):
 
         for i in range(self.rollout_size):
-            # with torch.no_grad():
             action, values, old_log_probs = self.select_action(state)
 
             next_state, reward, dones, _ = self.env.step(np.array(action))
-            self.epoch_reward += reward
 
             if self.render:
                 self.env.render()

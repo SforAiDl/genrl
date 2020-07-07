@@ -94,15 +94,16 @@ class PPO1(OnPolicyAgent):
         Creates actor critic model and initialises optimizers
         """
         # Instantiate networks and optimizers
-        state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
+        input_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
 
         self.ac = get_model("ac", self.network_type)(
-            state_dim,
+            input_dim,
             action_dim,
             self.layers,
             "V",
             discrete=discrete,
             action_lim=action_lim,
+            activation="tanh",
         ).to(self.device)
 
         # load paramaters if already trained
@@ -123,6 +124,7 @@ class PPO1(OnPolicyAgent):
             self.env.observation_space,
             self.env.action_space,
             n_envs=self.env.n_envs,
+            gae_lambda=0.95,
         )
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
@@ -139,7 +141,7 @@ class PPO1(OnPolicyAgent):
         action, c_new = self.ac.get_action(state, deterministic=False)
         value = self.ac.get_value(state)
 
-        return action.detach().cpu().numpy(), value, c_new.log_prob(action)
+        return action.detach().cpu().numpy(), value, c_new.log_prob(action).cpu()
 
     def evaluate_actions(self, old_states, old_actions):
         """
@@ -151,9 +153,14 @@ class PPO1(OnPolicyAgent):
         :type old_actions: NumPy Array
         :returns: Value, Log Probabilities of old actions, Entropy
         """
+        old_states, old_actions = (
+            old_states.to(self.device),
+            old_actions.to(self.device),
+        )
+
         value = self.ac.get_value(old_states)
         _, dist = self.ac.get_action(old_states)
-        return value, dist.log_prob(old_actions), dist.entropy()
+        return value, dist.log_prob(old_actions).cpu(), dist.entropy().cpu()
 
     # get clipped loss for single trajectory (episode)
     def get_traj_loss(self, values: np.ndarray, dones: bool):
@@ -198,15 +205,13 @@ calculate losses)
 
             values = values.flatten()
 
-            value_loss = nn.functional.mse_loss(rollout.returns, values)
+            value_loss = nn.functional.mse_loss(rollout.returns, values.cpu())
             self.logs["value_loss"].append(torch.mean(value_loss).item())
 
-            entropy_loss = -torch.mean(entropy)  # Change this to entropy
+            entropy_loss = -torch.mean(entropy)
             self.logs["policy_entropy"].append(entropy_loss.item())
 
-            loss = (
-                policy_loss + self.entropy_coeff * entropy_loss
-            )  # + self.vf_coef * value_loss
+            loss = policy_loss + self.entropy_coeff * entropy_loss
 
             self.optimizer_policy.zero_grad()
             loss.backward()

@@ -36,7 +36,7 @@ Eg. "mlp" or "cnn")
     raise ValueError
 
 
-def mlp(sizes: Tuple, sac: bool = False):
+def mlp(sizes: Tuple, activation: str = "relu", sac: bool = False):
     """
     Generates an MLP model given sizes of each layer
 
@@ -49,8 +49,10 @@ activation layers)
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
+    activation = nn.ReLU if activation == "relu" else nn.Tanh
+
     for layer in range(limit - 1):
-        act = nn.ReLU if layer < limit - 2 else nn.Identity
+        act = activation if layer < limit - 2 else nn.Identity
         layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act()]
     return nn.Sequential(*layers)
 
@@ -60,6 +62,7 @@ def cnn(
     kernel_sizes: Tuple = (8, 4),
     strides: Tuple = (4, 2),
     in_size: int = 84,
+    activation: str = "relu",
 ) -> (Tuple):
     """
     (Generates a CNN model given input dimensions, channels, kernel_sizes and
@@ -78,12 +81,12 @@ activation layers)
     """
     cnn_layers = []
     output_size = in_size
+    activation = nn.ReLU() if activation == "relu" else nn.Tanh()
 
     for i in range(len(channels) - 1):
         in_channels, out_channels = channels[i], channels[i + 1]
         kernel_size, stride = kernel_sizes[i], strides[i]
         conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
-        activation = nn.ReLU()
         cnn_layers += [conv, activation]
         output_size = (output_size - kernel_size) / stride + 1
 

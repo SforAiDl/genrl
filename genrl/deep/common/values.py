@@ -7,7 +7,12 @@ from .utils import cnn, mlp
 
 
 def _get_val_model(
-    arch: str, val_type: str, state_dim: str, hidden: Tuple, action_dim: int = None
+    arch: str,
+    val_type: str,
+    state_dim: str,
+    hidden: Tuple,
+    action_dim: int = None,
+    activation: str = "relu",
 ):
     """
     Returns Neural Network given specifications
@@ -26,11 +31,11 @@ def _get_val_model(
     :returns: Neural Network model to be used for the Value function
     """
     if val_type == "V":
-        return arch([state_dim] + list(hidden) + [1])
+        return arch([state_dim] + list(hidden) + [1], activation)
     elif val_type == "Qsa":
-        return arch([state_dim + action_dim] + list(hidden) + [1])
+        return arch([state_dim + action_dim] + list(hidden) + [1], activation)
     elif val_type == "Qs":
-        return arch([state_dim] + list(hidden) + [action_dim])
+        return arch([state_dim] + list(hidden) + [action_dim], activation)
     else:
         raise ValueError
 
@@ -56,13 +61,18 @@ class MlpValue(BaseValue):
         action_dim: int = None,
         val_type: str = "V",
         hidden: Tuple = (32, 32),
+        **kwargs,
     ):
         super(MlpValue, self).__init__()
 
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = _get_val_model(mlp, val_type, state_dim, hidden, action_dim)
+        self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
+
+        self.model = _get_val_model(
+            mlp, val_type, state_dim, hidden, action_dim, self.activation
+        )
 
 
 class CNNValue(BaseValue):

@@ -4,13 +4,12 @@ import gym
 
 from ..environments import (
     AtariPreprocessing,
-    AtariTimeLimit,
     FireReset,
     FrameStack,
     GymWrapper,
     NoopReset,
-    TimeLimit,
 )
+from ..environments.time_limit import AtariTimeLimit, TimeLimit
 from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
