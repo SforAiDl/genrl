@@ -11,7 +11,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
 
 
-class BootstrapNeural(DCBAgent):
+class BootstrapNeuralAgent(DCBAgent):
     def __init__(
         self,
         bandit: DataBasedBandit,
@@ -24,7 +24,7 @@ class BootstrapNeural(DCBAgent):
         batch_size: int = 512,
         nn_update_interval: int = 20,
     ):
-        super(BootstrapNeural, self).__init__(bandit)
+        super(BootstrapNeuralAgent, self).__init__(bandit)
         self.init_pulls = init_pulls
         self.n = n
         self.add_prob = add_prob
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     ]
 
     demo_dcb_policy(
-        BootstrapNeural,
+        BootstrapNeuralAgent,
         BernoulliCB,
         POLICY_ARGS_COLLECTION,
         BANDIT_ARGS,

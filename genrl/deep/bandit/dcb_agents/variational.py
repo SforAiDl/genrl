@@ -23,7 +23,7 @@ class VariationalAgent(DCBAgent):
         batch_size: int = 512,
         nn_update_interval: int = 20,
     ):
-        super(VariationAgent, self).__init__(bandit)
+        super(VariationalAgent, self).__init__(bandit)
         self.init_pulls = init_pulls
         self.batch_size = batch_size
         self.model = BayesianNNBanditModel(
