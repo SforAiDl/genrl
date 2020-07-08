@@ -74,7 +74,7 @@ class BayesianUCBCBPolicy(CBPolicy):
         """
         return self._c
 
-    def select_action(self, context: int, t: int) -> int:
+    def select_action(self, context: int) -> int:
         """
         Select an action according to bayesian upper confidence bound
 

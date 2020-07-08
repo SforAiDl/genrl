@@ -11,15 +11,21 @@ class ContextualBandit(object):
 
     :param bandits: Number of bandits
     :param arms: Number of arms in each bandit
+    :param context_type: Give context as either tensor or int
     :type bandits: int
     :type arms: int
+    :type context_type: str
     """
 
-    def __init__(self, bandits: int = 1, arms: int = 1):
+    def __init__(self, bandits: int = 1, arms: int = 1, context_type: str = "tensor"):
         self._nbandits = bandits
         self._narms = arms
         self.n_actions = arms
         self.context_dim = bandits
+        assert (
+            context_type == "int" or context_type == "tensor"
+        ), f"cotext_type should be either tensor or int, found {context_type}"
+        self.context_type = context_type
         self.reset()
         self._regret_hist = []
         self._reward_hist = []
@@ -73,9 +79,12 @@ class ContextualBandit(object):
         self.curr_context = F.one_hot(
             self.curr_bandit, num_classes=self.context_dim
         ).to(torch.float)
-        return self.curr_context
+        if self.context_type == "tensor":
+            return self.curr_context
+        elif self.context_type == "int":
+            return self.curr_bandit.item()
 
-    def step(self, action: int) -> Tuple[torch.Tensor, int]:
+    def step(self, action: int) -> Tuple[Union[int, torch.Tensor], Union[int, float]]:
         """
         Takes an action in the bandit and returns the sampled reward
 
@@ -90,7 +99,10 @@ class ContextualBandit(object):
         self.regret_hist.append(max_reward - reward)
         self.reward_hist.append(reward)
         self.reset()
-        return self.curr_context.view(-1), reward
+        if self.context_type == "tensor":
+            return self.curr_context.view(-1), reward
+        elif self.context_type == "int":
+            return self.curr_bandit, reward
 
 
 class BernoulliCB(ContextualBandit):
@@ -106,9 +118,13 @@ class BernoulliCB(ContextualBandit):
     """
 
     def __init__(
-        self, bandits: int = 1, arms: int = 1, reward_probs: np.ndarray = None
+        self,
+        bandits: int = 1,
+        arms: int = 1,
+        reward_probs: np.ndarray = None,
+        context_type: str = "tensor",
     ):
-        super(BernoulliCB, self).__init__(bandits, arms)
+        super(BernoulliCB, self).__init__(bandits, arms, context_type)
         if reward_probs is not None:
             self.reward_probs = reward_probs
         else:
@@ -122,8 +138,8 @@ class BernoulliCB(ContextualBandit):
 
         :param action: The action to take
         :type action: int
-        :returns: Reward sampled for the action taken
-        :rtype: int
+        :returns: Reward sampled for the action taken and maximum reward
+        :rtype: tuple of int
         """
         reward_prob = self.reward_probs[self.curr_bandit, action]
         reward = int(np.random.random() > reward_prob)
@@ -143,9 +159,13 @@ class GaussianCB(ContextualBandit):
     """
 
     def __init__(
-        self, bandits: int = 1, arms: int = 1, reward_means: np.ndarray = None
+        self,
+        bandits: int = 1,
+        arms: int = 1,
+        reward_means: np.ndarray = None,
+        context_type: str = "tensor",
     ):
-        super(GaussianCB, self).__init__(bandits, arms)
+        super(GaussianCB, self).__init__(bandits, arms, context_type)
         if reward_means is not None:
             self.reward_means = reward_means
         else:
@@ -159,8 +179,8 @@ class GaussianCB(ContextualBandit):
 
         :param action: The action to take
         :type action: int
-        :returns: Reward sampled for the action taken
-        :rtype: int
+        :returns: Reward sampled for the action taken and maximum reward
+        :rtype: tuples of int
         """
         reward_mean = self.reward_means[self.curr_bandit, action]
         reward = np.random.normal(reward_mean)

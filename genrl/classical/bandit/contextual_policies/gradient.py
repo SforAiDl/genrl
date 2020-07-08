@@ -82,7 +82,7 @@ class GradientCBPolicy(CBPolicy):
         p = exp / total
         return p
 
-    def select_action(self, context: int, t: int) -> int:
+    def select_action(self, context: int) -> int:
         """
         Select an action according by softmax action selection strategy
 
@@ -90,9 +90,7 @@ class GradientCBPolicy(CBPolicy):
         the Q values for all actions
 
         :param context: the context to select action for
-        :param t: timestep to choose action for
         :type context: int
-        :type t: int
         :returns: Selected action
         :rtype: int
         """

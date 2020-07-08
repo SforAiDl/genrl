@@ -22,6 +22,7 @@ class UCBCBPolicy(CBPolicy):
         self._c = confidence
         self._quality = np.zeros(shape=(bandit.bandits, bandit.arms))
         self._counts = np.zeros(shape=(bandit.bandits, bandit.arms))
+        self._t = 0
 
     @property
     def confidence(self) -> float:
@@ -43,7 +44,7 @@ class UCBCBPolicy(CBPolicy):
         """
         return self._quality
 
-    def select_action(self, context: int, t: int) -> int:
+    def select_action(self, context: int) -> int:
         """
         Select an action according to upper confidence bound action selction
 
@@ -51,15 +52,15 @@ class UCBCBPolicy(CBPolicy):
         and an exploration encouragement term controlled by c.
 
         :param context: the context to select action for
-        :param t: timestep to choose action for
         :type context: int
-        :type t: int
         :returns: Selected action
         :rtype: int
         """
+        self._t += 1
         action = np.argmax(
             self.quality[context]
-            + self.confidence * np.sqrt(2 * np.log(t + 1) / (self.counts[context] + 1))
+            + self.confidence
+            * np.sqrt(2 * np.log(self._t + 1) / (self.counts[context] + 1))
         )
         self.action_hist.append((context, action))
         return action

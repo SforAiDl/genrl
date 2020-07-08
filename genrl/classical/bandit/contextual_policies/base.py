@@ -1,6 +1,7 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
+import torch
 
 from ..contextual_bandits import ContextualBandit
 
@@ -16,9 +17,12 @@ class CBPolicy(object):
 
     def __init__(self, bandit: ContextualBandit):
         self._bandit = bandit
+        assert bandit.context_type == "int", (
+            f"Context type of bandit should be int, " f"found {bandit.context_type}"
+        )
         self._regret = 0.0
-        self._action_hist = []
         self._regret_hist = []
+        self._action_hist = []
         self._reward_hist = []
         self._counts = np.zeros(shape=(bandit.bandits, bandit.arms))
 
@@ -33,16 +37,6 @@ class CBPolicy(object):
         return self._action_hist
 
     @property
-    def regret_hist(self) -> List[float]:
-        """
-        Get the history of regrets computed for each step
-
-        :returns: List of regrets
-        :rtype: list
-        """
-        return self._regret_hist
-
-    @property
     def regret(self) -> float:
         """
         Get the current regret
@@ -51,6 +45,16 @@ class CBPolicy(object):
         :rtype: float
         """
         return self._regret
+
+    @property
+    def regret_hist(self) -> List[float]:
+        """
+        Get the history of regrets incurred for each step
+
+        :returns: List of rewards
+        :rtype: list
+        """
+        return self._regret_hist
 
     @property
     def reward_hist(self) -> List[float]:
@@ -72,22 +76,22 @@ class CBPolicy(object):
         """
         return self._counts
 
-    def select_action(self, context: int, t: int) -> int:
+    def select_action(self, context: int) -> int:
         """
         Select an action
 
         This method needs to be implemented in the specific policy.
 
         :param context: the context to select action for
-        :param t: timestep to choose action for
         :type context: int
-        :type t: int
         :returns: Selected action
         :rtype: int
         """
         raise NotImplementedError
 
-    def update_params(self, context: int, action: int, reward: float) -> None:
+    def update_params(
+        self, context: int, action: int, reward: Union[int, float]
+    ) -> None:
         """
         Update parmeters for the policy
 
@@ -98,7 +102,7 @@ class CBPolicy(object):
         :param reward: reward obtained for the step
         :type context: int
         :type action: int
-        :type reward: float
+        :type reward: int or float
         """
         raise NotImplementedError
 
@@ -114,7 +118,8 @@ class CBPolicy(object):
         :type: int
         """
         context = self._bandit.reset()
-        for t in range(n_timesteps):
-            action = self.select_action(context, t)
+        for _ in range(n_timesteps):
+            action = self.select_action(context)
             context, reward = self._bandit.step(action)
+            self.action_hist.append(action)
             self.update_params(context, action, reward)
