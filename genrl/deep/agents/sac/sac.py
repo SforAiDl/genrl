@@ -7,10 +7,16 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 from torch.distributions import Normal
-from torch.utils.tensorboard import SummaryWriter
 
 from ....environments import VecEnv
-from ...common import ReplayBuffer, get_model, load_params, save_params, set_seeds
+from ...common import (
+    ReplayBuffer,
+    get_model,
+    load_params,
+    safe_mean,
+    save_params,
+    set_seeds,
+)
 
 
 class SAC:
@@ -35,7 +41,6 @@ class SAC:
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of step between updates
     :param layers: Neural network layer dimensions
-    :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
@@ -58,7 +63,6 @@ class SAC:
     :type start_update: int
     :type update_interval: int
     :type layers: tuple
-    :type tensorboard_log: string
     :type seed: int
     :type render: bool
     :type device: string
@@ -85,7 +89,6 @@ class SAC:
         start_update: int = 256,
         update_interval: int = 1,
         layers: Tuple = (256, 256),
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -112,7 +115,6 @@ class SAC:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
@@ -120,6 +122,12 @@ class SAC:
         self.load_model = load_model
         self.save = save_params
         self.load = load_params
+
+        self.logs = {}
+        self.logs["q1_loss"] = []
+        self.logs["q2_loss"] = []
+        self.logs["policy_loss"] = []
+        self.logs["alpha_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -133,10 +141,6 @@ class SAC:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
@@ -373,12 +377,12 @@ class SAC:
                     target_param.data * self.polyak + param.data * (1 - self.polyak)
                 )
 
-        # TO DO: Make a get_logging_params() for logging these
-        # return (q1_loss.item(), q2_loss.item(), policy_loss.item(), alpha_loss.item())
+        self.logs["q1_loss"].append(q1_loss.item())
+        self.logs["q2_loss"].append(q2_loss.item())
+        self.logs["policy_loss"].append(policy_loss.item())
+        self.logs["alpha_loss"].append(alpha_loss.item())
 
     def learn(self) -> None:  # pragma: no cover
-        if self.tensorboard_log:
-            writer = SummaryWriter(self.tensorboard_log)
 
         total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
 
@@ -402,16 +406,7 @@ class SAC:
                 and i % self.update_interval == 0
                 and self.replay_buffer.pos > self.batch_size
             ):
-                q1_loss, q2_loss, policy_loss, alpha_loss = self.update_params(
-                    self.update_interval
-                )
-
-                # write loss logs to tensorboard
-                if self.tensorboard_log:
-                    writer.add_scalar("loss/q1_loss", q1_loss, i)
-                    writer.add_scalar("loss/q2_loss", q2_loss, i)
-                    writer.add_scalar("loss/policy_loss", policy_loss, i)
-                    writer.add_scalar("loss/alpha_loss", alpha_loss, i)
+                self.update_params(self.update_interval)
 
                 if self.save_model is not None:
                     if i >= self.start_update and i % self.save_interval == 0:
@@ -440,10 +435,6 @@ class SAC:
             if i > total_steps:
                 break
 
-            # write episode reward to tensorboard logs
-            if self.tensorboard_log:
-                writer.add_scalar("reward/episode_reward", episode_reward, i)
-
             if sum(episode_len) % (5 * self.env.n_envs) == 0 and sum(episode_len) != 0:
                 print(
                     "Episode: {}, total numsteps: {}, reward: {}".format(
@@ -453,8 +444,6 @@ class SAC:
             # ep += 1
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
@@ -471,6 +460,32 @@ class SAC:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "q1_loss": safe_mean(self.logs["q1_loss"]),
+            "q2_loss": safe_mean(self.logs["q2_loss"]),
+            "alpha_loss": safe_mean(self.logs["alpha_loss"]),
+        }
+
+        self.empty_logs()
+
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["q1_loss"] = []
+        self.logs["q2_loss"] = []
+        self.logs["policy_loss"] = []
+        self.logs["alpha_loss"] = []
 
 
 if __name__ == "__main__":

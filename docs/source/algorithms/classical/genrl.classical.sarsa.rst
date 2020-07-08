@@ -1,13 +1,13 @@
-genrl.deep.agents.ddpg package
-==============================
+genrl.classical.sarsa
+=====================
 
 Submodules
 ----------
 
-genrl.deep.agents.ddpg.ddpg module
+genrl.classical.sarsa.sarsa module
 ----------------------------------
 
-.. automodule:: genrl.deep.agents.ddpg.ddpg
+.. automodule:: genrl.classical.sarsa.sarsa
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.deep.agents.ddpg.ddpg module
 Module contents
 ---------------
 
-.. automodule:: genrl.deep.agents.ddpg
+.. automodule:: genrl.classical.sarsa
    :members:
    :undoc-members:
    :show-inheritance:

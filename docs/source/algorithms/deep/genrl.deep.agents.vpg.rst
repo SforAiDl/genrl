@@ -1,13 +1,13 @@
-genrl.deep.agents.sac package
-=============================
+genrl.deep.agents.vpg
+=====================
 
 Submodules
 ----------
 
-genrl.deep.agents.sac.sac module
+genrl.deep.agents.vpg.vpg module
 --------------------------------
 
-.. automodule:: genrl.deep.agents.sac.sac
+.. automodule:: genrl.deep.agents.vpg.vpg
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.deep.agents.sac.sac module
 Module contents
 ---------------
 
-.. automodule:: genrl.deep.agents.sac
+.. automodule:: genrl.deep.agents.vpg
    :members:
    :undoc-members:
    :show-inheritance:

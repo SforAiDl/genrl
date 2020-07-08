@@ -3,7 +3,7 @@ from typing import List
 import gym
 
 from ..environments import AtariPreprocessing, FrameStack, GymWrapper, NoopReset
-from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv, VecNormalize
+from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
 def VectorEnv(
@@ -32,8 +32,6 @@ subprocesses, False if we want environments to run serially one after the other)
         venv = SubProcessVecEnv(envs, n_envs)
     else:
         venv = SerialVecEnv(envs, n_envs)
-
-    venv = VecNormalize(venv)
 
     return venv
 

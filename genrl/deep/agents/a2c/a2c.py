@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import gym
 import numpy as np
@@ -8,10 +8,11 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments.vec_env import VecEnv
-from ...common import RolloutBuffer, get_model, load_params, save_params, set_seeds
+from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from ..base import OnPolicyAgent
 
 
-class A2C:
+class A2C(OnPolicyAgent):
     """
     Advantage Actor Critic algorithm (A2C)
     The synchronous version of A3C
@@ -29,8 +30,6 @@ class A2C:
     :param layers: Number of neurons in hidden layers
     :param noise: Noise function to use
     :param noise_std: Standard deviation for action noise
-    :param tensorboard_log: (The log location for Tensorboard
-(if None, no logging))
     :param seed: Seed for reproducing results
     :param render: True if environment is to be rendered, else False
     :param device: Device to use for Tensor operation ['cpu', 'cuda']
@@ -52,7 +51,6 @@ class A2C:
     :type layers: tuple or list
     :type noise: function
     :type noise_std: float
-    :type tensorboard_log: string
     :type seed: int
     :type render: boolean
     :type device: string
@@ -68,75 +66,46 @@ class A2C:
         self,
         network_type: str,
         env: Union[gym.Env, VecEnv],
+        batch_size: int = 256,
         gamma: float = 0.99,
-        actor_batch_size: int = 64,
-        lr_actor: float = 0.01,
-        lr_critic: float = 0.1,
-        num_episodes: int = 100,
-        timesteps_per_actorbatch: int = 4000,
+        lr_policy: float = 0.01,
+        lr_value: float = 0.1,
+        epochs: int = 100,
         max_ep_len: int = 1000,
         layers: Tuple = (32, 32),
         noise: Any = None,
         noise_std: float = 0.1,
-        tensorboard_log: str = None,
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        save_interval: int = 1000,
         rollout_size: int = 2048,
-        val_coeff: float = 0.5,
-        entropy_coeff: float = 0.01,
+        **kwargs
     ):
-        self.network_type = network_type
-        self.env = env
-        self.gamma = gamma
-        self.actor_batch_size = actor_batch_size
-        self.lr_actor = lr_actor
-        self.lr_critic = lr_critic
-        self.num_episodes = num_episodes
-        self.timesteps_per_actorbatch = timesteps_per_actorbatch
+
+        super(A2C, self).__init__(
+            network_type,
+            env,
+            batch_size,
+            layers,
+            gamma,
+            lr_policy,
+            lr_value,
+            epochs,
+            rollout_size,
+            **kwargs
+        )
+
         self.max_ep_len = max_ep_len
-        self.layers = layers
         self.noise = noise
         self.noise_std = noise_std
-        self.tensorboard_log = tensorboard_log
-        self.seed = seed
-        self.render = render
-        self.run_num = run_num
-        self.save_interval = save_interval
-        self.save_model = None
-        self.save = save_params
-        self.load = load_params
-        self.rollout_size = rollout_size
-        self.val_coeff = val_coeff
-        self.entropy_coeff = entropy_coeff
+        self.value_coeff = kwargs.get("value_coeff", 0.5)
+        self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
 
-        # Assign device
-        if "cuda" in device and torch.cuda.is_available():
-            self.device = torch.device("cuda")
-        else:
-            self.device = torch.device("cpu")
-
-        # Assign seed
-        if seed is not None:
-            set_seeds(seed, self.env)
-
-        # Setup tensorboard writer
-        self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
-
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
         """
         Creates actor critic model and initialises optimizers
         """
-        (state_dim, action_dim, discrete, action_lim) = self.get_env_properties()
+        (state_dim, action_dim, discrete, action_lim) = get_env_properties(self.env)
 
         if self.noise is not None:
             self.noise = self.noise(
@@ -147,9 +116,9 @@ class A2C:
             state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
 
-        self.actor_optimizer = opt.Adam(self.ac.actor.parameters(), lr=self.lr_actor)
+        self.actor_optimizer = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
 
-        self.critic_optimizer = opt.Adam(self.ac.critic.parameters(), lr=self.lr_critic)
+        self.critic_optimizer = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
         self.rollout = RolloutBuffer(
             self.rollout_size,
@@ -203,7 +172,7 @@ calculate losses)
 
     def update_policy(self) -> None:
 
-        for rollout in self.rollout.get(256):
+        for rollout in self.rollout.get(self.batch_size):
 
             actions = rollout.actions
 
@@ -213,11 +182,14 @@ calculate losses)
             values, log_prob = self.get_value_log_probs(rollout.observations, actions)
 
             policy_loss = rollout.advantages * log_prob
-            policy_loss = -torch.sum(policy_loss)
+            policy_loss = -torch.mean(policy_loss)
+            self.logs["policy_loss"].append(policy_loss.item())
 
-            value_loss = self.val_coeff * F.mse_loss(rollout.returns, values)
+            value_loss = self.value_coeff * F.mse_loss(rollout.returns, values)
+            self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = (torch.exp(log_prob) * log_prob).sum()
+            self.logs["policy_entropy"].append(entropy_loss.item())
 
             actor_loss = policy_loss + self.entropy_coeff * entropy_loss
 
@@ -231,85 +203,6 @@ calculate losses)
             torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.critic_optimizer.step()
 
-    def collect_rollouts(self, initial_state):
-
-        state = initial_state
-
-        for i in range(2048):
-            # with torch.no_grad():
-            action, values, old_log_probs = self.select_action(state)
-
-            next_state, reward, done, _ = self.env.step(np.array(action))
-            self.epoch_reward += reward
-
-            if self.render:
-                self.env.render()
-
-            self.rollout.add(
-                state,
-                action.reshape(self.env.n_envs, 1),
-                reward,
-                done,
-                values.detach(),
-                old_log_probs.detach(),
-            )
-
-            state = next_state
-
-            for i, di in enumerate(done):
-                if di:
-                    self.rewards.append(self.epoch_reward[i])
-                    self.epoch_reward[i] = 0
-
-        return values, done
-
-    def learn(self):  # pragma: no cover
-        """
-        Trains actor critic model
-        """
-        for episode in range(self.num_episodes):
-            episode_reward = 0
-
-            self.update(episode)
-
-            if episode % 5 == 0:
-                print("Episode: {}, Reward: {}".format(episode, episode_reward))
-                if self.tensorboard_log:
-                    self.writer.add_scalar("reward", episode_reward, episode)
-
-            if self.save_model is not None:
-                if episode % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, episode)
-                    print("Saved current model")
-
-        self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
-
-    def get_env_properties(self):
-        """
-        Helper function to extract the observation and action space
-
-        :returns: (Observation space, Action Space and whether the action
-space is discrete or not)
-        :rtype: int, float, ... ; int, float, ... ; bool
-        """
-        state_dim = self.env.observation_space.shape[0]
-
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-            action_lim = None
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            action_lim = self.env.action_space.high[0]
-            disc = False
-        else:
-            raise NotImplementedError
-
-        return state_dim, action_dim, disc, action_lim
-
     def get_hyperparams(self) -> Dict[str, Any]:
         """
         Loads important hyperparameters that need to be loaded or saved
@@ -319,19 +212,40 @@ space is discrete or not)
         """
         hyperparams = {
             "network_type": self.network_type,
-            "timesteps_per_actorbatch": self.timesteps_per_actorbatch,
+            "batch_size": self.batch_size,
             "gamma": self.gamma,
-            "actor_batch_size": self.actor_batch_size,
             "lr_actor": self.lr_actor,
             "lr_critic": self.lr_critic,
+            "rollout_size": self.rollout_size,
             "actor_weights": self.ac.actor.state_dict(),
             "critic_weights": self.ac.critic.state_dict(),
         }
 
         return hyperparams
 
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
 
-if __name__ == "__main__":
-    env = gym.make("CartPole-v0")
-    algo = A2C("mlp", env)
-    algo.learn()
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
+            "policy_entropy": safe_mean(self.logs["policy_entropy"]),
+            "mean_reward": safe_mean(self.rewards),
+        }
+
+        self.empty_logs()
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
+        self.logs["policy_entropy"] = []
+        self.rewards = []

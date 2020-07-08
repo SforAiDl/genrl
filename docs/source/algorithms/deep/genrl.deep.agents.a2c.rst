@@ -1,13 +1,13 @@
-genrl.deep.agents.vpg package
-=============================
+genrl.deep.agents.a2c
+=====================
 
 Submodules
 ----------
 
-genrl.deep.agents.vpg.vpg module
+genrl.deep.agents.a2c.a2c module
 --------------------------------
 
-.. automodule:: genrl.deep.agents.vpg.vpg
+.. automodule:: genrl.deep.agents.a2c.a2c
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.deep.agents.vpg.vpg module
 Module contents
 ---------------
 
-.. automodule:: genrl.deep.agents.vpg
+.. automodule:: genrl.deep.agents.a2c
    :members:
    :undoc-members:
    :show-inheritance:
