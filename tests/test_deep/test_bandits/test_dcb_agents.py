@@ -7,6 +7,7 @@ from genrl import (
     NeuralLinearPosteriorAgent,
     NeuralNoiseSamplingAgent,
     VariationalAgent,
+    FixedAgent,
 )
 
 
@@ -57,4 +58,12 @@ class TestDCBAgents:
         bandits.append(BernoulliCB(bandits=10, arms=10))
         for bandit in bandits:
             policy = NeuralNoiseSamplingAgent(bandit)
+            policy.learn(10)
+
+    def test_fixed_agent(self) -> None:
+        bandits = []
+        bandits.append(CovertypeDataBandit(download=True))
+        bandits.append(BernoulliCB(bandits=10, arms=10))
+        for bandit in bandits:
+            policy = FixedAgent(bandit)
             policy.learn(10)

@@ -13,3 +13,4 @@ from genrl.deep.bandit.dcb_agents import NeuralLinearPosteriorAgent  # noqa
 from genrl.deep.bandit.dcb_agents import NeuralNoiseSamplingAgent  # noqa
 from genrl.deep.bandit.dcb_agents import TransitionDB  # noqa
 from genrl.deep.bandit.dcb_agents import VariationalAgent  # noqa
+from genrl.deep.bandit.dcb_agents import FixedAgent  # noqa

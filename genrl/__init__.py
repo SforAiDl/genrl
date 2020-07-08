@@ -26,5 +26,5 @@ from genrl.deep import NeuralNoiseSamplingAgent  # noqa
 from genrl.deep import StatlogDataBandit  # noqa
 from genrl.deep import VariationalAgent  # noqa
 from genrl.deep import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
-
+from genrl.deep import FixedAgent  # noqa
 from genrl.deep import AdultDataBandit  # noqa; noqa

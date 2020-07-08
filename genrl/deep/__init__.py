@@ -12,3 +12,4 @@ from genrl.deep.bandit import NeuralLinearPosteriorAgent  # noqa
 from genrl.deep.bandit import NeuralNoiseSamplingAgent  # noqa
 from genrl.deep.bandit import StatlogDataBandit  # noqa
 from genrl.deep.bandit import VariationalAgent  # noqa
+from genrl.deep.bandit import FixedAgent  # noqa
