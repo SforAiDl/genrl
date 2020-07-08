@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as opt
 
 from ....environments import VecEnv
@@ -13,6 +13,7 @@ from ...common import (
     get_env_properties,
     get_model,
     load_params,
+    safe_mean,
     save_params,
     set_seeds,
 )
@@ -42,7 +43,6 @@ class DDPG:
     :param update_interval: Number of steps between parameter updates
     :param save_interval: Number of steps between saves of models
     :param layers: Number of neurons in hidden layers
-    :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
@@ -67,7 +67,6 @@ class DDPG:
     :type update_interval: int
     :type save_interval: int
     :type layers: tuple
-    :type tensorboard_log: string
     :type seed: int
     :type render: bool
     :type device: string
@@ -96,7 +95,6 @@ class DDPG:
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (32, 32),
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -125,7 +123,6 @@ class DDPG:
         self.update_interval = update_interval
         self.save_interval = save_interval
         self.layers = layers
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
         self.run_num = run_num
@@ -133,6 +130,10 @@ class DDPG:
         self.load_model = load_model
         self.save = save_params
         self.load = load_params
+
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -146,10 +147,6 @@ class DDPG:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
-
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
 
         self.create_model()
 
@@ -258,13 +255,9 @@ class DDPG:
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
 
-        q_pi = self.ac.get_value(
-            torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
-        )
-
-        total_loss = nn.MSELoss()(quality, target) - torch.mean(q_pi)
-        return total_loss
-        # return nn.MSELoss()(quality, target)
+        value_loss = F.mse_loss(quality, target)
+        self.logs["value_loss"].append(value_loss.item())
+        return value_loss
 
     def get_p_loss(self, state: np.ndarray) -> torch.Tensor:
         """
@@ -278,7 +271,11 @@ class DDPG:
         q_pi = self.ac.get_value(
             torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
         )
-        return -torch.mean(q_pi)
+
+        policy_loss = torch.mean(q_pi)
+        self.logs["policy_loss"].append(policy_loss.item())
+
+        return -policy_loss
 
     def update_params(self, update_interval: int) -> None:
         """
@@ -291,32 +288,19 @@ class DDPG:
             batch = self.replay_buffer.sample(self.batch_size)
             state, action, reward, next_state, done = (x.to(self.device) for x in batch)
 
+            self.optimizer_q.zero_grad()
+            loss_q = self.get_q_loss(state, action, reward, next_state, done)
+            loss_q.backward()
+            self.optimizer_q.step()
+
             # freeze critic params for policy update
             for param in self.ac.critic.parameters():
                 param.requires_grad = False
 
             self.optimizer_policy.zero_grad()
-            self.optimizer_q.zero_grad()
-
-            loss = self.get_q_loss(state, action, reward, next_state, done)
-            loss.backward()
-
-            self.optimizer_q.step()
+            loss_p = self.get_p_loss(state)
+            loss_p.backward()
             self.optimizer_policy.step()
-
-            # self.optimizer_q.zero_grad()
-            # loss_q = self.get_q_loss(state, action, reward, next_state, done)
-            # loss_q.backward()
-            # self.optimizer_q.step()
-
-            # freeze critic params for policy update
-            # for param in self.ac.critic.parameters():
-            #     param.requires_grad = False
-
-            # self.optimizer_policy.zero_grad()
-            # loss_p = self.get_p_loss(state)
-            # loss_p.backward()
-            # self.optimizer_policy.step()
 
             # unfreeze critic params
             for param in self.ac.critic.parameters():
@@ -393,8 +377,6 @@ class DDPG:
                     print("Saved current model")
 
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
@@ -410,6 +392,28 @@ class DDPG:
         }
 
         return hyperparams
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
+        }
+
+        self.empty_logs()
+
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
 
 
 if __name__ == "__main__":
