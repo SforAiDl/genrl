@@ -1,4 +1,5 @@
 from genrl.deep.bandit.data_bandits import AdultDataBandit  # noqa
+from genrl.deep.bandit.data_bandits import CensusDataBandit  # noqa
 from genrl.deep.bandit.data_bandits import CovertypeDataBandit  # noqa
 from genrl.deep.bandit.data_bandits import DataBasedBandit  # noqa
 from genrl.deep.bandit.data_bandits import MushroomDataBandit  # noqa

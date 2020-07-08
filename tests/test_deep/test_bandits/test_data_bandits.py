@@ -1,9 +1,5 @@
-from genrl import (
-    AdultDataBandit,
-    CovertypeDataBandit,
-    MushroomDataBandit,
-    StatlogDataBandit,
-)
+from genrl import (AdultDataBandit, CensusDataBandit, CovertypeDataBandit,
+                   MushroomDataBandit, StatlogDataBandit)
 
 
 class TestDataBandits:
@@ -27,6 +23,12 @@ class TestDataBandits:
 
     def test_adult_data_bandit(self) -> None:
         bandit = AdultDataBandit(download=True)
+        _ = bandit.reset()
+        for i in range(bandit.n_actions):
+            _, _ = bandit.step(i)
+
+    def test_census_data_bandit(self) -> None:
+        bandit = CensusDataBandit(download=True)
         _ = bandit.reset()
         for i in range(bandit.n_actions):
             _, _ = bandit.step(i)

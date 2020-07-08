@@ -15,6 +15,7 @@ from genrl.classical import ThompsonSamplingPolicy  # noqa
 from genrl.classical import UCBCBPolicy  # noqa
 from genrl.classical import UCBPolicy  # noqa
 from genrl.deep import BootstrapNeuralAgent  # noqa
+from genrl.deep import CensusDataBandit  # noqa
 from genrl.deep import CovertypeDataBandit  # noqa
 from genrl.deep import DataBasedBandit  # noqa
 from genrl.deep import LinearPosteriorAgent  # noqa

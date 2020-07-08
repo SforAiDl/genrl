@@ -1,6 +1,7 @@
 from genrl.deep.agents import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG  # noqa
 from genrl.deep.bandit import AdultDataBandit  # noqa
 from genrl.deep.bandit import BootstrapNeuralAgent  # noqa
+from genrl.deep.bandit import CensusDataBandit  # noqa
 from genrl.deep.bandit import CovertypeDataBandit  # noqa
 from genrl.deep.bandit import DataBasedBandit  # noqa
 from genrl.deep.bandit import LinearPosteriorAgent  # noqa
