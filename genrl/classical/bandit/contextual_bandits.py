@@ -2,7 +2,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 import torch
-import torch.nn.functional as F
+from torch.nn import functional as F
 
 
 class ContextualBandit(object):
@@ -22,9 +22,10 @@ class ContextualBandit(object):
         self._narms = arms
         self.n_actions = arms
         self.context_dim = bandits
-        assert (
-            context_type == "int" or context_type == "tensor"
-        ), f"cotext_type should be either tensor or int, found {context_type}"
+        if not (context_type == "int" or context_type == "tensor"):
+            raise ValueError(
+                f"context_type should be either tensor or int, found {context_type}"
+            )
         self.context_type = context_type
         self.reset()
         self._regret_hist = []
