@@ -5,7 +5,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.optim as opt
-from torch.autograd import Variable
 
 from ....environments.vec_env import VecEnv
 from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean

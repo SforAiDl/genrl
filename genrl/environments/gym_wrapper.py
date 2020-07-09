@@ -3,6 +3,8 @@ from typing import Any
 import gym
 import numpy as np
 
+from ..deep.common.utils import get_obs_action_shape
+
 
 class GymWrapper(gym.Wrapper):
     """
@@ -24,7 +26,7 @@ serially or parallelly
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
-        self.obs_shape, self.action_shape = self._get_obs_action_shape()
+        self.obs_shape, self.action_shape = get_obs_action_shape(env)
 
         self.state = None
         self.action = None

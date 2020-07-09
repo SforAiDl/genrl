@@ -6,8 +6,7 @@ import gym
 import numpy as np
 import torch
 import torch.nn as nn
-
-from ...environments import VecEnv
+from gym import spaces
 
 
 def get_model(type_: str, name_: str) -> Union:
@@ -50,14 +49,12 @@ activation layers)
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
 
-    if activation == "tanh":
-        activation = nn.Tanh()
-    else:
-        activation = nn.ReLU()
+    activation = nn.Tanh() if activation == "tanh" else nn.ReLU()
 
     for layer in range(limit - 1):
         act = activation if layer < limit - 2 else nn.Identity()
         layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act]
+
     return nn.Sequential(*layers)
 
 
@@ -86,10 +83,7 @@ activation layers)
     cnn_layers = []
     output_size = in_size
 
-    if activation == "tanh":
-        activation = nn.Tanh()
-    else:
-        activation = nn.ReLU()
+    activation = nn.Tanh() if activation == "tanh" else nn.ReLU()
 
     for i in range(len(channels) - 1):
         in_channels, out_channels = channels[i], channels[i + 1]
@@ -101,6 +95,28 @@ activation layers)
     cnn_layers = nn.Sequential(*cnn_layers)
     output_size = int(out_channels * (output_size ** 2))
     return cnn_layers, output_size
+
+
+def get_obs_action_shape(env: gym.Env):
+    """
+    Get the shapes of observation and action spaces
+    """
+    obs_shape, action_shape = None, None
+
+    if isinstance(env.observation_space, spaces.Discrete):
+        obs_shape = (1,)
+    elif isinstance(env.observation_space, spaces.Box):
+        obs_shape = obs.shape
+
+    if isinstance(env.action_space, spaces.Box):
+        action_shape = actions.shape
+    elif isinstance(env.action_space, spaces.Discrete):
+        action_shape = (1,)
+
+    if obs_shape is None or action_shape is None:
+        raise NotImplementedError
+
+    return obs_shape, action_shape
 
 
 def save_params(algo: Any, timestep: int) -> None:

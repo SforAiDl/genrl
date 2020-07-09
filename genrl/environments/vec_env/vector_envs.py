@@ -6,6 +6,8 @@ from typing import Any, Iterator, List, Tuple
 import gym
 import numpy as np
 
+from ...deep.common.utils import get_obs_action_shape
+
 
 def worker(parent_conn: mp.Pipe, child_conn: mp.Pipe, env: gym.Env):
     """
@@ -59,33 +61,13 @@ class VecEnv(ABC):
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
-        self.obs_shape, self.action_shape = self._get_obs_action_shape()
+        self.obs_shape, self.action_shape = get_obs_action_shape(self.env)
 
         self.episode_reward = np.zeros((self.n_envs))
 
     def __getattr__(self, name: str) -> Any:
         env = super(VecEnv, self).__getattribute__("env")
         return getattr(env, name)
-
-    def _get_obs_action_shape(self):
-        """
-        Get the shapes of observation and action spaces
-        """
-        if isinstance(self.observation_space, gym.spaces.Discrete):
-            obs_shape = (1,)
-        elif isinstance(self.observation_space, gym.spaces.Box):
-            obs_shape = self.observation_space.shape
-        else:
-            raise NotImplementedError
-
-        if isinstance(self.action_space, gym.spaces.Box):
-            action_shape = self.action_space.shape
-        elif isinstance(self.action_space, gym.spaces.Discrete):
-            action_shape = (1,)
-        else:
-            raise NotImplementedError
-
-        return obs_shape, action_shape
 
     def __iter__(self) -> Iterator:
         """
