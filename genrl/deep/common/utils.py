@@ -36,7 +36,7 @@ Eg. "mlp" or "cnn")
     raise ValueError
 
 
-def mlp(sizes: Tuple, sac: bool = False):
+def mlp(sizes: Tuple, sac: bool = False, activation: str = "relu"):
     """
     Generates an MLP model given sizes of each layer
 
@@ -49,9 +49,15 @@ activation layers)
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
+
+    if activation == "tanh":
+        activation = nn.Tanh()
+    else:
+        activation = nn.ReLU()
+
     for layer in range(limit - 1):
-        act = nn.ReLU if layer < limit - 2 else nn.Identity
-        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act()]
+        act = activation if layer < limit - 2 else nn.Identity()
+        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act]
     return nn.Sequential(*layers)
 
 
@@ -60,6 +66,7 @@ def cnn(
     kernel_sizes: Tuple = (8, 4),
     strides: Tuple = (4, 2),
     in_size: int = 84,
+    activation: str = "relu",
 ) -> (Tuple):
     """
     (Generates a CNN model given input dimensions, channels, kernel_sizes and
@@ -79,11 +86,15 @@ activation layers)
     cnn_layers = []
     output_size = in_size
 
+    if activation == "tanh":
+        activation = nn.Tanh()
+    else:
+        activation = nn.ReLU()
+
     for i in range(len(channels) - 1):
         in_channels, out_channels = channels[i], channels[i + 1]
         kernel_size, stride = kernel_sizes[i], strides[i]
         conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
-        activation = nn.ReLU()
         cnn_layers += [conv, activation]
         output_size = (output_size - kernel_size) / stride + 1
 
@@ -144,7 +155,9 @@ def load_params(algo: Any) -> None:
         raise Exception("Invalid file name")
 
 
-def get_env_properties(env: Union[gym.Env, VecEnv]) -> (Tuple[int]):
+def get_env_properties(
+    env: Union[gym.Env, VecEnv], network_type: str = "mlp"
+) -> (Tuple[int]):
     """
     Finds important properties of environment
 
@@ -155,7 +168,10 @@ def get_env_properties(env: Union[gym.Env, VecEnv]) -> (Tuple[int]):
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
-    state_dim = env.observation_space.shape[0]
+    if network_type == "cnn":
+        input_dim = env.framestack
+    elif network_type == "mlp":
+        input_dim = env.observation_space.shape[0]
 
     if isinstance(env.action_space, gym.spaces.Discrete):
         action_dim = env.action_space.n
@@ -168,7 +184,7 @@ discreteness of action space and action limit (highest action value)
     else:
         raise NotImplementedError
 
-    return state_dim, action_dim, discrete, action_lim
+    return input_dim, action_dim, discrete, action_lim
 
 
 def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
