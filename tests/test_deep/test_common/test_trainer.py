@@ -9,6 +9,7 @@ def test_on_policy_trainer():
     trainer = OnPolicyTrainer(algo, env, ["stdout"], epochs=1)
     assert not trainer.off_policy
     trainer.train()
+    trainer.evaluate()
 
 
 def test_off_policy_trainer():
@@ -17,3 +18,4 @@ def test_off_policy_trainer():
     trainer = OffPolicyTrainer(algo, env, ["stdout"], epochs=1)
     assert trainer.off_policy
     trainer.train()
+    trainer.evaluate()
