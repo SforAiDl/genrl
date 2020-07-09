@@ -130,10 +130,10 @@ class PPO1(OnPolicyAgent):
     def select_action(self, state: np.ndarray) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
         # create distribution based on policy output
-        action, c_new = self.ac.get_action(state, deterministic=False)
+        action, dist = self.ac.get_action(state, deterministic=False)
         value = self.ac.get_value(state)
 
-        return action.detach().cpu().numpy(), value, c_new.log_prob(action).cpu()
+        return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
 
     def evaluate_actions(self, old_states, old_actions):
         old_states, old_actions = (
@@ -181,10 +181,10 @@ class PPO1(OnPolicyAgent):
             entropy_loss = -torch.mean(entropy)  # Change this to entropy
             self.logs["policy_entropy"].append(entropy_loss.item())
 
-            loss = policy_loss + self.entropy_coeff * entropy_loss
+            actor_loss = policy_loss + self.entropy_coeff * entropy_loss
 
             self.optimizer_policy.zero_grad()
-            loss.backward()
+            actor_loss.backward()
             torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
             self.optimizer_policy.step()
 
