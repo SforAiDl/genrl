@@ -119,13 +119,7 @@ class PPO1(OnPolicyAgent):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(
-            self.rollout_size,
-            self.env.observation_space,
-            self.env.action_space,
-            n_envs=self.env.n_envs,
-            gae_lambda=0.95,
-        )
+        self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95,)
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)

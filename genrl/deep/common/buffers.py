@@ -5,26 +5,22 @@ from typing import Tuple
 import numpy as np
 import torch
 
-from .utils import get_action_dim, get_obs_shape
-
 
 class ReplayBuffer:
     def __init__(self, size, env):
-        self.obs_shape = get_obs_shape(env.observation_space)
-        self.action_dim = get_action_dim(env.action_space)
         self.buffer_size = size
         self.n_envs = env.n_envs
 
         self.observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32
+            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32
         )
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32
+            (self.buffer_size, self.n_envs,) + env.action_shape, dtype=np.float32
         )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.next_observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32
+            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32
         )
         self.pos = 0
 

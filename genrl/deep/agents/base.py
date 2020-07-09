@@ -18,8 +18,8 @@ class BaseAgent(ABC):
         self.save_model = kwargs.get("save_model", None)
         self.load_model = kwargs.get("load_model", None)
         self.save_interval = kwargs.get("save_interval", 50)
-        self.observation_space = None
-        self.action_space = None
+        self.observation_space = env.observation_space
+        self.action_space = env.action_space
 
         # Assign device
         device = kwargs.get("device", "cpu")

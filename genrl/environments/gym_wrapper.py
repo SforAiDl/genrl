@@ -17,12 +17,15 @@ serially or parallelly
     :type parallel: boolean
     """
 
-    # TODO(zeus3101) Add functionality for VecEnvs
     def __init__(self, env: gym.Env):
         super(GymWrapper, self).__init__(env)
         self.env = env
+
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
+
+        self.obs_shape, self.action_shape = self._get_obs_action_shape()
+
         self.state = None
         self.action = None
         self.reward = None
@@ -36,12 +39,25 @@ serially or parallelly
         env = super(GymWrapper, self).__getattribute__("env")
         return getattr(env, name)
 
-    @property
-    def action_shape(self):
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            return [1]
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            return self.env.action_space.shape
+    def _get_obs_action_shape(self):
+        """
+        Get the shapes of observation and action spaces
+        """
+        if isinstance(self.observation_space, gym.spaces.Discrete):
+            obs_shape = (1,)
+        elif isinstance(self.observation_space, gym.spaces.Box):
+            obs_shape = self.observation_space.shape
+        else:
+            raise NotImplementedError
+
+        if isinstance(self.action_space, gym.spaces.Box):
+            action_shape = self.action_space.shape
+        elif isinstance(self.action_space, gym.spaces.Discrete):
+            action_shape = (1,)
+        else:
+            raise NotImplementedError
+
+        return obs_shape, action_shape
 
     def sample(self) -> np.ndarray:
         """

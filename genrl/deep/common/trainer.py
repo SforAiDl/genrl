@@ -123,7 +123,7 @@ False (To be implemented))
             if isinstance(action, torch.Tensor):
                 action = action.numpy()
 
-            next_state, reward, dones, _ = self.env.step(action)
+            next_state, reward, done, _ = self.env.step(action)
             episode_reward += reward
             state = next_state
             if np.any(done):

@@ -11,6 +11,7 @@ from torch.distributions import Normal
 from ....environments import VecEnv
 from ...common import (
     ReplayBuffer,
+    get_env_properties,
     get_model,
     load_params,
     safe_mean,
@@ -124,10 +125,7 @@ class SAC:
         self.load = load_params
 
         self.logs = {}
-        self.logs["q1_loss"] = []
-        self.logs["q2_loss"] = []
-        self.logs["policy_loss"] = []
-        self.logs["alpha_loss"] = []
+        self.empty_logs()
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -149,17 +147,7 @@ class SAC:
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim = self.env.observation_space.shape[0]
-
-        # initialize models
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            disc = False
-        else:
-            raise NotImplementedError
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
 
         self.q1 = (
             get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
@@ -175,7 +163,7 @@ class SAC:
 
         self.policy = (
             get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc, False, sac=True
+                state_dim, action_dim, self.layers, discrete, False, sac=True
             )
             .to(self.device)
             .float()
@@ -303,9 +291,9 @@ class SAC:
                 )
             else:
                 state, action, next_state = (
-                    state.reshape(-1, *self.env.observation_space.shape).float(),
-                    action.reshape(-1, *self.env.action_space.shape).float(),
-                    next_state.reshape(-1, *self.env.observation_space.shape).float(),
+                    state.reshape(-1, *self.env.obs_shape).float(),
+                    action.reshape(-1, *self.env.action_shape).float(),
+                    next_state.reshape(-1, *self.env.obs_shape).float(),
                 )
                 reward, done = reward.reshape(-1, 1), done.reshape(-1, 1)
 

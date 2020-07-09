@@ -205,56 +205,6 @@ def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
         env.seed(seed)
 
 
-def get_obs_action_shape(obs, action):
-    """
-    Get the shapes of observation and action
-
-    :param obs: State space of environment
-    :param action: Action
-    :type obs: gym.Space
-    :type action: np.array
-    """
-    if isinstance(obs, gym.spaces.Discrete):
-        return 1, 1
-    elif isinstance(obs, gym.spaces.Box):
-        return obs.shape[0], int(np.prod(action.shape))
-    else:
-        raise NotImplementedError
-
-
-def get_obs_shape(observation_space):
-    """
-    Get the shape of the observation.
-
-    :param observation_space: Observation space
-    :type observation_space: gym.spaces.Space
-    :returns: The observation space's shape
-    :rtype: (Tuple[int, ...])
-    """
-    if isinstance(observation_space, gym.spaces.Box):
-        return observation_space.shape
-    elif isinstance(observation_space, gym.spaces.Discrete):
-        return (1,)
-    else:
-        raise NotImplementedError()
-
-
-def get_action_dim(action_space):
-    """
-    Get the dimension of the action space.
-    :param action_space: Action space
-    :type action_space: gym.spaces.Space
-    :returns: Action space's shape
-    :rtype: int
-    """
-    if isinstance(action_space, gym.spaces.Box):
-        return int(np.prod(action_space.shape))
-    elif isinstance(action_space, gym.spaces.Discrete):
-        return 1
-    else:
-        raise NotImplementedError()
-
-
 def safe_mean(log: List[int]):
     """
     Returns 0 if there are no elements in logs

@@ -58,13 +58,34 @@ class VecEnv(ABC):
 
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
-        self.action_shape = self.env.action_shape
+
+        self.obs_shape, self.action_shape = self._get_obs_action_shape()
 
         self.episode_reward = np.zeros((self.n_envs))
 
     def __getattr__(self, name: str) -> Any:
         env = super(VecEnv, self).__getattribute__("env")
         return getattr(env, name)
+
+    def _get_obs_action_shape(self):
+        """
+        Get the shapes of observation and action spaces
+        """
+        if isinstance(self.observation_space, gym.spaces.Discrete):
+            obs_shape = (1,)
+        elif isinstance(self.observation_space, gym.spaces.Box):
+            obs_shape = self.observation_space.shape
+        else:
+            raise NotImplementedError
+
+        if isinstance(self.action_space, gym.spaces.Box):
+            action_shape = self.action_space.shape
+        elif isinstance(self.action_space, gym.spaces.Discrete):
+            action_shape = (1,)
+        else:
+            raise NotImplementedError
+
+        return obs_shape, action_shape
 
     def __iter__(self) -> Iterator:
         """
@@ -127,8 +148,7 @@ class SerialVecEnv(VecEnv):
     def __init__(self, *args, **kwargs):
         super(SerialVecEnv, self).__init__(*args, **kwargs)
         self.states = np.zeros(
-            (self.n_envs, *self.observation_space.shape),
-            dtype=self.observation_space.dtype,
+            (self.n_envs, *self.obs_shape), dtype=self.observation_space.dtype,
         )
         self.rewards = np.zeros((self.n_envs))
         self.dones = np.zeros((self.n_envs))
@@ -174,6 +194,9 @@ class SerialVecEnv(VecEnv):
         """
         for env in self.envs:
             env.close()
+
+    def get_spaces(self):
+        return self.observation_space, self.action_space
 
     def images(self) -> List:
         """

@@ -278,16 +278,14 @@ class DQN:
                 self.batch_size
             )
 
-        state = state.reshape(
-            self.batch_size * self.env.n_envs, *self.env.observation_space.shape
-        )
+        state = state.reshape(self.batch_size * self.env.n_envs, *self.env.obs_shape)
         action = action.reshape(
             self.batch_size * self.env.n_envs, *self.env.action_shape
         )
         reward = reward.reshape(-1, 1)
         done = done.reshape(-1, 1)
         next_state = next_state.reshape(
-            self.batch_size * self.env.n_envs, *self.env.observation_space.shape
+            self.batch_size * self.env.n_envs, *self.env.obs_shape
         )
 
         state = Variable(torch.FloatTensor(np.float32(state)))

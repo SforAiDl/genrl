@@ -121,12 +121,7 @@ class A2C(OnPolicyAgent):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(
-            self.rollout_size,
-            self.env.observation_space,
-            self.env.action_space,
-            n_envs=self.env.n_envs,
-        )
+        self.rollout = RolloutBuffer(self.rollout_size, self.env,)
 
         # load paramaters if already trained
         if self.run_num is not None:

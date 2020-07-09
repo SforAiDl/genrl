@@ -102,12 +102,7 @@ class VPG(OnPolicyAgent):
 
         self.optimizer_policy = opt.Adam(self.actor.parameters(), lr=self.lr_policy)
 
-        self.rollout = RolloutBuffer(
-            self.rollout_size,
-            self.env.observation_space,
-            self.env.action_space,
-            n_envs=self.env.n_envs,
-        )
+        self.rollout = RolloutBuffer(self.rollout_size, self.env,)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
