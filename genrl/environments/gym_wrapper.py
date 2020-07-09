@@ -2,8 +2,7 @@ from typing import Any
 
 import gym
 import numpy as np
-
-from ..deep.common.utils import get_obs_action_shape
+from gym import spaces
 
 
 class GymWrapper(gym.Wrapper):
@@ -26,8 +25,6 @@ serially or parallelly
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
-        self.obs_shape, self.action_shape = get_obs_action_shape(env)
-
         self.state = None
         self.action = None
         self.reward = None
@@ -41,25 +38,21 @@ serially or parallelly
         env = super(GymWrapper, self).__getattribute__("env")
         return getattr(env, name)
 
-    def _get_obs_action_shape(self):
-        """
-        Get the shapes of observation and action spaces
-        """
-        if isinstance(self.observation_space, gym.spaces.Discrete):
+    @property
+    def obs_shape(self):
+        if isinstance(self.env.observation_space, spaces.Discrete):
             obs_shape = (1,)
-        elif isinstance(self.observation_space, gym.spaces.Box):
-            obs_shape = self.observation_space.shape
-        else:
-            raise NotImplementedError
+        elif isinstance(self.env.observation_space, spaces.Box):
+            obs_shape = self.env.observation_space.shape
+        return obs_shape
 
-        if isinstance(self.action_space, gym.spaces.Box):
-            action_shape = self.action_space.shape
-        elif isinstance(self.action_space, gym.spaces.Discrete):
+    @property
+    def action_shape(self):
+        if isinstance(self.env.action_space, spaces.Box):
+            action_shape = self.env.action_space.shape
+        elif isinstance(self.env.action_space, spaces.Discrete):
             action_shape = (1,)
-        else:
-            raise NotImplementedError
-
-        return obs_shape, action_shape
+        return action_shape
 
     def sample(self) -> np.ndarray:
         """

@@ -5,8 +5,7 @@ from typing import Any, Iterator, List, Tuple
 
 import gym
 import numpy as np
-
-from ...deep.common.utils import get_obs_action_shape
+from gym import spaces
 
 
 def worker(parent_conn: mp.Pipe, child_conn: mp.Pipe, env: gym.Env):
@@ -60,8 +59,6 @@ class VecEnv(ABC):
 
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
-
-        self.obs_shape, self.action_shape = get_obs_action_shape(self.env)
 
         self.episode_reward = np.zeros((self.n_envs))
 
@@ -120,6 +117,22 @@ class VecEnv(ABC):
     @property
     def action_spaces(self):
         return [i.action_space for i in self.envs]
+
+    @property
+    def obs_shape(self):
+        if isinstance(self.observation_space, spaces.Discrete):
+            obs_shape = (1,)
+        elif isinstance(self.observation_space, spaces.Box):
+            obs_shape = self.observation_space.shape
+        return obs_shape
+
+    @property
+    def action_shape(self):
+        if isinstance(self.action_space, spaces.Box):
+            action_shape = self.action_space.shape
+        elif isinstance(self.action_space, spaces.Discrete):
+            action_shape = (1,)
+        return action_shape
 
 
 class SerialVecEnv(VecEnv):
@@ -194,7 +207,7 @@ class SerialVecEnv(VecEnv):
 images in 'human' and returns tiled images in 'rgb_array')
         :type mode: string
         """
-        self.envs[0].render()
+        self.env.render()
 
         # images = np.asarray(self.images())
         # batch, height, width, channel = images.shape

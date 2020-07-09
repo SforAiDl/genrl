@@ -25,7 +25,6 @@ class Trainer(ABC):
     :param max_ep_len: Max Episode Length
     :param distributed: (True if distributed training is enabled, else
 False (To be implemented))
-    :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
     :param device: Device to train model on
@@ -42,7 +41,6 @@ False (To be implemented))
     :type render: bool
     :type max_ep_len: int
     :type distributed: bool
-    :type ckpt_log_name: string
     :type steps_per_epochs: int
     :type epochs: int
     :type device: string
@@ -60,10 +58,11 @@ False (To be implemented))
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = False,
         save_interval: int = 0,
+        save_model: str = "checkpoints",
+        run_num: int = 0,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
-        ckpt_log_name: str = "experiment",
         steps_per_epoch: int = 4000,
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
@@ -85,9 +84,10 @@ False (To be implemented))
             else:
                 self.buffer = self.agent.replay_buffer
         self.save_interval = save_interval
+        self.save_model = save_model
+        self.run_num = run_num
         self.render = render
         self.max_ep_len = max_ep_len
-        self.ckpt_log_name = ckpt_log_name
         self.steps_per_epoch = steps_per_epoch
         self.epochs = epochs
         self.device = device
@@ -142,6 +142,42 @@ False (To be implemented))
                 )
                 return
 
+    def save(self, timestep) -> None:
+        """
+        Function to save all parameters of a given agent
+
+        :param timestep: The timestep during training at which model is being saved
+        :type timestep: int
+        """
+        algo_name = self.agent.__class__.__name__
+        if isinstance(self.env, VecEnv):
+            env_name = self.env.env.unwrapped.spec.id
+        else:
+            env_name = self.env.unwrapped.spec.id
+
+        directory = self.save_model
+        path = "{}/{}_{}".format(directory, algo_name, env_name)
+
+        if self.run_num is not None:
+            run_num = self.run_num
+        else:
+            if not os.path.exists(path):
+                os.makedirs(path)
+                run_num = 0
+            elif list(os.scandir(path)) == []:
+                run_num = 0
+            else:
+                last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
+                    -1
+                ].path
+                run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
+            self.run_num = run_num
+
+        torch.save(
+            self.agent.get_hyperparams(),
+            "{}/{}-log-{}.pt".format(path, run_num, timestep),
+        )
+
     @property
     def n_envs(self) -> int:
         """
@@ -164,7 +200,6 @@ class OffPolicyTrainer(Trainer):
     :param max_ep_len: Max Episode Length
     :param distributed: (Should distributed training be enabled?
 (To be implemented))
-    :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
     :param device: Device to train model on
@@ -186,7 +221,6 @@ many steps)
     :type render: bool
     :type max_ep_len: int
     :type distributed: int
-    :type ckpt_log_name: string
     :type steps_per_epochs: int
     :type epochs: int
     :type device: string
@@ -207,10 +241,11 @@ many steps)
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = True,
         save_interval: int = 0,
+        save_model: str = "checkpoints",
+        run_num: int = 0,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
-        ckpt_log_name: str = "experiment",
         steps_per_epoch: int = 4000,
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
@@ -231,10 +266,11 @@ many steps)
             buffer,
             off_policy,
             save_interval,
+            save_model,
+            run_num,
             render,
             max_ep_len,
             distributed,
-            ckpt_log_name,
             steps_per_epoch,
             epochs,
             device,
@@ -325,8 +361,7 @@ many steps)
                 and self.save_interval != 0
                 and timestep % self.save_interval == 0
             ):
-                self.checkpoint = self.agent.get_hyperparams()
-                save_params(self.agent, timestep)
+                self.save(timestep)
 
         self.env.close()
         self.logger.close()
@@ -346,7 +381,6 @@ class OnPolicyTrainer(Trainer):
     :param max_ep_len: Max Episode Length
     :param distributed: (Should distributed training be enabled?
 (To be implemented))
-    :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
     :param device: Device to train model on
@@ -363,7 +397,6 @@ class OnPolicyTrainer(Trainer):
     :type render: bool
     :type max_ep_len: int
     :type distributed: int
-    :type ckpt_log_name: string
     :type steps_per_epochs: int
     :type epochs: int
     :type device: string
@@ -379,10 +412,11 @@ class OnPolicyTrainer(Trainer):
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
         save_interval: int = 0,
+        save_model: str = "checkpoints",
+        run_num: int = 0,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
-        ckpt_log_name: str = "experiment",
         steps_per_epoch: int = 4000,
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
@@ -400,10 +434,11 @@ class OnPolicyTrainer(Trainer):
             buffer=None,
             off_policy=False,
             save_interval=save_interval,
+            save_model=save_model,
+            run_num=run_num,
             render=render,
             max_ep_len=max_ep_len,
             distributed=distributed,
-            ckpt_log_name=ckpt_log_name,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             device=device,
@@ -444,9 +479,7 @@ class OnPolicyTrainer(Trainer):
                 self.env.render()
 
             if self.save_interval != 0 and epoch % self.save_interval == 0:
-                self.checkpoint = self.agent.get_hyperparams()
-                save_params(self.agent, epoch * self.agent.batch_size)
-                # save_params(self.agent, epoch * self.agent.timesteps_per_actorbatch)
+                self.save(epoch * self.agent.batch_size)
 
         self.env.close()
         self.logger.close()

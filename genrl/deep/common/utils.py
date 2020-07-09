@@ -8,6 +8,8 @@ import torch
 import torch.nn as nn
 from gym import spaces
 
+from ...environments import VecEnv
+
 
 def get_model(type_: str, name_: str) -> Union:
     """
@@ -97,28 +99,7 @@ activation layers)
     return cnn_layers, output_size
 
 
-def get_obs_action_shape(env: gym.Env):
-    """
-    Get the shapes of observation and action spaces
-    """
-    obs_shape, action_shape = None, None
-
-    if isinstance(env.observation_space, spaces.Discrete):
-        obs_shape = (1,)
-    elif isinstance(env.observation_space, spaces.Box):
-        obs_shape = obs.shape
-
-    if isinstance(env.action_space, spaces.Box):
-        action_shape = actions.shape
-    elif isinstance(env.action_space, spaces.Discrete):
-        action_shape = (1,)
-
-    if obs_shape is None or action_shape is None:
-        raise NotImplementedError
-
-    return obs_shape, action_shape
-
-
+# TODO(sampreet-arthi) Remove this later
 def save_params(algo: Any, timestep: int) -> None:
     """
     Function to save all parameters of a given agent
@@ -189,11 +170,11 @@ discreteness of action space and action limit (highest action value)
     elif network_type == "mlp":
         input_dim = env.observation_space.shape[0]
 
-    if isinstance(env.action_space, gym.spaces.Discrete):
+    if isinstance(env.action_space, spaces.Discrete):
         action_dim = env.action_space.n
         discrete = True
         action_lim = None
-    elif isinstance(env.action_space, gym.spaces.Box):
+    elif isinstance(env.action_space, spaces.Box):
         action_dim = env.action_space.shape[0]
         action_lim = env.action_space.high[0]
         discrete = False
