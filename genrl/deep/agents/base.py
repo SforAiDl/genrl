@@ -110,7 +110,6 @@ class OnPolicyAgent(BaseAgent):
                 self.epoch_reward[i] = 0
 
     def collect_rollouts(self, state):
-
         for i in range(self.rollout_size):
             # with torch.no_grad():
             action, values, old_log_probs = self.select_action(state)
