@@ -58,6 +58,9 @@ class VecEnv(ABC):
 
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
+        self.action_shape = self.env.action_shape
+
+        self.episode_reward = np.zeros((self.n_envs))
 
     def __getattr__(self, name: str) -> Any:
         env = super(VecEnv, self).__getattribute__("env")
@@ -143,6 +146,7 @@ class SerialVecEnv(VecEnv):
             if done:
                 obs = env.reset()
             self.states[i] = obs
+            self.episode_reward[i] += reward
             self.rewards[i] = reward
             self.dones[i] = done
             self.infos[i] = info
@@ -160,6 +164,7 @@ class SerialVecEnv(VecEnv):
         """
         for i, env in enumerate(self.envs):
             self.states[i] = env.reset()
+        self.episode_reward = np.zeros((self.n_envs))
 
         return np.copy(self.states)
 
@@ -253,6 +258,8 @@ class SubProcessVecEnv(VecEnv):
         for parent_conn in self.parent_conns:
             parent_conn.send(("reset", None))
 
+        self.episode_reward = np.zeros((self.n_envs))
+
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
         return np.asarray(obs)
 
@@ -273,6 +280,7 @@ class SubProcessVecEnv(VecEnv):
         self.waiting = False
 
         observations, rewards, dones, infos = zip(*result)
+        self.episode_reward += np.asarray(rewards)
         return (np.asarray(v) for v in [observations, rewards, dones, infos])
 
     def close(self):

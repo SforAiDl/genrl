@@ -8,7 +8,7 @@ import torch
 from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
-from .utils import save_params, set_seeds
+from .utils import safe_mean, save_params, set_seeds
 
 
 class Trainer(ABC):
@@ -73,8 +73,6 @@ False (To be implemented))
         batch_size: int = 50,
         seed: Optional[int] = None,
         deterministic_actions: bool = False,
-        transform: bool = None,
-        history_length: int = 4,
     ):
         self.agent = agent
         self.env = env
@@ -97,8 +95,6 @@ False (To be implemented))
         self.evaluate_episodes = evaluate_episodes
         self.batch_size = batch_size
         self.deterministic_actions = deterministic_actions
-        self.transform = transform
-        self.history_length = history_length
 
         if seed is not None:
             set_seeds(seed, self.env)
@@ -115,8 +111,8 @@ False (To be implemented))
         """
         Evaluate function
         """
-        ep, ep_r = 0, np.zeros(self.env.n_envs)
-        ep_rews = []
+        episode, episode_reward = 0, np.zeros(self.env.n_envs)
+        episode_rewards = []
         state = self.env.reset()
         while True:
             if self.off_policy:
@@ -127,19 +123,21 @@ False (To be implemented))
             if isinstance(action, torch.Tensor):
                 action = action.numpy()
 
-            next_state, reward, done, _ = self.env.step(action)
-            ep_r += reward
+            next_state, reward, dones, _ = self.env.step(action)
+            episode_reward += reward
             state = next_state
             if np.any(done):
                 for i, di in enumerate(done):
                     if di:
-                        ep += 1
-                        ep_rews.append(ep_r[i])
-                        ep_r[i] = 0
-            if ep == self.evaluate_episodes:
+                        episode += 1
+                        episode_rewards.append(episode_reward[i])
+                        episode_reward[i] = 0
+            if episode == self.evaluate_episodes:
                 print(
                     "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                        self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews),
+                        self.evaluate_episodes,
+                        np.mean(episode_rewards),
+                        np.std(episode_rewards),
                     )
                 )
                 return
@@ -256,9 +254,8 @@ many steps)
         """
         Run training
         """
-        state, episode_reward, episode_len, episode = (
+        state, episode_len, episode = (
             self.env.reset(),
-            np.zeros(self.env.n_envs),
             np.zeros(self.env.n_envs),
             np.zeros(self.env.n_envs),
         )
@@ -272,7 +269,7 @@ many steps)
 
         assert self.update_interval % self.env.n_envs == 0
 
-        self.rewards = [0]
+        self.rewards = []
 
         for timestep in range(0, total_steps, self.env.n_envs):
             self.agent.update_params_before_select_action(timestep)
@@ -287,7 +284,6 @@ many steps)
             if self.render:
                 self.env.render()
 
-            episode_reward += reward
             episode_len += 1
 
             done = [
@@ -309,15 +305,15 @@ many steps)
                             "timestep": timestep,
                             "Episode": sum(episode),
                             **self.agent.get_logging_params(),
-                            "Episode Reward": np.mean(self.rewards),
+                            "Episode Reward": safe_mean(self.rewards),
                         }
                     )
-                    self.rewards = [0]
+                    self.rewards = []
 
                 for i, di in enumerate(done):
                     if di:
-                        self.rewards.append(episode_reward[i])
-                        episode_reward[i] = 0
+                        self.rewards.append(self.env.episode_reward[i])
+                        self.env.episode_reward[i] = 0
                         episode_len[i] = 0
                         episode[i] += 1
 
@@ -427,7 +423,6 @@ class OnPolicyTrainer(Trainer):
             self.agent.epoch_reward = np.zeros(self.env.n_envs)
 
             self.agent.rollout.reset()
-            self.agent.rewards = []
 
             state = self.env.reset()
             values, done = self.agent.collect_rollouts(state)
