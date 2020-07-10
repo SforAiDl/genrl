@@ -14,7 +14,6 @@ from ...common import (
     get_model,
     load_params,
     safe_mean,
-    save_params,
     set_seeds,
 )
 
@@ -41,13 +40,10 @@ class DDPG:
     :param deterministic_actions: True if actions are deterministic
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of steps between parameter updates
-    :param save_interval: Number of steps between saves of models
     :param layers: Number of neurons in hidden layers
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :param run_num: model run number if it has already been trained
-    :param save_model: model save directory
     :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
@@ -65,13 +61,10 @@ class DDPG:
     :type deterministic_actions: bool
     :type start_update: int
     :type update_interval: int
-    :type save_interval: int
     :type layers: tuple
     :type seed: int
     :type render: bool
     :type device: string
-    :type run_num: int
-    :type save_model: string
     :type load_model: string
     """
 
@@ -98,10 +91,7 @@ class DDPG:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
         load_model: str = None,
-        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -121,14 +111,10 @@ class DDPG:
         self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
-        self.save_interval = save_interval
         self.layers = layers
         self.seed = seed
         self.render = render
-        self.run_num = run_num
-        self.save_model = save_model
         self.load_model = load_model
-        self.save = save_params
         self.load = load_params
 
         self.logs = {}
@@ -174,7 +160,7 @@ class DDPG:
             self.load(self)
             self.ac.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
-                if key not in ["weights", "save_model"]:
+                if key not in ["weights"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
@@ -369,12 +355,6 @@ class DDPG:
             # update params
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.update_params(self.update_interval)
-
-            if self.save_model is not None:
-                if timestep >= self.start_update and timestep % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, timestep)
-                    print("Saved current model")
 
         self.env.close()
 

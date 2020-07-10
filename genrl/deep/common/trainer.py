@@ -1,3 +1,4 @@
+import os
 from abc import ABC
 from typing import Any, List, Optional, Type, Union
 
@@ -8,7 +9,7 @@ import torch
 from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
-from .utils import safe_mean, save_params, set_seeds
+from .utils import safe_mean, set_seeds
 
 
 class Trainer(ABC):
@@ -59,7 +60,7 @@ False (To be implemented))
         off_policy: bool = False,
         save_interval: int = 0,
         save_model: str = "checkpoints",
-        run_num: int = 0,
+        run_num: int = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
@@ -242,7 +243,7 @@ many steps)
         off_policy: bool = True,
         save_interval: int = 0,
         save_model: str = "checkpoints",
-        run_num: int = 0,
+        run_num: int = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
@@ -290,6 +291,9 @@ many steps)
         """
         Run training
         """
+        if self.load_model is not None:
+            self.load()
+
         state, episode_len, episode = (
             self.env.reset(),
             np.zeros(self.env.n_envs),
@@ -413,7 +417,7 @@ class OnPolicyTrainer(Trainer):
         log_mode: List[str] = ["stdout"],
         save_interval: int = 0,
         save_model: str = "checkpoints",
-        run_num: int = 0,
+        run_num: int = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,

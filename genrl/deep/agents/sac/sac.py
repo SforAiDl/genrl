@@ -15,7 +15,6 @@ from ...common import (
     get_model,
     load_params,
     safe_mean,
-    save_params,
     set_seeds,
 )
 
@@ -45,8 +44,6 @@ class SAC:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :param run_num: model run number if it has already been trained
-    :param save_model: model save directory
     :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
@@ -67,8 +64,6 @@ class SAC:
     :type seed: int
     :type render: bool
     :type device: string
-    :type run_num: int
-    :type save_model: string
     :type load_model: string
     """
 
@@ -93,10 +88,7 @@ class SAC:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
         load_model: str = None,
-        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -114,14 +106,10 @@ class SAC:
         self.max_ep_len = max_ep_len
         self.start_update = start_update
         self.update_interval = update_interval
-        self.save_interval = save_interval
         self.layers = layers
         self.seed = seed
         self.render = render
-        self.run_num = run_num
-        self.save_model = save_model
         self.load_model = load_model
-        self.save = save_params
         self.load = load_params
 
         self.logs = {}
@@ -176,7 +164,7 @@ class SAC:
             self.policy.load_state_dict(self.checkpoint["policy_weights"])
 
             for key, item in self.checkpoint.items():
-                if key not in ["weights", "save_model"]:
+                if key not in ["weights"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
@@ -396,12 +384,6 @@ class SAC:
             ):
                 self.update_params(self.update_interval)
 
-                if self.save_model is not None:
-                    if i >= self.start_update and i % self.save_interval == 0:
-                        self.checkpoint = self.get_hyperparams()
-                        self.save(self, i)
-                        print("Saved current model")
-
                 # prepare transition for replay memory push
             next_state, reward, done, _ = self.env.step(action)
             if self.render:
@@ -474,10 +456,3 @@ class SAC:
         self.logs["q2_loss"] = []
         self.logs["policy_loss"] = []
         self.logs["alpha_loss"] = []
-
-
-if __name__ == "__main__":
-    env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env, save_model="checkpoints")
-    algo.learn()
-    algo.evaluate(algo)

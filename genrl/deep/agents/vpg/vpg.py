@@ -24,12 +24,9 @@ class VPG(OnPolicyAgent):
     :param actor_batchsize: trajectories per optimizer epoch
     :param epochs: the optimizer's number of epochs
     :param lr_policy: policy network learning rate
-    :param save_interval: Number of episodes between saves of models
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; \
 'cpu' for cpu and 'cuda' for gpu
-    :param run_num: if model has already been trained
-    :param save_model: True if user wants to save
     :param load_model: model loading path
     :param rollout_size: Rollout Buffer Size
     :type network_type: str
@@ -39,11 +36,8 @@ class VPG(OnPolicyAgent):
     :type actor_batchsize: int
     :type epochs: int
     :type lr_policy: float
-    :type save_interval: int
     :type seed: int
     :type device: str
-    :type run_num: bool
-    :type save_model: bool
     :type load_model: string
     :type rollout_size: int
     """
@@ -96,7 +90,7 @@ class VPG(OnPolicyAgent):
             self.actor.load_state_dict(self.checkpoint["policy_weights"])
 
             for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "save_model"]:
+                if key not in ["policy_weights"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 

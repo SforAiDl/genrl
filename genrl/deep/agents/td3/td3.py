@@ -13,7 +13,6 @@ from ...common import (
     get_model,
     load_params,
     safe_mean,
-    save_params,
     set_seeds,
 )
 
@@ -42,19 +41,11 @@ class TD3:
     :param deterministic_actions: True if actions are deterministic
     :param start_update: (int) Number of steps before first parameter update
     :param update_interval: (int) Number of steps between parameter updates
-    :param save_interval: (int) Number of steps between saves of models
     :param layers: (tuple or list) Number of neurons in hidden layers
     :param seed (int): seed for torch and gym
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param run_num: (boolean) if model has already been trained
-    :param save_name: (str) model save name (if None, model hasn't been
-        pretrained)
-    :param save_version: (int) model save version (if None, model hasn't been
-        pretrained)
-    :param run_num: model run number if it has already been trained
-    :param save_model: model save directory
     :param load_model: model loading path
     :type network_type: str
     :type env: Gym environment
@@ -73,16 +64,10 @@ class TD3:
     :type deterministic_actions: bool
     :type start_update: int
     :type update_interval: int
-    :type save_interval: int
     :type layers: tuple or list
     :type seed: int
     :type render: boolean
     :type device: str
-    :type run_num: boolean
-    :type save_name: str
-    :type save_version: int
-    :type run_num: int
-    :type save_model: string
     :type load_model: string
     """
 
@@ -91,7 +76,7 @@ class TD3:
         network_type: str,
         env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
-        replay_size: int = 1000000,
+        replay_size: int = 1000,
         batch_size: int = 100,
         lr_p: float = 0.001,
         lr_q: float = 0.001,
@@ -110,10 +95,7 @@ class TD3:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
         load_model: str = None,
-        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -134,14 +116,10 @@ class TD3:
         self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
-        self.save_interval = save_interval
         self.layers = layers
         self.seed = seed
         self.render = render
-        self.run_num = run_num
-        self.save_model = save_model
         self.load_model = load_model
-        self.save = save_params
         self.load = load_params
 
         self.logs = {}
@@ -186,12 +164,12 @@ class TD3:
 
         if self.load_model is not None:
             self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
+            self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
             self.ac.qf1.load_state_dict(self.checkpoint["q1_weights"])
             self.ac.qf2.load_state_dict(self.checkpoint["q2_weights"])
 
             for key, item in self.checkpoint.items():
-                if key not in ["weights", "save_model"]:
+                if key not in ["weights"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
@@ -382,12 +360,6 @@ class TD3:
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.update_params(self.update_interval)
 
-            if self.save_model is not None:
-                if timestep >= self.start_update and timestep % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, timestep)
-                    print("Saved current model")
-
         self.env.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
@@ -401,7 +373,7 @@ class TD3:
             "noise_std": self.noise_std,
             "q1_weights": self.ac.qf1.state_dict(),
             "q2_weights": self.ac.qf2.state_dict(),
-            "policy_weights": self.ac.actor.state_dict(),
+            "actor_weights": self.ac.actor.state_dict(),
         }
 
         return hyperparams
@@ -427,9 +399,3 @@ class TD3:
 
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
-
-
-if __name__ == "__main__":
-    env = gym.make("Pendulum-v0")
-    algo = TD3("mlp", env)
-    algo.learn()

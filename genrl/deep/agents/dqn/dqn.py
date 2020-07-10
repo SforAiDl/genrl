@@ -15,7 +15,6 @@ from ...common import (
     get_model,
     load_params,
     safe_mean,
-    save_params,
     set_seeds,
 )
 from .utils import (
@@ -53,9 +52,6 @@ class DQN:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
-    :param save_interval: Number of steps between saves of models
-    :param run_num: model run number if it has already been trained
-    :param save_model: model save directory
     :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
@@ -74,9 +70,6 @@ class DQN:
     :type seed: int
     :type render: bool
     :type device: string
-    :type save_interval: int
-    :type run_num: int
-    :type save_model: string
     :type load_model: string
     """
 
@@ -106,9 +99,6 @@ class DQN:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        save_interval: int = 5000,
-        run_num: int = None,
-        save_model: str = None,
         load_model: str = None,
         transform: Any = None,
     ):
@@ -134,11 +124,7 @@ class DQN:
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
-        self.run_num = run_num
-        self.save_model = save_model
         self.load_model = load_model
-        self.save_interval = save_interval
-        self.save = save_params
         self.load = load_params
         self.network_type = network_type
         self.transform = transform
@@ -200,8 +186,9 @@ class DQN:
             self.load(self)
             self.model.load_state_dict(self.checkpoint["weights"])
             for key, item in self.checkpoint.items():
-                if key not in ["weights", "save_model"]:
+                if key not in ["weights"]:
                     setattr(self, key, item)
+            self.epsilon = self.calculate_epsilon_by_frame()
             print("Loaded pretrained model")
 
         self.target_model = deepcopy(self.model)
@@ -228,7 +215,8 @@ class DQN:
         :param timestep: Timestep in the training process
         :type timestep: int
         """
-        self.epsilon = self.calculate_epsilon_by_frame(timestep)
+        self.timestep = timestep
+        self.epsilon = self.calculate_epsilon_by_frame()
 
     def select_action(self, state: np.ndarray) -> np.ndarray:
         """
@@ -370,17 +358,15 @@ so no need to call the function explicitly.)
             if timestep % update_interval == 0:
                 self.update_target_model()
 
-    def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
+    def calculate_epsilon_by_frame(self) -> float:
         """
         A helper function to calculate the value of epsilon after every step.
 
-        :param frame_idx: Current step
-        :type frame_idx: int
         :returns: epsilon value for the step
         :rtype: float
         """
         return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
-            -1.0 * frame_idx / self.epsilon_decay
+            -1.0 * self.timestep / self.epsilon_decay
         )
 
     def projection_distribution(
@@ -479,12 +465,6 @@ so no need to call the function explicitly.)
             if frame_idx >= self.start_update and frame_idx % self.update_interval == 0:
                 self.agent.update_params(self.update_interval)
 
-            if self.save_model is not None:
-                if frame_idx % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, frame_idx)
-                    print("Saved current model")
-
             if frame_idx % 100 == 0:
                 self.update_target_model()
 
@@ -503,6 +483,7 @@ so no need to call the function explicitly.)
             "prioritized_replay": self.prioritized_replay,
             "prioritized_replay_alpha": self.prioritized_replay_alpha,
             "weights": self.model.state_dict(),
+            "timestep": self.timestep,
         }
 
         return hyperparams

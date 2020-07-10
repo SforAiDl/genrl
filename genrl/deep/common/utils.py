@@ -99,44 +99,6 @@ activation layers)
     return cnn_layers, output_size
 
 
-# TODO(sampreet-arthi) Remove this later
-def save_params(algo: Any, timestep: int) -> None:
-    """
-    Function to save all parameters of a given agent
-
-    :param algo: The agent object
-    :param timestep: The timestep during training at which model is being saved
-    :type algo: Object
-    :type timestep: int
-    """
-    algo_name = algo.__class__.__name__
-    if isinstance(algo.env, VecEnv):
-        env_name = algo.env.envs[0].unwrapped.spec.id
-    else:
-        env_name = algo.env.unwrapped.spec.id
-    directory = algo.save_model
-    path = "{}/{}_{}".format(directory, algo_name, env_name)
-
-    if algo.run_num is not None:
-        run_num = algo.run_num
-    else:
-        if not os.path.exists(path):
-            os.makedirs(path)
-            run_num = 0
-        elif list(os.scandir(path)) == []:
-            run_num = 0
-        else:
-            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
-                -1
-            ].path
-            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
-        algo.run_num = run_num
-
-    torch.save(
-        algo.get_hyperparams(), "{}/{}-log-{}.pt".format(path, run_num, timestep)
-    )
-
-
 def load_params(algo: Any) -> None:
     """
     Function load parameters for an algorithm from a given checkpoint file

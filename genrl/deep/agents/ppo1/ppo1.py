@@ -28,12 +28,9 @@ class PPO1(OnPolicyAgent):
     :param lr_value: value network learning rate
     :param policy_copy_interval: number of optimizer before copying
         params from new policy to old policy
-    :param save_interval: Number of episodes between saves of models
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param run_num: if model has already been trained
-    :param save_model: directory the user wants to save models to
     :param load_model: model loading path
     :type network_type: str
     :type env: Gym environment
@@ -45,11 +42,8 @@ class PPO1(OnPolicyAgent):
     :type lr_policy: float
     :type lr_value: float
     :type policy_copy_interval: int
-    :type save_interval: int
     :type seed: int
     :type device: string
-    :type run_num: boolean
-    :type save_model: string
     :type load_model: string
     :type rollout_size: int
     """
@@ -109,10 +103,10 @@ class PPO1(OnPolicyAgent):
         # load paramaters if already trained
         if self.load_model is not None:
             self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
-            self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
+            self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
+            self.ac.critic.load_state_dict(self.checkpoint["critic_weights"])
             for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights", "save_model"]:
+                if key not in ["actor_weights", "critic_weights"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 
@@ -196,8 +190,8 @@ class PPO1(OnPolicyAgent):
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
             "rollout_size": self.rollout_size,
-            "policy_weights": self.ac.actor.state_dict(),
-            "value_weights": self.ac.critic.state_dict(),
+            "actor_weights": self.ac.actor.state_dict(),
+            "critic_weights": self.ac.critic.state_dict(),
         }
 
         return hyperparams

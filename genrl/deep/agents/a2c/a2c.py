@@ -32,9 +32,6 @@ class A2C(OnPolicyAgent):
     :param seed: Seed for reproducing results
     :param render: True if environment is to be rendered, else False
     :param device: Device to use for Tensor operation ['cpu', 'cuda']
-    :param run_num: Model run number if it has already been trained
-    :param save_model: Directory the user wants to save models to
-    :param save_interval: Number of steps between saves of models
     :param rollout_size: Rollout Buffer Size
     :param val_coeff: Coefficient of value loss in overall loss function
     :param entropy_coeff: Coefficient of entropy loss in overall loss function
@@ -53,9 +50,6 @@ class A2C(OnPolicyAgent):
     :type seed: int
     :type render: boolean
     :type device: string
-    :type run_num: int
-    :type save_model: string
-    :type save_interval: int
     :type rollout_size: int
     :type val_coeff: float
     :type entropy_coeff: float
@@ -128,7 +122,7 @@ class A2C(OnPolicyAgent):
             self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
             self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
             for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights", "save_model"]:
+                if key not in ["policy_weights", "value_weights"]:
                     setattr(self, key, item)
             print("Loaded pretrained model")
 

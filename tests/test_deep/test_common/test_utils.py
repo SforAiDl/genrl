@@ -72,7 +72,7 @@ class TestUtils:
         test saving algorithm state dict
         """
         env = VectorEnv("CartPole-v0", 1)
-        algo = PPO1("mlp", env, epochs=1)
+        algo = PPO1("mlp", env)
         trainer = OnPolicyTrainer(
             algo, env, ["stdout"], save_model="test_ckpt", save_interval=1, epochs=1
         )
@@ -85,9 +85,7 @@ class TestUtils:
         test loading algorithm parameters
         """
         env = VectorEnv("CartPole-v0", 1)
-        algo = PPO1(
-            "mlp", env, epochs=1, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",
-        )
+        algo = PPO1("mlp", env, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",)
 
         rmtree("logs")
 
