@@ -21,7 +21,7 @@ def download_data(
         return str(fpath)
 
     try:
-        print(f"Downloading {url} to {fpath}")
+        print(f"Downloading {url} to {fpath.resolve()}")
         urllib.request.urlretrieve(url, fpath)
     except (urllib.error.URLError, IOError) as e:
         if url[:5] == "https":

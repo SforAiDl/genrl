@@ -18,7 +18,9 @@ from genrl.deep import BootstrapNeuralAgent  # noqa
 from genrl.deep import CensusDataBandit  # noqa
 from genrl.deep import CovertypeDataBandit  # noqa
 from genrl.deep import DataBasedBandit  # noqa
+from genrl.deep import FixedAgent  # noqa
 from genrl.deep import LinearPosteriorAgent  # noqa
+from genrl.deep import MagicDataBandit  # noqa
 from genrl.deep import MushroomDataBandit  # noqa
 from genrl.deep import NeuralGreedyAgent  # noqa
 from genrl.deep import NeuralLinearPosteriorAgent  # noqa
@@ -26,5 +28,5 @@ from genrl.deep import NeuralNoiseSamplingAgent  # noqa
 from genrl.deep import StatlogDataBandit  # noqa
 from genrl.deep import VariationalAgent  # noqa
 from genrl.deep import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
-from genrl.deep import FixedAgent  # noqa
+
 from genrl.deep import AdultDataBandit  # noqa; noqa
