@@ -1,9 +1,12 @@
 from abc import ABC
+from datetime import datetime
+from pathlib import Path
 from typing import Any, List, Optional, Type, Union
 
 import gym
 import numpy as np
 import torch
+from matplotlib import pyplot as plt
 
 from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
@@ -455,3 +458,111 @@ class OnPolicyTrainer(Trainer):
 
         self.env.close()
         self.logger.close()
+
+
+class BanditTrainer:
+    def __init__(
+        self, agent, bandit, logdir="./logs", log_mode=["stdout"],
+    ):
+        self.agent = agent
+        self.bandit = bandit
+        self.logdir = logdir
+        self.log_mode = log_mode
+        self.logger = Logger(logdir=logdir, formats=[*log_mode])
+
+    def train(
+        self,
+        timesteps=10_000,
+        update_interval=20,
+        update_after=500,
+        batch_size=64,
+        train_epochs=20,
+        plot=True,
+    ) -> None:
+        """
+        Run training
+        """
+        start_time = datetime.now()
+        print(
+            f"Started at {start_time:%d-%m-%y %H:%M:%S}\n"
+            f"Training {self.agent.__class__.__name__} on {self.bandit.__class__.__name__} "
+            f"for {timesteps} timesteps"
+        )
+        mv_len = timesteps // 20
+        context = self.bandit.reset()
+        regret_mv_avgs = []
+        reward_mv_avgs = []
+        try:
+            for t in range(1, timesteps + 1):
+                action = self.agent.select_action(context)
+                context, reward = self.bandit.step(action)
+                self.agent.update_db(context, action, reward)
+
+                if t > update_after and t % update_interval == 0:
+                    self.agent.update_params(
+                        context, action, reward, batch_size, train_epochs
+                    )
+
+                regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
+                reward_mv_avgs.append(np.mean(self.bandit.reward_hist[-mv_len:]))
+                self.logger.write(
+                    {
+                        "Timestep": t,
+                        "regret": self.bandit.regret_hist[-1],
+                        "reward": reward,
+                        "cumulative_regret": self.bandit.cum_regret,
+                        "cumulative_reward": self.bandit.cum_reward,
+                        "regret_moving_avg": regret_mv_avgs[-1],
+                        "reward_moving_avg": reward_mv_avgs[-1],
+                    }
+                )
+
+        except KeyboardInterrupt:
+            print("\nTraining interrupted by user!\n")
+
+        except Exception as e:
+            print("\nEncounterred exception during training!\n")
+            raise e
+
+        finally:
+            self.logger.close()
+            print(
+                f"Training completed in {(datetime.now() - start_time).seconds} seconds\n"
+                f"Final Regret Moving Average: {regret_mv_avgs[-1]} | "
+                f"Final Reward Moving Average: {reward_mv_avgs[-1]}"
+            )
+
+            if plot:
+                fig, axs = plt.subplots(3, 2, figsize=(10, 10))
+                axs[0, 0].scatter(
+                    list(range(len(self.bandit.regret_hist))), self.bandit.regret_hist
+                )
+                axs[0, 0].set_title("Regret History")
+                axs[0, 1].scatter(
+                    list(range(len(self.bandit.reward_hist))), self.bandit.reward_hist
+                )
+                axs[0, 0].set_title("Reward History")
+                axs[1, 0].plot(self.bandit.cum_regret_hist)
+                axs[1, 1].set_title("Cumulative Regret")
+                axs[1, 1].plot(self.bandit.cum_reward_hist)
+                axs[1, 1].set_title("Cumulative Reward")
+                axs[2, 0].plot(regret_mv_avgs)
+                axs[2, 0].set_title("Regret Moving Avg")
+                axs[2, 1].plot(reward_mv_avgs)
+                axs[2, 1].set_title("Reward Moving Avg")
+
+                fig.savefig(
+                    Path(self.logdir).joinpath(
+                        f"{self.agent.__class__.__name__}-on-{self.bandit.__class__.__name__}.png"
+                    )
+                )
+                plt.cla()
+
+            return {
+                "regrets": self.bandit.regret_hist,
+                "rewards": self.bandit.reward_hist,
+                "cumulative_regrets": self.bandit.cum_regret_hist,
+                "cumulative_rewards": self.bandit.cum_reward_hist,
+                "regret_moving_avgs": regret_mv_avgs,
+                "reward_moving_avgs": reward_mv_avgs,
+            }

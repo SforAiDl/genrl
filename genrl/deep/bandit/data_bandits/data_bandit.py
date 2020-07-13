@@ -57,14 +57,39 @@ class DataBasedBandit(object):
         """
         return self._regret_hist
 
+    @property
+    def cum_regret_hist(self) -> Union[List[int], List[float]]:
+        return self._cum_regret_hist
+
+    @property
+    def cum_reward_hist(self) -> Union[List[int], List[float]]:
+        return self._cum_reward_hist
+
+    @property
+    def cum_regret(self) -> Union[int, float]:
+        return self._cum_regret
+
+    @property
+    def cum_reward(self) -> Union[int, float]:
+        return self._cum_reward
+
     def _reset(self) -> torch.Tensor:
         self.idx = 0
+        self._cum_regret = 0
+        self._cum_reward = 0
         self._reward_hist = []
         self._regret_hist = []
+        self._cum_regret_hist = []
+        self._cum_reward_hist = []
 
     def step(self, action: int) -> Tuple[torch.Tensor, int]:
         reward, max_reward = self._compute_reward(action)
-        self.regret_hist.append(max_reward - reward)
+        regret = max_reward - reward
+        self._cum_regret += regret
+        self.cum_regret_hist.append(self._cum_regret)
+        self.regret_hist.append(regret)
+        self._cum_reward += reward
+        self.cum_reward_hist.append(self._cum_reward)
         self.reward_hist.append(reward)
         self.idx += 1
         if not self.idx < self.len:
@@ -72,7 +97,7 @@ class DataBasedBandit(object):
         context = self._get_context()
         return context, reward
 
-    def _step(self, action: int) -> Tuple[torch.Tensor, int, int]:
+    def _compute_reward(self, action: int) -> Tuple[int, int]:
         raise NotImplementedError
 
     def _get_context(self) -> torch.Tensor:

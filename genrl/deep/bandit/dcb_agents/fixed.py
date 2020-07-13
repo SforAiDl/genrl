@@ -1,7 +1,7 @@
 from typing import List
 
-import torch
 import numpy as np
+import torch
 
 from ..data_bandits import DataBasedBandit
 from .common import NeuralBanditModel, TransitionDB
@@ -25,41 +25,8 @@ class FixedAgent(DCBAgent):
         self.t += 1
         return np.random.choice(range(self.n_actions), p=self.p)
 
-    def update_params(self, context: torch.Tensor, action: int, reward: int):
+    def update_db(self, *args, **kwargs):
         pass
 
-
-if __name__ == "__main__":
-
-    from ....classical.bandit.contextual_bandits import BernoulliCB
-    from ..data_bandits.census_bandit import CensusDataBandit
-    from ..data_bandits.covertype_bandit import CovertypeDataBandit
-    from ..data_bandits.mushroom_bandit import MushroomDataBandit
-    from ..data_bandits.statlog_bandit import StatlogDataBandit
-    from .common import demo_dcb_policy
-
-    TIMESTEPS = 1000
-    ITERATIONS = 10
-    BANDIT_ARGS = {"download": True}
-    # BANDIT_ARGS = {"bandits": 10, "arms": 10}
-
-    POLICY_ARGS_COLLECTION = [
-        {
-            "init_pulls": 2,
-            "hidden_dims": [100, 100],
-            "train_epochs": 20,
-            "lr": 1e-3,
-            "batch_size": 64,
-            "nn_update_interval": 20,
-        }
-    ]
-
-    demo_dcb_policy(
-        FixedAgent,
-        CensusDataBandit,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-        verbose=True,
-    )
+    def update_params(self, *args, **kwargs):
+        pass

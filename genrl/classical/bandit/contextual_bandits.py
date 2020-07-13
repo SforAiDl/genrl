@@ -30,6 +30,10 @@ class ContextualBandit(object):
         self.reset()
         self._regret_hist = []
         self._reward_hist = []
+        self._cum_regret_hist = []
+        self._cum_reward_hist = []
+        self._cum_regret = 0
+        self._cum_reward = 0
 
     @property
     def reward_hist(self) -> List[float]:
@@ -48,6 +52,22 @@ class ContextualBandit(object):
         :rtype: list
         """
         return self._regret_hist
+
+    @property
+    def cum_regret_hist(self) -> Union[List[int], List[float]]:
+        return self._cum_regret_hist
+
+    @property
+    def cum_reward_hist(self) -> Union[List[int], List[float]]:
+        return self._cum_reward_hist
+
+    @property
+    def cum_regret(self) -> Union[int, float]:
+        return self._cum_regret
+
+    @property
+    def cum_reward(self) -> Union[int, float]:
+        return self._cum_reward
 
     @property
     def arms(self) -> int:
@@ -97,7 +117,12 @@ class ContextualBandit(object):
         :rtype: int, float ...
         """
         reward, max_reward = self._compute_reward(action)
-        self.regret_hist.append(max_reward - reward)
+        regret = max_reward - reward
+        self._cum_regret += regret
+        self.cum_regret_hist.append(self._cum_regret)
+        self.regret_hist.append(regret)
+        self._cum_reward += reward
+        self.cum_reward_hist.append(self._cum_reward)
         self.reward_hist.append(reward)
         self.reset()
         if self.context_type == "tensor":

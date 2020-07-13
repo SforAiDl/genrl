@@ -17,7 +17,6 @@ class LinearPosteriorAgent(DCBAgent):
         lambda_prior: float = 0.5,
         a0: float = 0.0,
         b0: float = 0.0,
-        bayesian_update_interval: int = 1,
     ):
         super(LinearPosteriorAgent, self).__init__(bandit)
 
@@ -45,7 +44,6 @@ class LinearPosteriorAgent(DCBAgent):
         self.a = self.a0 * torch.ones(self.n_actions, device=device, dtype=dtype)
         self.b = self.b0 * torch.ones(self.n_actions, device=device, dtype=dtype)
         self.db = TransitionDB()
-        self.bayesian_update_interval = bayesian_update_interval
         self.t = 0
         self.update_count = 0
 
@@ -88,59 +86,24 @@ class LinearPosteriorAgent(DCBAgent):
                 .to(dtype)
             )
         values = torch.mv(beta, torch.cat([context.view(-1), torch.ones(1)]))
-        return torch.argmax(values).to(torch.int)
+        action = torch.argmax(values).to(torch.int)
+        return action
+
+    def update_db(self, context: torch.Tensor, action: int, reward: int):
+        self.db.add(context, action, reward)
 
     def update_params(self, context: torch.Tensor, action: int, reward: int):
         self.update_count += 1
-        self.db.add(context, action, reward)
 
-        if self.update_count % self.bayesian_update_interval == 0:
-            x, y = self.db.get_data_for_action(action)
-            x = torch.cat([x, torch.ones(x.shape[0], 1)], dim=1)
-            inv_cov = torch.mm(x.T, x) + self.lambda_prior * torch.eye(
-                self.context_dim + 1
-            )
-            cov = torch.inverse(inv_cov)
-            mu = torch.mm(cov, torch.mm(x.T, y))
-            a = self.a0 + self.t / 2
-            b = self.b0 + (torch.mm(y.T, y) - torch.mm(mu.T, torch.mm(inv_cov, mu))) / 2
-            self.mu[action] = mu.squeeze(1)
-            self.cov[action] = cov
-            self.inv_cov[action] = inv_cov
-            self.a[action] = a
-            self.b[action] = b
-
-
-if __name__ == "__main__":
-
-    from .common import demo_dcb_policy
-    from ..data_bandits.covertype_bandit import CovertypeDataBandit
-    from ..data_bandits.mushroom_bandit import MushroomDataBandit
-    from ..data_bandits.statlog_bandit import StatlogDataBandit
-    from ..data_bandits.adult_bandit import AdultDataBandit
-    from ....classical.bandit.contextual_bandits import BernoulliCB
-
-    TIMESTEPS = 1000
-    ITERATIONS = 10
-    BANDIT_ARGS = {"download": True}
-    # BANDIT_ARGS = {"bandits": 5, "arms": 10}
-
-    POLICY_ARGS_COLLECTION = [
-        {
-            "init_pulls": 3,
-            "lambda_prior": 0.25,
-            "a0": 0.0,
-            "b0": 0.0,
-            "bayesian_update_interval": 1,
-        }
-    ]
-
-    demo_dcb_policy(
-        LinearPosteriorAgent,
-        AdultDataBandit,
-        POLICY_ARGS_COLLECTION,
-        BANDIT_ARGS,
-        TIMESTEPS,
-        ITERATIONS,
-        verbose=True,
-    )
+        x, y = self.db.get_data_for_action(action)
+        x = torch.cat([x, torch.ones(x.shape[0], 1)], dim=1)
+        inv_cov = torch.mm(x.T, x) + self.lambda_prior * torch.eye(self.context_dim + 1)
+        cov = torch.inverse(inv_cov)
+        mu = torch.mm(cov, torch.mm(x.T, y))
+        a = self.a0 + self.t / 2
+        b = self.b0 + (torch.mm(y.T, y) - torch.mm(mu.T, torch.mm(inv_cov, mu))) / 2
+        self.mu[action] = mu.squeeze(1)
+        self.cov[action] = cov
+        self.inv_cov[action] = inv_cov
+        self.a[action] = a
+        self.b[action] = b

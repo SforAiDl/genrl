@@ -20,11 +20,8 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         a0: float = 0.0,
         b0: float = 0.0,
         hidden_dims: List[int] = [128],
-        train_epochs: int = 20,
         lr: float = 1e-3,
-        batch_size: int = 512,
-        bayesian_update_interval: int = 1,
-        nn_update_interval: int = 20,
+        nn_update_ratio: int = 1,
     ):
         super(NeuralLinearPosteriorAgent, self).__init__(bandit)
         self.init_pulls = init_pulls
@@ -32,11 +29,10 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         self.a0 = a0
         self.b0 = b0
         self.latent_dim = hidden_dims[-1]
-        self.batch_size = batch_size
+        self.nn_update_ratio = nn_update_ratio
         self.model = NeuralBanditModel(
             self.context_dim, hidden_dims, self.n_actions, lr
         )
-        self.train_epochs = train_epochs
         self.mu = torch.zeros(
             size=(self.n_actions, self.latent_dim + 1), device=device, dtype=dtype
         )
@@ -58,8 +54,6 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         self.b = self.b0 * torch.ones(self.n_actions, device=device, dtype=dtype)
         self.db = TransitionDB()
         self.latent_db = TransitionDB()
-        self.nn_update_interval = nn_update_interval
-        self.bayesian_update_interval = bayesian_update_interval
         self.t = 0
         self.update_count = 0
 
@@ -102,29 +96,36 @@ class NeuralLinearPosteriorAgent(DCBAgent):
             )
         latent_context, _ = self.model(context)
         values = torch.mv(beta, torch.cat([latent_context.squeeze(0), torch.ones(1)]))
-        return torch.argmax(values).to(torch.int)
+        action = torch.argmax(values).to(torch.int)
+        return action
 
-    def update_params(self, context: torch.Tensor, action: int, reward: int):
-        self.update_count += 1
+    def update_db(self, context: torch.Tensor, action: int, reward: int):
         self.db.add(context, action, reward)
         latent_context, _ = self.model(context)
         self.latent_db.add(latent_context, action, reward)
 
-        if self.update_count % self.nn_update_interval == 0:
-            self.model.train(self.db, self.train_epochs, self.batch_size)
+    def update_params(
+        self,
+        context: torch.Tensor,
+        action: int,
+        reward: int,
+        batch_size: int = 512,
+        train_epochs: int = 20,
+    ):
+        self.update_count += 1
 
-        if self.update_count % self.bayesian_update_interval == 0:
-            z, y = self.latent_db.get_data_for_action(action)
-            z = torch.cat([z, torch.ones(z.shape[0], 1)], dim=1)
-            inv_cov = torch.mm(z.T, z) + self.lambda_prior * torch.eye(
-                self.latent_dim + 1
-            )
-            cov = torch.inverse(inv_cov)
-            mu = torch.mm(cov, torch.mm(z.T, y))
-            a = self.a0 + self.t / 2
-            b = self.b0 + (torch.mm(y.T, y) - torch.mm(mu.T, torch.mm(inv_cov, mu))) / 2
-            self.mu[action] = mu.squeeze(1)
-            self.cov[action] = cov
-            self.inv_cov[action] = inv_cov
-            self.a[action] = a
-            self.b[action] = b
+        if self.update_count % self.nn_update_ratio == 0:
+            self.model.train(self.db, train_epochs, batch_size)
+
+        z, y = self.latent_db.get_data_for_action(action, batch_size)
+        z = torch.cat([z, torch.ones(z.shape[0], 1)], dim=1)
+        inv_cov = torch.mm(z.T, z) + self.lambda_prior * torch.eye(self.latent_dim + 1)
+        cov = torch.inverse(inv_cov)
+        mu = torch.mm(cov, torch.mm(z.T, y))
+        a = self.a0 + self.t / 2
+        b = self.b0 + (torch.mm(y.T, y) - torch.mm(mu.T, torch.mm(inv_cov, mu))) / 2
+        self.mu[action] = mu.squeeze(1)
+        self.cov[action] = cov
+        self.inv_cov[action] = inv_cov
+        self.a[action] = a
+        self.b[action] = b
