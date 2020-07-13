@@ -13,7 +13,6 @@ from ...common import (
     ReplayBuffer,
     get_env_properties,
     get_model,
-    load_params,
     safe_mean,
     set_seeds,
 )
@@ -52,7 +51,6 @@ class DQN:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
-    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type double_dqn: bool
@@ -70,7 +68,6 @@ class DQN:
     :type seed: int
     :type render: bool
     :type device: string
-    :type load_model: string
     """
 
     def __init__(
@@ -99,8 +96,6 @@ class DQN:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        load_model: str = None,
-        transform: Any = None,
     ):
         self.env = env
         self.double_dqn = double_dqn
@@ -124,13 +119,7 @@ class DQN:
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
-        self.load_model = load_model
-        self.load = load_params
         self.network_type = network_type
-        self.transform = transform
-
-        self.logs = {}
-        self.logs["value_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -145,6 +134,7 @@ class DQN:
         # Setup tensorboard writer
         self.writer = None
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
@@ -180,16 +170,6 @@ class DQN:
                 self.model = get_model("v", self.network_type)(
                     action_dim, self.framestack, "Qs"
                 )
-
-        # load paramaters if already trained
-        if self.load_model is not None:
-            self.load(self)
-            self.model.load_state_dict(self.checkpoint["weights"])
-            for key, item in self.checkpoint.items():
-                if key not in ["weights"]:
-                    setattr(self, key, item)
-            self.epsilon = self.calculate_epsilon_by_frame()
-            print("Loaded pretrained model")
 
         self.target_model = deepcopy(self.model)
 
@@ -488,6 +468,12 @@ so no need to call the function explicitly.)
 
         return hyperparams
 
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.model.load_state_dict(weights["weights"])
+
     def get_logging_params(self) -> Dict[str, Any]:
         """
         :returns: Logging parameters for monitoring training
@@ -505,11 +491,5 @@ so no need to call the function explicitly.)
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["value_loss"] = []
-
-
-if __name__ == "__main__":
-    env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env)
-    algo.learn()

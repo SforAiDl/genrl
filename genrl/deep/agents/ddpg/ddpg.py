@@ -8,14 +8,7 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from ....environments import VecEnv
-from ...common import (
-    ReplayBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    safe_mean,
-    set_seeds,
-)
+from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
 
 
 class DDPG:
@@ -44,7 +37,6 @@ class DDPG:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type gamma: float
@@ -65,7 +57,6 @@ class DDPG:
     :type seed: int
     :type render: bool
     :type device: string
-    :type load_model: string
     """
 
     def __init__(
@@ -91,7 +82,6 @@ class DDPG:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        load_model: str = None,
     ):
 
         self.network_type = network_type
@@ -114,12 +104,6 @@ class DDPG:
         self.layers = layers
         self.seed = seed
         self.render = render
-        self.load_model = load_model
-        self.load = load_params
-
-        self.logs = {}
-        self.logs["policy_loss"] = []
-        self.logs["value_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -134,6 +118,7 @@ class DDPG:
         # Setup tensorboard writer
         self.writer = None
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
@@ -154,15 +139,6 @@ class DDPG:
         self.ac = get_model("ac", self.network_type)(
             state_dim, action_dim, self.layers, "Qsa", False
         ).to(self.device)
-
-        # load paramaters if already trained
-        if self.load_model is not None:
-            self.load(self)
-            self.ac.load_state_dict(self.checkpoint["weights"])
-            for key, item in self.checkpoint.items():
-                if key not in ["weights"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -373,6 +349,12 @@ class DDPG:
 
         return hyperparams
 
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.load_state_dict(weights["weights"])
+
     def get_logging_params(self) -> Dict[str, Any]:
         """
         :returns: Logging parameters for monitoring training
@@ -391,7 +373,7 @@ class DDPG:
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
 

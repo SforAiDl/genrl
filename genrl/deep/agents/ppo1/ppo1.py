@@ -100,16 +100,6 @@ class PPO1(OnPolicyAgent):
             activation=self.activation,
         ).to(self.device)
 
-        # load paramaters if already trained
-        if self.load_model is not None:
-            self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
-            self.ac.critic.load_state_dict(self.checkpoint["critic_weights"])
-            for key, item in self.checkpoint.items():
-                if key not in ["actor_weights", "critic_weights"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
-
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
@@ -190,11 +180,18 @@ class PPO1(OnPolicyAgent):
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
             "rollout_size": self.rollout_size,
-            "actor_weights": self.ac.actor.state_dict(),
-            "critic_weights": self.ac.critic.state_dict(),
+            "policy_weights": self.ac.actor.state_dict(),
+            "value_weights": self.ac.critic.state_dict(),
         }
 
         return hyperparams
+
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.actor.load_state_dict(weights["policy_weights"])
+        self.ac.critic.load_state_dict(weights["value_weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
         """

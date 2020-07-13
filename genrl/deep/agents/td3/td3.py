@@ -7,14 +7,7 @@ import torch
 import torch.nn as nn
 
 from ....environments import VecEnv
-from ...common import (
-    ReplayBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    safe_mean,
-    set_seeds,
-)
+from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
 
 
 class TD3:
@@ -46,7 +39,6 @@ class TD3:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param load_model: model loading path
     :type network_type: str
     :type env: Gym environment
     :type gamma: float
@@ -68,7 +60,6 @@ class TD3:
     :type seed: int
     :type render: boolean
     :type device: str
-    :type load_model: string
     """
 
     def __init__(
@@ -95,7 +86,6 @@ class TD3:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        load_model: str = None,
     ):
 
         self.network_type = network_type
@@ -119,12 +109,6 @@ class TD3:
         self.layers = layers
         self.seed = seed
         self.render = render
-        self.load_model = load_model
-        self.load = load_params
-
-        self.logs = {}
-        self.logs["policy_loss"] = []
-        self.logs["value_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -136,8 +120,8 @@ class TD3:
         if seed is not None:
             set_seeds(seed, self.env)
 
+        self.empty_logs()
         self.create_model()
-        self.checkpoint = self.get_hyperparams()
 
     def create_model(self) -> None:
         state_dim, action_dim, discrete, _ = get_env_properties(self.env)
@@ -161,17 +145,6 @@ class TD3:
 
         self.ac.qf1.to(self.device)
         self.ac.qf2.to(self.device)
-
-        if self.load_model is not None:
-            self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["actor_weights"])
-            self.ac.qf1.load_state_dict(self.checkpoint["q1_weights"])
-            self.ac.qf2.load_state_dict(self.checkpoint["q2_weights"])
-
-            for key, item in self.checkpoint.items():
-                if key not in ["weights"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -378,6 +351,14 @@ class TD3:
 
         return hyperparams
 
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.actor.load_state_dict(weights["actor_weights"])
+        self.ac.qf1.load_state_dict(weights["q1_weights"])
+        self.ac.qf2.load_state_dict(weights["q2_weights"])
+
     def get_logging_params(self) -> Dict[str, Any]:
         """
         :returns: Logging parameters for monitoring training
@@ -389,13 +370,12 @@ class TD3:
         }
 
         self.empty_logs()
-
         return logs
 
     def empty_logs(self):
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []

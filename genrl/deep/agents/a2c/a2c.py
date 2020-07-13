@@ -116,16 +116,6 @@ class A2C(OnPolicyAgent):
 
         self.rollout = RolloutBuffer(self.rollout_size, self.env,)
 
-        # load paramaters if already trained
-        if self.run_num is not None:
-            self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
-            self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
-            for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
-
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
@@ -210,6 +200,13 @@ calculate losses)
         }
 
         return hyperparams
+
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.actor.load_state_dict(weights["policy_weights"])
+        self.ac.critic.load_state_dict(weights["value_weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
         """

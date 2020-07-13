@@ -9,14 +9,7 @@ import torch.optim as opt
 from torch.distributions import Normal
 
 from ....environments import VecEnv
-from ...common import (
-    ReplayBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    safe_mean,
-    set_seeds,
-)
+from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
 
 
 class SAC:
@@ -44,7 +37,6 @@ class SAC:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type gamma: float
@@ -64,7 +56,6 @@ class SAC:
     :type seed: int
     :type render: bool
     :type device: string
-    :type load_model: string
     """
 
     def __init__(
@@ -88,7 +79,6 @@ class SAC:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        load_model: str = None,
     ):
 
         self.network_type = network_type
@@ -109,11 +99,6 @@ class SAC:
         self.layers = layers
         self.seed = seed
         self.render = render
-        self.load_model = load_model
-        self.load = load_params
-
-        self.logs = {}
-        self.empty_logs()
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -128,6 +113,7 @@ class SAC:
         # Setup tensorboard writer
         self.writer = None
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
@@ -156,17 +142,6 @@ class SAC:
             .to(self.device)
             .float()
         )
-
-        if self.load_model is not None:
-            self.load(self)
-            self.q1.load_state_dict(self.checkpoint["q1_weights"])
-            self.q2.load_state_dict(self.checkpoint["q2_weights"])
-            self.policy.load_state_dict(self.checkpoint["policy_weights"])
-
-            for key, item in self.checkpoint.items():
-                if key not in ["weights"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
@@ -431,6 +406,14 @@ class SAC:
 
         return hyperparams
 
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.q1.load_state_dict(weights["q1_weights"])
+        self.q2.load_state_dict(weights["q2_weights"])
+        self.policy.load_state_dict(weights["policy_weights"])
+
     def get_logging_params(self) -> Dict[str, Any]:
         """
         :returns: Logging parameters for monitoring training
@@ -444,14 +427,13 @@ class SAC:
         }
 
         self.empty_logs()
-
         return logs
 
     def empty_logs(self):
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["q1_loss"] = []
         self.logs["q2_loss"] = []
         self.logs["policy_loss"] = []

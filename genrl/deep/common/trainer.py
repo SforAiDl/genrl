@@ -61,6 +61,7 @@ False (To be implemented))
         save_interval: int = 0,
         save_model: str = "checkpoints",
         run_num: int = None,
+        load_model: str = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
@@ -179,6 +180,25 @@ False (To be implemented))
             "{}/{}-log-{}.pt".format(path, run_num, timestep),
         )
 
+    def load(self):
+        path = self.load_model
+        try:
+            self.agent.checkpoint = torch.load(path)
+        except FileNotFoundError:
+            raise Exception("Invalid File Name")
+
+        weights = {}
+
+        for key, item in self.checkpoint.items():
+            if "weights" not in key:
+                setattr(self, key, item)
+            else:
+                weights[key] = item
+
+        self.agent.load_weights(weights)
+
+        print("Loaded Pretrained Model!")
+
     @property
     def n_envs(self) -> int:
         """
@@ -244,6 +264,7 @@ many steps)
         save_interval: int = 0,
         save_model: str = "checkpoints",
         run_num: int = None,
+        load_model: str = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
@@ -418,6 +439,7 @@ class OnPolicyTrainer(Trainer):
         save_interval: int = 0,
         save_model: str = "checkpoints",
         run_num: int = None,
+        load_model: str = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
@@ -458,6 +480,9 @@ class OnPolicyTrainer(Trainer):
         """
         Run training.
         """
+        if self.load_model is not None:
+            self.load()
+
         for epoch in range(self.epochs):
             self.agent.epoch_reward = np.zeros(self.env.n_envs)
 
