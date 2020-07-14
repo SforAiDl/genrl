@@ -82,7 +82,6 @@ class MushroomDataBandit(DataBasedBandit):
         return self._get_context()
 
     def _compute_reward(self, action: int) -> Tuple[int, int]:
-        label = list(self.df.iloc[self.idx, : self.n_actions])
         if action == 0:
             r = self.r_pass
         elif action == 1:

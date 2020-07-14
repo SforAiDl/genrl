@@ -47,4 +47,4 @@ class NeuralGreedyAgent(DCBAgent):
         batch_size: int = 512,
     ):
         self.update_count += 1
-        self.model.train(self.db, train_epochs, batch_size)
+        self.model.train_model(self.db, train_epochs, batch_size)

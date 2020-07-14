@@ -2,7 +2,6 @@ from typing import List
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from ..data_bandits import DataBasedBandit
 from .common import NeuralBanditModel, TransitionDB
@@ -56,7 +55,7 @@ class NeuralNoiseSamplingAgent(DCBAgent):
         train_epochs: int = 20,
     ):
         self.update_count += 1
-        self.model.train(self.db, train_epochs, batch_size)
+        self.model.train_model(self.db, train_epochs, batch_size)
         self._update_noise()
 
     def _noisy_pred(self, context: torch.Tensor) -> torch.Tensor:

@@ -1,7 +1,6 @@
 from typing import List
 
 import torch
-from scipy.stats import invgamma
 
 from ..data_bandits import DataBasedBandit
 from .common import BayesianNNBanditModel, TransitionDB
@@ -49,4 +48,4 @@ class VariationalAgent(DCBAgent):
         batch_size: int = 512,
     ):
         self.update_count += 1
-        self.model.train(self.db, train_epochs, batch_size)
+        self.model.train_model(self.db, train_epochs, batch_size)

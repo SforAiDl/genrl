@@ -4,7 +4,6 @@ import numpy as np
 import torch
 
 from ..data_bandits import DataBasedBandit
-from .common import NeuralBanditModel, TransitionDB
 from .dcb_agent import DCBAgent
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

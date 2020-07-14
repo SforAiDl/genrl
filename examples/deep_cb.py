@@ -1,7 +1,6 @@
 import argparse
 
 import genrl
-from genrl.deep.common import BanditTrainer
 
 ALGOS = {
     "bootstrap": genrl.BootstrapNeuralAgent,

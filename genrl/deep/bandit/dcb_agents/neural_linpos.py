@@ -115,7 +115,7 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         self.update_count += 1
 
         if self.update_count % self.nn_update_ratio == 0:
-            self.model.train(self.db, train_epochs, batch_size)
+            self.model.train_model(self.db, train_epochs, batch_size)
 
         z, y = self.latent_db.get_data_for_action(action, batch_size)
         z = torch.cat([z, torch.ones(z.shape[0], 1)], dim=1)

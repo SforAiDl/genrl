@@ -1,15 +1,10 @@
 import random
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from matplotlib import pyplot as plt
 
-from ...common.logger import Logger
-from ..data_bandits import DataBasedBandit
-from .dcb_agent import DCBAgent
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
@@ -49,10 +44,10 @@ class TransitionDB(object):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         action_idx = [i for i in range(self.db_size) if self.db["actions"][i] == action]
         if batch_size is None:
-            batch_size = len(action_idx)
+            t_batch_size = len(action_idx)
         else:
-            batch_size = min(batch_size, self.db_size)
-        idx = random.sample(action_idx, len(action_idx))
+            t_batch_size = min(batch_size, len(action_idx))
+        idx = random.sample(action_idx, t_batch_size)
         x = torch.stack([self.db["contexts"][i] for i in idx]).to(device).to(dtype)
         y = (
             torch.tensor([self.db["rewards"][i] for i in idx])
@@ -85,7 +80,7 @@ class NeuralBanditModel(nn.Module):
         pred_rewards = self.layers[-1](x)
         return x, pred_rewards
 
-    def train(self, db: TransitionDB, epochs: int, batch_size: int):
+    def train_model(self, db: TransitionDB, epochs: int, batch_size: int):
         for e in range(epochs):
             x, a, y = db.get_data(batch_size)
             reward_vec = torch.zeros(
@@ -150,7 +145,7 @@ class BayesianLinear(nn.Module):
                     )
             else:
                 b = 0.0
-                b_logprob = None
+                # b_logprob = None
 
         return F.linear(x, w, b), kl_val
 
@@ -169,11 +164,10 @@ class BayesianNNBanditModel(nn.Module):
         self.hidden_dims = hidden_dims
         self.n_actions = n_actions
         self.noise_sigma = noise_sigma
-        hidden_dims.insert(0, context_dim)
-        hidden_dims.append(n_actions)
+        t_hidden_dims = [context_dim, *hidden_dims, n_actions]
         self.layers = nn.ModuleList([])
-        for i in range(len(hidden_dims) - 1):
-            self.layers.append(BayesianLinear(hidden_dims[i], hidden_dims[i + 1]))
+        for i in range(len(t_hidden_dims) - 1):
+            self.layers.append(BayesianLinear(t_hidden_dims[i], t_hidden_dims[i + 1]))
         self.optimizer = torch.optim.Adam(self.layers.parameters(), lr=lr)
 
     def forward(
@@ -191,7 +185,7 @@ class BayesianNNBanditModel(nn.Module):
             kl_val += kl_v
         return x, pred_rewards, kl_val
 
-    def train(self, db: TransitionDB, epochs: int, batch_size: int):
+    def train_model(self, db: TransitionDB, epochs: int, batch_size: int):
         for e in range(epochs):
             x, a, y = db.get_data(batch_size)
             reward_vec = torch.zeros(

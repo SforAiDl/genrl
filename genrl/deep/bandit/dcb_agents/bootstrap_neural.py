@@ -56,4 +56,4 @@ class BootstrapNeuralAgent(DCBAgent):
     ):
         self.update_count += 1
         for i, model in enumerate(self.models):
-            model.train(self.dbs[i], train_epochs, batch_size)
+            model.train_model(self.dbs[i], train_epochs, batch_size)

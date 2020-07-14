@@ -2,7 +2,6 @@ import urllib.request
 from pathlib import Path
 from typing import List, Tuple, Union
 
-import pandas as pd
 import torch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
