@@ -5,7 +5,7 @@ from genrl.deep.common import OffPolicyTrainer, OrnsteinUhlenbeckActionNoise
 from genrl.environments import VectorEnv
 
 
-def test_td3(self):
+def test_td3():
     env = VectorEnv("Pendulum-v0", 2)
     algo = TD3("mlp", env, noise=OrnsteinUhlenbeckActionNoise, layers=[1, 1])
 

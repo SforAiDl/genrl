@@ -88,6 +88,7 @@ False (To be implemented))
         self.save_interval = save_interval
         self.save_model = save_model
         self.run_num = run_num
+        self.load_model = load_model
         self.render = render
         self.max_ep_len = max_ep_len
         self.steps_per_epoch = steps_per_epoch
@@ -101,6 +102,7 @@ False (To be implemented))
         if seed is not None:
             set_seeds(seed, self.env)
 
+        print(logdir)
         self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
     def train(self) -> None:

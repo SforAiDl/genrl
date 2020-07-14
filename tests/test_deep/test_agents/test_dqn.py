@@ -5,7 +5,7 @@ from genrl.deep.common import OffPolicyTrainer
 from genrl.environments import VectorEnv
 
 
-def test_dqn(self):
+def test_dqn():
     env = VectorEnv("CartPole-v0", 2)
     # DQN
     algo = DQN("mlp", env)

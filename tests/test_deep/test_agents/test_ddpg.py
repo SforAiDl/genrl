@@ -5,7 +5,7 @@ from genrl.deep.common import NormalActionNoise, OffPolicyTrainer
 from genrl.environments import VectorEnv
 
 
-def test_ddpg(self):
+def test_ddpg():
     env = VectorEnv("Pendulum-v0", 2)
     algo = DDPG("mlp", env, noise=NormalActionNoise, layers=[1, 1])
 

@@ -5,7 +5,7 @@ from genrl.deep.common import OffPolicyTrainer
 from genrl.environments import VectorEnv
 
 
-def test_dqn_cnn(self):
+def test_dqn_cnn():
     env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
 
     # DQN

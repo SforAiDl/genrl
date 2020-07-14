@@ -5,7 +5,7 @@ from genrl.deep.common import OnPolicyTrainer
 from genrl.environments import VectorEnv
 
 
-def test_vpg(self):
+def test_vpg():
     env = VectorEnv("CartPole-v0", 1)
     algo = VPG("mlp", env)
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
