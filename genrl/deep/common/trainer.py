@@ -1,6 +1,7 @@
 from abc import ABC
 from datetime import datetime
 from pathlib import Path
+import traceback
 from typing import Any, List, Optional, Type, Union
 
 import gym
@@ -477,6 +478,7 @@ class BanditTrainer:
         update_after=500,
         batch_size=64,
         train_epochs=20,
+        log_every=100,
         plot=True,
     ) -> None:
         """
@@ -484,7 +486,7 @@ class BanditTrainer:
         """
         start_time = datetime.now()
         print(
-            f"Started at {start_time:%d-%m-%y %H:%M:%S}\n"
+            f"\nStarted at {start_time:%d-%m-%y %H:%M:%S}\n"
             f"Training {self.agent.__class__.__name__} on {self.bandit.__class__.__name__} "
             f"for {timesteps} timesteps"
         )
@@ -505,23 +507,25 @@ class BanditTrainer:
 
                 regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
                 reward_mv_avgs.append(np.mean(self.bandit.reward_hist[-mv_len:]))
-                self.logger.write(
-                    {
-                        "Timestep": t,
-                        "regret": self.bandit.regret_hist[-1],
-                        "reward": reward,
-                        "cumulative_regret": self.bandit.cum_regret,
-                        "cumulative_reward": self.bandit.cum_reward,
-                        "regret_moving_avg": regret_mv_avgs[-1],
-                        "reward_moving_avg": reward_mv_avgs[-1],
-                    }
-                )
+                if t % log_every == 0:
+                    self.logger.write(
+                        {
+                            "Timestep": t,
+                            "regret": self.bandit.regret_hist[-1],
+                            "reward": reward,
+                            "cumulative_regret": self.bandit.cum_regret,
+                            "cumulative_reward": self.bandit.cum_reward,
+                            "regret_moving_avg": regret_mv_avgs[-1],
+                            "reward_moving_avg": reward_mv_avgs[-1],
+                        }
+                    )
 
         except KeyboardInterrupt:
             print("\nTraining interrupted by user!\n")
 
         except Exception as e:
-            print("\nEncounterred exception during training!\n")
+            print(f"\nEncounterred exception during training!\n{e}\n")
+            traceback.print_exc()
             raise e
 
         finally:
