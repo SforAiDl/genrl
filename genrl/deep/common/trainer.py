@@ -1,7 +1,7 @@
+import traceback
 from abc import ABC
 from datetime import datetime
 from pathlib import Path
-import traceback
 from typing import Any, List, Optional, Type, Union
 
 import gym
@@ -538,6 +538,10 @@ class BanditTrainer:
 
             if plot:
                 fig, axs = plt.subplots(3, 2, figsize=(10, 10))
+                fig.suptitle(
+                    f"{self.agent.__class__.__name__} on {self.bandit.__class__.__name__}",
+                    fontsize=14,
+                )
                 axs[0, 0].scatter(
                     list(range(len(self.bandit.regret_hist))), self.bandit.regret_hist
                 )
@@ -545,7 +549,7 @@ class BanditTrainer:
                 axs[0, 1].scatter(
                     list(range(len(self.bandit.reward_hist))), self.bandit.reward_hist
                 )
-                axs[0, 0].set_title("Reward History")
+                axs[0, 1].set_title("Reward History")
                 axs[1, 0].plot(self.bandit.cum_regret_hist)
                 axs[1, 1].set_title("Cumulative Regret")
                 axs[1, 1].plot(self.bandit.cum_reward_hist)
