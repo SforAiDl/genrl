@@ -1,4 +1,3 @@
-
 import torch
 
 from ..data_bandits import DataBasedBandit
