@@ -13,10 +13,10 @@ class LinearPosteriorAgent(DCBAgent):
     def __init__(
         self,
         bandit: DataBasedBandit,
-        init_pulls: int = 3,
-        lambda_prior: float = 0.5,
-        a0: float = 0.0,
-        b0: float = 0.0,
+        init_pulls: int = 2,
+        lambda_prior: float = 0.25,
+        a0: float = 6.0,
+        b0: float = 6.0,
     ):
         super(LinearPosteriorAgent, self).__init__(bandit)
 
@@ -51,7 +51,6 @@ class LinearPosteriorAgent(DCBAgent):
         self.t += 1
         if self.t < self.n_actions * self.init_pulls:
             return torch.tensor(self.t % self.n_actions, device=device, dtype=torch.int)
-
         var = torch.tensor(
             [self.b[i] * invgamma.rvs(self.a[i]) for i in range(self.n_actions)],
             device=device,
@@ -92,7 +91,14 @@ class LinearPosteriorAgent(DCBAgent):
     def update_db(self, context: torch.Tensor, action: int, reward: int):
         self.db.add(context, action, reward)
 
-    def update_params(self, context: torch.Tensor, action: int, reward: int):
+    def update_params(
+        self,
+        context: torch.Tensor,
+        action: int,
+        reward: int,
+        batch_size: int = 512,
+        train_epochs: int = 20,
+    ):
         self.update_count += 1
 
         x, y = self.db.get_data_for_action(action)
