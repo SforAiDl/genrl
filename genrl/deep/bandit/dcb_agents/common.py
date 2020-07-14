@@ -65,11 +65,10 @@ class NeuralBanditModel(nn.Module):
         self.context_dim = context_dim
         self.hidden_dims = hidden_dims
         self.n_actions = n_actions
-        hidden_dims.insert(0, context_dim)
-        hidden_dims.append(n_actions)
+        t_hidden_dims = [context_dim, *hidden_dims, n_actions]
         self.layers = nn.ModuleList([])
-        for i in range(len(hidden_dims) - 1):
-            self.layers.append(nn.Linear(hidden_dims[i], hidden_dims[i + 1]))
+        for i in range(len(t_hidden_dims) - 1):
+            self.layers.append(nn.Linear(t_hidden_dims[i], t_hidden_dims[i + 1]))
         self.optimizer = torch.optim.Adam(self.layers.parameters(), lr=lr)
 
     def forward(self, context: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
