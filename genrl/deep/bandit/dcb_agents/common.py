@@ -122,9 +122,10 @@ class BayesianLinear(nn.Module):
         self, x: torch.Tensor, kl: bool = True, frozen: bool = False
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
         kl_val = None
+        b = None
         if frozen:
             w = self.w_mu
-            if bias:
+            if self.bias:
                 b = self.b_mu
         else:
             w_dist = torch.distributions.Normal(self.w_mu, self.w_sigma)
