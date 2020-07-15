@@ -102,7 +102,6 @@ False (To be implemented))
         if seed is not None:
             set_seeds(seed, self.env)
 
-        print(logdir)
         self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
     def train(self) -> None:
@@ -286,24 +285,24 @@ many steps)
         super(OffPolicyTrainer, self).__init__(
             agent,
             env,
-            log_mode,
-            buffer,
-            off_policy,
-            save_interval,
-            save_model,
-            run_num,
-            render,
-            max_ep_len,
-            distributed,
-            steps_per_epoch,
-            epochs,
-            device,
-            log_interval,
-            evaluate_episodes,
-            logdir,
-            batch_size,
-            seed,
-            deterministic_actions,
+            log_mode=log_mode,
+            buffer=buffer,
+            off_policy=off_policy,
+            save_interval=save_interval,
+            save_model=save_model,
+            run_num=run_num,
+            render=render,
+            max_ep_len=max_ep_len,
+            distributed=distributed,
+            steps_per_epoch=steps_per_epoch,
+            epochs=epochs,
+            device=device,
+            log_interval=log_interval,
+            evaluate_episodes=evaluate_episodes,
+            logdir=logdir,
+            batch_size=batch_size,
+            seed=seed,
+            deterministic_actions=deterministic_actions,
         )
         self.warmup_steps = warmup_steps
         self.update_interval = update_interval

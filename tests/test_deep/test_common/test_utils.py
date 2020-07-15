@@ -85,7 +85,11 @@ class TestUtils:
         test loading algorithm parameters
         """
         env = VectorEnv("CartPole-v0", 1)
-        algo = PPO1("mlp", env, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",)
+        algo = PPO1("mlp", env)
+        trainer = OnPolicyTrainer(
+            algo, env, epochs=0, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
+        )
+        trainer.train()
 
         rmtree("logs")
 
