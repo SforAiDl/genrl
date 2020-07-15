@@ -32,12 +32,12 @@ class MagicDataBandit(DataBasedBandit):
             self.df = pd.read_csv(fpath, header=None)
         else:
             if Path(path).is_dir():
-                path = Path(path).joinpath("magic.data")
+                path = Path(path).joinpath("magic04.data")
             if Path(path).is_file():
                 self.df = pd.read_csv(path, header=None)
             else:
                 raise FileNotFoundError(
-                    "File not found at location {path}, use download flag"
+                    f"File not found at location {path}, use download flag"
                 )
 
         col = self.df.columns[-1]

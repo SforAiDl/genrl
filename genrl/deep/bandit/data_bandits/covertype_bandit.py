@@ -41,7 +41,7 @@ class CovertypeDataBandit(DataBasedBandit):
                 self.df = pd.read_csv(path, header=None, na_values=["?"]).dropna()
             else:
                 raise FileNotFoundError(
-                    "File not found at location {path}, use download flag"
+                    f"File not found at location {path}, use download flag"
                 )
         self.n_actions = len(self.df.iloc[:, -1].unique())
         self.context_dim = self.df.shape[1] - 1

@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple, Union, List
+import zipfile
 
 import pandas as pd
 import torch
@@ -31,7 +32,7 @@ class AdultDataBandit(DataBasedBandit):
                 url = URL
             for i, u in enumerate(URL):
                 zpath = download_data(path, url, force_download)
-                fpath = zipfil.ZipFile(zpath).extract(f"jester-data-{i}.xls")
+                fpath = zipfile.ZipFile(zpath).extract(f"jester-data-{i}.xls")
                 dfs.append(pd.read_excel(fpath, encoding="sys.getfilesystemencoding()"))
         else:
             if Path(path).is_dir():
@@ -40,7 +41,7 @@ class AdultDataBandit(DataBasedBandit):
                 self.df = pd.read_csv(path, header=None, na_values=["?", " ?"]).dropna()
             else:
                 raise FileNotFoundError(
-                    "File not found at location {path}, use download flag"
+                    f"File not found at location {path}, use download flag"
                 )
         self.df = pd.concat(dfs, axis=0)
 

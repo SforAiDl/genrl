@@ -36,7 +36,7 @@ class CensusDataBandit(DataBasedBandit):
                 self.df = pd.read_csv(path)
             else:
                 raise FileNotFoundError(
-                    "File not found at location {path}, use download flag"
+                    f"File not found at location {path}, use download flag"
                 )
 
         self.n_actions = len(self.df["dOccup"].unique())

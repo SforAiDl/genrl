@@ -39,7 +39,7 @@ class MushroomDataBandit(DataBasedBandit):
                 self.df = pd.read_csv(path, header=None)
             else:
                 raise FileNotFoundError(
-                    "File not found at location {path}, use download flag"
+                    f"File not found at location {path}, use download flag"
                 )
 
         for col in self.df.columns:
@@ -86,6 +86,8 @@ class MushroomDataBandit(DataBasedBandit):
             r = self.r_pass
         elif action == 1:
             r = self.eat_rewards[self.idx]
+        else:
+            raise ValueError(f"Action {action} undefined for mushroom data bandit")
         return r, self.optimal_exp_rewards[self.idx]
 
     def _get_context(self) -> torch.Tensor:

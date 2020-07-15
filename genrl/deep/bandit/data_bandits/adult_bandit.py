@@ -33,7 +33,7 @@ class AdultDataBandit(DataBasedBandit):
                 self.df = pd.read_csv(path, header=None, na_values=["?", " ?"]).dropna()
             else:
                 raise FileNotFoundError(
-                    "File not found at location {path}, use download flag"
+                    f"File not found at location {path}, use download flag"
                 )
 
         for col in self.df.columns[[1, 3, 5, 6, 7, 8, 9, 13, 14]]:
@@ -41,7 +41,6 @@ class AdultDataBandit(DataBasedBandit):
             self.df = pd.concat([self.df, dummies], axis=1)
             self.df = self.df.drop(col, axis=1)
 
-        print(list(self.df.columns))
         self.df[self.df.columns[-2]] += self.df[self.df.columns[-1]]
         self.df.drop(self.df.columns[-1], axis=1)
 

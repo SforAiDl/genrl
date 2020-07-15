@@ -36,7 +36,7 @@ class StatlogDataBandit(DataBasedBandit):
                 self.df = pd.read_csv(path, header=None, delimiter=" ")
             else:
                 raise FileNotFoundError(
-                    "File not found at location {path}, use download flag"
+                    f"File not found at location {path}, use download flag"
                 )
 
         self.n_actions = len(self.df.iloc[:, -1].unique())
