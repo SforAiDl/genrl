@@ -1,13 +1,11 @@
 import traceback
 from abc import ABC
 from datetime import datetime
-from pathlib import Path
 from typing import Any, List, Optional, Type, Union
 
 import gym
 import numpy as np
 import torch
-from matplotlib import pyplot as plt
 
 from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
