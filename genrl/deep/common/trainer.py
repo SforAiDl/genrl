@@ -153,10 +153,7 @@ False (To be implemented))
         :type timestep: int
         """
         algo_name = self.agent.__class__.__name__
-        if isinstance(self.env, VecEnv):
-            env_name = self.env.env.unwrapped.spec.id
-        else:
-            env_name = self.env.unwrapped.spec.id
+        env_name = self.env.unwrapped.spec.id
 
         directory = self.save_model
         path = "{}/{}_{}".format(directory, algo_name, env_name)

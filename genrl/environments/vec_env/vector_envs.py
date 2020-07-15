@@ -5,7 +5,6 @@ from typing import Any, Iterator, List, Tuple
 
 import gym
 import numpy as np
-from gym import spaces
 
 
 def worker(parent_conn: mp.Pipe, child_conn: mp.Pipe, env: gym.Env):
@@ -120,17 +119,17 @@ class VecEnv(ABC):
 
     @property
     def obs_shape(self):
-        if isinstance(self.observation_space, spaces.Discrete):
+        if isinstance(self.observation_space, gym.spaces.Discrete):
             obs_shape = (1,)
-        elif isinstance(self.observation_space, spaces.Box):
+        elif isinstance(self.observation_space, gym.spaces.Box):
             obs_shape = self.observation_space.shape
         return obs_shape
 
     @property
     def action_shape(self):
-        if isinstance(self.action_space, spaces.Box):
+        if isinstance(self.action_space, gym.spaces.Box):
             action_shape = self.action_space.shape
-        elif isinstance(self.action_space, spaces.Discrete):
+        elif isinstance(self.action_space, gym.spaces.Discrete):
             action_shape = (1,)
         return action_shape
 

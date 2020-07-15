@@ -1,4 +1,3 @@
-import os
 import random
 from typing import Any, List, Tuple, Union
 
@@ -6,7 +5,6 @@ import gym
 import numpy as np
 import torch
 import torch.nn as nn
-from gym import spaces
 
 from ...environments import VecEnv
 
@@ -64,8 +62,7 @@ def cnn(
     channels: Tuple = (4, 16, 32),
     kernel_sizes: Tuple = (8, 4),
     strides: Tuple = (4, 2),
-    in_size: int = 84,
-    activation: str = "relu",
+    **kwargs,
 ) -> (Tuple):
     """
     (Generates a CNN model given input dimensions, channels, kernel_sizes and
@@ -82,10 +79,12 @@ strides)
     :returns: (Convolutional Neural Network with convolutional layers and
 activation layers)
     """
-    cnn_layers = []
-    output_size = in_size
 
-    activation = nn.Tanh() if activation == "tanh" else nn.ReLU()
+    cnn_layers = []
+    output_size = kwargs["in_size"] if "in_size" in kwargs else 84
+
+    act_fn = kwargs["activation"] if "activation" in kwargs else "relu"
+    activation = nn.Tanh() if act_fn == "tanh" else nn.ReLU()
 
     for i in range(len(channels) - 1):
         in_channels, out_channels = channels[i], channels[i + 1]
@@ -132,11 +131,11 @@ discreteness of action space and action limit (highest action value)
     elif network_type == "mlp":
         input_dim = env.observation_space.shape[0]
 
-    if isinstance(env.action_space, spaces.Discrete):
+    if isinstance(env.action_space, gym.spaces.Discrete):
         action_dim = env.action_space.n
         discrete = True
         action_lim = None
-    elif isinstance(env.action_space, spaces.Box):
+    elif isinstance(env.action_space, gym.spaces.Box):
         action_dim = env.action_space.shape[0]
         action_lim = env.action_space.high[0]
         discrete = False

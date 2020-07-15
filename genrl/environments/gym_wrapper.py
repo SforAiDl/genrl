@@ -2,7 +2,6 @@ from typing import Any
 
 import gym
 import numpy as np
-from gym import spaces
 
 
 class GymWrapper(gym.Wrapper):
@@ -40,17 +39,17 @@ serially or parallelly
 
     @property
     def obs_shape(self):
-        if isinstance(self.env.observation_space, spaces.Discrete):
+        if isinstance(self.env.observation_space, gym.spaces.Discrete):
             obs_shape = (1,)
-        elif isinstance(self.env.observation_space, spaces.Box):
+        elif isinstance(self.env.observation_space, gym.spaces.Box):
             obs_shape = self.env.observation_space.shape
         return obs_shape
 
     @property
     def action_shape(self):
-        if isinstance(self.env.action_space, spaces.Box):
+        if isinstance(self.env.action_space, gym.spaces.Box):
             action_shape = self.env.action_space.shape
-        elif isinstance(self.env.action_space, spaces.Discrete):
+        elif isinstance(self.env.action_space, gym.spaces.Discrete):
             action_shape = (1,)
         return action_shape
 

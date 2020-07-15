@@ -413,7 +413,8 @@ so no need to call the function explicitly.)
             self.update_target_model()
 
         for frame_idx in range(1, total_steps + 1):
-            self.epsilon = self.calculate_epsilon_by_frame(frame_idx)
+            self.timestep = frame_idx
+            self.epsilon = self.calculate_epsilon_by_frame()
 
             action = self.select_action(state)
 
