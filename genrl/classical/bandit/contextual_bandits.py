@@ -27,13 +27,8 @@ class ContextualBandit(object):
                 f"context_type should be either tensor or int, found {context_type}"
             )
         self.context_type = context_type
-        self.reset()
-        self._regret_hist = []
-        self._reward_hist = []
-        self._cum_regret_hist = []
-        self._cum_reward_hist = []
-        self._cum_regret = 0
-        self._cum_reward = 0
+        self._reset_metrics()
+        self._reset_bandit()
 
     @property
     def reward_hist(self) -> List[float]:
@@ -89,17 +84,35 @@ class ContextualBandit(object):
         """
         return self._nbandits
 
-    def reset(self) -> torch.Tensor:
+    def _reset_metrics(self) -> None:
         """
-        Resets the current bandit randomly
+        Resets the various metrics to empty
+        """
+        self._regret_hist = []
+        self._reward_hist = []
+        self._cum_regret_hist = []
+        self._cum_reward_hist = []
+        self._cum_regret = 0
+        self._cum_reward = 0
 
-        :returns: The current bandit as observation
-        :rtype: int
+    def _reset_bandit(self) -> None:
+        """
+        Resets the current bandit and context
         """
         self.curr_bandit = torch.randint(self.bandits, (1,))
         self.curr_context = F.one_hot(
             self.curr_bandit, num_classes=self.context_dim
         ).to(torch.float)
+
+    def reset(self) -> torch.Tensor:
+        """
+        Resets metrics to empty the current bandit randomly
+
+        :returns: The current bandit as observation
+        :rtype: int
+        """
+        self._reset_metrics()
+        self._reset_bandit()
         if self.context_type == "tensor":
             return self.curr_context
         elif self.context_type == "int":
@@ -124,7 +137,7 @@ class ContextualBandit(object):
         self._cum_reward += reward
         self.cum_reward_hist.append(self._cum_reward)
         self.reward_hist.append(reward)
-        self.reset()
+        self._reset_bandit()
         if self.context_type == "tensor":
             return self.curr_context.view(-1), reward
         elif self.context_type == "int":
@@ -145,8 +158,8 @@ class BernoulliCB(ContextualBandit):
 
     def __init__(
         self,
-        bandits: int = 1,
-        arms: int = 1,
+        bandits: int = 10,
+        arms: int = 5,
         reward_probs: np.ndarray = None,
         context_type: str = "tensor",
     ):
@@ -186,8 +199,8 @@ class GaussianCB(ContextualBandit):
 
     def __init__(
         self,
-        bandits: int = 1,
-        arms: int = 1,
+        bandits: int = 10,
+        arms: int = 5,
         reward_means: np.ndarray = None,
         context_type: str = "tensor",
     ):
