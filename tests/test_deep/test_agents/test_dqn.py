@@ -15,11 +15,11 @@ def test_dqn():
     shutil.rmtree("./logs")
 
     # Double DQN with prioritized replay buffer
-    algo1 = DQN("mlp", env, double_dqn=True, prioritized_replay=True)
+    # algo1 = DQN("mlp", env, double_dqn=True, prioritized_replay=True)
 
-    trainer = OffPolicyTrainer(algo1, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")
+    # trainer = OffPolicyTrainer(algo1, env, log_mode=["csv"], logdir="./logs", epochs=1)
+    # trainer.train()
+    # shutil.rmtree("./logs")
 
     # Noisy DQN
     algo2 = DQN("mlp", env, noisy_dqn=True)

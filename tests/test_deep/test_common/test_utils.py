@@ -56,9 +56,8 @@ class TestUtils:
         channels = [1, 2, 4]
         kernels = [4, 1]
         strides = [2, 2]
-        input_size = 84
 
-        cnn_nn, output_size = cnn(channels, kernels, strides, input_size)
+        cnn_nn, output_size = cnn(channels, kernels, strides)
 
         assert len(cnn_nn) == 2 * (len(channels) - 1)
         assert all(isinstance(cnn_nn[i], nn.Conv2d) for i in range(0, len(channels), 2))
