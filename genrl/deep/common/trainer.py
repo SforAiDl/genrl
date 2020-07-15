@@ -479,6 +479,7 @@ class BanditTrainer:
         batch_size=64,
         train_epochs=20,
         log_every=100,
+        ignore_init=0,
     ) -> None:
         """
         Run training
@@ -504,20 +505,21 @@ class BanditTrainer:
                         context, action, reward, batch_size, train_epochs
                     )
 
-                regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
-                reward_mv_avgs.append(np.mean(self.bandit.reward_hist[-mv_len:]))
-                if t % log_every == 0:
-                    self.logger.write(
-                        {
-                            "Timestep": t,
-                            "regret/regret": self.bandit.regret_hist[-1],
-                            "reward/reward": reward,
-                            "regret/cumulative_regret": self.bandit.cum_regret,
-                            "reward/cumulative_reward": self.bandit.cum_reward,
-                            "regret/regret_moving_avg": regret_mv_avgs[-1],
-                            "reward/reward_moving_avg": reward_mv_avgs[-1],
-                        }
-                    )
+                if t > ignore_init:
+                    regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
+                    reward_mv_avgs.append(np.mean(self.bandit.reward_hist[-mv_len:]))
+                    if t % log_every == 0:
+                        self.logger.write(
+                            {
+                                "Timestep": t,
+                                "regret/regret": self.bandit.regret_hist[-1],
+                                "reward/reward": reward,
+                                "regret/cumulative_regret": self.bandit.cum_regret,
+                                "reward/cumulative_reward": self.bandit.cum_reward,
+                                "regret/regret_moving_avg": regret_mv_avgs[-1],
+                                "reward/reward_moving_avg": reward_mv_avgs[-1],
+                            }
+                        )
 
         except KeyboardInterrupt:
             print("\nTraining interrupted by user!\n")

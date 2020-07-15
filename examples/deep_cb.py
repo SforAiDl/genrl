@@ -1,7 +1,8 @@
 import argparse
 from datetime import datetime
-import matplotlib.pyplot as plt
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 
 import genrl
 
@@ -41,6 +42,7 @@ def run(args, agent, bandit, plot=True):
         batch_size=args.batch_size,
         train_epochs=args.train_epochs,
         log_every=args.log_every,
+        ignore_init=args.ignore_init,
     )
 
     if plot:
@@ -123,6 +125,9 @@ def main():
     )
     parser.add_argument(
         "--logdir", help="Directory to store logs in", default="./logs/", type=str,
+    )
+    parser.add_argument(
+        "--ignore-init", help="Initial no. of step to ignore", default=10, type=int,
     )
 
     args = parser.parse_args()
