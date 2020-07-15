@@ -178,12 +178,14 @@ class SAC:
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             ).to(self.device)
 
-    def sample_action(self, state: np.ndarray) -> np.ndarray:
+    def sample_action(self, state: np.ndarray, deterministic: bool) -> np.ndarray:
         """
         sample action normal distribution parameterized by policy network
 
         :param state: Observation state
-        :type: int, float, ...
+        :param deterministic: Is the greedy action being chosen?
+        :type state: int, float, ...
+        :type deterministic: bool
         :returns: action
         :returns: log likelihood of policy
         :returns: scaled mean of normal distribution
@@ -218,17 +220,17 @@ class SAC:
         """
         pass
 
-    def select_action(self, state):
+    def select_action(self, state, deterministic=False):
         """
         select action given a state
 
-        :param state: Environment state
+        :param state: Observation state
+        :param deterministic: Is the greedy action being chosen?
         :type state: int, float, ...
-        :returns: action
-        :rtype: int, float, ...
+        :type deterministic: bool
         """
         state = torch.FloatTensor(state).to(self.device)
-        action, _, _ = self.sample_action(state)
+        action, _, _ = self.sample_action(state, deterministic)
         return action.detach().cpu().numpy()
 
     def update_params(self, update_interval: int) -> (Tuple[float]):

@@ -104,7 +104,7 @@ class VPG(OnPolicyAgent):
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
-        action, dist = self.actor.get_action(state, deterministic=False)
+        action, dist = self.actor.get_action(state, deterministic=deterministic)
 
         return (
             action.detach().cpu().numpy(),

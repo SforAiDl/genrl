@@ -198,28 +198,33 @@ class DQN:
         self.timestep = timestep
         self.epsilon = self.calculate_epsilon_by_frame()
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
         """
         Epsilon Greedy selection of action
 
         :param state: Observation state
+        :param deterministic: Whether greedy action should be taken always
         :type state: int, float, ...
+        :type deterministic: bool
         :returns: Action based on the state and epsilon value
         :rtype: int, float, ...
         """
 
-        if np.random.rand() > self.epsilon:
-            if self.categorical_dqn:
-                state = Variable(torch.FloatTensor(state))
-                dist = self.model(state).data.cpu()
-                dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                action = dist.sum(2).max(1)[1].numpy()  # [0]
-            else:
-                state = Variable(torch.FloatTensor(state))
-                q_value = self.model(state)
-                action = np.argmax(q_value.detach().numpy(), axis=-1)
+        if not deterministic:
+            if np.random.rand() < self.epsilon:
+                return np.asarray(self.env.sample())
+
+        if self.categorical_dqn:
+            state = Variable(torch.FloatTensor(state))
+            dist = self.model(state).data.cpu()
+            dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
+            action = dist.sum(2).max(1)[1].numpy()  # [0]
         else:
-            action = np.asarray(self.env.sample())  # .reshape(1,-1)
+            state = Variable(torch.FloatTensor(state))
+            q_value = self.model(state)
+            action = np.argmax(q_value.detach().numpy(), axis=-1)
 
         return action
 

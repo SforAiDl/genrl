@@ -119,7 +119,7 @@ False (To be implemented))
         state = self.env.reset()
         while True:
             if self.off_policy:
-                action = self.agent.select_action(state)
+                action = self.agent.select_action(state, deterministic=True)
             else:
                 action, _, _ = self.agent.select_action(state)
 
@@ -127,6 +127,10 @@ False (To be implemented))
                 action = action.numpy()
 
             next_state, reward, done, _ = self.env.step(action)
+
+            if self.render:
+                self.env.render()
+
             episode_reward += reward
             state = next_state
             if np.any(done):

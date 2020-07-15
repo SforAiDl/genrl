@@ -105,10 +105,10 @@ class PPO1(OnPolicyAgent):
 
         self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95,)
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
+    def select_action(self, state: np.ndarray, deterministic=False) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
         # create distribution based on policy output
-        action, dist = self.ac.get_action(state, deterministic=False)
+        action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
         return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()

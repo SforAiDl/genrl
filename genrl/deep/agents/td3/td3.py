@@ -31,7 +31,6 @@ class TD3:
     :param steps_per_epoch: (int) Number of steps per epoch
     :param noise_std: (float) Standard deviation for action noise
     :param max_ep_len: (int) Maximum steps per episode
-    :param deterministic_actions: True if actions are deterministic
     :param start_update: (int) Number of steps before first parameter update
     :param update_interval: (int) Number of steps between parameter updates
     :param layers: (tuple or list) Number of neurons in hidden layers
@@ -53,7 +52,6 @@ class TD3:
     :type steps_per_epoch: int
     :type noise_std: float
     :type max_ep_len: int
-    :type deterministic_actions: bool
     :type start_update: int
     :type update_interval: int
     :type layers: tuple or list
@@ -79,7 +77,6 @@ class TD3:
         noise: Optional[Any] = None,
         noise_std: float = 0.1,
         max_ep_len: int = 1000,
-        deterministic_actions: bool = False,
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (256, 256),
@@ -103,7 +100,6 @@ class TD3:
         self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
-        self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
         self.layers = layers
@@ -169,11 +165,13 @@ class TD3:
         """
         pass
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
         with torch.no_grad():
             action = self.ac_target.get_action(
                 torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=self.deterministic_actions,
+                deterministic=deterministic,
             )[0].numpy()
 
         # add noise to output from policy network
