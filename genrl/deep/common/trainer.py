@@ -479,7 +479,6 @@ class BanditTrainer:
         batch_size=64,
         train_epochs=20,
         log_every=100,
-        plot=True,
     ) -> None:
         """
         Run training
@@ -511,12 +510,12 @@ class BanditTrainer:
                     self.logger.write(
                         {
                             "Timestep": t,
-                            "regret": self.bandit.regret_hist[-1],
-                            "reward": reward,
-                            "cumulative_regret": self.bandit.cum_regret,
-                            "cumulative_reward": self.bandit.cum_reward,
-                            "regret_moving_avg": regret_mv_avgs[-1],
-                            "reward_moving_avg": reward_mv_avgs[-1],
+                            "regret/regret": self.bandit.regret_hist[-1],
+                            "reward/reward": reward,
+                            "regret/cumulative_regret": self.bandit.cum_regret,
+                            "reward/cumulative_reward": self.bandit.cum_reward,
+                            "regret/regret_moving_avg": regret_mv_avgs[-1],
+                            "reward/reward_moving_avg": reward_mv_avgs[-1],
                         }
                     )
 
@@ -535,36 +534,6 @@ class BanditTrainer:
                 f"Final Regret Moving Average: {regret_mv_avgs[-1]} | "
                 f"Final Reward Moving Average: {reward_mv_avgs[-1]}"
             )
-
-            if plot:
-                fig, axs = plt.subplots(3, 2, figsize=(10, 10))
-                fig.suptitle(
-                    f"{self.agent.__class__.__name__} on {self.bandit.__class__.__name__}",
-                    fontsize=14,
-                )
-                axs[0, 0].scatter(
-                    list(range(len(self.bandit.regret_hist))), self.bandit.regret_hist
-                )
-                axs[0, 0].set_title("Regret History")
-                axs[0, 1].scatter(
-                    list(range(len(self.bandit.reward_hist))), self.bandit.reward_hist
-                )
-                axs[0, 1].set_title("Reward History")
-                axs[1, 0].plot(self.bandit.cum_regret_hist)
-                axs[1, 1].set_title("Cumulative Regret")
-                axs[1, 1].plot(self.bandit.cum_reward_hist)
-                axs[1, 1].set_title("Cumulative Reward")
-                axs[2, 0].plot(regret_mv_avgs)
-                axs[2, 0].set_title("Regret Moving Avg")
-                axs[2, 1].plot(reward_mv_avgs)
-                axs[2, 1].set_title("Reward Moving Avg")
-
-                fig.savefig(
-                    Path(self.logdir).joinpath(
-                        f"{self.agent.__class__.__name__}-on-{self.bandit.__class__.__name__}.png"
-                    )
-                )
-                plt.cla()
 
             return {
                 "regrets": self.bandit.regret_hist,
