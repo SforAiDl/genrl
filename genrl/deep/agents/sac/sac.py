@@ -178,7 +178,9 @@ class SAC:
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             ).to(self.device)
 
-    def sample_action(self, state: np.ndarray, deterministic: bool = False) -> np.ndarray:
+    def sample_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
         """
         sample action normal distribution parameterized by policy network
 
