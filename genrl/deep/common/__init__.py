@@ -20,7 +20,6 @@ from genrl.deep.common.utils import get_model  # noqa
 from genrl.deep.common.utils import load_params  # noqa
 from genrl.deep.common.utils import mlp  # noqa
 from genrl.deep.common.utils import safe_mean  # noqa
-from genrl.deep.common.utils import save_params  # noqa
 from genrl.deep.common.utils import set_seeds  # noqa
 from genrl.deep.common.values import CNNValue  # noqa
 from genrl.deep.common.values import MlpValue  # noqa

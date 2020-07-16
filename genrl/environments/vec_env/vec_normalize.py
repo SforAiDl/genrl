@@ -32,9 +32,7 @@ class VecNormalize(VecEnvWrapper):
     ):
         super(VecNormalize, self).__init__(venv)
 
-        self.obs_rms = (
-            RunningMeanStd(shape=self.observation_space.shape) if norm_obs else False
-        )
+        self.obs_rms = RunningMeanStd(shape=self.obs_shape) if norm_obs else False
         self.reward_rms = RunningMeanStd(shape=(1, 1)) if norm_reward else False
 
         self.clip_reward = clip_reward
