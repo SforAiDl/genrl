@@ -1,5 +1,5 @@
-genrl.classical.qlearning package
-=================================
+genrl.classical.qlearning
+=========================
 
 Submodules
 ----------

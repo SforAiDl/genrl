@@ -20,8 +20,10 @@ serially or parallelly
     def __init__(self, env: gym.Env):
         super(GymWrapper, self).__init__(env)
         self.env = env
+
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
+
         self.state = None
         self.action = None
         self.reward = None
@@ -36,11 +38,20 @@ serially or parallelly
         return getattr(env, name)
 
     @property
+    def obs_shape(self):
+        if isinstance(self.env.observation_space, gym.spaces.Discrete):
+            obs_shape = (1,)
+        elif isinstance(self.env.observation_space, gym.spaces.Box):
+            obs_shape = self.env.observation_space.shape
+        return obs_shape
+
+    @property
     def action_shape(self):
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            return [1]
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            return self.env.action_space.shape
+        if isinstance(self.env.action_space, gym.spaces.Box):
+            action_shape = self.env.action_space.shape
+        elif isinstance(self.env.action_space, gym.spaces.Discrete):
+            action_shape = (1,)
+        return action_shape
 
     def sample(self) -> np.ndarray:
         """

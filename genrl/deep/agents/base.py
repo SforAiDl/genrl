@@ -4,7 +4,7 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import torch
 
-from genrl.deep.common.utils import load_params, save_params, set_seeds
+from genrl.deep.common.utils import load_params, set_seeds
 
 
 class BaseAgent(ABC):
@@ -14,12 +14,9 @@ class BaseAgent(ABC):
         self.epochs = epochs
         self.seed = kwargs.get("seed", None)
         self.render = kwargs.get("render", False)
-        self.run_num = kwargs.get("run_num", None)
-        self.save_model = kwargs.get("save_model", None)
         self.load_model = kwargs.get("load_model", None)
-        self.save_interval = kwargs.get("save_interval", 50)
-        self.observation_space = None
-        self.action_space = None
+        self.observation_space = env.observation_space
+        self.action_space = env.action_space
 
         # Assign device
         device = kwargs.get("device", "cpu")
@@ -101,7 +98,6 @@ class OnPolicyAgent(BaseAgent):
         self.layers = layers
         self.rollout_size = rollout_size
         self.load = load_params
-        self.save = save_params
 
     def collect_rewards(self, dones):
         for i, done in enumerate(dones):
@@ -110,7 +106,6 @@ class OnPolicyAgent(BaseAgent):
                 self.env.episode_reward[i] = 0
 
     def collect_rollouts(self, state):
-
         for i in range(self.rollout_size):
             action, values, old_log_probs = self.select_action(state)
 

@@ -1,4 +1,3 @@
-import os
 import random
 from typing import Any, List, Tuple, Union
 
@@ -36,7 +35,7 @@ Eg. "mlp" or "cnn")
     raise ValueError
 
 
-def mlp(sizes: Tuple, activation: str = "relu", sac: bool = False):
+def mlp(sizes: Tuple, sac: bool = False, activation: str = "relu"):
     """
     Generates an MLP model given sizes of each layer
 
@@ -49,11 +48,13 @@ activation layers)
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
-    activation = nn.ReLU if activation == "relu" else nn.Tanh
+
+    activation = nn.Tanh() if activation == "tanh" else nn.ReLU()
 
     for layer in range(limit - 1):
-        act = activation if layer < limit - 2 else nn.Identity
-        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act()]
+        act = activation if layer < limit - 2 else nn.Identity()
+        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act]
+
     return nn.Sequential(*layers)
 
 
@@ -61,8 +62,7 @@ def cnn(
     channels: Tuple = (4, 16, 32),
     kernel_sizes: Tuple = (8, 4),
     strides: Tuple = (4, 2),
-    in_size: int = 84,
-    activation: str = "relu",
+    **kwargs,
 ) -> (Tuple):
     """
     (Generates a CNN model given input dimensions, channels, kernel_sizes and
@@ -79,9 +79,12 @@ strides)
     :returns: (Convolutional Neural Network with convolutional layers and
 activation layers)
     """
+
     cnn_layers = []
-    output_size = in_size
-    activation = nn.ReLU() if activation == "relu" else nn.Tanh()
+    output_size = kwargs["in_size"] if "in_size" in kwargs else 84
+
+    act_fn = kwargs["activation"] if "activation" in kwargs else "relu"
+    activation = nn.Tanh() if act_fn == "tanh" else nn.ReLU()
 
     for i in range(len(channels) - 1):
         in_channels, out_channels = channels[i], channels[i + 1]
@@ -93,43 +96,6 @@ activation layers)
     cnn_layers = nn.Sequential(*cnn_layers)
     output_size = int(out_channels * (output_size ** 2))
     return cnn_layers, output_size
-
-
-def save_params(algo: Any, timestep: int) -> None:
-    """
-    Function to save all parameters of a given agent
-
-    :param algo: The agent object
-    :param timestep: The timestep during training at which model is being saved
-    :type algo: Object
-    :type timestep: int
-    """
-    algo_name = algo.__class__.__name__
-    if isinstance(algo.env, VecEnv):
-        env_name = algo.env.envs[0].unwrapped.spec.id
-    else:
-        env_name = algo.env.unwrapped.spec.id
-    directory = algo.save_model
-    path = "{}/{}_{}".format(directory, algo_name, env_name)
-
-    if algo.run_num is not None:
-        run_num = algo.run_num
-    else:
-        if not os.path.exists(path):
-            os.makedirs(path)
-            run_num = 0
-        elif list(os.scandir(path)) == []:
-            run_num = 0
-        else:
-            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
-                -1
-            ].path
-            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
-        algo.run_num = run_num
-
-    torch.save(
-        algo.get_hyperparams(), "{}/{}-log-{}.pt".format(path, run_num, timestep)
-    )
 
 
 def load_params(algo: Any) -> None:
@@ -163,7 +129,7 @@ discreteness of action space and action limit (highest action value)
     """
     if network_type == "cnn":
         input_dim = env.framestack
-    else:
+    elif network_type == "mlp":
         input_dim = env.observation_space.shape[0]
 
     if isinstance(env.action_space, gym.spaces.Discrete):
@@ -196,56 +162,6 @@ def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
     random.seed(seed)
     if env is not None:
         env.seed(seed)
-
-
-def get_obs_action_shape(obs, action):
-    """
-    Get the shapes of observation and action
-
-    :param obs: State space of environment
-    :param action: Action
-    :type obs: gym.Space
-    :type action: np.array
-    """
-    if isinstance(obs, gym.spaces.Discrete):
-        return 1, 1
-    elif isinstance(obs, gym.spaces.Box):
-        return obs.shape, int(np.prod(action.shape))
-    else:
-        raise NotImplementedError
-
-
-def get_obs_shape(observation_space):
-    """
-    Get the shape of the observation.
-
-    :param observation_space: Observation space
-    :type observation_space: gym.spaces.Space
-    :returns: The observation space's shape
-    :rtype: (Tuple[int, ...])
-    """
-    if isinstance(observation_space, gym.spaces.Box):
-        return observation_space.shape
-    elif isinstance(observation_space, gym.spaces.Discrete):
-        return (1,)
-    else:
-        raise NotImplementedError()
-
-
-def get_action_dim(action_space):
-    """
-    Get the dimension of the action space.
-    :param action_space: Action space
-    :type action_space: gym.spaces.Space
-    :returns: Action space's shape
-    :rtype: int
-    """
-    if isinstance(action_space, gym.spaces.Box):
-        return int(np.prod(action_space.shape))
-    elif isinstance(action_space, gym.spaces.Discrete):
-        return 1
-    else:
-        raise NotImplementedError()
 
 
 def safe_mean(log: List[int]):

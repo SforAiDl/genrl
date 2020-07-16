@@ -1,5 +1,5 @@
-genrl.deep.agents.a2c package
-=============================
+genrl.deep.agents.a2c
+=====================
 
 Submodules
 ----------

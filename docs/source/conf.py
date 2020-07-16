@@ -13,8 +13,10 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath("../../"))
+import recommonmark
+from recommonmark.transform import AutoStructify
 
+source_suffix = [".rst", ".md"]
 
 # -- Project information -----------------------------------------------------
 
@@ -31,7 +33,11 @@ release = "0.1"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinxcontrib.napoleon", "sphinx_rtd_theme"]
+extensions = [
+    "sphinxcontrib.napoleon",
+    "sphinx_rtd_theme",
+    "recommonmark",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -56,3 +62,20 @@ html_static_path = ["_static"]
 
 # Override readthedocs master_doc
 master_doc = "index"
+
+
+# app setup hook
+def setup(app):
+    app.add_config_value(
+        "recommonmark_config",
+        {
+            # 'url_resolver': lambda url: github_doc_root + url,
+            "auto_toc_tree_section": "Contents",
+            "enable_math": False,
+            "enable_inline_math": False,
+            "enable_eval_rst": True,
+            "enable_auto_doc_ref": True,
+        },
+        True,
+    )
+    app.add_transform(AutoStructify)

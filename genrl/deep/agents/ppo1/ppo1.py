@@ -28,12 +28,9 @@ class PPO1(OnPolicyAgent):
     :param lr_value: value network learning rate
     :param policy_copy_interval: number of optimizer before copying
         params from new policy to old policy
-    :param save_interval: Number of episodes between saves of models
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :param run_num: if model has already been trained
-    :param save_model: directory the user wants to save models to
     :param load_model: model loading path
     :type network_type: str
     :type env: Gym environment
@@ -45,11 +42,8 @@ class PPO1(OnPolicyAgent):
     :type lr_policy: float
     :type lr_value: float
     :type policy_copy_interval: int
-    :type save_interval: int
     :type seed: int
     :type device: string
-    :type run_num: boolean
-    :type save_model: string
     :type load_model: string
     :type rollout_size: int
     """
@@ -85,102 +79,56 @@ class PPO1(OnPolicyAgent):
         self.clip_param = clip_param
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
         self.value_coeff = kwargs.get("value_coeff", 0.5)
+        self.activation = kwargs.get("activation", "relu")
 
         self.empty_logs()
         self.create_model()
 
-    def create_model(self) -> None:
-        """
-        Creates actor critic model and initialises optimizers
-        """
+    def create_model(self):
         # Instantiate networks and optimizers
-        input_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
+        input_dim, action_dim, discrete, action_lim = get_env_properties(
+            self.env, self.network_type
+        )
 
         self.ac = get_model("ac", self.network_type)(
             input_dim,
             action_dim,
             self.layers,
             "V",
-            discrete=discrete,
+            discrete,
             action_lim=action_lim,
-            activation="tanh",
+            activation=self.activation,
         ).to(self.device)
-
-        # load paramaters if already trained
-        if self.load_model is not None:
-            self.load(self)
-            self.ac.actor.load_state_dict(self.checkpoint["policy_weights"])
-            self.ac.critic.load_state_dict(self.checkpoint["value_weights"])
-            for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights", "save_model"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
 
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(
-            self.rollout_size,
-            self.env.observation_space,
-            self.env.action_space,
-            n_envs=self.env.n_envs,
-            gae_lambda=0.95,
-        )
+        self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95,)
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
-        """
-        Selection of action
-
-        :param state: Observation state
-        :type state: int, float, ...
-        :returns: Action based on the state and epsilon value
-        :rtype: int, float, ...
-        """
+    def select_action(self, state: np.ndarray, deterministic=False) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
-        # create distribution based on actor output
-        action, c_new = self.ac.get_action(state, deterministic=False)
+        # create distribution based on policy output
+        action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
-        return action.detach().cpu().numpy(), value, c_new.log_prob(action).cpu()
+        return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
 
     def evaluate_actions(self, old_states, old_actions):
-        """
-        Evaluate the performance of older actions
-
-        :param old_states: Previous states
-        :param old_actions: Previous actions
-        :type old_states: NumPy Array
-        :type old_actions: NumPy Array
-        :returns: Value, Log Probabilities of old actions, Entropy
-        """
         old_states, old_actions = (
             old_states.to(self.device),
             old_actions.to(self.device),
         )
 
-        value = self.ac.get_value(old_states)
-        _, dist = self.ac.get_action(old_states)
+        value = self.ac.critic.get_value(old_states)
+        _, dist = self.ac.actor.get_action(old_states)
         return value, dist.log_prob(old_actions).cpu(), dist.entropy().cpu()
 
-    # get clipped loss for single trajectory (episode)
-    def get_traj_loss(self, values: np.ndarray, dones: bool):
-        """
-        (Get trajectory of agent to calculate discounted rewards and
-calculate losses)
-
-        :param value: Value of a state
-        :param done: True if the state is terminal, else False
-        :type value: NumPy Array
-        :type done: boolean
-        """
+    def get_traj_loss(self, values, dones):
         self.rollout.compute_returns_and_advantage(
             values.detach().cpu().numpy(), dones, use_gae=True
         )
 
     def update_policy(self):
-        """
-        Function to calculate loss from rollouts and update the policy
-        """
         for rollout in self.rollout.get(self.batch_size):
             actions = rollout.actions
 
@@ -208,13 +156,13 @@ calculate losses)
             value_loss = nn.functional.mse_loss(rollout.returns, values.cpu())
             self.logs["value_loss"].append(torch.mean(value_loss).item())
 
-            entropy_loss = -torch.mean(entropy)
+            entropy_loss = -torch.mean(entropy)  # Change this to entropy
             self.logs["policy_entropy"].append(entropy_loss.item())
 
-            loss = policy_loss + self.entropy_coeff * entropy_loss
+            actor_loss = policy_loss + self.entropy_coeff * entropy_loss
 
             self.optimizer_policy.zero_grad()
-            loss.backward()
+            actor_loss.backward()
             torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), 0.5)
             self.optimizer_policy.step()
 
@@ -224,12 +172,6 @@ calculate losses)
             self.optimizer_value.step()
 
     def get_hyperparams(self) -> Dict[str, Any]:
-        """
-        Loads important hyperparameters that need to be loaded or saved
-
-        :returns: Hyperparameters that need to be saved or loaded
-        :rtype: dict
-        """
         hyperparams = {
             "network_type": self.network_type,
             "batch_size": self.batch_size,
@@ -237,12 +179,19 @@ calculate losses)
             "clip_param": self.clip_param,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
+            "rollout_size": self.rollout_size,
             "policy_weights": self.ac.actor.state_dict(),
             "value_weights": self.ac.critic.state_dict(),
-            "rollout_size": self.rollout_size,
         }
 
         return hyperparams
+
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.actor.load_state_dict(weights["policy_weights"])
+        self.ac.critic.load_state_dict(weights["value_weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
         """

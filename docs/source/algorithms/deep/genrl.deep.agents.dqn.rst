@@ -1,5 +1,5 @@
-genrl.deep.agents.dqn package
-=============================
+genrl.deep.agents.dqn
+=====================
 
 Submodules
 ----------
