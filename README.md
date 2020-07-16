@@ -44,15 +44,16 @@ If you intend to install the latest unreleased version of the library (i.e from 
     $ python setup.py install
 
 ## Usage
-To train a Soft Actor-Critic model from scratch on the `CartPole-v0` gym environment and log rewards on tensorboard
+To train a Soft Actor-Critic model from scratch on the `Pendulum-v0` gym environment and log rewards on tensorboard
 ```python
 import gym
 
 from genrl import SAC, QLearning
 from genrl.classical.common import Trainer
 from genrl.deep.common import OffPolicyTrainer
+from genrl.environments import VectorEnv
 
-env = gym.make("CartPole-v0")
+env = VectorEnv("Pendulum-v0")
 agent = SAC('mlp', env)
 trainer = OffPolicyTrainer(agent, env, log_mode=['stdout', 'tensorboard'])
 trainer.train()
