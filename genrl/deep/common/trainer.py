@@ -69,7 +69,7 @@ False (To be implemented))
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
         log_interval: int = 10,
-        evaluate_episodes: int = 500,
+        evaluate_episodes: int = 50,
         logdir: str = "logs",
         batch_size: int = 50,
         seed: Optional[int] = None,

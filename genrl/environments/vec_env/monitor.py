@@ -61,8 +61,8 @@ class VecMonitor(VecEnvWrapper):
         self.episode_lens += 1
 
         new_infos = infos.copy()
-        for i in range(self.n_envs):
-            if dones[i]:
+        for i, done in enumerate(dones):
+            if done:
                 episode_info = {
                     "Episode Rewards": self.episode_returns[i],
                     "Episode Length": self.episode_lens[i],

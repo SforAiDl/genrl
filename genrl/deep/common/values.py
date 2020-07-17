@@ -70,10 +70,10 @@ class MlpValue(BaseValue):
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
+        activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
         self.model = _get_val_model(
-            mlp, val_type, state_dim, hidden, action_dim, self.activation
+            mlp, val_type, state_dim, hidden, action_dim, activation
         )
 
 
@@ -81,29 +81,32 @@ class CNNValue(BaseValue):
     """
     CNN Value Function class
 
-    :param action_dim: Action dimension of environment
     :param framestack: Number of previous frames to stack together
+    :param action_dim: Action dimension of environment
     :param val_type: Specifies type of value function: (
 "V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
     :param fc_layers: Sizes of hidden layers
-    :type action_dim: int
     :type framestack: int
+    :type action_dim: int
     :type val_type: string
     :type fc_layers: tuple or list
     """
 
     def __init__(
         self,
+        framestack: int,
         action_dim: int,
-        framestack: int = 4,
         val_type: str = "Qs",
         fc_layers: Tuple = (256,),
+        **kwargs,
     ):
         super(CNNValue, self).__init__()
 
         self.action_dim = action_dim
 
-        self.conv, output_size = cnn((framestack, 16, 32))
+        activation = kwargs["activation"] if "activation" in kwargs else "relu"
+
+        self.conv, output_size = cnn((framestack, 16, 32), activation=activation)
 
         self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
 
