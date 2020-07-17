@@ -161,7 +161,7 @@ class TensorboardLogger:
         :type kvs: dict
         """
         for key, value in kvs.items():
-            self.writer.add_scalar(key, value, kvs["Timestep"])
+            self.writer.add_scalar(key, value, kvs["timestep"])
 
     def close(self) -> None:
         """
