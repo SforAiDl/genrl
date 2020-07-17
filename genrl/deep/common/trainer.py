@@ -110,7 +110,7 @@ False (To be implemented))
         """
         raise NotImplementedError
 
-    def evaluate(self) -> None:
+    def evaluate(self, render=False) -> None:
         """
         Evaluate function
         """
@@ -128,7 +128,7 @@ False (To be implemented))
 
             next_state, reward, done, _ = self.env.step(action)
 
-            if self.render:
+            if render:
                 self.env.render()
 
             episode_reward += reward
