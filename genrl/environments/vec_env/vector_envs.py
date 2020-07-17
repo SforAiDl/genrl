@@ -58,9 +58,6 @@ class VecEnv(ABC):
 
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
-        self.action_shape = self.env.action_shape
-
-        self.episode_reward = np.zeros((self.n_envs))
 
         self.episode_reward = np.zeros((self.n_envs))
 
@@ -281,7 +278,6 @@ class SubProcessVecEnv(VecEnv):
         self.episode_reward = np.zeros((self.n_envs))
 
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
-        self.episode_reward = np.zeros((self.n_envs,))
         return np.asarray(obs)
 
     def step(self, actions: np.ndarray) -> Tuple:

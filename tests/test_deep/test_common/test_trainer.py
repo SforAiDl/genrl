@@ -19,6 +19,3 @@ def test_off_policy_trainer():
     assert trainer.off_policy
     trainer.train()
     trainer.evaluate()
-
-
-test_off_policy_trainer()

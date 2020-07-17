@@ -35,7 +35,9 @@ Eg. "mlp" or "cnn")
     raise ValueError
 
 
-def mlp(sizes: Tuple, sac: bool = False, activation: str = "relu"):
+def mlp(
+    sizes: Tuple, activation: str = "relu", sac: bool = False,
+):
     """
     Generates an MLP model given sizes of each layer
 

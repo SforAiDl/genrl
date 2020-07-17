@@ -31,11 +31,13 @@ def _get_val_model(
     :returns: Neural Network model to be used for the Value function
     """
     if val_type == "V":
-        return arch([state_dim] + list(hidden) + [1], activation)
+        return arch([state_dim] + list(hidden) + [1], activation=activation)
     elif val_type == "Qsa":
-        return arch([state_dim + action_dim] + list(hidden) + [1], activation)
+        return arch(
+            [state_dim + action_dim] + list(hidden) + [1], activation=activation
+        )
     elif val_type == "Qs":
-        return arch([state_dim] + list(hidden) + [action_dim], activation)
+        return arch([state_dim] + list(hidden) + [action_dim], activation=activation)
     else:
         raise ValueError
 
