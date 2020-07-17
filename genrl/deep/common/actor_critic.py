@@ -41,7 +41,7 @@ class MlpActorCritic(BaseActorCritic):
         super(MlpActorCritic, self).__init__()
 
         self.actor = MlpPolicy(state_dim, action_dim, hidden, discrete, **kwargs)
-        self.critic = MlpValue(state_dim, action_dim, val_type, hidden)
+        self.critic = MlpValue(state_dim, action_dim, val_type, hidden, **kwargs)
 
 
 class CNNActorCritic(BaseActorCritic):

@@ -119,8 +119,8 @@ class PPO1(OnPolicyAgent):
             old_actions.to(self.device),
         )
 
-        value = self.ac.critic.get_value(old_states)
-        _, dist = self.ac.actor.get_action(old_states)
+        _, dist = self.ac.get_action(old_states)
+        value = self.ac.get_value(old_states)
         return value, dist.log_prob(old_actions).cpu(), dist.entropy().cpu()
 
     def get_traj_loss(self, values, dones):

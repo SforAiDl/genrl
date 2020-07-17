@@ -11,3 +11,11 @@ def test_ppo1():
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")
+
+
+def test_ppo1_cnn():
+    env = VectorEnv("Pong-v0", 1, env_type="atari")
+    algo = PPO1("cnn", env)
+    trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
+    trainer.train()
+    shutil.rmtree("./logs")
