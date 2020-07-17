@@ -35,7 +35,9 @@ Eg. "mlp" or "cnn")
     raise ValueError
 
 
-def mlp(sizes: Tuple, sac: bool = False, activation: str = "relu"):
+def mlp(
+    sizes: Tuple, activation: str = "relu", sac: bool = False,
+):
     """
     Generates an MLP model given sizes of each layer
 
@@ -121,7 +123,8 @@ def get_env_properties(
 
     :param env: Environment that the agent is interacting with
     :type env: Gym Environment
-
+    :param network_type: Type of network architecture, eg. "mlp", "cnn"
+    :type network_type: str
     :returns: (State space dimensions, Action space dimensions,
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...

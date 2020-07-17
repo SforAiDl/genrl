@@ -114,7 +114,7 @@ class A2C(OnPolicyAgent):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(self.rollout_size, self.env,)
+        self.rollout = RolloutBuffer(self.rollout_size, self.env)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False

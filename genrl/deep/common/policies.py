@@ -1,7 +1,9 @@
 from typing import Tuple
 
+import numpy as np
+
 from .base import BasePolicy
-from .utils import mlp
+from .utils import cnn, mlp
 
 
 class MlpPolicy(BasePolicy):
@@ -23,11 +25,13 @@ class MlpPolicy(BasePolicy):
         state_dim: int,
         action_dim: int,
         hidden: Tuple = (32, 32),
-        disc: bool = True,
+        discrete: bool = True,
         *args,
         **kwargs
     ):
-        super(MlpPolicy, self).__init__(state_dim, action_dim, hidden, disc, **kwargs)
+        super(MlpPolicy, self).__init__(
+            state_dim, action_dim, hidden, discrete, **kwargs
+        )
 
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -36,12 +40,51 @@ class MlpPolicy(BasePolicy):
 
         self.model = mlp(
             [state_dim] + list(hidden) + [action_dim],
-            sac=self.sac,
             activation=self.activation,
+            sac=self.sac,
         )
 
 
-policy_registry = {"mlp": MlpPolicy}
+class CNNPolicy(BasePolicy):
+    """
+    CNN Policy
+
+    :param framestack: Number of previous frames to stack together
+    :param action_dim: Action dimensions of the environment
+    :param fc_layers: Sizes of hidden layers
+    :param discrete: True if action space is discrete, else False
+    :type framestack: int
+    :type action_dim: int
+    :type fc_layers: tuple or list
+    :type discrete: bool
+    """
+
+    def __init__(
+        self,
+        framestack: int,
+        action_dim: int,
+        hidden: Tuple = (32, 32),
+        discrete: bool = True,
+        *args,
+        **kwargs
+    ):
+        super(CNNPolicy, self).__init__(
+            framestack, action_dim, hidden, discrete, **kwargs
+        )
+        self.action_dim = action_dim
+
+        self.conv, output_size = cnn((framestack, 16, 32))
+
+        self.fc = mlp([output_size] + list(hidden) + [action_dim], sac=self.sac)
+
+    def forward(self, state: np.ndarray) -> np.ndarray:
+        state = self.conv(state)
+        state = state.view(state.size(0), -1)
+        action = self.fc(state)
+        return action
+
+
+policy_registry = {"mlp": MlpPolicy, "cnn": CNNPolicy}
 
 
 def get_policy_from_name(name_: str):

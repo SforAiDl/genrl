@@ -69,7 +69,7 @@ False (To be implemented))
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
         log_interval: int = 10,
-        evaluate_episodes: int = 500,
+        evaluate_episodes: int = 50,
         logdir: str = "logs",
         batch_size: int = 50,
         seed: Optional[int] = None,
@@ -110,7 +110,7 @@ False (To be implemented))
         """
         raise NotImplementedError
 
-    def evaluate(self) -> None:
+    def evaluate(self, render=False) -> None:
         """
         Evaluate function
         """
@@ -128,7 +128,7 @@ False (To be implemented))
 
             next_state, reward, done, _ = self.env.step(action)
 
-            if self.render:
+            if render:
                 self.env.render()
 
             episode_reward += reward

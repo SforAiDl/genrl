@@ -66,13 +66,13 @@ class PPO1(OnPolicyAgent):
         super(PPO1, self).__init__(
             network_type,
             env,
-            batch_size,
-            layers,
-            gamma,
-            lr_policy,
-            lr_value,
-            epochs,
-            rollout_size,
+            batch_size=batch_size,
+            layers=layers,
+            gamma=gamma,
+            lr_policy=lr_policy,
+            lr_value=lr_value,
+            epochs=epochs,
+            rollout_size=rollout_size,
             **kwargs
         )
 
@@ -103,7 +103,7 @@ class PPO1(OnPolicyAgent):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95,)
+        self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95)
 
     def select_action(self, state: np.ndarray, deterministic=False) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
@@ -119,8 +119,8 @@ class PPO1(OnPolicyAgent):
             old_actions.to(self.device),
         )
 
-        value = self.ac.critic.get_value(old_states)
-        _, dist = self.ac.actor.get_action(old_states)
+        _, dist = self.ac.get_action(old_states)
+        value = self.ac.get_value(old_states)
         return value, dist.log_prob(old_actions).cpu(), dist.entropy().cpu()
 
     def get_traj_loss(self, values, dones):

@@ -11,3 +11,11 @@ def test_a2c():
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")
+
+
+def test_a2c_cnn():
+    env = VectorEnv("Pong-v0", 1, env_type="atari")
+    algo = A2C("cnn", env)
+    trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
+    trainer.train()
+    shutil.rmtree("./logs")

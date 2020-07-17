@@ -3,8 +3,8 @@ from typing import Any, Tuple
 import numpy as np
 
 from .utils import RunningMeanStd
-from .vec_wrappers import VecEnvWrapper
 from .vector_envs import VecEnv
+from .wrappers import VecEnvWrapper
 
 
 class VecNormalize(VecEnvWrapper):
@@ -28,7 +28,7 @@ class VecNormalize(VecEnvWrapper):
         venv: VecEnv,
         norm_obs: bool = True,
         norm_reward: bool = True,
-        clip_reward: float = 10.0,
+        clip_reward: float = 20.0,
     ):
         super(VecNormalize, self).__init__(venv)
 
@@ -36,8 +36,6 @@ class VecNormalize(VecEnvWrapper):
         self.reward_rms = RunningMeanStd(shape=(1, 1)) if norm_reward else False
 
         self.clip_reward = clip_reward
-        self.returns = np.zeros((self.n_envs,), dtype=np.float32)
-        self.gamma = 0.99
 
     def __getattr__(self, name: str) -> Any:
         """
@@ -60,13 +58,10 @@ class VecNormalize(VecEnvWrapper):
         """
         states, rewards, dones, infos = self.venv.step(actions)
 
-        self.returns = self.returns * self.gamma + rewards
         states = self._normalize(self.obs_rms, None, states)
         rewards = self._normalize(self.reward_rms, self.clip_reward, rewards).reshape(
             self.n_envs,
         )
-
-        self.returns[dones.astype(bool)] = 0
 
         return states, rewards, dones, infos
 
@@ -99,7 +94,6 @@ class VecNormalize(VecEnvWrapper):
         :returns: Initial observations
         :rtype: Numpy Array
         """
-        self.returns = np.zeros((self.n_envs,), dtype=np.float32)
         states = self.venv.reset()
         return self._normalize(self.obs_rms, None, states)
 
