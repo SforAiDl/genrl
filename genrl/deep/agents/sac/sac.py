@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as opt
+from torch import nn as nn
+from torch import optim as opt
 from torch.distributions import Normal
 
 from ....environments import VecEnv

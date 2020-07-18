@@ -3,8 +3,8 @@ from typing import Any, Dict, Tuple, Union
 import gym
 import numpy as np
 import torch
-import torch.nn.functional as F
-import torch.optim as opt
+from torch import optim as opt
+from torch.nn import functional as F
 
 from ....environments.vec_env import VecEnv
 from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean

@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn as nn
 
 from ....environments import VecEnv
 from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds

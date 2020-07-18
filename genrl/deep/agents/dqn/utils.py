@@ -2,7 +2,7 @@ import math
 from typing import List, Tuple
 
 import torch
-import torch.nn as nn
+from torch import nn as nn
 from torch.autograd import Variable
 
 from genrl.deep.common.utils import cnn, mlp

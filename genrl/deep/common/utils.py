@@ -4,7 +4,7 @@ from typing import Any, List, Tuple, Union
 import gym
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn as nn
 
 from ...environments import VecEnv
 
@@ -98,21 +98,6 @@ activation layers)
     cnn_layers = nn.Sequential(*cnn_layers)
     output_size = int(out_channels * (output_size ** 2))
     return cnn_layers, output_size
-
-
-def load_params(algo: Any) -> None:
-    """
-    Function load parameters for an algorithm from a given checkpoint file
-
-    :param algo: The agent object
-    :type algo: Object
-    """
-    path = algo.load_model
-
-    try:
-        algo.checkpoint = torch.load(path)
-    except FileNotFoundError:
-        raise Exception("Invalid file name")
 
 
 def get_env_properties(

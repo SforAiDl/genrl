@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 import gym
 import numpy as np
 import torch
-import torch.optim as opt
+from torch import optim as opt
 from torch.autograd import Variable
 
 from ....environments import VecEnv
