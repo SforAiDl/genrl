@@ -267,7 +267,7 @@ many steps)
         agent: Any,
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
-        log_key: str = "timestep"
+        log_key: str = "timestep",
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = True,
         save_interval: int = 0,
@@ -449,7 +449,7 @@ class OnPolicyTrainer(Trainer):
         agent: Any,
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
-        log_key: str = "timestep"
+        log_key: str = "timestep",
         save_interval: int = 0,
         save_model: str = "checkpoints",
         run_num: int = None,
