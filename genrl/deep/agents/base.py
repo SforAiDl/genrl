@@ -4,7 +4,7 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import torch
 
-from genrl.deep.common.utils import load_params, set_seeds
+from genrl.deep.common.utils import set_seeds
 
 
 class BaseAgent(ABC):
@@ -20,6 +20,7 @@ class BaseAgent(ABC):
         self.network_type = network_type
         self.env = env
         self.batch_size = batch_size
+        self.layers = layers
         self.gamma = gamma
         self.seed = kwargs.get("seed", None)
         self.render = kwargs.get("render", False)

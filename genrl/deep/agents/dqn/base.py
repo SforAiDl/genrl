@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
@@ -8,7 +8,14 @@ from torch import optim as opt
 from torch.nn import functional as F
 
 from ....environments import VecEnv
-from ...common import get_env_properties, get_model, safe_mean, set_seeds
+from ...common import (
+    PushReplayBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+    set_seeds,
+)
+from ..base import BaseAgent
 
 
 class DQN(BaseAgent):
@@ -16,38 +23,30 @@ class DQN(BaseAgent):
         self,
         network_type: str,
         env: Union[gym.Env, VecEnv],
-        gamma: float = 0.99,
-        lr: float = 0.001,
         batch_size: int = 32,
+        gamma: float = 0.99,
+        layers: Tuple = (32, 32),
+        lr: float = 0.001,
         replay_size: int = 100,
         max_epsilon: float = 1.0,
         min_epsilon: float = 0.01,
         epsilon_decay: int = 1000,
-        layers: Tuple = (32, 32) ** kwargs,
+        **kwargs,
     ):
-        self.network_type = network_type
-        self.env = env
+        super(DQN, self).__init__(
+            network_type,
+            env,
+            batch_size=batch_size,
+            gamma=gamma,
+            layers=layers,
+            **kwargs,
+        )
         self.replay_size = replay_size
-        self.lr = lr
-        self.gamma = gamma
-        self.batch_size = batch_size
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
         self.layers = layers
-
-        # Assign device
-        if "cuda" in device and torch.cuda.is_available():
-            self.device = torch.device(device)
-        else:
-            self.device = torch.device("cpu")
-
-        # Assign seed
-        if seed is not None:
-            set_seeds(seed, self.env)
-
-        # Setup tensorboard writer
-        self.writer = None
+        self.lr = lr
 
         self.empty_logs()
         self.create_model()
@@ -58,11 +57,9 @@ class DQN(BaseAgent):
         self.model = get_model("v", self.network_type)(
             input_dim, action_dim, "Qs", self.layers
         )
-
         self.target_model = deepcopy(self.model)
 
-        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
-
+        self.replay_buffer = PushReplayBuffer(self.replay_size)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def update_target_model(self) -> None:
@@ -80,20 +77,22 @@ class DQN(BaseAgent):
             if np.random.rand() < self.epsilon:
                 return np.asarray(self.env.sample())
 
-        state = Variable(torch.FloatTensor(state))
+        state = torch.FloatTensor(state)
         q_values = self.model(state).detach().numpy()
 
         return np.argmax(q_values, axis=-1)
 
-    def get_q_values(self) -> torch.Tensor:
+    def get_q_values(self, states, actions) -> torch.Tensor:
         q_values = self.model(states).gather(1, actions)
         return q_values
 
-    def get_target_q_values(self):
-        next_q_values = self.target_model(next_states)
-        max_next_q_values = q_next_state_values.max(1)[0]
-        target_q_values = rewards + self.gamma * max_next_q_values * (1 - dones)
-        return target_q_values
+    def get_target_q_values(self, next_states, rewards, dones):
+        next_q_target_values = self.target_model(next_states)
+        max_next_q_target_values = next_q_target_values.max(1)[0]
+        target_q_values = rewards + self.gamma * torch.mul(
+            max_next_q_target_values, (1 - dones)
+        )
+        return target_q_values.unsqueeze(-1)
 
     def update_params(self, update_interval: int) -> None:
         for timestep in range(update_interval):
