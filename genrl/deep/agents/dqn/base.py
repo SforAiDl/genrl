@@ -109,6 +109,9 @@ class DQN(BaseAgent):
 
             q_values = self.get_q_values(states, actions)
             target_q_values = self.get_target_q_values(next_states, rewards, dones)
+            # print(q_values.shape)
+            # print(target_q_values.shape)
+            # print("\n\n")
 
             loss = F.mse_loss(q_values, target_q_values)
             self.logs["value_loss"].append(loss.item())

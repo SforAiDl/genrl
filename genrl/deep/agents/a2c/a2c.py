@@ -63,29 +63,23 @@ class A2C(OnPolicyAgent):
         gamma: float = 0.99,
         lr_policy: float = 0.01,
         lr_value: float = 0.1,
-        epochs: int = 100,
-        max_ep_len: int = 1000,
         layers: Tuple = (32, 32),
+        rollout_size: int = 2048,
         noise: Any = None,
         noise_std: float = 0.1,
-        rollout_size: int = 2048,
         **kwargs
     ):
-
         super(A2C, self).__init__(
             network_type,
             env,
-            batch_size,
-            layers,
-            gamma,
-            lr_policy,
-            lr_value,
-            epochs,
-            rollout_size,
+            batch_size=batch_size,
+            layers=layers,
+            gamma=gamma,
+            lr_policy=lr_policy,
+            lr_value=lr_value,
+            rollout_size=rollout_size,
             **kwargs
         )
-
-        self.max_ep_len = max_ep_len
         self.noise = noise
         self.noise_std = noise_std
         self.value_coeff = kwargs.get("value_coeff", 0.5)
@@ -198,7 +192,6 @@ calculate losses)
             "policy_weights": self.ac.actor.state_dict(),
             "value_weights": self.ac.critic.state_dict(),
         }
-
         return hyperparams
 
     def load_weights(self, weights) -> None:
@@ -213,7 +206,6 @@ calculate losses)
         :returns: Logging parameters for monitoring training
         :rtype: dict
         """
-
         logs = {
             "policy_loss": safe_mean(self.logs["policy_loss"]),
             "value_loss": safe_mean(self.logs["value_loss"]),
@@ -228,7 +220,6 @@ calculate losses)
         """
         Empties logs
         """
-
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
