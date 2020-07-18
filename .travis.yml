@@ -24,7 +24,7 @@ jobs:
       script:
         - flake8 .
         - black --check .
-        - isort -rc -c .
+        - isort -c .
       after_success:
         
     - stage: test

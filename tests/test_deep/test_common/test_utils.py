@@ -56,9 +56,8 @@ class TestUtils:
         channels = [1, 2, 4]
         kernels = [4, 1]
         strides = [2, 2]
-        input_size = 84
 
-        cnn_nn, output_size = cnn(channels, kernels, strides, input_size)
+        cnn_nn, output_size = cnn(channels, kernels, strides)
 
         assert len(cnn_nn) == 2 * (len(channels) - 1)
         assert all(isinstance(cnn_nn[i], nn.Conv2d) for i in range(0, len(channels), 2))
@@ -72,9 +71,10 @@ class TestUtils:
         test saving algorithm state dict
         """
         env = VectorEnv("CartPole-v0", 1)
-        algo = PPO1("mlp", env, epochs=1, save_model="test_ckpt")
-        # algo.learn()
-        trainer = OnPolicyTrainer(algo, env, ["stdout"], save_interval=1, epochs=1)
+        algo = PPO1("mlp", env)
+        trainer = OnPolicyTrainer(
+            algo, env, ["stdout"], save_model="test_ckpt", save_interval=1, epochs=1
+        )
         trainer.train()
 
         assert len(os.listdir("test_ckpt/PPO1_CartPole-v0")) != 0
@@ -84,9 +84,11 @@ class TestUtils:
         test loading algorithm parameters
         """
         env = VectorEnv("CartPole-v0", 1)
-        algo = PPO1(
-            "mlp", env, epochs=1, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",
+        algo = PPO1("mlp", env)
+        trainer = OnPolicyTrainer(
+            algo, env, epochs=0, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
         )
+        trainer.train()
 
         rmtree("logs")
 

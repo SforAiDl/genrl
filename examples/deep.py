@@ -14,7 +14,7 @@ def main():
         "-e", "--env", help="Which env to train on", default="CartPole-v0", type=str
     )
     parser.add_argument(
-        "--env-type", help="What kind of env is it", default="gym", type=str
+        "-t", "--env-type", help="What kind of env is it", default="gym", type=str
     )
     parser.add_argument(
         "-n",
@@ -55,6 +55,11 @@ def main():
         "--replay-size", help="Replay Buffer Size", default=1000, type=int
     )
 
+    onpolicyargs = parser.add_argument_group("On Policy Args")
+    onpolicyargs.add_argument(
+        "--rollout-size", help="Rollout Buffer Size", default=2048, type=int
+    )
+
     args = parser.parse_args()
 
     ALGOS = {
@@ -79,7 +84,9 @@ def main():
     if args.algo in ["ppo", "vpg", "a2c"]:
         offpolicy = False
         trainerclass = OnPolicyTrainer
-        agent = algo(args.arch, env)  # , batch_size=args.batch_size)
+        agent = algo(
+            args.arch, env, rollout_size=args.rollout_size
+        )  # , batch_size=args.batch_size)
         trainer = trainerclass(
             agent,
             env,

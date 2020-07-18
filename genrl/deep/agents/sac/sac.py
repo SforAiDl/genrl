@@ -9,14 +9,7 @@ import torch.optim as opt
 from torch.distributions import Normal
 
 from ....environments import VecEnv
-from ...common import (
-    ReplayBuffer,
-    get_model,
-    load_params,
-    safe_mean,
-    save_params,
-    set_seeds,
-)
+from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
 
 
 class SAC:
@@ -44,9 +37,6 @@ class SAC:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :param run_num: model run number if it has already been trained
-    :param save_model: model save directory
-    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type gamma: float
@@ -66,9 +56,6 @@ class SAC:
     :type seed: int
     :type render: bool
     :type device: string
-    :type run_num: int
-    :type save_model: string
-    :type load_model: string
     """
 
     def __init__(
@@ -92,10 +79,6 @@ class SAC:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -113,21 +96,9 @@ class SAC:
         self.max_ep_len = max_ep_len
         self.start_update = start_update
         self.update_interval = update_interval
-        self.save_interval = save_interval
         self.layers = layers
         self.seed = seed
         self.render = render
-        self.run_num = run_num
-        self.save_model = save_model
-        self.load_model = load_model
-        self.save = save_params
-        self.load = load_params
-
-        self.logs = {}
-        self.logs["q1_loss"] = []
-        self.logs["q2_loss"] = []
-        self.logs["policy_loss"] = []
-        self.logs["alpha_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -142,6 +113,7 @@ class SAC:
         # Setup tensorboard writer
         self.writer = None
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
@@ -149,17 +121,7 @@ class SAC:
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim = self.env.observation_space.shape[0]
-
-        # initialize models
-        if isinstance(self.env.action_space, gym.spaces.Discrete):
-            action_dim = self.env.action_space.n
-            disc = True
-        elif isinstance(self.env.action_space, gym.spaces.Box):
-            action_dim = self.env.action_space.shape[0]
-            disc = False
-        else:
-            raise NotImplementedError
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
 
         self.q1 = (
             get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
@@ -175,22 +137,11 @@ class SAC:
 
         self.policy = (
             get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, disc, False, sac=True
+                state_dim, action_dim, self.layers, discrete, False, sac=True
             )
             .to(self.device)
             .float()
         )
-
-        if self.load_model is not None:
-            self.load(self)
-            self.q1.load_state_dict(self.checkpoint["q1_weights"])
-            self.q2.load_state_dict(self.checkpoint["q2_weights"])
-            self.policy.load_state_dict(self.checkpoint["policy_weights"])
-
-            for key, item in self.checkpoint.items():
-                if key not in ["weights", "save_model"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
@@ -227,12 +178,16 @@ class SAC:
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             ).to(self.device)
 
-    def sample_action(self, state: np.ndarray) -> np.ndarray:
+    def sample_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
         """
         sample action normal distribution parameterized by policy network
 
         :param state: Observation state
-        :type: int, float, ...
+        :param deterministic: Is the greedy action being chosen?
+        :type state: int, float, ...
+        :type deterministic: bool
         :returns: action
         :returns: log likelihood of policy
         :returns: scaled mean of normal distribution
@@ -267,17 +222,17 @@ class SAC:
         """
         pass
 
-    def select_action(self, state):
+    def select_action(self, state, deterministic=False):
         """
         select action given a state
 
-        :param state: Environment state
+        :param state: Observation state
+        :param deterministic: Is the greedy action being chosen?
         :type state: int, float, ...
-        :returns: action
-        :rtype: int, float, ...
+        :type deterministic: bool
         """
         state = torch.FloatTensor(state).to(self.device)
-        action, _, _ = self.sample_action(state)
+        action, _, _ = self.sample_action(state, deterministic)
         return action.detach().cpu().numpy()
 
     def update_params(self, update_interval: int) -> (Tuple[float]):
@@ -303,9 +258,9 @@ class SAC:
                 )
             else:
                 state, action, next_state = (
-                    state.reshape(-1, *self.env.observation_space.shape).float(),
-                    action.reshape(-1, *self.env.action_space.shape).float(),
-                    next_state.reshape(-1, *self.env.observation_space.shape).float(),
+                    state.reshape(-1, *self.env.obs_shape).float(),
+                    action.reshape(-1, *self.env.action_shape).float(),
+                    next_state.reshape(-1, *self.env.obs_shape).float(),
                 )
                 reward, done = reward.reshape(-1, 1), done.reshape(-1, 1)
 
@@ -408,12 +363,6 @@ class SAC:
             ):
                 self.update_params(self.update_interval)
 
-                if self.save_model is not None:
-                    if i >= self.start_update and i % self.save_interval == 0:
-                        self.checkpoint = self.get_hyperparams()
-                        self.save(self, i)
-                        print("Saved current model")
-
                 # prepare transition for replay memory push
             next_state, reward, done, _ = self.env.step(action)
             if self.render:
@@ -461,6 +410,14 @@ class SAC:
 
         return hyperparams
 
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.q1.load_state_dict(weights["q1_weights"])
+        self.q2.load_state_dict(weights["q2_weights"])
+        self.policy.load_state_dict(weights["policy_weights"])
+
     def get_logging_params(self) -> Dict[str, Any]:
         """
         :returns: Logging parameters for monitoring training
@@ -474,22 +431,14 @@ class SAC:
         }
 
         self.empty_logs()
-
         return logs
 
     def empty_logs(self):
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["q1_loss"] = []
         self.logs["q2_loss"] = []
         self.logs["policy_loss"] = []
         self.logs["alpha_loss"] = []
-
-
-if __name__ == "__main__":
-    env = gym.make("Pendulum-v0")
-    algo = SAC("mlp", env, save_model="checkpoints")
-    algo.learn()
-    algo.evaluate(algo)
