@@ -11,41 +11,12 @@ from .base import BaseDQN
 
 
 class DuelingDQN(BaseDQN):
-    def __init__(
-        self,
-        network_type: str,
-        env: Union[gym.Env, VecEnv],
-        batch_size: int = 32,
-        gamma: float = 0.99,
-        layers: Tuple = (32, 32),
-        lr: float = 0.001,
-        replay_size: int = 100,
-        max_epsilon: float = 1.0,
-        min_epsilon: float = 0.01,
-        epsilon_decay: int = 1000,
-        **kwargs,
-    ):
-        super(DuelingDQN, self).__init__(
-            network_type,
-            env,
-            batch_size,
-            gamma,
-            layers,
-            lr,
-            replay_size,
-            max_epsilon,
-            min_epsilon,
-            epsilon_decay,
-            **kwargs,
-        )
+    def __init__(self, *args, **kwargs):
+        super(DuelingDQN, self).__init__(*args, **kwargs)
         self.empty_logs()
         self.create_model()
 
-    def create_model(
-        self,
-        buffer_class: Union[PushReplayBuffer, PrioritizedBuffer] = PushReplayBuffer,
-        *args,
-    ) -> None:
+    def create_model(self, *args) -> None:
         input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
 
         self.model = get_model("dv", self.network_type + "dueling")(

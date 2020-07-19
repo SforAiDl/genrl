@@ -11,40 +11,15 @@ from .base import BaseDQN
 
 
 class PrioritizedReplayDQN(BaseDQN):
-    def __init__(
-        self,
-        network_type: str,
-        env: Union[gym.Env, VecEnv],
-        batch_size: int = 32,
-        gamma: float = 0.99,
-        layers: Tuple = (32, 32),
-        lr: float = 0.001,
-        replay_size: int = 100,
-        max_epsilon: float = 1.0,
-        min_epsilon: float = 0.01,
-        epsilon_decay: int = 1000,
-        alpha: float = 0.6,
-        beta: float = 0.4,
-        **kwargs,
-    ):
+    def __init__(self, *args, alpha: float = 0.6, beta: float = 0.4, **kwargs):
         super(PrioritizedReplayDQN, self).__init__(
-            network_type,
-            env,
-            batch_size,
-            gamma,
-            layers,
-            lr,
-            replay_size,
-            max_epsilon,
-            min_epsilon,
-            epsilon_decay,
-            **kwargs,
+            *args, buffer_type="prioritized", **kwargs
         )
         self.alpha = alpha
         self.beta = beta
 
         self.empty_logs()
-        self.create_model(PrioritizedBuffer, self.alpha)
+        self.create_model(self.alpha)
 
     def get_q_loss(self) -> torch.Tensor:
         (

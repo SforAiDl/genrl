@@ -29,6 +29,7 @@ class BaseDQN(BaseAgent):
         layers: Tuple = (32, 32),
         lr: float = 0.001,
         replay_size: int = 100,
+        buffer_type: str = "push",
         max_epsilon: float = 1.0,
         min_epsilon: float = 0.01,
         epsilon_decay: int = 1000,
@@ -49,11 +50,14 @@ class BaseDQN(BaseAgent):
         self.layers = layers
         self.lr = lr
 
-    def create_model(
-        self,
-        buffer_class: Union[PushReplayBuffer, PrioritizedBuffer] = PushReplayBuffer,
-        *args,
-    ) -> None:
+        if buffer_type == "push":
+            self.buffer_class = PushReplayBuffer
+        elif buffer_type == "prioritized":
+            self.buffer_class = PrioritizedBuffer
+        else:
+            raise NotImplementedError
+
+    def create_model(self, *args) -> None:
         input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
 
         self.model = get_model("v", self.network_type)(
@@ -61,7 +65,7 @@ class BaseDQN(BaseAgent):
         )
         self.target_model = deepcopy(self.model)
 
-        self.replay_buffer = buffer_class(self.replay_size, *args)
+        self.replay_buffer = self.buffer_class(self.replay_size, *args)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def update_target_model(self) -> None:
@@ -165,3 +169,10 @@ class BaseDQN(BaseAgent):
         """
         self.logs = {}
         self.logs["value_loss"] = []
+
+
+class DQN(BaseDQN):
+    def __init__(self, *args, **kwargs):
+        super(DQN, self).__init__(*args, **kwargs)
+        self.empty_logs()
+        self.create_model()

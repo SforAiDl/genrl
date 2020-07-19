@@ -22,11 +22,12 @@ class BaseAgent(ABC):
         self.batch_size = batch_size
         self.layers = layers
         self.gamma = gamma
-        self.seed = kwargs.get("seed", None)
-        self.render = kwargs.get("render", False)
+
+        self.seed = kwargs["seed"] if "seed" in kwargs else None
+        self.render = kwargs["render"] if "render" in kwargs else False
 
         # Assign device
-        device = kwargs.get("device", "cpu")
+        device = kwargs[device] if "device" in kwargs else "cpu"
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
         else:
@@ -77,24 +78,13 @@ class BaseAgent(ABC):
 class OnPolicyAgent(BaseAgent):
     def __init__(
         self,
-        network_type: str,
-        env: Any,
-        batch_size: int = 256,
-        gamma: float = 0.99,
-        layers: Tuple = (64, 64),
+        *args,
         lr_policy: float = 0.01,
         lr_value: float = 0.0005,
         rollout_size: int = 2048,
         **kwargs
     ):
-        super(OnPolicyAgent, self).__init__(
-            network_type,
-            env,
-            batch_size=batch_size,
-            gamma=gamma,
-            layers=layers,
-            **kwargs
-        )
+        super(OnPolicyAgent, self).__init__(*args, **kwargs)
         self.lr_policy = lr_policy
         self.lr_value = lr_value
         self.rollout_size = rollout_size
