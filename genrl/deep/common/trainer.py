@@ -267,7 +267,7 @@ many steps)
         agent: Any,
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
-        log_key: str = "timestep"
+        log_key: str = "timestep",
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = True,
         save_interval: int = 0,
@@ -294,7 +294,7 @@ many steps)
             agent,
             env,
             log_mode=log_mode,
-            log_key = log_key
+            log_key=log_key,
             buffer=buffer,
             off_policy=off_policy,
             save_interval=save_interval,
@@ -378,7 +378,7 @@ many steps)
                             **self.agent.get_logging_params(),
                             "Episode Reward": safe_mean(self.rewards),
                         },
-                        self.log_key
+                        self.log_key,
                     )
                     self.rewards = []
 
@@ -449,7 +449,7 @@ class OnPolicyTrainer(Trainer):
         agent: Any,
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
-        log_key: str = "timestep"
+        log_key: str = "timestep",
         save_interval: int = 0,
         save_model: str = "checkpoints",
         run_num: int = None,
@@ -471,7 +471,7 @@ class OnPolicyTrainer(Trainer):
             agent,
             env,
             log_mode,
-            log_key=log_key
+            log_key=log_key,
             buffer=None,
             off_policy=False,
             save_interval=save_interval,
@@ -517,7 +517,7 @@ class OnPolicyTrainer(Trainer):
                         "Episode": epoch,
                         **self.agent.get_logging_params(),
                     },
-                    self.log_key
+                    self.log_key,
                 )
 
             if self.render:
