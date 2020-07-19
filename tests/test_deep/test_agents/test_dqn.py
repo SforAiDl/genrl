@@ -14,6 +14,8 @@ def test_dqn():
     trainer.train()
     shutil.rmtree("./logs")
 
+
+# def test_double_dqn():
     # Double DQN with prioritized replay buffer
     # algo = DQN("mlp", env, double_dqn=True, prioritized_replay=True)
 
