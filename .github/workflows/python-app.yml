@@ -38,11 +38,3 @@ jobs:
     - name: Code Coverage CodeCov.io
       run: |
         codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
-        
-    - name: Code Coverage Code Climate
-      uses: paambaati/codeclimate-action@v2.6.0
-      env:
-        CC_TEST_REPORTER_ID: c4b850ddcb7852a826884ef959ef68e5c69b22f64c0b6298e535121ade703111
-      with:
-        coverageCommand: npm run coverage
-        debug: true
