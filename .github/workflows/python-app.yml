@@ -1,7 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
-
-name: Python application
+name: Lint, Test, Code Coverage
 
 on:
   push:
@@ -24,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest black isort
+        pip install flake8 pytest black isort codecov pytest-cov
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         
     - name: Lint check
@@ -36,9 +33,16 @@ jobs:
         
     - name: Tests
       run: |
-        pip install codecov pytest-cov
         pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
         
     - name: Code Coverage CodeCov.io
       run: |
         codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
+        
+    - name: Code Coverage Code Climate
+      uses: paambaati/codeclimate-action@v2.6.0
+      env:
+        CC_TEST_REPORTER_ID: c4b850ddcb7852a826884ef959ef68e5c69b22f64c0b6298e535121ade703111
+      with:
+        coverageCommand: npm run coverage
+        debug: true
