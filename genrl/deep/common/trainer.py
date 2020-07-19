@@ -294,7 +294,7 @@ many steps)
             agent,
             env,
             log_mode=log_mode,
-            log_key = log_key
+            log_key = log_key,
             buffer=buffer,
             off_policy=off_policy,
             save_interval=save_interval,
@@ -471,7 +471,7 @@ class OnPolicyTrainer(Trainer):
             agent,
             env,
             log_mode,
-            log_key=log_key
+            log_key=log_key,
             buffer=None,
             off_policy=False,
             save_interval=save_interval,
