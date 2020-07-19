@@ -2,13 +2,17 @@ import math
 from typing import List
 
 import torch
-from torch import nn as nn
+import torch.nn as nn
+import torch.nn.functional as F
 
-from .base import DQN
+from .base import BaseDQN
 
 
 def ddqn_q_target(
-    agent: DQN, next_states: torch.Tensor, rewards: torch.Tensor, dones: torch.Tensor
+    agent: BaseDQN,
+    next_states: torch.Tensor,
+    rewards: torch.Tensor,
+    dones: torch.Tensor,
 ) -> torch.Tensor:
     next_q_values = agent.model(next_states)
     next_best_actions = next_q_values.max(1)[1].unsqueeze(1)
@@ -62,8 +66,7 @@ class NoisyLinear(nn.Module):
         else:
             weight = self.weight_mu
             bias = self.bias_mu
-        print(state.shape, weight.shape, bias.shape)
-        return nn.functional.linear(state, weight, bias)
+        return F.linear(state, weight, bias)
 
     def reset_parameters(self) -> None:
         mu_range = 1 / math.sqrt(self.weight_mu.size(1))

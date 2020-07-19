@@ -19,7 +19,7 @@ from ...common import (
 from ..base import BaseAgent
 
 
-class DQN(BaseAgent):
+class BaseDQN(BaseAgent):
     def __init__(
         self,
         network_type: str,
@@ -34,7 +34,7 @@ class DQN(BaseAgent):
         epsilon_decay: int = 1000,
         **kwargs,
     ):
-        super(DQN, self).__init__(
+        super(BaseDQN, self).__init__(
             network_type,
             env,
             batch_size=batch_size,
@@ -48,9 +48,6 @@ class DQN(BaseAgent):
         self.epsilon_decay = epsilon_decay
         self.layers = layers
         self.lr = lr
-
-        self.empty_logs()
-        self.create_model()
 
     def create_model(
         self,

@@ -7,10 +7,10 @@ from torch import optim as opt
 
 from ....environments import VecEnv
 from ...common import PrioritizedBuffer, PushReplayBuffer, get_env_properties, get_model
-from .base import DQN
+from .base import BaseDQN
 
 
-class DuelingDQN(DQN):
+class DuelingDQN(BaseDQN):
     def __init__(
         self,
         network_type: str,

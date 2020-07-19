@@ -4,10 +4,10 @@ import gym
 import torch
 
 from ....environments import VecEnv
-from .base import DQN
+from .base import BaseDQN
 
 
-class DoubleDQN(DQN):
+class DoubleDQN(BaseDQN):
     def __init__(
         self,
         network_type: str,

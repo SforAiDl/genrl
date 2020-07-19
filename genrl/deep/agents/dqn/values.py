@@ -4,8 +4,7 @@ import torch
 from torch import nn as nn
 
 from ...common import cnn, mlp
-from .base import DQN
-from .utils import noisy_mlp
+from .utils import NoisyLinear, noisy_mlp
 
 
 class MlpDuelingValue(nn.Module):
