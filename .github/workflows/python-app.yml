@@ -20,17 +20,24 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.6
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install flake8 pytest black isort
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        
     - name: Lint check
       run: |
         # stop the build if there are Python syntax errors or undefined names
         flake8 .
         black --check .
         isort -c .
-    - name: Test with pytest
+        
+    - name: Tests
       run: |
-        pytest
+        pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
+        
+    - name: Code Coverage CodeCov.io
+      run: |
+        codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
