@@ -17,38 +17,54 @@ def test_dqn_cnn():
     trainer.train()
     shutil.rmtree("./logs")
 
+
+def test_double_dqn_cnn():
+    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
+
     # Double DQN with prioritized replay buffer
-    algo1 = DQN("cnn", env, double_dqn=True, prioritized_replay=True)
+    algo = DQN("cnn", env, double_dqn=True, prioritized_replay=True)
 
     trainer = OffPolicyTrainer(
-        algo1, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
     )
     trainer.train()
     shutil.rmtree("./logs")
+
+
+def test_noisy_dqn_cnn():
+    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
 
     # Noisy DQN
-    algo2 = DQN("cnn", env, noisy_dqn=True)
+    algo = DQN("cnn", env, noisy_dqn=True)
 
     trainer = OffPolicyTrainer(
-        algo2, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
     )
     trainer.train()
     shutil.rmtree("./logs")
+
+
+def test_dueling_dqn_cnn():
+    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
 
     # Dueling DDQN
-    algo3 = DQN("cnn", env, dueling_dqn=True, double_dqn=True)
+    algo = DQN("cnn", env, dueling_dqn=True, double_dqn=True)
 
     trainer = OffPolicyTrainer(
-        algo3, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
     )
     trainer.train()
     shutil.rmtree("./logs")
 
+
+def test_categorical_dqn_cnn():
+    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
+
     # Categorical DQN
-    algo4 = DQN("cnn", env, categorical_dqn=True)
+    algo = DQN("cnn", env, categorical_dqn=True)
 
     trainer = OffPolicyTrainer(
-        algo4, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
+        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
     )
     trainer.train()
     shutil.rmtree("./logs")
