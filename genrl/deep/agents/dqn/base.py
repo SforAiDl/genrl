@@ -9,6 +9,7 @@ from torch.nn import functional as F
 
 from ....environments import VecEnv
 from ...common import (
+    PrioritizedBuffer,
     PushReplayBuffer,
     get_env_properties,
     get_model,
@@ -51,7 +52,11 @@ class DQN(BaseAgent):
         self.empty_logs()
         self.create_model()
 
-    def create_model(self) -> None:
+    def create_model(
+        self,
+        buffer_class: Union[PushReplayBuffer, PrioritizedBuffer] = PushReplayBuffer,
+        *args,
+    ) -> None:
         input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
 
         self.model = get_model("v", self.network_type)(
@@ -59,7 +64,7 @@ class DQN(BaseAgent):
         )
         self.target_model = deepcopy(self.model)
 
-        self.replay_buffer = PushReplayBuffer(self.replay_size)
+        self.replay_buffer = buffer_class(self.replay_size, *args)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
 
     def update_target_model(self) -> None:
@@ -89,33 +94,34 @@ class DQN(BaseAgent):
     def get_target_q_values(self, next_states, rewards, dones):
         next_q_target_values = self.target_model(next_states)
         max_next_q_target_values = next_q_target_values.max(1)[0]
+
         target_q_values = rewards + self.gamma * torch.mul(
             max_next_q_target_values, (1 - dones)
         )
         return target_q_values.unsqueeze(-1)
 
+    def get_q_loss(self):
+        states, actions, rewards, next_states, dones = self.replay_buffer.sample(
+            self.batch_size
+        )
+
+        states = states.reshape(-1, *self.env.obs_shape)
+        actions = actions.reshape(-1, *self.env.action_shape).long()
+        next_states = next_states.reshape(-1, *self.env.obs_shape)
+
+        rewards = torch.FloatTensor(rewards).reshape(-1)
+        dones = torch.FloatTensor(dones).reshape(-1)
+
+        q_values = self.get_q_values(states, actions)
+        target_q_values = self.get_target_q_values(next_states, rewards, dones)
+
+        loss = F.mse_loss(q_values, target_q_values)
+        self.logs["value_loss"].append(loss.item())
+        return loss
+
     def update_params(self, update_interval: int) -> None:
         for timestep in range(update_interval):
-            states, actions, rewards, next_states, dones = self.replay_buffer.sample(
-                self.batch_size
-            )
-
-            states = states.reshape(-1, *self.env.obs_shape)
-            actions = actions.reshape(-1, *self.env.action_shape).long()
-            next_states = next_states.reshape(-1, *self.env.obs_shape)
-
-            rewards = torch.FloatTensor(rewards)
-            dones = torch.FloatTensor(dones)
-
-            q_values = self.get_q_values(states, actions)
-            target_q_values = self.get_target_q_values(next_states, rewards, dones)
-            # print(q_values.shape)
-            # print(target_q_values.shape)
-            # print("\n\n")
-
-            loss = F.mse_loss(q_values, target_q_values)
-            self.logs["value_loss"].append(loss.item())
-
+            loss = self.get_q_loss()
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()

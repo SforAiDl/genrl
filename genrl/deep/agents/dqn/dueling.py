@@ -1,13 +1,16 @@
+from copy import deepcopy
 from typing import Tuple, Union
 
 import gym
 import torch
+from torch import optim as opt
 
 from ....environments import VecEnv
+from ...common import PrioritizedBuffer, PushReplayBuffer, get_env_properties, get_model
 from .base import DQN
 
 
-class DoubleDQN(DQN):
+class DuelingDQN(DQN):
     def __init__(
         self,
         network_type: str,
@@ -22,7 +25,7 @@ class DoubleDQN(DQN):
         epsilon_decay: int = 1000,
         **kwargs,
     ):
-        super(DoubleDQN, self).__init__(
+        super(DuelingDQN, self).__init__(
             network_type,
             env,
             batch_size,
@@ -38,17 +41,17 @@ class DoubleDQN(DQN):
         self.empty_logs()
         self.create_model()
 
-    def get_target_q_values(
-        self, next_states: torch.Tensor, rewards: torch.Tensor, dones: torch.Tensor
-    ) -> torch.Tensor:
-        next_q_values = self.model(next_states)
-        next_best_actions = next_q_values.max(1)[1].unsqueeze(1)
+    def create_model(
+        self,
+        buffer_class: Union[PushReplayBuffer, PrioritizedBuffer] = PushReplayBuffer,
+        *args,
+    ) -> None:
+        input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
 
-        rewards, dones = rewards.unsqueeze(-1), dones.unsqueeze(-1)
-
-        next_q_target_values = self.target_model(next_states)
-        max_next_q_target_values = next_q_target_values.gather(1, next_best_actions)
-        target_q_values = rewards + self.gamma * torch.mul(
-            max_next_q_target_values, (1 - dones)
+        self.model = get_model("dv", self.network_type + "dueling")(
+            input_dim, action_dim, self.layers
         )
-        return target_q_values
+        self.target_model = deepcopy(self.model)
+
+        self.replay_buffer = buffer_class(self.replay_size, *args)
+        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)

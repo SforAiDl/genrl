@@ -1,43 +1,41 @@
 import shutil
 
-from genrl import DQN
+from genrl.deep.agents import DQN, DoubleDQN, DuelingDQN, PrioritizedReplayDQN
 from genrl.deep.common import OffPolicyTrainer
 from genrl.environments import VectorEnv
 
 
-def test_dqn():
-    env = VectorEnv("CartPole-v0", 2)
-    # DQN
-    algo = DQN("mlp", env)
+class TestDQN:
+    def test_vanilla_dqn(self):
+        env = VectorEnv("CartPole-v0")
+        algo = DQN("mlp", env)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
-    trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")
+    def test_double_dqn(self):
+        env = VectorEnv("CartPole-v0")
+        algo = DoubleDQN("mlp", env)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
-    # Double DQN with prioritized replay buffer
-    # algo1 = DQN("mlp", env, double_dqn=True, prioritized_replay=True)
+    def test_dueling_dqn(self):
+        env = VectorEnv("CartPole-v0")
+        algo = DuelingDQN("mlp", env)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
-    # trainer = OffPolicyTrainer(algo1, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    # trainer.train()
-    # shutil.rmtree("./logs")
-
-    # Noisy DQN
-    algo2 = DQN("mlp", env, noisy_dqn=True)
-
-    trainer = OffPolicyTrainer(algo2, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")
-
-    # Dueling DDQN
-    algo3 = DQN("mlp", env, dueling_dqn=True, double_dqn=True)
-
-    trainer = OffPolicyTrainer(algo3, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")
-
-    # Categorical DQN
-    algo4 = DQN("mlp", env, categorical_dqn=True)
-
-    trainer = OffPolicyTrainer(algo4, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")
+    # def test_prioritized_dqn(self):
+    #     env = VectorEnv("CartPole-v0")
+    #     algo = PrioritizedReplayDQN("mlp", env)
+    #     trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
+    #     trainer.train()
+    #     shutil.rmtree("./logs")

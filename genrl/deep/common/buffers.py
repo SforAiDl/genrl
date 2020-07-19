@@ -215,7 +215,7 @@ specific indices)
         for idx, priority in zip(batch_indices, batch_priorities):
             self.priorities[int(idx)] = priority
 
-    def get_len(self) -> int:
+    def __len__(self) -> int:
         """
         Gives number of experiences in buffer currently
 
