@@ -36,6 +36,7 @@ jobs:
         
     - name: Tests
       run: |
+        pip install codecov pytest-cov
         pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
         
     - name: Code Coverage CodeCov.io
