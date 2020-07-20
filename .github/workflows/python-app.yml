@@ -19,6 +19,7 @@ jobs:
     steps:
 
       - name: Lint check
+        shell: bash
         run: |
           conda activate test-python36
           python -m flake8 .
@@ -26,9 +27,9 @@ jobs:
           python -m isort -c .
 
       - name: Tests
-        run: |
-          /usr/local/miniconda/envs/test-python36/bin/python -m pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
+        shell: bash
+        run: python -m pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
 
       - name: Code Coverage CodeCov.io
-        run: |
-          /usr/local/miniconda/envs/test-python36/bin/python -m codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
+        shell: bash
+        run: python -m codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
