@@ -8,9 +8,6 @@ on:
 
 jobs:
   build:
-
-    if: "!contains(github.event.head_commit.message, 'ci skip')"
-    
     container:
       image: genrl/ubuntu-build:latest
     runs-on: ubuntu-latest
@@ -23,18 +20,18 @@ jobs:
         shell: bash
         run: |
           source activate test-python36
-          python -m flake8 .
-          python -m black --check .
-          python -m isort -c .
+          flake8 .
+          --check .
+          isort -c .
 
       - name: Tests
         shell: bash
         run: |
           source activate test-python36
-          python -m pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
+          pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
 
       - name: Code Coverage CodeCov.io
         shell: bash
         run: |
           source activate test-python36
-          python -m codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
+          codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
