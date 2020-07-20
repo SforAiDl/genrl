@@ -517,7 +517,7 @@ class OnPolicyTrainer(Trainer):
         self.env.close()
         self.logger.close()
 
-        
+
 class BanditTrainer:
     """Bandit Trainer Class
 

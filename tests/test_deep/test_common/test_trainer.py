@@ -1,5 +1,5 @@
-from genrl.deep.common import BanditTrainer, OffPolicyTrainer, OnPolicyTrainer
 from genrl import DDPG, PPO1, CovertypeDataBandit, NeuralGreedyAgent
+from genrl.deep.common import BanditTrainer, OffPolicyTrainer, OnPolicyTrainer
 from genrl.environments import VectorEnv
 
 
