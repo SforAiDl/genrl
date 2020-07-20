@@ -28,8 +28,12 @@ jobs:
 
       - name: Tests
         shell: bash
-        run: python -m pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
+        run: |
+          source activate test-python36
+          python -m pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
 
       - name: Code Coverage CodeCov.io
         shell: bash
-        run: python -m codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
+        run: |
+          source activate test-python36
+          python -m codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
