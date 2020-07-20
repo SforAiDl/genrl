@@ -7,7 +7,12 @@ from .utils import cnn, mlp
 
 
 def _get_val_model(
-    arch: str, val_type: str, state_dim: str, hidden: Tuple, action_dim: int = None
+    arch: str,
+    val_type: str,
+    state_dim: str,
+    hidden: Tuple,
+    action_dim: int = None,
+    activation: str = "relu",
 ):
     """
     Returns Neural Network given specifications
@@ -26,11 +31,13 @@ def _get_val_model(
     :returns: Neural Network model to be used for the Value function
     """
     if val_type == "V":
-        return arch([state_dim] + list(hidden) + [1])
+        return arch([state_dim] + list(hidden) + [1], activation=activation)
     elif val_type == "Qsa":
-        return arch([state_dim + action_dim] + list(hidden) + [1])
+        return arch(
+            [state_dim + action_dim] + list(hidden) + [1], activation=activation
+        )
     elif val_type == "Qs":
-        return arch([state_dim] + list(hidden) + [action_dim])
+        return arch([state_dim] + list(hidden) + [action_dim], activation=activation)
     else:
         raise ValueError
 
@@ -56,52 +63,58 @@ class MlpValue(BaseValue):
         action_dim: int = None,
         val_type: str = "V",
         hidden: Tuple = (32, 32),
+        **kwargs,
     ):
         super(MlpValue, self).__init__()
 
         self.state_dim = state_dim
         self.action_dim = action_dim
 
-        self.model = _get_val_model(mlp, val_type, state_dim, hidden, action_dim)
+        activation = kwargs["activation"] if "activation" in kwargs else "relu"
+
+        self.model = _get_val_model(
+            mlp, val_type, state_dim, hidden, action_dim, activation
+        )
 
 
 class CNNValue(BaseValue):
     """
     CNN Value Function class
 
-    :param state_dim: State dimension of environment
-    :param action_dim: Action dimension of environment
     :param framestack: Number of previous frames to stack together
+    :param action_dim: Action dimension of environment
     :param val_type: Specifies type of value function: (
 "V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
-    :param hidden: Sizes of hidden layers
-    :type state_dim: int
-    :type action_dim: int
+    :param fc_layers: Sizes of hidden layers
     :type framestack: int
+    :type action_dim: int
     :type val_type: string
-    :type hidden: tuple or list
+    :type fc_layers: tuple or list
     """
 
     def __init__(
         self,
+        framestack: int,
         action_dim: int,
-        framestack: int = 4,
         val_type: str = "Qs",
         fc_layers: Tuple = (256,),
+        **kwargs,
     ):
         super(CNNValue, self).__init__()
 
         self.action_dim = action_dim
 
-        self.conv, output_size = cnn((framestack, 16, 32))
+        activation = kwargs["activation"] if "activation" in kwargs else "relu"
+
+        self.conv, output_size = cnn((framestack, 16, 32), activation=activation)
 
         self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
 
     def forward(self, state: np.ndarray) -> np.ndarray:
         state = self.conv(state)
         state = state.view(state.size(0), -1)
-        state = self.fc(state)
-        return state
+        value = self.fc(state)
+        return value
 
 
 value_registry = {"mlp": MlpValue, "cnn": CNNValue}

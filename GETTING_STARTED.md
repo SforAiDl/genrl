@@ -22,7 +22,7 @@ trainer.plot(episode_rewards)
 Train Vanilla Policy Gradient on Vectorized CartPole-v1
 
 ```python
-from genrl import PPO1, VPG
+from genrl import PPO1, SAC, VPG
 from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
 from genrl.environments import VectorEnv
 
@@ -31,46 +31,18 @@ n_envs = 10
 epochs = 15
 eval_episodes = 10
 arch = "mlp"
-log = ["stdout,tensorboard"] # Specify logging type as a comma-separated list
+log = ["stdout"] # Specify logging type as a comma-separated list
 
 # Initialize Agent and Environment
 env = VectorEnv("CartPole-v1", n_envs)
-agent = VPG("mlp", env)
+agent = VPG(arch, env)
 
 # Trainer
 trainer = OnPolicyTrainer(agent, env, log, epochs = epochs, evaluate_episodes = eval_episodes)
 trainer.train()
 
 # Evaluation
-trainer.render = True
-trainer.evaluate()
-```
-
-#### Proximal Policy Optimization (PPO)
-
-Train Proximal Policy Optimization (PPO) on Vectorized LunarLander-v2
-
-```python
-
-
-# Specify some hyperparameters
-n_envs = 10
-epochs = 40
-eval_episodes = 20
-arch = "mlp"
-log = ["stdout,tensorboard"] # Specify logging type as a comma-separated list
-
-# Initialize Agent and Environment
-env = VectorEnv("CartPole-v1", n_envs)
-agent = PPO1("mlp", env)
-
-# Trainer
-trainer = OnPolicyTrainer(agent, env, log, epochs = epochs, evaluate_episodes = eval_episodes)
-trainer.train()
-
-# Evaluation
-trainer.render = True
-trainer.evaluate()
+trainer.evaluate(render=True)
 ```
 
 #### Soft Actor-Critic (SAC)
@@ -85,17 +57,44 @@ n_envs = 10
 epochs = 40
 eval_episodes = 20
 arch = "mlp"
-log = ["stdout,tensorboard"] # Specify logging type as a comma-separated list
+log = ["stdout", "csv"] # Specify logging type as a comma-separated list
 
 # Initialize Agent and Environment
 env = VectorEnv("Pendulum-v0", n_envs)
-agent = SAC("mlp", env)
+agent = SAC(arch, env)
 
 # Trainer
 trainer = OffPolicyTrainer(agent, env, log, epochs = epochs, evaluate_episodes = eval_episodes)
 trainer.train()
 
 # Evaluation
-trainer.render = True
-trainer.evaluate()
+trainer.evaluate(render=True)
+```
+
+
+#### Proximal Policy Optimization (PPO)
+
+Train Proximal Policy Optimization (PPO) on Vectorized Breakout-v0
+
+```python
+
+
+# Specify some hyperparameters
+n_envs = 2
+epochs = 100
+eval_episodes = 20
+arch = "cnn"
+rollout_size = 128
+log = ["stdout", "tensorboard"] # Specify logging type as a comma-separated list
+
+# Initialize Agent and Environment
+env = VectorEnv("Breakout-v0", n_envs, env_type = "atari")
+agent = PPO1(arch, env, rollout_size = rollout_size)
+
+# Trainer
+trainer = OnPolicyTrainer(agent, env, log, epochs = epochs, evaluate_episodes = eval_episodes)
+trainer.train()
+
+# Evaluation
+trainer.evaluate(render=True)
 ```

@@ -13,9 +13,7 @@ from ...common import (
     ReplayBuffer,
     get_env_properties,
     get_model,
-    load_params,
     safe_mean,
-    save_params,
     set_seeds,
 )
 from .utils import (
@@ -53,10 +51,6 @@ class DQN:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
-    :param save_interval: Number of steps between saves of models
-    :param run_num: model run number if it has already been trained
-    :param save_model: model save directory
-    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type double_dqn: bool
@@ -74,10 +68,6 @@ class DQN:
     :type seed: int
     :type render: bool
     :type device: string
-    :type save_interval: int
-    :type run_num: int
-    :type save_model: string
-    :type load_model: string
     """
 
     def __init__(
@@ -106,11 +96,6 @@ class DQN:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        save_interval: int = 5000,
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        transform: Any = None,
     ):
         self.env = env
         self.double_dqn = double_dqn
@@ -134,17 +119,7 @@ class DQN:
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
-        self.run_num = run_num
-        self.save_model = save_model
-        self.load_model = load_model
-        self.save_interval = save_interval
-        self.save = save_params
-        self.load = load_params
         self.network_type = network_type
-        self.transform = transform
-
-        self.logs = {}
-        self.logs["value_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -159,6 +134,7 @@ class DQN:
         # Setup tensorboard writer
         self.writer = None
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
@@ -195,15 +171,6 @@ class DQN:
                     action_dim, self.framestack, "Qs"
                 )
 
-        # load paramaters if already trained
-        if self.load_model is not None:
-            self.load(self)
-            self.model.load_state_dict(self.checkpoint["weights"])
-            for key, item in self.checkpoint.items():
-                if key not in ["weights", "save_model"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
-
         self.target_model = deepcopy(self.model)
 
         if self.prioritized_replay:
@@ -228,30 +195,36 @@ class DQN:
         :param timestep: Timestep in the training process
         :type timestep: int
         """
-        self.epsilon = self.calculate_epsilon_by_frame(timestep)
+        self.timestep = timestep
+        self.epsilon = self.calculate_epsilon_by_frame()
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
         """
         Epsilon Greedy selection of action
 
         :param state: Observation state
+        :param deterministic: Whether greedy action should be taken always
         :type state: int, float, ...
+        :type deterministic: bool
         :returns: Action based on the state and epsilon value
         :rtype: int, float, ...
         """
 
-        if np.random.rand() > self.epsilon:
-            if self.categorical_dqn:
-                state = Variable(torch.FloatTensor(state))
-                dist = self.model(state).data.cpu()
-                dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
-                action = dist.sum(2).max(1)[1].numpy()  # [0]
-            else:
-                state = Variable(torch.FloatTensor(state))
-                q_value = self.model(state)
-                action = np.argmax(q_value.detach().numpy(), axis=-1)
+        if not deterministic:
+            if np.random.rand() < self.epsilon:
+                return np.asarray(self.env.sample())
+
+        if self.categorical_dqn:
+            state = Variable(torch.FloatTensor(state))
+            dist = self.model(state).data.cpu()
+            dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
+            action = dist.sum(2).max(1)[1].numpy()  # [0]
         else:
-            action = np.asarray(self.env.sample())  # .reshape(1,-1)
+            state = Variable(torch.FloatTensor(state))
+            q_value = self.model(state)
+            action = np.argmax(q_value.detach().numpy(), axis=-1)
 
         return action
 
@@ -278,16 +251,14 @@ class DQN:
                 self.batch_size
             )
 
-        state = state.reshape(
-            self.batch_size * self.env.n_envs, *self.env.observation_space.shape
-        )
+        state = state.reshape(self.batch_size * self.env.n_envs, *self.env.obs_shape)
         action = action.reshape(
             self.batch_size * self.env.n_envs, *self.env.action_shape
         )
         reward = reward.reshape(-1, 1)
         done = done.reshape(-1, 1)
         next_state = next_state.reshape(
-            self.batch_size * self.env.n_envs, *self.env.observation_space.shape
+            self.batch_size * self.env.n_envs, *self.env.obs_shape
         )
 
         state = Variable(torch.FloatTensor(np.float32(state)))
@@ -372,17 +343,15 @@ so no need to call the function explicitly.)
             if timestep % update_interval == 0:
                 self.update_target_model()
 
-    def calculate_epsilon_by_frame(self, frame_idx: int) -> float:
+    def calculate_epsilon_by_frame(self) -> float:
         """
         A helper function to calculate the value of epsilon after every step.
 
-        :param frame_idx: Current step
-        :type frame_idx: int
         :returns: epsilon value for the step
         :rtype: float
         """
         return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
-            -1.0 * frame_idx / self.epsilon_decay
+            -1.0 * self.timestep / self.epsilon_decay
         )
 
     def projection_distribution(
@@ -449,7 +418,8 @@ so no need to call the function explicitly.)
             self.update_target_model()
 
         for frame_idx in range(1, total_steps + 1):
-            self.epsilon = self.calculate_epsilon_by_frame(frame_idx)
+            self.timestep = frame_idx
+            self.epsilon = self.calculate_epsilon_by_frame()
 
             action = self.select_action(state)
 
@@ -481,12 +451,6 @@ so no need to call the function explicitly.)
             if frame_idx >= self.start_update and frame_idx % self.update_interval == 0:
                 self.agent.update_params(self.update_interval)
 
-            if self.save_model is not None:
-                if frame_idx % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, frame_idx)
-                    print("Saved current model")
-
             if frame_idx % 100 == 0:
                 self.update_target_model()
 
@@ -505,9 +469,16 @@ so no need to call the function explicitly.)
             "prioritized_replay": self.prioritized_replay,
             "prioritized_replay_alpha": self.prioritized_replay_alpha,
             "weights": self.model.state_dict(),
+            "timestep": self.timestep,
         }
 
         return hyperparams
+
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.model.load_state_dict(weights["weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
         """
@@ -526,11 +497,5 @@ so no need to call the function explicitly.)
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["value_loss"] = []
-
-
-if __name__ == "__main__":
-    env = gym.make("CartPole-v0")
-    algo = DQN("mlp", env)
-    algo.learn()

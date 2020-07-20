@@ -1,3 +1,4 @@
+import os
 import traceback
 from abc import ABC
 from datetime import datetime
@@ -10,7 +11,7 @@ import torch
 from ...environments import VecEnv
 from .buffers import PrioritizedBuffer, ReplayBuffer
 from .logger import Logger
-from .utils import save_params, set_seeds
+from .utils import safe_mean, set_seeds
 
 
 class Trainer(ABC):
@@ -27,7 +28,6 @@ class Trainer(ABC):
     :param max_ep_len: Max Episode Length
     :param distributed: (True if distributed training is enabled, else
 False (To be implemented))
-    :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
     :param device: Device to train model on
@@ -44,7 +44,6 @@ False (To be implemented))
     :type render: bool
     :type max_ep_len: int
     :type distributed: bool
-    :type ckpt_log_name: string
     :type steps_per_epochs: int
     :type epochs: int
     :type device: string
@@ -62,21 +61,21 @@ False (To be implemented))
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = False,
         save_interval: int = 0,
+        save_model: str = "checkpoints",
+        run_num: int = None,
+        load_model: str = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
-        ckpt_log_name: str = "experiment",
         steps_per_epoch: int = 4000,
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
         log_interval: int = 10,
-        evaluate_episodes: int = 500,
+        evaluate_episodes: int = 50,
         logdir: str = "logs",
         batch_size: int = 50,
         seed: Optional[int] = None,
         deterministic_actions: bool = False,
-        transform: bool = None,
-        history_length: int = 4,
     ):
         self.agent = agent
         self.env = env
@@ -89,9 +88,11 @@ False (To be implemented))
             else:
                 self.buffer = self.agent.replay_buffer
         self.save_interval = save_interval
+        self.save_model = save_model
+        self.run_num = run_num
+        self.load_model = load_model
         self.render = render
         self.max_ep_len = max_ep_len
-        self.ckpt_log_name = ckpt_log_name
         self.steps_per_epoch = steps_per_epoch
         self.epochs = epochs
         self.device = device
@@ -99,8 +100,6 @@ False (To be implemented))
         self.evaluate_episodes = evaluate_episodes
         self.batch_size = batch_size
         self.deterministic_actions = deterministic_actions
-        self.transform = transform
-        self.history_length = history_length
 
         if seed is not None:
             set_seeds(seed, self.env)
@@ -113,16 +112,16 @@ False (To be implemented))
         """
         raise NotImplementedError
 
-    def evaluate(self) -> None:
+    def evaluate(self, render=False) -> None:
         """
         Evaluate function
         """
-        ep, ep_r = 0, np.zeros(self.env.n_envs)
-        ep_rews = []
+        episode, episode_reward = 0, np.zeros(self.env.n_envs)
+        episode_rewards = []
         state = self.env.reset()
         while True:
             if self.off_policy:
-                action = self.agent.select_action(state)
+                action = self.agent.select_action(state, deterministic=True)
             else:
                 action, _, _ = self.agent.select_action(state)
 
@@ -130,21 +129,79 @@ False (To be implemented))
                 action = action.numpy()
 
             next_state, reward, done, _ = self.env.step(action)
-            ep_r += reward
+
+            if render:
+                self.env.render()
+
+            episode_reward += reward
             state = next_state
             if np.any(done):
                 for i, di in enumerate(done):
                     if di:
-                        ep += 1
-                        ep_rews.append(ep_r[i])
-                        ep_r[i] = 0
-            if ep == self.evaluate_episodes:
+                        episode += 1
+                        episode_rewards.append(episode_reward[i])
+                        episode_reward[i] = 0
+            if episode == self.evaluate_episodes:
                 print(
                     "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
-                        self.evaluate_episodes, np.mean(ep_rews), np.std(ep_rews),
+                        self.evaluate_episodes,
+                        np.mean(episode_rewards),
+                        np.std(episode_rewards),
                     )
                 )
                 return
+
+    def save(self, timestep) -> None:
+        """
+        Function to save all parameters of a given agent
+
+        :param timestep: The timestep during training at which model is being saved
+        :type timestep: int
+        """
+        algo_name = self.agent.__class__.__name__
+        env_name = self.env.unwrapped.spec.id
+
+        directory = self.save_model
+        path = "{}/{}_{}".format(directory, algo_name, env_name)
+
+        if self.run_num is not None:
+            run_num = self.run_num
+        else:
+            if not os.path.exists(path):
+                os.makedirs(path)
+                run_num = 0
+            elif list(os.scandir(path)) == []:
+                run_num = 0
+            else:
+                last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
+                    -1
+                ].path
+                run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
+            self.run_num = run_num
+
+        torch.save(
+            self.agent.get_hyperparams(),
+            "{}/{}-log-{}.pt".format(path, run_num, timestep),
+        )
+
+    def load(self):
+        path = self.load_model
+        try:
+            self.agent.checkpoint = torch.load(path)
+        except FileNotFoundError:
+            raise Exception("Invalid File Name")
+
+        weights = {}
+
+        for key, item in self.checkpoint.items():
+            if "weights" not in key:
+                setattr(self, key, item)
+            else:
+                weights[key] = item
+
+        self.agent.load_weights(weights)
+
+        print("Loaded Pretrained Model!")
 
     @property
     def n_envs(self) -> int:
@@ -168,7 +225,6 @@ class OffPolicyTrainer(Trainer):
     :param max_ep_len: Max Episode Length
     :param distributed: (Should distributed training be enabled?
 (To be implemented))
-    :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
     :param device: Device to train model on
@@ -190,7 +246,6 @@ many steps)
     :type render: bool
     :type max_ep_len: int
     :type distributed: int
-    :type ckpt_log_name: string
     :type steps_per_epochs: int
     :type epochs: int
     :type device: string
@@ -211,10 +266,12 @@ many steps)
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = True,
         save_interval: int = 0,
+        save_model: str = "checkpoints",
+        run_num: int = None,
+        load_model: str = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
-        ckpt_log_name: str = "experiment",
         steps_per_epoch: int = 4000,
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
@@ -231,23 +288,24 @@ many steps)
         super(OffPolicyTrainer, self).__init__(
             agent,
             env,
-            log_mode,
-            buffer,
-            off_policy,
-            save_interval,
-            render,
-            max_ep_len,
-            distributed,
-            ckpt_log_name,
-            steps_per_epoch,
-            epochs,
-            device,
-            log_interval,
-            evaluate_episodes,
-            logdir,
-            batch_size,
-            seed,
-            deterministic_actions,
+            log_mode=log_mode,
+            buffer=buffer,
+            off_policy=off_policy,
+            save_interval=save_interval,
+            save_model=save_model,
+            run_num=run_num,
+            render=render,
+            max_ep_len=max_ep_len,
+            distributed=distributed,
+            steps_per_epoch=steps_per_epoch,
+            epochs=epochs,
+            device=device,
+            log_interval=log_interval,
+            evaluate_episodes=evaluate_episodes,
+            logdir=logdir,
+            batch_size=batch_size,
+            seed=seed,
+            deterministic_actions=deterministic_actions,
         )
         self.warmup_steps = warmup_steps
         self.update_interval = update_interval
@@ -258,9 +316,11 @@ many steps)
         """
         Run training
         """
-        state, episode_reward, episode_len, episode = (
+        if self.load_model is not None:
+            self.load()
+
+        state, episode_len, episode = (
             self.env.reset(),
-            np.zeros(self.env.n_envs),
             np.zeros(self.env.n_envs),
             np.zeros(self.env.n_envs),
         )
@@ -274,7 +334,7 @@ many steps)
 
         assert self.update_interval % self.env.n_envs == 0
 
-        self.rewards = [0]
+        self.rewards = []
 
         for timestep in range(0, total_steps, self.env.n_envs):
             self.agent.update_params_before_select_action(timestep)
@@ -289,7 +349,6 @@ many steps)
             if self.render:
                 self.env.render()
 
-            episode_reward += reward
             episode_len += 1
 
             done = [
@@ -311,15 +370,15 @@ many steps)
                             "timestep": timestep,
                             "Episode": sum(episode),
                             **self.agent.get_logging_params(),
-                            "Episode Reward": np.mean(self.rewards),
+                            "Episode Reward": safe_mean(self.rewards),
                         }
                     )
-                    self.rewards = [0]
+                    self.rewards = []
 
                 for i, di in enumerate(done):
                     if di:
-                        self.rewards.append(episode_reward[i])
-                        episode_reward[i] = 0
+                        self.rewards.append(self.env.episode_reward[i])
+                        self.env.episode_reward[i] = 0
                         episode_len[i] = 0
                         episode[i] += 1
 
@@ -331,8 +390,7 @@ many steps)
                 and self.save_interval != 0
                 and timestep % self.save_interval == 0
             ):
-                self.checkpoint = self.agent.get_hyperparams()
-                save_params(self.agent, timestep)
+                self.save(timestep)
 
         self.env.close()
         self.logger.close()
@@ -352,7 +410,6 @@ class OnPolicyTrainer(Trainer):
     :param max_ep_len: Max Episode Length
     :param distributed: (Should distributed training be enabled?
 (To be implemented))
-    :param ckpt_log_name: Model checkpoint name
     :param steps_per_epochs: Steps to take per epoch?
     :param epochs: Total Epochs to train for
     :param device: Device to train model on
@@ -369,7 +426,6 @@ class OnPolicyTrainer(Trainer):
     :type render: bool
     :type max_ep_len: int
     :type distributed: int
-    :type ckpt_log_name: string
     :type steps_per_epochs: int
     :type epochs: int
     :type device: string
@@ -385,10 +441,12 @@ class OnPolicyTrainer(Trainer):
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
         save_interval: int = 0,
+        save_model: str = "checkpoints",
+        run_num: int = None,
+        load_model: str = None,
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
-        ckpt_log_name: str = "experiment",
         steps_per_epoch: int = 4000,
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
@@ -406,10 +464,11 @@ class OnPolicyTrainer(Trainer):
             buffer=None,
             off_policy=False,
             save_interval=save_interval,
+            save_model=save_model,
+            run_num=run_num,
             render=render,
             max_ep_len=max_ep_len,
             distributed=distributed,
-            ckpt_log_name=ckpt_log_name,
             steps_per_epoch=steps_per_epoch,
             epochs=epochs,
             device=device,
@@ -425,11 +484,13 @@ class OnPolicyTrainer(Trainer):
         """
         Run training.
         """
+        if self.load_model is not None:
+            self.load()
+
         for epoch in range(self.epochs):
             self.agent.epoch_reward = np.zeros(self.env.n_envs)
 
             self.agent.rollout.reset()
-            self.agent.rewards = []
 
             state = self.env.reset()
             values, done = self.agent.collect_rollouts(state)
@@ -451,14 +512,12 @@ class OnPolicyTrainer(Trainer):
                 self.env.render()
 
             if self.save_interval != 0 and epoch % self.save_interval == 0:
-                self.checkpoint = self.agent.get_hyperparams()
-                save_params(self.agent, epoch * self.agent.batch_size)
-                # save_params(self.agent, epoch * self.agent.timesteps_per_actorbatch)
+                self.save(epoch * self.agent.batch_size)
 
         self.env.close()
         self.logger.close()
 
-
+        
 class BanditTrainer:
     """Bandit Trainer Class
 

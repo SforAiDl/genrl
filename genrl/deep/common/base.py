@@ -106,24 +106,24 @@ class BaseValue(nn.Module):
 
         self.model = None
 
-    def forward(self, inp: torch.Tensor) -> torch.Tensor:
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
         """
         Defines the computation performed at every call.
 
-        :param x: Input to value function
-        :type x: Tensor
+        :param state: Input to value function
+        :type state: Tensor
         """
-        return self.model.forward(inp)
+        return self.model.forward(state)
 
-    def get_value(self, inp: torch.Tensor) -> torch.Tensor:
+    def get_value(self, state: torch.Tensor) -> torch.Tensor:
         """
         Get value from value function based on input
 
-        :param x: Input to value function
-        :type x: Tensor
+        :param state: Input to value function
+        :type state: Tensor
         :returns: Value
         """
-        return self.forward(inp).squeeze(-1)
+        return self.forward(state).squeeze(-1)
 
 
 class BaseActorCritic(nn.Module):

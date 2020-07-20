@@ -8,15 +8,7 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from ....environments import VecEnv
-from ...common import (
-    ReplayBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    safe_mean,
-    save_params,
-    set_seeds,
-)
+from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
 
 
 class DDPG:
@@ -38,17 +30,12 @@ class DDPG:
     :param steps_per_epoch: Number of steps per epoch
     :param noise_std: Standard deviation for action noise
     :param max_ep_len: Maximum steps per episode
-    :param deterministic_actions: True if actions are deterministic
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of steps between parameter updates
-    :param save_interval: Number of steps between saves of models
     :param layers: Number of neurons in hidden layers
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :param run_num: model run number if it has already been trained
-    :param save_model: model save directory
-    :param load_model: model loading path
     :type network_type: string
     :type env: Gym environment
     :type gamma: float
@@ -62,17 +49,12 @@ class DDPG:
     :type steps_per_epoch: int
     :type noise_std: float
     :type max_ep_len: int
-    :type deterministic_actions: bool
     :type start_update: int
     :type update_interval: int
-    :type save_interval: int
     :type layers: tuple
     :type seed: int
     :type render: bool
     :type device: string
-    :type run_num: int
-    :type save_model: string
-    :type load_model: string
     """
 
     def __init__(
@@ -91,17 +73,12 @@ class DDPG:
         noise: Optional[Any] = None,
         noise_std: float = 0.1,
         max_ep_len: int = 1000,
-        deterministic_actions: bool = False,
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (32, 32),
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 5000,
     ):
 
         self.network_type = network_type
@@ -118,22 +95,11 @@ class DDPG:
         self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
-        self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
-        self.save_interval = save_interval
         self.layers = layers
         self.seed = seed
         self.render = render
-        self.run_num = run_num
-        self.save_model = save_model
-        self.load_model = load_model
-        self.save = save_params
-        self.load = load_params
-
-        self.logs = {}
-        self.logs["policy_loss"] = []
-        self.logs["value_loss"] = []
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -148,6 +114,7 @@ class DDPG:
         # Setup tensorboard writer
         self.writer = None
 
+        self.empty_logs()
         self.create_model()
 
     def create_model(self) -> None:
@@ -169,15 +136,6 @@ class DDPG:
             state_dim, action_dim, self.layers, "Qsa", False
         ).to(self.device)
 
-        # load paramaters if already trained
-        if self.load_model is not None:
-            self.load(self)
-            self.ac.load_state_dict(self.checkpoint["weights"])
-            for key, item in self.checkpoint.items():
-                if key not in ["weights", "save_model"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
-
         self.ac_target = deepcopy(self.ac).to(self.device)
 
         # freeze target network params
@@ -197,19 +155,23 @@ class DDPG:
         """
         pass
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
         """
         Selection of action
 
         :param state: Observation state
+        :param deterministic: Action selection type
         :type state: int, float, ...
+        :type deterministic: bool
         :returns: Action based on the state and epsilon value
         :rtype: int, float, ...
         """
         with torch.no_grad():
             action, _ = self.ac.get_action(
                 torch.as_tensor(state, dtype=torch.float32).to(self.device),
-                deterministic=self.deterministic_actions,
+                deterministic=deterministic,
             )
             action = action.detach().cpu().numpy()
 
@@ -370,12 +332,6 @@ class DDPG:
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.update_params(self.update_interval)
 
-            if self.save_model is not None:
-                if timestep >= self.start_update and timestep % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, timestep)
-                    print("Saved current model")
-
         self.env.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
@@ -392,6 +348,12 @@ class DDPG:
         }
 
         return hyperparams
+
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.load_state_dict(weights["weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
         """
@@ -411,7 +373,7 @@ class DDPG:
         """
         Empties logs
         """
-
+        self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
 

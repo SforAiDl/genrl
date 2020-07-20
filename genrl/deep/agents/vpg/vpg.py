@@ -24,12 +24,9 @@ class VPG(OnPolicyAgent):
     :param actor_batchsize: trajectories per optimizer epoch
     :param epochs: the optimizer's number of epochs
     :param lr_policy: policy network learning rate
-    :param save_interval: Number of episodes between saves of models
     :param seed: seed for torch and gym
     :param device: device to use for tensor operations; \
 'cpu' for cpu and 'cuda' for gpu
-    :param run_num: if model has already been trained
-    :param save_model: True if user wants to save
     :param load_model: model loading path
     :param rollout_size: Rollout Buffer Size
     :type network_type: str
@@ -39,11 +36,8 @@ class VPG(OnPolicyAgent):
     :type actor_batchsize: int
     :type epochs: int
     :type lr_policy: float
-    :type save_interval: int
     :type seed: int
     :type device: str
-    :type run_num: bool
-    :type save_model: bool
     :type load_model: string
     :type rollout_size: int
     """
@@ -81,31 +75,18 @@ class VPG(OnPolicyAgent):
         """
         Initialize the actor and critic networks
         """
-        state_dim, action_dim, discrete, action_lim = get_env_properties(self.env)
+        input_dim, action_dim, discrete, action_lim = get_env_properties(
+            self.env, self.network_type
+        )
 
         # Instantiate networks and optimizers
         self.actor = get_model("p", self.network_type)(
-            state_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
+            input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
         ).to(self.device)
-
-        # load paramaters if already trained
-        if self.load_model is not None:
-            self.load(self)
-            self.actor.load_state_dict(self.checkpoint["policy_weights"])
-
-            for key, item in self.checkpoint.items():
-                if key not in ["policy_weights", "value_weights", "save_model"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
 
         self.optimizer_policy = opt.Adam(self.actor.parameters(), lr=self.lr_policy)
 
-        self.rollout = RolloutBuffer(
-            self.rollout_size,
-            self.env.observation_space,
-            self.env.action_space,
-            n_envs=self.env.n_envs,
-        )
+        self.rollout = RolloutBuffer(self.rollout_size, self.env,)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
@@ -123,24 +104,27 @@ class VPG(OnPolicyAgent):
         state = Variable(torch.as_tensor(state).float().to(self.device))
 
         # create distribution based on policy_fn output
-        a, c = self.actor.get_action(state, deterministic=False)
+        action, dist = self.actor.get_action(state, deterministic=deterministic)
 
-        return a, c.log_prob(a), None
+        return (
+            action.detach().cpu().numpy(),
+            torch.zeros((1, self.env.n_envs)),
+            dist.log_prob(action).cpu(),
+        )
 
     def get_value_log_probs(self, state, action):
-        a, c = self.actor.get_action(state, deterministic=False)
-        return c.log_prob(action)
+        state, action = state.to(self.device), action.to(self.device)
+        _, dist = self.actor.get_action(state, deterministic=False)
+        return dist.log_prob(action).cpu()
 
-    def get_traj_loss(self, value, done):
+    def get_traj_loss(self, values, dones):
         """
         Calculates the loss for the trajectory
         """
-        self.rollout.compute_returns_and_advantage(value.detach().cpu().numpy(), done)
+        self.rollout.compute_returns_and_advantage(values.detach().cpu().numpy(), dones)
 
     def update_policy(self) -> None:
-
         for rollout in self.rollout.get(self.batch_size):
-
             actions = rollout.actions
 
             if isinstance(self.env.action_space, gym.spaces.Discrete):
@@ -148,44 +132,15 @@ class VPG(OnPolicyAgent):
 
             log_prob = self.get_value_log_probs(rollout.observations, actions)
 
-            policy_loss = rollout.returns * log_prob
+            loss = rollout.returns * log_prob
 
-            policy_loss = -torch.mean(policy_loss)
-            self.logs["policy_loss"].append(policy_loss.item())
-
-            loss = policy_loss
+            loss = -torch.mean(loss)
+            self.logs["loss"].append(loss.item())
 
             self.optimizer_policy.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(self.actor.parameters(), 0.5)
             self.optimizer_policy.step()
-
-    def collect_rollouts(self, state):
-
-        for i in range(self.rollout_size):
-
-            action, old_log_probs, _ = self.select_action(state)
-
-            next_state, reward, dones, _ = self.env.step(action.numpy())
-            self.epoch_reward += reward
-
-            if self.render:
-                self.env.render()
-
-            self.rollout.add(
-                state,
-                action.reshape(self.env.n_envs, 1),
-                reward,
-                dones,
-                torch.Tensor([0] * self.env.n_envs),
-                old_log_probs.detach(),
-            )
-
-            state = next_state
-
-            self.collect_rewards(dones)
-
-        return torch.Tensor([0] * self.env.n_envs), dones
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
@@ -199,6 +154,12 @@ class VPG(OnPolicyAgent):
 
         return hyperparams
 
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.load_state_dict(weights["weights"])
+
     def get_logging_params(self) -> Dict[str, Any]:
         """
         :returns: Logging parameters for monitoring training
@@ -206,7 +167,7 @@ class VPG(OnPolicyAgent):
         """
 
         logs = {
-            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "loss": safe_mean(self.logs["loss"]),
             "mean_reward": safe_mean(self.rewards),
         }
 
@@ -218,6 +179,5 @@ class VPG(OnPolicyAgent):
         Empties logs
         """
         self.logs = {}
-        self.logs["policy_loss"] = []
-        self.logs["policy_entropy"] = []
+        self.logs["loss"] = []
         self.rewards = []

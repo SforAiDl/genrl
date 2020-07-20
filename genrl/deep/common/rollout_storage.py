@@ -1,10 +1,10 @@
 from typing import Generator, NamedTuple, Optional, Union
 
+import gym
 import numpy as np
 import torch
-from gym import spaces
 
-from .utils import get_obs_action_shape
+from ...environments import VecEnv
 
 
 class RolloutBufferSamples(NamedTuple):
@@ -35,8 +35,7 @@ class BaseBuffer(object):
     """
     Base class that represent a buffer (rollout or replay)
     :param buffer_size: (int) Max number of element in the buffer
-    :param observation_space: (spaces.Space) Observation space
-    :param action_space: (spaces.Space) Action space
+    :param env: (Environment) The environment being trained on
     :param device: (Union[torch.device, str]) PyTorch device
         to which the values will be converted
     :param n_envs: (int) Number of parallel environments
@@ -45,22 +44,15 @@ class BaseBuffer(object):
     def __init__(
         self,
         buffer_size: int,
-        observation_space: spaces.Space,
-        action_space: spaces.Space,
+        env: Union[gym.Env, VecEnv],
         device: Union[torch.device, str] = "cpu",
-        n_envs: int = 1,
     ):
         super(BaseBuffer, self).__init__()
         self.buffer_size = buffer_size
-        self.observation_space = observation_space
-        self.action_space = action_space
-        self.obs_shape, self.action_dim = get_obs_action_shape(
-            observation_space, action_space
-        )
+        self.env = env
         self.pos = 0
         self.full = False
         self.device = device
-        self.n_envs = n_envs
 
     @staticmethod
     def swap_and_flatten(arr: np.ndarray) -> np.ndarray:
@@ -138,21 +130,12 @@ class BaseBuffer(object):
             return torch.tensor(array).to(self.device)
         return torch.as_tensor(array).to(self.device)
 
-    @staticmethod
-    def _normalize_obs(obs: np.ndarray,) -> np.ndarray:
-        return obs
-
-    @staticmethod
-    def _normalize_reward(reward: np.ndarray,) -> np.ndarray:
-        return reward
-
 
 class RolloutBuffer(BaseBuffer):
     """
     Rollout buffer used in on-policy algorithms like A2C/PPO.
     :param buffer_size: (int) Max number of element in the buffer
-    :param observation_space: (spaces.Space) Observation space
-    :param action_space: (spaces.Space) Action space
+    :param env: (Environment) The environment being trained on
     :param device: (torch.device)
     :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
         Equivalent to classic advantage when set to 1.
@@ -163,17 +146,13 @@ class RolloutBuffer(BaseBuffer):
     def __init__(
         self,
         buffer_size: int,
-        observation_space: spaces.Space,
-        action_space: spaces.Space,
+        env: Union[gym.Env, VecEnv],
         device: Union[torch.device, str] = "cpu",
         gae_lambda: float = 1,
         gamma: float = 0.99,
-        n_envs: int = 1,
     ):
 
-        super(RolloutBuffer, self).__init__(
-            buffer_size, observation_space, action_space, device, n_envs=n_envs
-        )
+        super(RolloutBuffer, self).__init__(buffer_size, env, device)
         self.gae_lambda = gae_lambda
         self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = (
@@ -188,17 +167,20 @@ class RolloutBuffer(BaseBuffer):
 
     def reset(self) -> None:
         self.observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + (self.obs_shape,), dtype=np.float32
+            (self.buffer_size, self.env.n_envs,) + self.env.obs_shape, dtype=np.float32
         )
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32
+            (self.buffer_size, self.env.n_envs,) + self.env.action_shape,
+            dtype=np.float32,
         )
-        self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-        self.returns = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-        self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-        self.values = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-        self.log_probs = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
-        self.advantages = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
+        self.rewards = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
+        self.returns = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
+        self.dones = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
+        self.values = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
+        self.log_probs = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
+        self.advantages = np.zeros(
+            (self.buffer_size, self.env.n_envs), dtype=np.float32
+        )
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
@@ -292,7 +274,7 @@ class RolloutBuffer(BaseBuffer):
         self, batch_size: Optional[int] = None
     ) -> Generator[RolloutBufferSamples, None, None]:
         assert self.full, ""
-        indices = np.random.permutation(self.buffer_size * self.n_envs)
+        indices = np.random.permutation(self.buffer_size * self.env.n_envs)
         # Prepare the data
         if not self.generator_ready:
             for tensor in [
@@ -308,10 +290,10 @@ class RolloutBuffer(BaseBuffer):
 
         # Return everything, don't create minibatches
         if batch_size is None:
-            batch_size = self.buffer_size * self.n_envs
+            batch_size = self.buffer_size * self.env.n_envs
 
         start_idx = 0
-        while start_idx < self.buffer_size * self.n_envs:
+        while start_idx < self.buffer_size * self.env.n_envs:
             yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
