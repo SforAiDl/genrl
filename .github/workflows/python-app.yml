@@ -17,18 +17,13 @@ jobs:
     name: Lint, Build and Code Coverage
     
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python 3.6
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.6
 
       - name: Lint check
         run: |
-          # stop the build if there are Python syntax errors or undefined names
-          /usr/local/miniconda/envs/test-python36/bin/python -m flake8 .
-          /usr/local/miniconda/envs/test-python36/bin/python -m black --check .
-          /usr/local/miniconda/envs/test-python36/bin/python -m isort -c .
+          conda activate test-python36
+          python -m flake8 .
+          python -m black --check .
+          python -m isort -c .
 
       - name: Tests
         run: |
