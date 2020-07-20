@@ -17,6 +17,7 @@ jobs:
     name: Lint, Build and Code Coverage
     
     steps:
+      - uses: actions/checkout@v2
 
       - name: Lint check
         shell: bash
