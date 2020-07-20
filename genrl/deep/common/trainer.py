@@ -460,8 +460,21 @@ class OnPolicyTrainer(Trainer):
 
 
 class BanditTrainer:
+    """Bandit Trainer Class
+
+    Arguments:
+        agent (genrl.deep.bandit.dcb_agents.DCBAgent): Agent to train.
+        bandit (genrl.deep.bandit.data_bandits.DataBasedBandit): Bandit to train agent on.
+        logdir (str): Path to directory to store logs in.
+        log_mode (List[str]): List of modes for logging.
+    """
+
     def __init__(
-        self, agent, bandit, logdir="./logs", log_mode=["stdout"],
+        self,
+        agent: Any,
+        bandit: Any,
+        logdir: str = "./logs",
+        log_mode: List[str] = ["stdout"],
     ):
         self.agent = agent
         self.bandit = bandit
@@ -471,16 +484,36 @@ class BanditTrainer:
 
     def train(
         self,
-        timesteps=10_000,
-        update_interval=20,
-        update_after=500,
-        batch_size=64,
-        train_epochs=20,
-        log_every=100,
-        ignore_init=0,
+        timesteps: int = 10_000,
+        update_interval: int = 20,
+        update_after: int = 500,
+        batch_size: int = 64,
+        train_epochs: int = 20,
+        log_every: int = 100,
+        ignore_init: int = 0,
+        init_train_epochs: Optional[int] = None,
+        train_epochs_decay_steps: Optional[int] = None,
     ) -> None:
-        """
-        Run training
+        """Train the agent.
+
+        Args:
+            timesteps (int, optional): Number of timesteps to train for. Defaults to 10_000.
+            update_interval (int, optional): Number of timesteps between each successive
+                parameter update of the agent. Defaults to 20.
+            update_after (int, optional): Number of initial timesteps to start updating
+                the agent's parameters after. Defaults to 500.
+            batch_size (int, optional): Size of batch to update the agent with. Defaults to 64.
+            train_epochs (int, optional): Number of epochs to train agent's model for in
+                each update. Defaults to 20.
+            log_every (int, optional): Timesteps interval for logging. Defaults to 100.
+            ignore_init (int, optional): Number of initial steps to ignore for logging. Defaults to 0.
+            init_train_epochs (Optional[int], optional): Initial number of epochs to train agents
+                for. Defaults to None which implies `train_epochs` is to be used.
+            train_epochs_decay_steps (Optional[int], optional): Steps to decay number of epochs
+                to train agent for over. Defaults to None.
+
+        Returns:
+            dict: Dictionary of metrics recorded during training.
         """
         start_time = datetime.now()
         print(
@@ -492,11 +525,21 @@ class BanditTrainer:
         context = self.bandit.reset()
         regret_mv_avgs = []
         reward_mv_avgs = []
+
+        train_epochs_schedule = None
+        if init_train_epochs is not None and train_epochs_decay_steps is not None:
+            train_epochs_schedule = np.linspace(
+                init_train_epochs, train_epochs, train_epochs_decay_steps
+            )
+
         try:
             for t in range(1, timesteps + 1):
                 action = self.agent.select_action(context)
                 context, reward = self.bandit.step(action)
                 self.agent.update_db(context, action, reward)
+
+                if train_epochs_schedule is not None and t < train_epochs_decay_steps:
+                    train_epochs = int(train_epochs_schedule[t])
 
                 if t > update_after and t % update_interval == 0:
                     self.agent.update_params(
