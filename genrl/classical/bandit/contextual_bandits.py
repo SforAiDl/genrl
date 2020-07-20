@@ -7,7 +7,7 @@ from torch.nn import functional as F
 
 class ContextualBandit(object):
     """
-    Base Class for a Multi-armed Bandit
+    Base Class for a Contextual Multi-armed Bandit
 
     :param bandits: Number of bandits
     :param arms: Number of arms in each bandit
