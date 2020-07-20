@@ -11,6 +11,8 @@ jobs:
 
     if: "!contains(github.event.head_commit.message, 'ci skip')"
     
+    container:
+      image: vowpalwabbit/ubuntu1604-build:latest
     runs-on: ubuntu-latest
     name: Lint, Build and Code Coverage
     
