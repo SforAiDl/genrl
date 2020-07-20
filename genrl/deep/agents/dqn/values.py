@@ -3,8 +3,8 @@ from typing import Tuple
 import torch
 from torch import nn as nn
 
-from ...common import cnn, mlp
-from .utils import NoisyLinear, noisy_mlp
+from genrl.deep.agents.dqn.utils import NoisyLinear, noisy_mlp
+from genrl.deep.common import cnn, mlp
 
 
 class MlpDuelingValue(nn.Module):

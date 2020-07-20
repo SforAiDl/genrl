@@ -6,10 +6,9 @@ import numpy as np
 import torch
 from torch import optim as opt
 
-from ....environments import VecEnv
-from ...common import get_env_properties, get_model
-from .base import BaseDQN
-from .utils import get_projection_distribution
+from genrl.deep.agents.dqn.base import BaseDQN
+from genrl.deep.agents.dqn.utils import get_projection_distribution
+from genrl.deep.common import get_env_properties, get_model
 
 
 class CategoricalDQN(BaseDQN):
@@ -77,5 +76,4 @@ class CategoricalDQN(BaseDQN):
 
         loss = -(projection_distribution * dist.log()).sum(1).mean()
         self.logs["value_loss"].append(loss.item())
-
         return loss

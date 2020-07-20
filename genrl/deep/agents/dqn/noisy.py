@@ -5,9 +5,14 @@ import gym
 import torch
 from torch import optim as opt
 
-from ....environments import VecEnv
-from ...common import PrioritizedBuffer, PushReplayBuffer, get_env_properties, get_model
-from .base import BaseDQN
+from genrl.deep.agents.dqn.base import BaseDQN
+from genrl.deep.common import (
+    PrioritizedBuffer,
+    PushReplayBuffer,
+    get_env_properties,
+    get_model,
+)
+from genrl.environments import VecEnv
 
 
 class NoisyDQN(BaseDQN):

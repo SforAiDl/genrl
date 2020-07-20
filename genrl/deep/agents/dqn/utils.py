@@ -5,7 +5,7 @@ import torch
 from torch import nn as nn
 from torch.nn import functional as F
 
-from .base import BaseDQN
+from genrl.deep.agents.dqn.base import BaseDQN
 
 
 def ddqn_q_target(

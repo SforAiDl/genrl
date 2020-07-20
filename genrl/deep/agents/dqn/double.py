@@ -3,8 +3,7 @@ from typing import Tuple, Union
 import gym
 import torch
 
-from ....environments import VecEnv
-from .base import BaseDQN
+from genrl.deep.agents.dqn.base import BaseDQN
 
 
 class DoubleDQN(BaseDQN):

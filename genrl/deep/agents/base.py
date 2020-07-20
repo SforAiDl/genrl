@@ -15,13 +15,17 @@ class BaseAgent(ABC):
         batch_size: int = 64,
         gamma: float = 0.99,
         layers: Tuple = (64, 64),
+        lr_policy: float = 0.001,
+        lr_value: float = 0.001,
         **kwargs
     ):
         self.network_type = network_type
         self.env = env
         self.batch_size = batch_size
-        self.layers = layers
         self.gamma = gamma
+        self.layers = layers
+        self.lr_policy = lr_policy
+        self.lr_value = lr_value
 
         self.seed = kwargs["seed"] if "seed" in kwargs else None
         self.render = kwargs["render"] if "render" in kwargs else False
@@ -76,17 +80,8 @@ class BaseAgent(ABC):
 
 
 class OnPolicyAgent(BaseAgent):
-    def __init__(
-        self,
-        *args,
-        lr_policy: float = 0.01,
-        lr_value: float = 0.0005,
-        rollout_size: int = 2048,
-        **kwargs
-    ):
+    def __init__(self, *args, rollout_size: int = 2048, **kwargs):
         super(OnPolicyAgent, self).__init__(*args, **kwargs)
-        self.lr_policy = lr_policy
-        self.lr_value = lr_value
         self.rollout_size = rollout_size
 
     def collect_rewards(self, dones, timestep):
@@ -118,3 +113,9 @@ class OnPolicyAgent(BaseAgent):
             self.collect_rewards(dones, i)
 
         return values, dones
+
+
+def OffPolicyAgent(BaseAgent):
+    def __init__(self, *args, replay_size=1e6, **kwargs):
+        super(OffPolicyAgent, self).__init__(*args, **kwargs)
+        self.replay_size = replay_size

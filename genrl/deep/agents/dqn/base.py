@@ -7,8 +7,8 @@ import torch
 from torch import optim as opt
 from torch.nn import functional as F
 
-from ....environments import VecEnv
-from ...common import (
+from genrl.deep.agents.base import BaseAgent
+from genrl.deep.common import (
     PrioritizedBuffer,
     PushReplayBuffer,
     get_env_properties,
@@ -16,7 +16,7 @@ from ...common import (
     safe_mean,
     set_seeds,
 )
-from ..base import BaseAgent
+from genrl.environments import VecEnv
 
 
 class BaseDQN(BaseAgent):
@@ -41,14 +41,14 @@ class BaseDQN(BaseAgent):
             batch_size=batch_size,
             gamma=gamma,
             layers=layers,
+            lr_policy=None,
+            lr_value=lr,
             **kwargs,
         )
         self.replay_size = replay_size
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
-        self.layers = layers
-        self.lr = lr
 
         if buffer_type == "push":
             self.buffer_class = PushReplayBuffer
@@ -66,7 +66,7 @@ class BaseDQN(BaseAgent):
         self.target_model = deepcopy(self.model)
 
         self.replay_buffer = self.buffer_class(self.replay_size, *args)
-        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
+        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
 
     def update_target_model(self) -> None:
         self.target_model.load_state_dict(self.model.state_dict())
@@ -139,7 +139,7 @@ class BaseDQN(BaseAgent):
         hyperparams = {
             "gamma": self.gamma,
             "batch_size": self.batch_size,
-            "lr": self.lr,
+            "lr": self.lr_value,
             "replay_size": self.replay_size,
             "weights": self.model.state_dict(),
             "timestep": self.timestep,
