@@ -21,7 +21,7 @@ jobs:
       - name: Lint check
         shell: bash
         run: |
-          conda activate test-python36
+          source activate test-python36
           python -m flake8 .
           python -m black --check .
           python -m isort -c .
