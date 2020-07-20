@@ -1,6 +1,6 @@
-import math
 from typing import List
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -27,8 +27,54 @@ def ddqn_q_target(
     return target_q_values
 
 
+def get_projection_distribution(
+    agent, next_state: np.ndarray, rewards: List[float], dones: List[bool]
+):
+    batch_size = next_state.size(0)
+
+    delta_z = float(agent.Vmax - agent.Vmin) / (agent.num_atoms - 1)
+    support = torch.linspace(agent.Vmin, agent.Vmax, agent.num_atoms)
+
+    next_dist = agent.target_model(next_state).data.cpu() * support
+    next_action = next_dist.sum(2).max(1)[1]
+    next_action = (
+        next_action.unsqueeze(1)
+        .unsqueeze(1)
+        .expand(next_dist.size(0), 1, next_dist.size(2))
+    )
+    next_dist = next_dist.gather(1, next_action).squeeze(1)
+
+    rewards = rewards.expand_as(next_dist)
+    dones = dones.expand_as(next_dist)
+    support = support.unsqueeze(0).expand_as(next_dist)
+
+    tz = rewards + (1 - dones) * 0.99 * support
+    tz = tz.clamp(min=agent.Vmin, max=agent.Vmax)
+    bz = (tz - agent.Vmin) / delta_z
+    lower = bz.floor().long()
+    upper = bz.ceil().long()
+
+    offset = (
+        torch.linspace(0, (batch_size - 1) * agent.num_atoms, batch_size)
+        .long()
+        .unsqueeze(1)
+        .expand(-1, agent.num_atoms)
+    )
+
+    projection_distribution = torch.zeros(next_dist.size())
+    projection_distribution.view(-1).index_add_(
+        0, (lower + offset).view(-1), (next_dist * (upper.float() - bz)).view(-1)
+    )
+    projection_distribution.view(-1).index_add_(
+        0, (upper + offset).view(-1), (next_dist * (bz - lower.float())).view(-1)
+    )
+
+    return projection_distribution
+
+
 def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):
     model = []
+    assert fc_layers[-1] == noisy_layers[0], "Layer size mismatch"
     for layer in range(len(fc_layers) - 1):
         model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), nn.ReLU()]
     for layer in range(len(noisy_layers) - 1):
@@ -69,15 +115,13 @@ class NoisyLinear(nn.Module):
         return F.linear(state, weight, bias)
 
     def reset_parameters(self) -> None:
-        mu_range = 1 / math.sqrt(self.weight_mu.size(1))
+        mu_range = 1 / np.sqrt(self.weight_mu.size(1))
 
         self.weight_mu.data.uniform_(-mu_range, mu_range)
-        self.weight_sigma.data.fill_(
-            self.std_init / math.sqrt(self.weight_sigma.size(1))
-        )
+        self.weight_sigma.data.fill_(self.std_init / np.sqrt(self.weight_sigma.size(1)))
 
         self.bias_mu.data.uniform_(-mu_range, mu_range)
-        self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.bias_sigma.size(0)))
+        self.bias_sigma.data.fill_(self.std_init / np.sqrt(self.bias_sigma.size(0)))
 
     def reset_noise(self) -> None:
         epsilon_in = self._scale_noise(self.in_features)

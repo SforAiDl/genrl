@@ -24,5 +24,5 @@ class DuelingDQN(BaseDQN):
         )
         self.target_model = deepcopy(self.model)
 
-        self.replay_buffer = buffer_class(self.replay_size, *args)
+        self.replay_buffer = self.buffer_class(self.replay_size, *args)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
