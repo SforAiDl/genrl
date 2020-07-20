@@ -8,8 +8,10 @@ on:
 
 jobs:
   build:
-
+    
     runs-on: ubuntu-latest
+    name: Skip CI Check
+    if: "!contains(github.event.head_commit.message, 'ci skip')"
 
     steps:
     - uses: actions/checkout@v2
