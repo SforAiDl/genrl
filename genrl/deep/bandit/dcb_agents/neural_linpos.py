@@ -166,18 +166,17 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         latent_context, _ = self.model(context)
         self.latent_db.add(latent_context, action, reward)
 
-    def update_params(
-        self, action: int, batch_size: int = 512, train_epochs: int = 20,
-    ):
+    def update_params(self, action: int, batch_size: int = 512, train_epochs: int = 20):
         """Update parameters of the agent.
 
         Trains neural network and updates bayesian regression parameters.
 
         Args:
-            batch_size (int): Size of batch to update parameters with.
-            train_epochs (int): Epochs to train neural network for.
-            action (Optional[int], optional): Action to update the parameters for.
-                Defaults to None.
+            action (int): Action to update the parameters for.
+            batch_size (int, optional): Size of batch to update parameters with.
+                Defaults to 512
+            train_epochs (int, optional): Epochs to train neural network for.
+                Defaults to 20
         """
         self.update_count += 1
 

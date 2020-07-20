@@ -542,9 +542,7 @@ class BanditTrainer:
                     train_epochs = int(train_epochs_schedule[t])
 
                 if t > update_after and t % update_interval == 0:
-                    self.agent.update_params(
-                        context, action, reward, batch_size, train_epochs
-                    )
+                    self.agent.update_params(action, batch_size, train_epochs)
 
                 if t > ignore_init:
                     regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))

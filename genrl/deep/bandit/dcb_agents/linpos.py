@@ -1,3 +1,5 @@
+from typing import Optional
+
 import torch
 from scipy.stats import invgamma
 
@@ -121,21 +123,22 @@ class LinearPosteriorAgent(DCBAgent):
         self.db.add(context, action, reward)
 
     def update_params(
-        self, action: int, batch_size: int = 512, train_epochs: int = 20,
+        self, action: int, batch_size: int = 512, train_epochs: Optional[int] = None
     ):
         """Update parameters of the agent.
 
         Updated the posterior over beta though bayesian regression.
 
         Args:
-            batch_size (int): Size of batch to update parameters with.
-            train_epochs (int): Epochs to train neural network for.
-            action (Optional[int], optional): Action to update the parameters for.
-                Defaults to None.
+            action (int): Action to update the parameters for.
+            batch_size (int, optional): Size of batch to update parameters with.
+                Defaults to 512
+            train_epochs (Optional[int], optional): Epochs to train neural network for.
+                Not applicable in this agent. Defaults to None
         """
         self.update_count += 1
 
-        x, y = self.db.get_data_for_action(action)
+        x, y = self.db.get_data_for_action(action, batch_size)
         x = torch.cat([x, torch.ones(x.shape[0], 1)], dim=1)
         inv_cov = torch.mm(x.T, x) + self.lambda_prior * torch.eye(self.context_dim + 1)
         cov = torch.inverse(inv_cov)

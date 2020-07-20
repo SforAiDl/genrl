@@ -98,19 +98,21 @@ class NeuralGreedyAgent(DCBAgent):
 
     def update_params(
         self,
+        action: Optional[int] = None,
         batch_size: int = 512,
         train_epochs: int = 20,
-        action: Optional[int] = None,
     ):
         """Update parameters of the agent.
 
         Trains neural network.
 
         Args:
-            batch_size (int): Size of batch to update parameters with.
-            train_epochs (int): Epochs to train neural network for.
             action (Optional[int], optional): Action to update the parameters for.
-                Defaults to None.
+                Not applicable in this agent. Defaults to None.
+            batch_size (int, optional): Size of batch to update parameters with.
+                Defaults tp 512
+            train_epochs (int, optional): Epochs to train neural network for.
+                Defaults to 20
         """
         self.update_count += 1
         self.model.train_model(self.db, train_epochs, batch_size)

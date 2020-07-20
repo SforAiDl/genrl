@@ -34,16 +34,16 @@ class DCBAgent:
 
     def update_parameters(
         self,
+        action: Optional[int] = None,
         batch_size: Optional[int] = None,
         train_epochs: Optional[int] = None,
-        action: Optional[int] = None,
     ) -> None:
         """Update parameters of the agent.
 
         Args:
+            action (Optional[int], optional): Action to update the parameters for. Defaults to None.
             batch_size (Optional[int], optional): Size of batch to update parameters with. Defaults to None.
             train_epochs (Optional[int], optional): Epochs to train neural network for. Defaults to None.
-            action (Optional[int], optional): Action to update the parameters for. Defaults to None.
 
         Note:
             This method needs to be implemented in the specific agent.
