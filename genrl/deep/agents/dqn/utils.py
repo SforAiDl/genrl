@@ -2,8 +2,8 @@ from typing import List
 
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
+from torch import nn as nn
+from torch.nn import functional as F
 
 from .base import BaseDQN
 
@@ -74,7 +74,7 @@ def get_projection_distribution(
 
 def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):
     model = []
-    assert fc_layers[-1] == noisy_layers[0], "Layer size mismatch"
+    assert fc_layers[-1] == noisy_layers[0], "Size mismatch"
     for layer in range(len(fc_layers) - 1):
         model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), nn.ReLU()]
     for layer in range(len(noisy_layers) - 1):

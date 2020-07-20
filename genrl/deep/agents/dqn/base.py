@@ -74,6 +74,7 @@ class BaseDQN(BaseAgent):
     def update_params_before_select_action(self, timestep: int) -> None:
         self.timestep = timestep
         self.epsilon = self.calculate_epsilon_by_frame()
+        self.logs["epsilon"].append(self.epsilon)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
@@ -85,7 +86,6 @@ class BaseDQN(BaseAgent):
 
         state = torch.FloatTensor(state)
         q_values = self.model(state).detach().numpy()
-
         return np.argmax(q_values, axis=-1)
 
     def get_q_values(self, states, actions) -> torch.Tensor:
@@ -159,6 +159,7 @@ class BaseDQN(BaseAgent):
         """
         logs = {
             "value_loss": safe_mean(self.logs["value_loss"]),
+            "epsilon": safe_mean(self.logs["epsilon"]),
         }
         self.empty_logs()
         return logs
@@ -169,6 +170,7 @@ class BaseDQN(BaseAgent):
         """
         self.logs = {}
         self.logs["value_loss"] = []
+        self.logs["epsilon"] = []
 
 
 class DQN(BaseDQN):

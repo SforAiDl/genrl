@@ -11,7 +11,7 @@ from .base import BaseDQN
 
 
 class NoisyDQN(BaseDQN):
-    def __init__(self, *args, noisy_layers: Tuple = (128, 128), **kwargs):
+    def __init__(self, *args, noisy_layers: Tuple = (32, 128), **kwargs):
         super(NoisyDQN, self).__init__(*args, **kwargs)
         self.noisy_layers = noisy_layers
 

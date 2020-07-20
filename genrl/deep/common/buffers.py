@@ -97,9 +97,6 @@ class PushReplayBuffer:
         """
         self.memory.append(inp)
 
-    def extend(self, inp):
-        self.memory.extend(inp)
-
     def sample(
         self, batch_size: int
     ) -> (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -152,7 +149,7 @@ class PrioritizedBuffer:
         :type inp: tuple
         :returns: None
         """
-        max_priority = max(self.priorities) if self.buffer else 1.0
+        max_priority = max(self.priorities) if self.priorities else 1.0
         self.buffer.append(inp)
         self.priorities.append(max_priority)
 
@@ -182,21 +179,17 @@ Importance Sampling (IS) weights)
 `rewards`, `dones`, `indices` and `weights`)
         """
         total = len(self.buffer)
-
         priorities = np.asarray(self.priorities)
-
         probabilities = priorities ** self.alpha
         probabilities /= probabilities.sum()
-
         indices = np.random.choice(total, batch_size, p=probabilities)
 
         weights = (total * probabilities[indices]) ** (-beta)
         weights /= weights.max()
         weights = np.asarray(weights, dtype=np.float32)
 
-        samples = np.asarray(self.buffer, dtype=deque)[indices]
+        samples = [self.buffer[i] for i in indices]
         (states, actions, rewards, next_states, dones) = map(np.stack, zip(*samples))
-
         return (
             torch.as_tensor(v, dtype=torch.float32)
             for v in [states, actions, rewards, next_states, dones, indices, weights]
@@ -213,7 +206,7 @@ specific indices)
         :type batch_priorities: list or tuple
         """
         for idx, priority in zip(batch_indices, batch_priorities):
-            self.priorities[int(idx)] = priority
+            self.priorities[int(idx)] = priority.mean()
 
     def __len__(self) -> int:
         """
@@ -222,11 +215,6 @@ specific indices)
         :returns: Length of replay memory
         """
         return len(self.buffer)
-
-    def extend(self, inp):
-        max_priority = [max(self.priorities) if self.buffer else 1.0 for i in inp]
-        self.buffer.extend(inp)
-        self.priorities.extend(max_priority)
 
     @property
     def pos(self):

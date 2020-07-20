@@ -36,8 +36,8 @@ class PrioritizedReplayDQN(BaseDQN):
         actions = actions.reshape(-1, *self.env.action_shape).long()
         next_states = next_states.reshape(-1, *self.env.obs_shape)
 
-        rewards = torch.FloatTensor(rewards)
-        dones = torch.FloatTensor(dones)
+        rewards = torch.FloatTensor(rewards).reshape(-1)
+        dones = torch.FloatTensor(dones).reshape(-1)
 
         q_values = self.get_q_values(states, actions)
         target_q_values = self.get_target_q_values(next_states, rewards, dones)
@@ -45,6 +45,6 @@ class PrioritizedReplayDQN(BaseDQN):
         loss = weights * (q_values - target_q_values.detach()) ** 2
         priorities = loss + 1e-5
         loss = loss.mean()
-        self.replay_buffer.update_priorities(indices, priorities.data.cpu().numpy())
+        self.replay_buffer.update_priorities(indices, priorities.detach().cpu().numpy())
         self.logs["value_loss"].append(loss.item())
         return loss

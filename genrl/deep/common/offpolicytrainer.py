@@ -75,7 +75,7 @@ class OffPolicyTrainer(Trainer):
         state = self.env.reset()
 
         for epoch in range(self.epochs):
-            for timestep in range(self.steps_per_epoch):
+            for timestep in range(self.max_steps_per_epoch):
                 self.agent.update_params_before_select_action(timestep * epoch)
 
                 if timestep < self.warmup_steps:

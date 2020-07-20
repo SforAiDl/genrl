@@ -3,6 +3,7 @@ from genrl.deep.agents.base import BaseAgent, OnPolicyAgent  # noqa
 from genrl.deep.agents.ddpg import DDPG  # noqa
 from genrl.deep.agents.dqn import (  # noqa
     DQN,
+    CategoricalDQN,
     DoubleDQN,
     DuelingDQN,
     NoisyDQN,
