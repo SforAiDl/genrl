@@ -4,17 +4,34 @@ from typing import List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import dropout, dropout_
+from torch.cuda import init
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float
 
 
 class TransitionDB(object):
+    """
+    Database for storing (context, action, reward) transitions.
+
+    Attributes:
+        db (dict): Dictionary containing list of transitions.
+        db_size (int): Number of transitions stored in database.
+    """
+
     def __init__(self):
         self.db = {"contexts": [], "actions": [], "rewards": []}
         self.db_size = 0
 
     def add(self, context: torch.Tensor, action: int, reward: int):
+        """Add (context, action, reward) transition to database
+
+        Args:
+            context (torch.Tensor): Context recieved
+            action (int): Action taken
+            reward (int): Reward recieved
+        """
         self.db["contexts"].append(context)
         self.db["actions"].append(action)
         self.db["rewards"].append(reward)
@@ -23,6 +40,17 @@ class TransitionDB(object):
     def get_data(
         self, batch_size: Union[int, None] = None
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Get a batch of transition from database
+
+        Args:
+            batch_size (Union[int, None], optional): Size of batch required.
+                Defaults to None which implies all transitions in the database
+                are to be included in batch.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: Tuple of stacked
+                contexts, actions, rewards tensors.
+        """
         if batch_size is None:
             batch_size = self.db_size
         else:
@@ -41,6 +69,18 @@ class TransitionDB(object):
     def get_data_for_action(
         self, action: int, batch_size: Union[int, None] = None
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Get a batch of transition from database for a given action.
+
+        Args:
+            action (int): The action to sample transitions for.
+            batch_size (Union[int, None], optional): Size of batch required.
+                Defaults to None which implies all transitions in the database
+                are to be included in batch.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: Tuple of stacked
+                contexts and rewards tensors.
+        """
         action_idx = [i for i in range(self.db_size) if self.db["actions"][i] == action]
         if batch_size is None:
             t_batch_size = len(action_idx)
@@ -58,8 +98,35 @@ class TransitionDB(object):
 
 
 class NeuralBanditModel(nn.Module):
+    """Neural Network used in Deep Contextual Bandit Models.
+
+    Args:
+        context_dim (int): Length of context vector.
+        hidden_dims (List[int], optional): Dimensions of hidden layers of network.
+        n_actions (int): Number of actions that can be selected. Taken as length
+            of output vector for network to predict.
+        init_lr (float, optional): Initial learning rate.
+        max_grad_norm (float, optional): Maximum norm of gradients for gradient clipping.
+        lr_decay (float, optional): Decay rate for learning rate.
+        lr_reset (bool, optional): Whether to reset learning rate ever train interval.
+            Defaults to False.
+        dropout_p (Optional[float], optional): Probability for dropout. Defaults to None
+            which implies dropout is not to be used.
+
+    Attributes:
+        use_dropout (int): Indicated whether or not dropout should be used in forward pass.
+    """
+
     def __init__(
-        self, context_dim: int, hidden_dims: List[int], n_actions: int, lr: float,
+        self,
+        context_dim: int,
+        hidden_dims: List[int],
+        n_actions: int,
+        init_lr: float,
+        max_grad_norm: float,
+        lr_decay: Optional[float] = None,
+        lr_reset: bool = False,
+        dropout_p: Optional[float] = None,
     ):
         super(NeuralBanditModel, self).__init__()
         self.context_dim = context_dim
@@ -69,17 +136,56 @@ class NeuralBanditModel(nn.Module):
         self.layers = nn.ModuleList([])
         for i in range(len(t_hidden_dims) - 1):
             self.layers.append(nn.Linear(t_hidden_dims[i], t_hidden_dims[i + 1]))
-        self.optimizer = torch.optim.Adam(self.layers.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.layers.parameters(), lr=init_lr)
+        self.init_lr = init_lr
+        self.lr_decay = lr_decay
+        if self.lr_decay is not None:
+            self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+                self.optimizer, lambda i: 1 / (1 + self.lr_decay * i)
+            )
+        self.lr_reset = lr_reset
+        self.dropout_p = dropout_p
+        if self.dropout_p is not None:
+            self.use_dropout = True
+        self.max_grad_norm = max_grad_norm
 
     def forward(self, context: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Computes forward pass through the network.
+
+        Args:
+            context (torch.Tensor): The context vector to perform forward pass on.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor]: Tuple with the output of the second
+                to last layer of the network and the final output of the network.
+        """
         x = context
         for layer in self.layers[:-1]:
             x = F.relu(layer(x))
+            if self.dropout_p is not None and self.use_dropout is True:
+                x = F.dropout(x, self.dropout_p)
+
         pred_rewards = self.layers[-1](x)
         return x, pred_rewards
 
     def train_model(self, db: TransitionDB, epochs: int, batch_size: int):
-        for e in range(epochs):
+        """Trains the network on a given database for given epochs and batch_size.
+
+        Args:
+            db (TransitionDB): The database of transitions to train on.
+            epochs (int): Number of gradient steps to take.
+            batch_size (int): The size of each batch to perform gradient descent on.
+        """
+        if self.dropout_p is not None:
+            self.use_dropout = True
+
+        if self.lr_decay is not None and self.lr_reset is True:
+            for o in self.optimizer.param_groups:
+                o["lr"] = self.init_lr
+                self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+                    self.optimizer, lambda i: 1 / (1 + self.lr_decay * i)
+                )
+        for _ in range(epochs):
             x, a, y = db.get_data(batch_size)
             reward_vec = torch.zeros(
                 size=(y.shape[0], self.n_actions), device=device, dtype=dtype
@@ -92,10 +198,21 @@ class NeuralBanditModel(nn.Module):
             )
             self.optimizer.zero_grad()
             loss.backward()
+            nn.utils.clip_grad_norm_(self.parameters(), self.max_grad_norm)
             self.optimizer.step()
+            if self.lr_decay is not None:
+                self.lr_scheduler.step()
 
 
 class BayesianLinear(nn.Module):
+    """Linear Layer for Bayesian Neural Networks.
+
+    Args:
+        in_features (int): size of each input sample
+        out_features (int): size of each output sample
+        bias (bool, optional): Whether to use an additive bias. Defaults to True.
+    """
+
     def __init__(self, in_features: int, out_features: int, bias: bool = True) -> None:
         super(BayesianLinear, self).__init__()
 
@@ -112,6 +229,8 @@ class BayesianLinear(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
+        """Resets weight and bias parameters of the layer.
+        """
         self.w_mu.data.normal_(0, 0.1)
         self.w_sigma.data.normal_(0, 0.1)
         if self.bias:
@@ -121,6 +240,21 @@ class BayesianLinear(nn.Module):
     def forward(
         self, x: torch.Tensor, kl: bool = True, frozen: bool = False
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+        """Apply linear transormation to input.
+
+        The weight and bias is sampled for each forward pass from a normal
+        distribution. The KL divergence of the sampled weigth and bias can
+        also be computed if specified.
+
+        Args:
+            x (torch.Tensor): Input to be transformed
+            kl (bool, optional): Whether to compute the KL divergence. Defaults to True.
+            frozen (bool, optional): Whether to freeze current parameters. Defaults to False.
+
+        Returns:
+            Tuple[torch.Tensor, Optional[torch.Tensor]]: The transformed input and optionally
+                the computed KL divergence value.
+        """
         kl_val = None
         b = None
         if frozen:
@@ -150,33 +284,80 @@ class BayesianLinear(nn.Module):
 
 
 class BayesianNNBanditModel(nn.Module):
+    """Bayesian Neural Network used in Deep Contextual Bandit Models.
+
+    Args:
+        context_dim (int): Length of context vector.
+        hidden_dims (List[int], optional): Dimensions of hidden layers of network.
+        n_actions (int): Number of actions that can be selected. Taken as length
+            of output vector for network to predict.
+        init_lr (float, optional): Initial learning rate.
+        max_grad_norm (float, optional): Maximum norm of gradients for gradient clipping.
+        lr_decay (float, optional): Decay rate for learning rate.
+        lr_reset (bool, optional): Whether to reset learning rate ever train interval.
+            Defaults to False.
+        dropout_p (Optional[float], optional): Probability for dropout. Defaults to None
+            which implies dropout is not to be used.
+        noise_std (float): Standard deviation of noise used in the network. Defaults to 0.1
+
+    Attributes:
+        use_dropout (int): Indicated whether or not dropout should be used in forward pass.
+    """
+
     def __init__(
         self,
         context_dim: int,
         hidden_dims: List[int],
         n_actions: int,
-        lr: float,
-        noise_sigma: float = 0.1,
+        init_lr: float,
+        max_grad_norm: float,
+        lr_decay: Optional[float] = None,
+        lr_reset: bool = False,
+        dropout_p: Optional[float] = None,
+        noise_std: float = 0.1,
     ):
         super(BayesianNNBanditModel, self).__init__()
         self.context_dim = context_dim
         self.hidden_dims = hidden_dims
         self.n_actions = n_actions
-        self.noise_sigma = noise_sigma
+        self.noise_std = noise_std
         t_hidden_dims = [context_dim, *hidden_dims, n_actions]
         self.layers = nn.ModuleList([])
         for i in range(len(t_hidden_dims) - 1):
             self.layers.append(BayesianLinear(t_hidden_dims[i], t_hidden_dims[i + 1]))
-        self.optimizer = torch.optim.Adam(self.layers.parameters(), lr=lr)
+        self.optimizer = torch.optim.Adam(self.layers.parameters(), lr=init_lr)
+        self.init_lr = init_lr
+        self.lr_decay = lr_decay
+        if self.lr_decay is not None:
+            self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+                self.optimizer, lambda i: 1 / (1 + self.lr_decay * i)
+            )
+        self.lr_reset = lr_reset
+        self.dropout_p = dropout_p
+        if self.dropout_p is not None:
+            self.use_dropout = True
+        self.max_grad_norm = max_grad_norm
 
     def forward(
         self, context: torch.Tensor, kl: bool = True
     ) -> Tuple[torch.Tensor, torch.Tensor, Optional[torch.Tensor]]:
+        """Computes forward pass through the network.
+
+        Args:
+            context (torch.Tensor): The context vector to perform forward pass on.
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: Tuple with the output
+                of the second to last layer of the network, the final output of the
+                network and the value of accumulated kl divergence.
+        """
         kl_val = 0.0
         x = context
         for layer in self.layers[:-1]:
             x, kl_v = layer(x)
             x = F.relu(x)
+            if self.dropout_p is not None and self.use_dropout is True:
+                x = F.dropout(x, p=self.dropout_p)
             if kl:
                 kl_val += kl_v
         pred_rewards, kl_v = self.layers[-1](x)
@@ -185,7 +366,23 @@ class BayesianNNBanditModel(nn.Module):
         return x, pred_rewards, kl_val
 
     def train_model(self, db: TransitionDB, epochs: int, batch_size: int):
-        for e in range(epochs):
+        """Trains the network on a given database for given epochs and batch_size.
+
+        Args:
+            db (TransitionDB): The database of transitions to train on.
+            epochs (int): Number of gradient steps to take.
+            batch_size (int): The size of each batch to perform gradient descent on.
+        """
+        if self.dropout_p is not None:
+            self.use_dropout = True
+
+        if self.lr_decay is not None and self.lr_reset is True:
+            for o in self.optimizer.param_groups:
+                o["lr"] = self.init_lr
+                self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+                    self.optimizer, lambda i: 1 / (1 + self.lr_decay * i)
+                )
+        for _ in range(epochs):
             x, a, y = db.get_data(batch_size)
             reward_vec = torch.zeros(
                 size=(y.shape[0], self.n_actions), device=device, dtype=dtype
@@ -195,7 +392,7 @@ class BayesianNNBanditModel(nn.Module):
             action_mask = F.one_hot(a, num_classes=self.n_actions)
 
             log_likelihood = torch.distributions.Normal(
-                rewards_pred, self.noise_sigma
+                rewards_pred, self.noise_std
             ).log_prob(reward_vec)
 
             loss = torch.sum(action_mask * log_likelihood) / batch_size - (
@@ -205,3 +402,5 @@ class BayesianNNBanditModel(nn.Module):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            if self.lr_decay is not None:
+                self.lr_scheduler.step()

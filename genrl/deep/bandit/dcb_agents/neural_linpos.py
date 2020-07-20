@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import torch
 from scipy.stats import invgamma
@@ -12,16 +12,48 @@ dtype = torch.float
 
 
 class NeuralLinearPosteriorAgent(DCBAgent):
+    """Deep contextual bandit agent using bayesian regression on for posterior inference
+
+    A neural network is used to transform context vector to a latent represntation on
+    which bayesian regression is performed.
+
+    Args:
+        bandit (DataBasedBandit): The bandit to solve
+        init_pulls (int, optional): Number of times to select each action initially.
+            Defaults to 3.
+        hidden_dims (List[int], optional): Dimensions of hidden layers of network.
+            Defaults to [50, 50].
+        init_lr (float, optional): Initial learning rate. Defaults to 0.1.
+        lr_decay (float, optional): Decay rate for learning rate. Defaults to 0.5.
+        lr_reset (bool, optional): Whether to reset learning rate ever train interval.
+            Defaults to True.
+        max_grad_norm (float, optional): Maximum norm of gradients for gradient clipping.
+            Defaults to 0.5.
+        dropout_p (Optional[float], optional): Probability for dropout. Defaults to None
+            which implies dropout is not to be used.
+        eval_with_dropout (bool, optional): Whether or not to use dropout at inference.
+            Defaults to False.
+        nn_update_ratio (int, optional): . Defaults to 2.
+        lambda_prior (float, optional): Guassian prior for linear model. Defaults to 0.25.
+        a0 (float, optional): Inverse gamma prior for noise. Defaults to 3.0.
+        b0 (float, optional): Inverse gamma prior for noise. Defaults to 3.0.
+    """
+
     def __init__(
         self,
         bandit: DataBasedBandit,
-        init_pulls: int = 2,
+        init_pulls: int = 3,
+        hidden_dims: List[int] = [50, 50],
+        init_lr: float = 0.1,
+        lr_decay: float = 0.5,
+        lr_reset: bool = True,
+        max_grad_norm: float = 0.5,
+        dropout_p: Optional[float] = None,
+        eval_with_dropout: bool = False,
+        nn_update_ratio: int = 2,
         lambda_prior: float = 0.25,
-        a0: float = 6.0,
-        b0: float = 6.0,
-        hidden_dims: List[int] = [128],
-        lr: float = 1e-3,
-        nn_update_ratio: int = 1,
+        a0: float = 3.0,
+        b0: float = 3.0,
     ):
         super(NeuralLinearPosteriorAgent, self).__init__(bandit)
         self.init_pulls = init_pulls
@@ -31,8 +63,16 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         self.latent_dim = hidden_dims[-1]
         self.nn_update_ratio = nn_update_ratio
         self.model = NeuralBanditModel(
-            self.context_dim, hidden_dims, self.n_actions, lr
+            self.context_dim,
+            hidden_dims,
+            self.n_actions,
+            init_lr,
+            max_grad_norm,
+            lr_decay,
+            lr_reset,
+            dropout_p,
         )
+        self.eval_with_dropout = eval_with_dropout
         self.mu = torch.zeros(
             size=(self.n_actions, self.latent_dim + 1), device=device, dtype=dtype
         )
@@ -58,6 +98,19 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         self.update_count = 0
 
     def select_action(self, context: torch.Tensor) -> int:
+        """Select an action based on given context.
+
+        Selects an action by computing a forward pass through network to output
+        a representation of the context on which bayesian linear regression is
+        performed to select an action.
+
+        Args:
+            context (torch.Tensor): The context vector to select action for.
+
+        Returns:
+            int: The action to take.
+        """
+        self.model.use_dropout = self.eval_with_dropout
         self.t += 1
         if self.t < self.n_actions * self.init_pulls:
             return torch.tensor(self.t % self.n_actions, device=device, dtype=torch.int)
@@ -100,18 +153,32 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         return action
 
     def update_db(self, context: torch.Tensor, action: int, reward: int):
+        """Updates transition database with given transition
+
+        Updates latent context and predicted rewards seperately.
+
+        Args:
+            context (torch.Tensor): Context recieved
+            action (int): Action taken
+            reward (int): Reward recieved
+        """
         self.db.add(context, action, reward)
         latent_context, _ = self.model(context)
         self.latent_db.add(latent_context, action, reward)
 
     def update_params(
-        self,
-        context: torch.Tensor,
-        action: int,
-        reward: int,
-        batch_size: int = 512,
-        train_epochs: int = 20,
+        self, action: int, batch_size: int = 512, train_epochs: int = 20,
     ):
+        """Update parameters of the agent.
+
+        Trains neural network and updates bayesian regression parameters.
+
+        Args:
+            batch_size (int): Size of batch to update parameters with.
+            train_epochs (int): Epochs to train neural network for.
+            action (Optional[int], optional): Action to update the parameters for.
+                Defaults to None.
+        """
         self.update_count += 1
 
         if self.update_count % self.nn_update_ratio == 0:

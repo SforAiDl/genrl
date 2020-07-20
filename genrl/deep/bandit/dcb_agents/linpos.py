@@ -10,10 +10,21 @@ dtype = torch.float
 
 
 class LinearPosteriorAgent(DCBAgent):
+    """Deep contextual bandit agent using bayesian regression for posterior inference.
+
+    Args:
+        bandit (DataBasedBandit): The bandit to solve
+        init_pulls (int, optional): Number of times to select each action initially.
+            Defaults to 3.
+        lambda_prior (float, optional): Guassian prior for linear model. Defaults to 0.25.
+        a0 (float, optional): Inverse gamma prior for noise. Defaults to 6.0.
+        b0 (float, optional): Inverse gamma prior for noise. Defaults to 6.0.
+    """
+
     def __init__(
         self,
         bandit: DataBasedBandit,
-        init_pulls: int = 2,
+        init_pulls: int = 3,
         lambda_prior: float = 0.25,
         a0: float = 6.0,
         b0: float = 6.0,
@@ -48,6 +59,17 @@ class LinearPosteriorAgent(DCBAgent):
         self.update_count = 0
 
     def select_action(self, context: torch.Tensor) -> int:
+        """Select an action based on given context.
+
+        Selecting action with highest predicted reward computed through
+        betas sampled from posterior.
+
+        Args:
+            context (torch.Tensor): The context vector to select action for.
+
+        Returns:
+            int: The action to take.
+        """
         self.t += 1
         if self.t < self.n_actions * self.init_pulls:
             return torch.tensor(self.t % self.n_actions, device=device, dtype=torch.int)
@@ -89,16 +111,28 @@ class LinearPosteriorAgent(DCBAgent):
         return action
 
     def update_db(self, context: torch.Tensor, action: int, reward: int):
+        """Updates transition database with given transition
+
+        Args:
+            context (torch.Tensor): Context recieved
+            action (int): Action taken
+            reward (int): Reward recieved
+        """
         self.db.add(context, action, reward)
 
     def update_params(
-        self,
-        context: torch.Tensor,
-        action: int,
-        reward: int,
-        batch_size: int = 512,
-        train_epochs: int = 20,
+        self, action: int, batch_size: int = 512, train_epochs: int = 20,
     ):
+        """Update parameters of the agent.
+
+        Updated the posterior over beta though bayesian regression.
+
+        Args:
+            batch_size (int): Size of batch to update parameters with.
+            train_epochs (int): Epochs to train neural network for.
+            action (Optional[int], optional): Action to update the parameters for.
+                Defaults to None.
+        """
         self.update_count += 1
 
         x, y = self.db.get_data_for_action(action)
