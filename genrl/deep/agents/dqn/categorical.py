@@ -1,7 +1,5 @@
 from copy import deepcopy
-from typing import Tuple, Union
 
-import gym
 import numpy as np
 import torch
 from torch import optim as opt
@@ -17,15 +15,15 @@ class CategoricalDQN(BaseDQN):
         *args,
         noisy_layers: Tuple = (32, 128),
         num_atoms: int = 51,
-        Vmin: int = -10,
-        Vmax: int = 10,
+        v_min: int = -10,
+        v_max: int = 10,
         **kwargs
     ):
         super(CategoricalDQN, self).__init__(*args, **kwargs)
         self.noisy_layers = noisy_layers
         self.num_atoms = num_atoms
-        self.Vmin = Vmin
-        self.Vmax = Vmax
+        self.v_min = v_min
+        self.v_max = v_max
 
         self.empty_logs()
         self.create_model()
@@ -51,7 +49,7 @@ class CategoricalDQN(BaseDQN):
 
         state = torch.FloatTensor(state)
         dist = self.model(state).data.cpu()
-        dist = dist * torch.linspace(self.Vmin, self.Vmax, self.num_atoms)
+        dist = dist * torch.linspace(self.v_min, self.v_max, self.num_atoms)
         action = dist.sum(2).max(1)[1].numpy()
         return action
 
@@ -67,7 +65,7 @@ class CategoricalDQN(BaseDQN):
         dones = dones.unsqueeze(-1)
 
         projection_distribution = get_projection_distribution(
-            self, next_states, rewards, dones
+            next_states, rewards, dones, self.num_atoms, self.v_min, self.v_max
         )
         dist = self.model(states)
         actions = actions.unsqueeze(1).expand(-1, 1, self.num_atoms)

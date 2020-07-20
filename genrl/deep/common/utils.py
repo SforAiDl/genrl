@@ -1,5 +1,5 @@
 import random
-from typing import Any, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import gym
 import numpy as np

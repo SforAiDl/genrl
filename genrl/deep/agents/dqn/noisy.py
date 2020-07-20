@@ -1,18 +1,9 @@
 from copy import deepcopy
-from typing import Tuple, Union
 
-import gym
-import torch
 from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import BaseDQN
-from genrl.deep.common import (
-    PrioritizedBuffer,
-    PushReplayBuffer,
-    get_env_properties,
-    get_model,
-)
-from genrl.environments import VecEnv
+from genrl.deep.common import get_env_properties, get_model
 
 
 class NoisyDQN(BaseDQN):

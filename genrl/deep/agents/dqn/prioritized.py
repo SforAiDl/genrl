@@ -1,13 +1,9 @@
 from copy import deepcopy
-from typing import Tuple, Union
 
-import gym
 import torch
 from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import BaseDQN
-from genrl.deep.common import PrioritizedBuffer, get_env_properties, get_model
-from genrl.environments import VecEnv
 
 
 class PrioritizedReplayDQN(BaseDQN):

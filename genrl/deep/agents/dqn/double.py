@@ -1,6 +1,3 @@
-from typing import Tuple, Union
-
-import gym
 import torch
 
 from genrl.deep.agents.dqn.base import BaseDQN

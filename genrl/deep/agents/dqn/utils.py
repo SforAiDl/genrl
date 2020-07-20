@@ -3,7 +3,6 @@ from typing import List
 import numpy as np
 import torch
 from torch import nn as nn
-from torch.nn import functional as F
 
 from genrl.deep.agents.dqn.base import BaseDQN
 
@@ -28,12 +27,17 @@ def ddqn_q_target(
 
 
 def get_projection_distribution(
-    agent, next_state: np.ndarray, rewards: List[float], dones: List[bool]
+    next_state: np.ndarray,
+    rewards: List[float],
+    dones: List[bool],
+    num_atoms: int,
+    v_min: int,
+    v_max: int,
 ):
     batch_size = next_state.size(0)
 
-    delta_z = float(agent.Vmax - agent.Vmin) / (agent.num_atoms - 1)
-    support = torch.linspace(agent.Vmin, agent.Vmax, agent.num_atoms)
+    delta_z = float(v_max - v_min) / (num_atoms - 1)
+    support = torch.linspace(v_min, v_max, num_atoms)
 
     next_dist = agent.target_model(next_state).data.cpu() * support
     next_action = next_dist.sum(2).max(1)[1]
@@ -49,16 +53,16 @@ def get_projection_distribution(
     support = support.unsqueeze(0).expand_as(next_dist)
 
     tz = rewards + (1 - dones) * 0.99 * support
-    tz = tz.clamp(min=agent.Vmin, max=agent.Vmax)
-    bz = (tz - agent.Vmin) / delta_z
+    tz = tz.clamp(min=v_min, max=v_max)
+    bz = (tz - v_min) / delta_z
     lower = bz.floor().long()
     upper = bz.ceil().long()
 
     offset = (
-        torch.linspace(0, (batch_size - 1) * agent.num_atoms, batch_size)
+        torch.linspace(0, (batch_size - 1) * num_atoms, batch_size)
         .long()
         .unsqueeze(1)
-        .expand(-1, agent.num_atoms)
+        .expand(-1, num_atoms)
     )
 
     projection_distribution = torch.zeros(next_dist.size())
@@ -112,7 +116,7 @@ class NoisyLinear(nn.Module):
         else:
             weight = self.weight_mu
             bias = self.bias_mu
-        return F.linear(state, weight, bias)
+        return nn.functional.linear(state, weight, bias)
 
     def reset_parameters(self) -> None:
         mu_range = 1 / np.sqrt(self.weight_mu.size(1))

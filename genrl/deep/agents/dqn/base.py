@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import gym
 import numpy as np
@@ -8,26 +8,15 @@ from torch import optim as opt
 from torch.nn import functional as F
 
 from genrl.deep.agents.base import BaseAgent
-from genrl.deep.common import (
-    PrioritizedBuffer,
-    PushReplayBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-    set_seeds,
-)
+from genrl.deep.common.buffers import PrioritizedBuffer, PushReplayBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 from genrl.environments import VecEnv
 
 
 class BaseDQN(BaseAgent):
     def __init__(
         self,
-        network_type: str,
-        env: Union[gym.Env, VecEnv],
-        batch_size: int = 32,
-        gamma: float = 0.99,
-        layers: Tuple = (32, 32),
-        lr: float = 0.001,
+        *args,
         replay_size: int = 100,
         buffer_type: str = "push",
         max_epsilon: float = 1.0,

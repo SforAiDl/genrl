@@ -7,8 +7,9 @@ import torch
 from torch import optim as opt
 from torch.nn import functional as F
 
-from ....environments import VecEnv
-from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
+from genrl.deep.common.buffers import ReplayBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
+from genrl.environments import VecEnv
 
 
 class DDPG:
