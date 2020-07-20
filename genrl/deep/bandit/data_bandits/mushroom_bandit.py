@@ -13,6 +13,36 @@ dtype = torch.float
 
 
 class MushroomDataBandit(DataBasedBandit):
+    """A contextual bandit based on the Mushroom dataset.
+
+    Source:
+        https://archive.ics.uci.edu/ml/datasets/Mushroom
+
+    Args:
+        path (str, optional): Path to the data. Defaults to "./data/Magic/".
+        download (bool, optional): Whether to download the data. Defaults to False.
+        force_download (bool, optional): Whether to force download even if file exists.
+            Defaults to False.
+        url (Union[str, None], optional): URL to download data from. Defaults to None
+            which implies use of source URL.
+        r_pass (int): Reward generated for passing. Defaults to 0
+        r_edible (int): Reward generated for eating an edible mushroom. Defaults to 5
+        r_poisonous_lucky (int): Reward generated for eating a poisonous mushroom
+            and getting lucky. Defaults to 5
+        r_poisonous_unlucky (int): Reward generated for eating a poisonous mushroom
+            and getting unlucky. Defaults to -35
+        lucky_prob (float): Probability with which you can get lucky when eating a
+            poisonous mushroom. Defaults to 0.5
+
+    Attributes:
+        n_actions (int): Number of actions available.
+        context_dim (int): The length of context vector.
+        len (int): The number of examples (context, reward pairs) in the dataset.
+
+    Raises:
+        FileNotFoundError: If file is not found at specified path.
+    """
+
     def __init__(
         self,
         path: str = "./data/Mushroom/",
@@ -60,6 +90,11 @@ class MushroomDataBandit(DataBasedBandit):
         self.len = len(self.df)
 
     def reset(self) -> torch.Tensor:
+        """Reset bandit by shuffling indices and get new context.
+
+        Returns:
+            torch.Tensor: Current context selected by bandit.
+        """
         self._reset()
         self.df = self.df.sample(frac=1).reset_index(drop=True)
         poison_rewards = np.random.choice(
@@ -82,6 +117,14 @@ class MushroomDataBandit(DataBasedBandit):
         return self._get_context()
 
     def _compute_reward(self, action: int) -> Tuple[int, int]:
+        """Compute the reward for a given action.
+
+        Args:
+            action (int): The action to compute reward for.
+
+        Returns:
+            Tuple[int, int]: Computed reward.
+        """
         if action == 0:
             r = self.r_pass
         elif action == 1:
@@ -91,6 +134,11 @@ class MushroomDataBandit(DataBasedBandit):
         return r, self.optimal_exp_rewards[self.idx]
 
     def _get_context(self) -> torch.Tensor:
+        """Get the vector for current selected context.
+
+        Returns:
+            torch.Tensor: Current context vector.
+        """
         return torch.tensor(
             self.df.iloc[self.idx, self.n_actions :], device=device, dtype=dtype
         )

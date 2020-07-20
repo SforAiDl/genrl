@@ -12,8 +12,26 @@ dtype = torch.float
 
 
 class MagicDataBandit(DataBasedBandit):
-    """
-    https://archive.ics.uci.edu/ml/datasets/magic+gamma+telescope
+    """A contextual bandit based on the MAGIC Gamma Telescope dataset.
+
+    Source:
+        https://archive.ics.uci.edu/ml/datasets/magic+gamma+telescope
+
+    Args:
+        path (str, optional): Path to the data. Defaults to "./data/Magic/".
+        download (bool, optional): Whether to download the data. Defaults to False.
+        force_download (bool, optional): Whether to force download even if file exists.
+            Defaults to False.
+        url (Union[str, None], optional): URL to download data from. Defaults to None
+            which implies use of source URL.
+
+    Attributes:
+        n_actions (int): Number of actions available.
+        context_dim (int): The length of context vector.
+        len (int): The number of examples (context, reward pairs) in the dataset.
+
+    Raises:
+        FileNotFoundError: If file is not found at specified path.
     """
 
     def __init__(
@@ -50,16 +68,34 @@ class MagicDataBandit(DataBasedBandit):
         self.len = len(self.df)
 
     def reset(self) -> torch.Tensor:
+        """Reset bandit by shuffling indices and get new context.
+
+        Returns:
+            torch.Tensor: Current context selected by bandit.
+        """
         self._reset()
         self.df = self.df.sample(frac=1).reset_index(drop=True)
         return self._get_context()
 
     def _compute_reward(self, action: int) -> Tuple[int, int]:
+        """Compute the reward for a given action.
+
+        Args:
+            action (int): The action to compute reward for.
+
+        Returns:
+            Tuple[int, int]: Computed reward.
+        """
         label = self.df.iloc[self.idx, self.context_dim]
         r = int(label == (action + 1))
         return r, 1
 
     def _get_context(self) -> torch.Tensor:
+        """Get the vector for current selected context.
+
+        Returns:
+            torch.Tensor: Current context vector.
+        """
         return torch.tensor(
             self.df.iloc[self.idx, : self.context_dim], device=device, dtype=dtype
         )
