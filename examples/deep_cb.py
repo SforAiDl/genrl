@@ -5,6 +5,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import genrl
+from genrl.deep.common.trainer import BanditTrainer, Trainer
 
 ALGOS = {
     "bootstrap": genrl.BootstrapNeuralAgent,
@@ -43,6 +44,8 @@ def run(args, agent, bandit, plot=True):
         train_epochs=args.train_epochs,
         log_every=args.log_every,
         ignore_init=args.ignore_init,
+        init_train_epochs=args.init_train_epochs,
+        train_epochs_decay_steps=args.train_epochs_decay_steps,
     )
 
     if plot:
@@ -88,8 +91,168 @@ def plot_multi_runs(args, multi_results, title):
     fig.savefig(Path(args.logdir).joinpath(f"{title}.png"))
 
 
-def main():
+def main(args):
+    if args.algo.lower() == "all" and args.bandit.lower() != "all":
+        bandit_class = BANDITS[args.bandit.lower()]
+        bandit = bandit_class()
+        multi_results = {}
+        for name, algo in ALGOS.items():
+            agent = algo(bandit)
+            multi_results[name] = run(args, agent, bandit)
+        plot_multi_runs(args, multi_results, title=f"DCBs-on-{bandit_class.__name__}")
+
+    elif args.algo.lower() != "all" and args.bandit.lower() == "all":
+        algo = ALGOS[args.algo.lower()]
+        multi_results = {}
+        for name, bandit_class in BANDITS.items():
+            bandit = bandit_class()
+            agent = algo(bandit)
+            multi_results[name] = run(args, agent, bandit)
+        plot_multi_runs(args, multi_results, title=f"{algo.__name__}-Performance")
+
+    elif args.algo.lower() == "all" and args.bandit.lower() == "all":
+        raise ValueError("all argument cannot be used for both bandit and algorithm")
+
+    else:
+        algo = ALGOS[args.algo.lower()]
+        bandit_class = BANDITS[args.bandit.lower()]
+        bandit = bandit_class()
+        agent = algo(bandit)
+        run(args, agent, bandit)
+
+
+def run_experiment(args):
+    start_time = datetime.now
+    print(f"\nStarting experiment at {start_time():%d-%m-%y %H:%M:%S}\n")
+    results = {}
+
+    bandit_class = BANDITS[args.bandit.lower()]
+    bandit = bandit_class()
+
+    bootstrap = genrl.BootstrapNeuralAgent(bandit=bandit)
+    logdir = Path(args.logdir).joinpath(
+        f"{bootstrap.__class__.__name__}-on-{bandit.__class__.__name__}-{start_time():%d%m%y%H%M%S}"
+    )
+    bootstrap_trainer = BanditTrainer(
+        bootstrap, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
+    )
+    results["bootstrap"] = bootstrap_trainer.train(
+        timesteps=args.timesteps,
+        update_interval=50,
+        update_after=args.update_after,
+        batch_size=args.batch_size,
+        train_epochs=100,
+        log_every=args.log_every,
+        ignore_init=args.ignore_init,
+        init_train_epochs=None,
+        train_epochs_decay_steps=None,
+    )
+
+    fixed = genrl.FixedAgent(bandit)
+    logdir = Path(args.logdir).joinpath(
+        f"{fixed.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
+    )
+    fixed_trainer = BanditTrainer(
+        fixed, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
+    )
+    results["fixed"] = fixed_trainer.train(
+        timesteps=args.timesteps,
+        update_interval=1,
+        update_after=0,
+        batch_size=1,
+        train_epochs=1,
+        log_every=args.log_every,
+        ignore_init=args.ignore_init,
+        init_train_epochs=None,
+        train_epochs_decay_steps=None,
+    )
+
+    linpos = genrl.LinearPosteriorAgent(bandit)
+    logdir = Path(args.logdir).joinpath(
+        f"{linpos.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
+    )
+    linpos_trainer = BanditTrainer(
+        linpos, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
+    )
+    results["linpos"] = linpos_trainer.train(
+        timesteps=args.timesteps,
+        update_interval=1,
+        update_after=args.update_after,
+        log_every=args.log_every,
+        ignore_init=args.ignore_init,
+    )
+
+    neural_linpos = genrl.NeuralLinearPosteriorAgent(bandit)
+    logdir = Path(args.logdir).joinpath(
+        f"{neural_linpos.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
+    )
+    neural_linpos_trainer = BanditTrainer(
+        neural_linpos, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
+    )
+    results["neural-linpos"] = neural_linpos_trainer.train(
+        timesteps=args.timesteps,
+        update_interval=50,
+        update_after=args.update_after,
+        batch_size=args.batch_size,
+        train_epochs=100,
+        log_every=args.log_every,
+        ignore_init=args.ignore_init,
+        init_train_epochs=None,
+        train_epochs_decay_steps=None,
+    )
+
+    neural_noise = genrl.NeuralNoiseSamplingAgent(bandit)
+    logdir = Path(args.logdir).joinpath(
+        f"{neural_noise.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
+    )
+    neural_noise_trainer = BanditTrainer(
+        neural_noise, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
+    )
+    results["neural-noise"] = neural_noise_trainer.train(
+        timesteps=args.timesteps,
+        update_interval=50,
+        update_after=args.update_after,
+        batch_size=args.batch_size,
+        train_epochs=100,
+        log_every=args.log_every,
+        ignore_init=args.ignore_init,
+        init_train_epochs=None,
+        train_epochs_decay_steps=None,
+    )
+
+    variational = genrl.VariationalAgent(bandit)
+    logdir = Path(args.logdir).joinpath(
+        f"{variational.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
+    )
+    variational_trainer = BanditTrainer(
+        variational, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
+    )
+    results["variational"] = variational_trainer.train(
+        timesteps=args.timesteps,
+        update_interval=50,
+        update_after=args.update_after,
+        batch_size=args.batch_size,
+        train_epochs=100,
+        log_every=args.log_every,
+        ignore_init=args.ignore_init,
+        init_train_epochs=10000,
+        train_epochs_decay_steps=100,
+    )
+
+    plot_multi_runs(args, results, title="Exprimental Results")
+    print(f"\nCompleted experiment at {(datetime.now() - start_time).seconds}\n")
+
+
+if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(description="Train Deep Contextual Bandits")
+
+    parser.add_argument(
+        "--run-experiment",
+        help="Run pre written experiment with all algos",
+        action="store_true",
+    )
+
     parser.add_argument(
         "-a",
         "--algo",
@@ -121,7 +284,7 @@ def main():
         "--train-epochs", help="Epochs to train for each update", default=20, type=int,
     )
     parser.add_argument(
-        "--log-every", help="Timesteps interval for logging", default=1, type=int,
+        "--log-every", help="Timesteps interval for logging", default=100, type=int,
     )
     parser.add_argument(
         "--logdir", help="Directory to store logs in", default="./logs/", type=str,
@@ -129,37 +292,22 @@ def main():
     parser.add_argument(
         "--ignore-init", help="Initial no. of step to ignore", default=10, type=int,
     )
+    parser.add_argument(
+        "--init-train-epochs",
+        help="Initial no. of step to ignore",
+        default=None,
+        type=int,
+    )
+    parser.add_argument(
+        "--train-epochs-decay-steps",
+        help="Initial no. of step to ignore",
+        default=None,
+        type=int,
+    )
 
     args = parser.parse_args()
 
-    if args.algo.lower() == "all" and args.bandit.lower() != "all":
-        bandit_class = BANDITS[args.bandit.lower()]
-        bandit = bandit_class()
-        multi_results = {}
-        for name, algo in ALGOS.items():
-            agent = algo(bandit)
-            multi_results[name] = run(args, agent, bandit)
-        plot_multi_runs(args, multi_results, title=f"DCBs-on-{bandit_class.__name__}")
-
-    elif args.algo.lower() != "all" and args.bandit.lower() == "all":
-        algo = ALGOS[args.algo.lower()]
-        multi_results = {}
-        for name, bandit_class in BANDITS.items():
-            bandit = bandit_class()
-            agent = algo(bandit)
-            multi_results[name] = run(args, agent, bandit)
-        plot_multi_runs(args, multi_results, title=f"{algo.__name__}-Performance")
-
-    elif args.algo.lower() == "all" and args.bandit.lower() == "all":
-        raise ValueError("all argument cannot be used for both bandit and algorithm")
-
+    if args.run_experiment:
+        run_experiment(args)
     else:
-        algo = ALGOS[args.algo.lower()]
-        bandit_class = BANDITS[args.bandit.lower()]
-        bandit = bandit_class()
-        agent = algo(bandit)
-        run(args, agent, bandit)
-
-
-if __name__ == "__main__":
-    main()
+        main(args)
