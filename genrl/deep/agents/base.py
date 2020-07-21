@@ -116,7 +116,7 @@ class OnPolicyAgent(BaseAgent):
         return values, dones
 
 
-def OffPolicyAgent(BaseAgent):
+class OffPolicyAgent(BaseAgent):
     def __init__(self, *args, replay_size=1e6, buffer_type="push", **kwargs):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size
