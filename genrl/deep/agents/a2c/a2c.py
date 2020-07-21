@@ -17,42 +17,21 @@ class A2C(OnPolicyAgent):
     The synchronous version of A3C
     Paper: https://arxiv.org/abs/1602.01783
 
-    :param network_type: The deep neural network layer types ['mlp']
-    :param env: The environment to learn from
-    :param gamma: Discount factor
-    :param actor_batch_size: Update batch size
-    :param lr_actor: Policy Network learning rate
-    :param lr_critic: Value Network learning rate
-    :param num_episodes: Number of episodes
-    :param timesteps_per_actorbatch: Number of timesteps per epoch
-    :param max_ep_len: Maximum timesteps in an episode
-    :param layers: Number of neurons in hidden layers
-    :param noise: Noise function to use
-    :param noise_std: Standard deviation for action noise
-    :param seed: Seed for reproducing results
-    :param render: True if environment is to be rendered, else False
-    :param device: Device to use for Tensor operation ['cpu', 'cuda']
-    :param rollout_size: Rollout Buffer Size
-    :param val_coeff: Coefficient of value loss in overall loss function
-    :param entropy_coeff: Coefficient of entropy loss in overall loss function
-    :type network_type: string
-    :type env: Gym Environment
-    :type gamma: float
-    :type actor_batch_size: int
-    :type lr_a: float
-    :type lr_c: float
-    :type num_episodes: int
-    :type timesteps_per_actorbatch: int
-    :type max_ep_len: int
-    :type layers: tuple or list
-    :type noise: function
-    :type noise_std: float
-    :type seed: int
-    :type render: boolean
-    :type device: string
-    :type rollout_size: int
-    :type val_coeff: float
-    :type entropy_coeff: float
+    Attributes:
+        network_type (str): model architecture type ['mlp','cnn']
+        env (gym.Env or VectorEnv): environment for agent to interact with
+        batch_size (int): number of transitions per batch
+        gamma (float): discount factor
+        lr_policy (float): policy optimizer learning rate
+        lr_value (float): value function optimizer learning rate
+        epochs (int): number of training episodes
+        max_ep_len (int): maximum episode length
+        layers (tuple(int)): number of hidden units in layers of network
+        noise (Any): noise type
+        noise_std (float): standard deviation for action noise
+        rollout_size (int): size of rollout buffer
+        value_coeff (float): coefficient of value function loss in loss function
+        entropy_coeff (float): coefficient of entropy loss in loss function
     """
 
     def __init__(
@@ -95,8 +74,7 @@ class A2C(OnPolicyAgent):
         self.create_model()
 
     def create_model(self) -> None:
-        """
-        Creates actor critic model and initialises optimizers
+        """create actor critic model and initialize optimizers
         """
         input_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network_type
@@ -119,15 +97,16 @@ class A2C(OnPolicyAgent):
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
-        """
-        Selection of action
+        """select action using policy, given state
 
-        :param state: Observation state
-        :param deterministic: Action selection type
-        :type state: int, float, ...
-        :type deterministic: bool
-        :returns: Action based on the state and epsilon value
-        :rtype: int, float, ...
+        Args:
+            state (np.ndarray): environment state
+            deterministic (bool): True if deterministic policy. False if stochastic
+
+        Returns:
+            np.ndarray: action
+            np.ndarray: value of state
+            np.ndarray: categorical log probability of chosen action
         """
         state = torch.as_tensor(state).float().to(self.device)
 
@@ -137,20 +116,36 @@ class A2C(OnPolicyAgent):
 
         return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
 
-    def get_traj_loss(self, values, dones) -> None:
-        """
-        (Get trajectory of agent to calculate discounted rewards and
-calculate losses)
+    def get_traj_loss(self, value, done) -> None:
+        """calculate discounted rewards and losses over single trajectory
+
+        Args:
+            value (np.ndarray): values of states in trajectory
+            done (list(bool)): If each state in trajectory is a terminal state or not. True if terminal.
+                False if not.
         """
         self.rollout.compute_returns_and_advantage(values.detach().cpu().numpy(), dones)
 
     def get_value_log_probs(self, state, action):
-        state, action = state.to(self.device), action.to(self.device)
-        _, dist = self.ac.get_action(state, deterministic=False)
-        value = self.ac.get_value(state)
-        return value, dist.log_prob(action).cpu()
+        """calculate value of state and log probability of action
+
+        Args:
+            state (np.ndarray): environment state
+            action (np.ndarray): agent's action
+
+        Returns:
+            np.ndarray: value of state
+            np.ndarray: log probability of taking action at state according to policy
+        """
+
+        a, c = self.ac.get_action(state, deterministic=False)
+        val = self.ac.get_value(state)
+        return val, c.log_prob(action)
 
     def update_policy(self) -> None:
+        """update parameters of actor and critic networks
+        """
+
         for rollout in self.rollout.get(self.batch_size):
             actions = rollout.actions
 
@@ -182,11 +177,10 @@ calculate losses)
             self.optimizer_value.step()
 
     def get_hyperparams(self) -> Dict[str, Any]:
-        """
-        Loads important hyperparameters that need to be loaded or saved
+        """Returns important hyperparameters that need to be loaded or saved
 
-        :returns: Hyperparameters that need to be saved or loaded
-        :rtype: dict
+        Returns:
+            dict: hyperparameters that need to be loaded or saved
         """
         hyperparams = {
             "network_type": self.network_type,
@@ -209,9 +203,10 @@ calculate losses)
         self.ac.critic.load_state_dict(weights["value_weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
-        """
-        :returns: Logging parameters for monitoring training
-        :rtype: dict
+        """Returns logging parameters for monitoring training
+
+        Returns:
+            dict: Logging parameters for monitoring training
         """
 
         logs = {
@@ -225,8 +220,7 @@ calculate losses)
         return logs
 
     def empty_logs(self):
-        """
-        Empties logs
+        """Empties log dictionaries for policy loss, value loss and entropy
         """
 
         self.logs = {}
