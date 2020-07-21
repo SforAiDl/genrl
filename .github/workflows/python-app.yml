@@ -11,14 +11,18 @@ jobs:
 #    container:
 #      image: genrl/ubuntu-build:latest
     runs-on: ubuntu-latest
-    name: Lint, Build and Code Coverage
+    strategy:
+      matrix:
+        python-version: [ '3.6','3.7','3.8' ]
     
+    name: Lint, Build and Code Coverage for Python ${{ matrix.python-version }}
+       
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.6
         uses: actions/setup-python@v2
         with:
-          python-version: 3.6
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
         run: |
