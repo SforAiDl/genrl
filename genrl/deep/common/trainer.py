@@ -19,6 +19,7 @@ class Trainer(ABC):
     :param agent: Algorithm object
     :param env: Environment
     :param logger: Logger object
+    :param log_key: Key plotted on x_axis
     :param buffer: Buffer Object
     :param off_policy: Is the algorithm off-policy?
     :param save_interval: Model to save in each of these many timesteps
@@ -36,6 +37,7 @@ False (To be implemented))
     :type agent: object
     :type env: object
     :type logger: object
+    :type log_key: str
     :type buffer: object
     :type off_policy: bool
     :type save_interval: int
@@ -56,6 +58,7 @@ False (To be implemented))
         agent: Any,
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
+        log_key: str = "timestep",
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = False,
         save_interval: int = 0,
@@ -78,6 +81,7 @@ False (To be implemented))
         self.agent = agent
         self.env = env
         self.log_mode = log_mode
+        self.log_key = log_key
         self.logdir = logdir
         self.off_policy = off_policy
         if self.off_policy and buffer is None:
@@ -216,6 +220,7 @@ class OffPolicyTrainer(Trainer):
     :param agent: Algorithm object
     :param env: Environment
     :param logger: Logger object
+    :param log_key: Key plotted on x_axis
     :param buffer: Buffer Object. Cannot be None for Off-policy
     :param off_policy: Is the algorithm off-policy?
     :param save_interval: Model to save in each of these many timesteps
@@ -238,6 +243,7 @@ many steps)
     :type agent: object
     :type env: object
     :type logger: object
+    :type log_key: str
     :type buffer: object
     :type off_policy: bool
     :type save_interval:int
@@ -261,6 +267,7 @@ many steps)
         agent: Any,
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
+        log_key: str = "timestep",
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         off_policy: bool = True,
         save_interval: int = 0,
@@ -287,6 +294,7 @@ many steps)
             agent,
             env,
             log_mode=log_mode,
+            log_key=log_key,
             buffer=buffer,
             off_policy=off_policy,
             save_interval=save_interval,
@@ -369,7 +377,8 @@ many steps)
                             "Episode": sum(episode),
                             **self.agent.get_logging_params(),
                             "Episode Reward": safe_mean(self.rewards),
-                        }
+                        },
+                        self.log_key,
                     )
                     self.rewards = []
 
@@ -401,6 +410,7 @@ class OnPolicyTrainer(Trainer):
     :param agent: Algorithm object
     :param env: Environment
     :param logger: Logger Object
+    :param log_key: Key plotted on x_axis
     :param buffer: Buffer Object
     :param off_policy: Is the algorithm off-policy?
     :param save_interval: Model to save in each of these many timesteps
@@ -418,6 +428,7 @@ class OnPolicyTrainer(Trainer):
     :type agent: object
     :type env: object
     :type logger: object
+    :type log_key: str
     :type buffer: object
     :type off_policy: bool
     :type save_interval:int
@@ -438,6 +449,7 @@ class OnPolicyTrainer(Trainer):
         agent: Any,
         env: Union[gym.Env, VecEnv],
         log_mode: List[str] = ["stdout"],
+        log_key: str = "timestep",
         save_interval: int = 0,
         save_model: str = "checkpoints",
         run_num: int = None,
@@ -459,6 +471,7 @@ class OnPolicyTrainer(Trainer):
             agent,
             env,
             log_mode,
+            log_key=log_key,
             buffer=None,
             off_policy=False,
             save_interval=save_interval,
@@ -503,7 +516,8 @@ class OnPolicyTrainer(Trainer):
                         "Timestep": epoch * self.agent.rollout_size,
                         "Episode": epoch,
                         **self.agent.get_logging_params(),
-                    }
+                    },
+                    self.log_key,
                 )
 
             if self.render:

@@ -27,15 +27,17 @@ class Logger:
         for ft in self.formats:
             self.writers.append(get_logger_by_name(ft)(self.logdir))
 
-    def write(self, kvs: Dict[str, Any]) -> None:
+    def write(self, kvs: Dict[str, Any], log_key: str = "timestep") -> None:
         """
         Add entry to logger
 
         :param kvs: Entry to be logged
+        :param log_key: Key plotted on log_key
         :type kvs: dict
+        :type log_key: str
         """
         for writer in self.writers:
-            writer.write(kvs)
+            writer.write(kvs, log_key)
 
     def close(self) -> None:
         """
@@ -73,7 +75,7 @@ class HumanOutputFormat:
         self.lens = []
         self.maxlen = 0
 
-    def write(self, kvs: Dict[str, Any]) -> None:
+    def write(self, kvs: Dict[str, Any], log_key) -> None:
         """
         Log the entry out in human readable format
 
@@ -153,15 +155,17 @@ class TensorboardLogger:
         os.makedirs(self.logdir, exist_ok=True)
         self.writer = SummaryWriter(logdir)
 
-    def write(self, kvs: Dict[str, Any]) -> None:
+    def write(self, kvs: Dict[str, Any], log_key: str = "timestep") -> None:
         """
         Add entry to logger
 
         :param kvs: Entries to be logged
+        :param log_key: Key plotted on x_axis
         :type kvs: dict
+        :type log_key: str
         """
         for key, value in kvs.items():
-            self.writer.add_scalar(key, value, kvs["Timestep"])
+            self.writer.add_scalar(key, value, kvs[log_key])
 
     def close(self) -> None:
         """
@@ -185,7 +189,7 @@ class CSVLogger:
         self.first = True
         self.keynames = {}
 
-    def write(self, kvs: Dict[str, Any]) -> None:
+    def write(self, kvs: Dict[str, Any], log_key) -> None:
         """
         Add entry to logger
 
