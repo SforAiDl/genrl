@@ -47,7 +47,6 @@ class BaseDQN(OffPolicyAgent):
         **kwargs
     ):
         super(BaseDQN, self).__init__(*args, **kwargs)
-        self.replay_size = replay_size
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
