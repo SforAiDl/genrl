@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import Tuple
 
 import numpy as np
 import torch
@@ -37,7 +38,7 @@ class CategoricalDQN(BaseDQN):
         self.target_model = deepcopy(self.model)
 
         self.replay_buffer = self.buffer_class(self.replay_size, *args)
-        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
+        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False

@@ -76,15 +76,20 @@ def get_projection_distribution(
     return projection_distribution
 
 
-def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):
+def noisy_mlp(fc_layers: List[int], noisy_layers: List[int], activation="relu"):
     model = []
-    assert fc_layers[-1] == noisy_layers[0], "Size mismatch"
+    act = nn.Tanh if activation == "tanh" else nn.ReLU()
+
     for layer in range(len(fc_layers) - 1):
-        model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), nn.ReLU()]
+        model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), act]
+
+    model += [nn.Linear(fc_layers[-1], noisy_layers[0]), act]
+
     for layer in range(len(noisy_layers) - 1):
         model += [NoisyLinear(noisy_layers[layer], noisy_layers[layer + 1])]
         if layer < len(noisy_layers) - 2:
-            model += [nn.ReLU()]
+            model += [act]
+
     return nn.Sequential(*model)
 
 

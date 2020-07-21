@@ -1,4 +1,5 @@
 from copy import deepcopy
+from typing import Tuple
 
 from torch import optim as opt
 
@@ -7,7 +8,7 @@ from genrl.deep.common import get_env_properties, get_model
 
 
 class NoisyDQN(BaseDQN):
-    def __init__(self, *args, noisy_layers: Tuple = (32, 128), **kwargs):
+    def __init__(self, *args, noisy_layers: Tuple = (128, 128), **kwargs):
         super(NoisyDQN, self).__init__(*args, **kwargs)
         self.noisy_layers = noisy_layers
 
@@ -23,7 +24,7 @@ class NoisyDQN(BaseDQN):
         self.target_model = deepcopy(self.model)
 
         self.replay_buffer = self.buffer_class(self.replay_size, *args)
-        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr)
+        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
 
     def update_params(self, update_interval: int) -> None:
         for timestep in range(update_interval):

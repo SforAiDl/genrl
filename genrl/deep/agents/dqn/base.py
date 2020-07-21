@@ -24,16 +24,7 @@ class BaseDQN(BaseAgent):
         epsilon_decay: int = 1000,
         **kwargs,
     ):
-        super(BaseDQN, self).__init__(
-            network_type,
-            env,
-            batch_size=batch_size,
-            gamma=gamma,
-            layers=layers,
-            lr_policy=None,
-            lr_value=lr,
-            **kwargs,
-        )
+        super(BaseDQN, self).__init__(*args, **kwargs)
         self.replay_size = replay_size
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
