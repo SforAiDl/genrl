@@ -1,7 +1,6 @@
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List
 
-import gym
 import numpy as np
 import torch
 from torch import optim as opt
@@ -9,7 +8,6 @@ from torch.nn import functional as F
 
 from genrl.deep.agents.base import OffPolicyAgent
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
-from genrl.environments import VecEnv
 
 
 class BaseDQN(OffPolicyAgent):
