@@ -1,53 +1,21 @@
 language: python
 python:
-  - "3.6"      # current default Python on Travis CI
-#  - "nightly"  # nightly build
-# command to install dependencies
+  - "3.6"      
 install:
   - python setup.py install
   - pip install codecov
   - pip install pytest-cov
-# command to run tests
-script:
-  - pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
-  
-after_success:
-  - codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
 
 jobs:
   include:
-    #Run tests
-    - stage: Lint Check
-      python: "3.6"
-      install:
-        - pip install black flake8 isort==4.3.20 black
-      script:
-        - flake8 .
-        - black --check .
-        - isort -c .
-      after_success:
-        
-    - stage: test
-      python: "3.6"
-      install: 
-        - python setup.py install
-        - pip install codecov pytest-cov
-      script:
-        - pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
-      
-      after_success:
-        - codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
-
     # Deploy Documentation
     - stage: Docs
       python: "3.6"
       if: type != cron
       # Use previously defined before_install
-      before_install: *before_install
 
       install:
         - pip install -r docs/requirements.txt
-        - python setup.py install
 
       script:
         - make clean -C docs/ html
