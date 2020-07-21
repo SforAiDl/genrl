@@ -117,7 +117,7 @@ class OnPolicyAgent(BaseAgent):
 
 
 class OffPolicyAgent(BaseAgent):
-    def __init__(self, *args, replay_size=1e6, buffer_type="push", **kwargs):
+    def __init__(self, *args, replay_size=1000000, buffer_type="push", **kwargs):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size
 
