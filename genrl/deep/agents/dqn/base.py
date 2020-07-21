@@ -13,9 +13,9 @@ from genrl.environments import VecEnv
 
 
 class BaseDQN(OffPolicyAgent):
-    """Base DQN class
+    """Base DQN Class
 
-    The Base class of any DQN algorithm. The methods can be changed as required.
+    Paper: https://arxiv.org/abs/1312.5602
 
     Attributes:
         network_type (str): The network type of the Q-value function.

@@ -8,6 +8,14 @@ from genrl.deep.common import cnn, mlp
 
 
 class MlpDuelingValue(nn.Module):
+    """Class for Dueling DQN's MLP Q-Value function
+
+    Attributes:
+        state_dim (int): Observation space dimensions
+        action_dim (int): Action space dimensions
+        hidden (:obj:`tuple`): Hidden layer dimensions
+    """
+
     def __init__(self, state_dim: int, action_dim: int, hidden: Tuple = (128, 128)):
         super(MlpDuelingValue, self).__init__()
 
@@ -24,6 +32,14 @@ class MlpDuelingValue(nn.Module):
 
 
 class CnnDuelingValue(nn.Module):
+    """Class for Dueling DQN's MLP Q-Value function
+
+    Attributes:
+        framestack (int): No. of frames being passed into the Q-value function
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Hidden layer dimensions
+    """
+
     def __init__(self, framestack: int, action_dim: int, fc_layers: Tuple = (512,)):
         super(CnnDuelingValue, self).__init__()
 
@@ -41,6 +57,15 @@ class CnnDuelingValue(nn.Module):
 
 
 class MlpNoisyValue(nn.Module):
+    """Class for Noisy DQN's MLP Q-Value function
+
+    Attributes:
+        state_dim (int): Observation space dimensions
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Fully connected layer dimensions
+        noisy_layers (:obj:`tuple`): Noisy layer dimensions
+    """
+
     def __init__(
         self,
         state_dim: int,
@@ -64,6 +89,15 @@ class MlpNoisyValue(nn.Module):
 
 
 class CnnNoisyValue(nn.Module):
+    """Class for Noisy DQN's MLP Q-Value function
+
+    Attributes:
+        framestack (int): No. of frames being passed into the Q-value function
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Fully connected layer dimensions
+        noisy_layers (:obj:`tuple`): Noisy layer dimensions
+    """
+
     def __init__(
         self,
         framestack: int,
@@ -92,6 +126,17 @@ class CnnNoisyValue(nn.Module):
 
 
 class MlpCategoricalValue(nn.Module):
+    """Class for Categorical DQN's MLP Q-Value function
+
+    Attributes:
+        state_dim (int): Observation space dimensions
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Fully connected layer dimensions
+        noisy_layers (:obj:`tuple`): Noisy layer dimensions
+        num_atoms (int): Number of atoms used to discretise the
+            Categorical DQN value distribution
+    """
+
     def __init__(
         self,
         state_dim: int,
@@ -124,6 +169,17 @@ class MlpCategoricalValue(nn.Module):
 
 
 class CnnCategoricalValue(nn.Module):
+    """Class for Noisy DQN's MLP Q-Value function
+
+    Attributes:
+        framestack (int): No. of frames being passed into the Q-value function
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Fully connected layer dimensions
+        noisy_layers (:obj:`tuple`): Noisy layer dimensions
+        num_atoms (int): Number of atoms used to discretise the
+            Categorical DQN value distribution
+    """
+
     def __init__(
         self,
         framestack: int,
