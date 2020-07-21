@@ -10,10 +10,12 @@ jobs:
   build:
 #    container:
 #      image: genrl/ubuntu-build:latest
-    runs-on: ubuntu-latest
+    
     strategy:
       matrix:
         python-version: [ '3.6','3.7' ]
+        platform: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.platform }}
     
     name: Lint, Build and Code Coverage for Python ${{ matrix.python-version }}
        
