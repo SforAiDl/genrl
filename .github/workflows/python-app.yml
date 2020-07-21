@@ -8,30 +8,33 @@ on:
 
 jobs:
   build:
-    container:
-      image: genrl/ubuntu-build:latest
+#    container:
+#      image: genrl/ubuntu-build:latest
     runs-on: ubuntu-latest
     name: Lint, Build and Code Coverage
     
     steps:
       - uses: actions/checkout@v2
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.6
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pytest black isort codecov pytest-cov
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Lint check
-        shell: bash
         run: |
-          source activate test-python36
           flake8 .
           black --check .
           isort -c .
 
       - name: Tests
-        shell: bash
-        run: |
-          source activate test-python36
-          pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
+        run: pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
 
       - name: Code Coverage CodeCov.io
         shell: bash
-        run: |
-          source activate test-python36
-          codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
+        run: codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
