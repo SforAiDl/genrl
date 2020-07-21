@@ -4,6 +4,7 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import torch
 
+from genrl.deep.common.buffers import PrioritizedBuffer, PushReplayBuffer
 from genrl.deep.common.utils import set_seeds
 
 
@@ -116,6 +117,13 @@ class OnPolicyAgent(BaseAgent):
 
 
 def OffPolicyAgent(BaseAgent):
-    def __init__(self, *args, replay_size=1e6, **kwargs):
+    def __init__(self, *args, replay_size=1e6, buffer_type="push", **kwargs):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size
+
+        if buffer_type == "push":
+            self.buffer_class = PushReplayBuffer
+        elif buffer_type == "prioritized":
+            self.buffer_class = PrioritizedBuffer
+        else:
+            raise NotImplementedError
