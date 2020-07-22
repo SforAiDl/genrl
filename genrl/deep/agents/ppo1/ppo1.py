@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as opt
 
 from ....environments import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean, BaseActorCritic
 from ..base import OnPolicyAgent
 
 
@@ -32,7 +32,7 @@ class PPO1(OnPolicyAgent):
     :param device: device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
     :param load_model: model loading path
-    :type network_type: str
+    :type network_type: str or BaseActorCritic
     :type env: Gym environment
     :type timesteps_per_actorbatch: int
     :type gamma: float
@@ -50,7 +50,7 @@ class PPO1(OnPolicyAgent):
 
     def __init__(
         self,
-        network_type: str,
+        network_type: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
@@ -64,7 +64,6 @@ class PPO1(OnPolicyAgent):
     ):
 
         super(PPO1, self).__init__(
-            network_type,
             env,
             batch_size=batch_size,
             layers=layers,
@@ -76,6 +75,7 @@ class PPO1(OnPolicyAgent):
             **kwargs
         )
 
+        self.network_type = network_type
         self.clip_param = clip_param
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
         self.value_coeff = kwargs.get("value_coeff", 0.5)
@@ -86,22 +86,31 @@ class PPO1(OnPolicyAgent):
 
     def create_model(self):
         # Instantiate networks and optimizers
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
-            self.env, self.network_type
-        )
+        if type(self.network_type) == str:
+            input_dim, action_dim, discrete, action_lim = get_env_properties(
+                self.env, self.network_type
+            )
 
-        self.ac = get_model("ac", self.network_type)(
-            input_dim,
-            action_dim,
-            self.layers,
-            "V",
-            discrete,
-            action_lim=action_lim,
-            activation=self.activation,
-        ).to(self.device)
+            self.ac = get_model("ac", self.network_type)(
+                input_dim,
+                action_dim,
+                self.layers,
+                "V",
+                discrete,
+                action_lim=action_lim,
+                activation=self.activation,
+            ).to(self.device)
+        else:
+            if "get_action" and "get_value" not in dir(self.network_type):
+                raise KeyError("network_type class must have methods get_action and get value")
+            else:
+                self.ac = self.network_type(**kwargs).to(self.device)
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        try:
+            self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
+            self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        except:
+            raise KeyError("network_type class must have attributes actor and critic")
 
         self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95)
 

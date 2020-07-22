@@ -11,7 +11,7 @@ from genrl.deep.common.logger import get_logger_by_name  # noqa
 from genrl.deep.common.noise import ActionNoise  # noqa
 from genrl.deep.common.noise import NormalActionNoise  # noqa
 from genrl.deep.common.noise import OrnsteinUhlenbeckActionNoise  # noqa
-from genrl.deep.common.policies import MlpPolicy, get_policy_from_name  # noqa
+from genrl.deep.common.policies import MlpPolicy, CNNPolicy, get_policy_from_name  # noqa
 from genrl.deep.common.rollout_storage import RolloutBuffer  # noqa
 from genrl.deep.common.trainer import OffPolicyTrainer, OnPolicyTrainer, Trainer  # noqa
 from genrl.deep.common.utils import cnn  # noqa
@@ -25,3 +25,4 @@ from genrl.deep.common.values import CNNValue  # noqa
 from genrl.deep.common.values import MlpValue  # noqa
 from genrl.deep.common.values import _get_val_model  # noqa
 from genrl.deep.common.values import get_value_from_name  # noqa
+from genrl.deep.common.base import BaseActorCritic, BasePolicy, BaseValue  # noqa

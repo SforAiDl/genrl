@@ -106,7 +106,16 @@ class CNNValue(BaseValue):
 
         activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
-        self.conv, output_size = cnn((framestack, 16, 32), activation=activation)
+        if "channels" in kwargs:
+            channels = [framestack]
+            for i in range(len(kwargs["channels"])):
+                channels.append(kwargs["channels"][i])
+            channels = tupe(channels)
+
+        else:
+            channels = (framestack, 16, 32)
+
+        self.conv, output_size = cnn(channels, activation=activation)
 
         self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
 

@@ -9,7 +9,7 @@ import torch.optim as opt
 from torch.distributions import Normal
 
 from ....environments import VecEnv
-from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
+from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds, BaseValue, BasePolicy
 
 
 class SAC:
@@ -18,7 +18,7 @@ class SAC:
 
     Paper: https://arxiv.org/abs/1812.05905
 
-    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param network_type: The deep neural network layer types ['mlp', 'cnn'] or CustomClass
     :param env: The environment to learn from
     :param gamma: discount factor
     :param replay_size: Replay memory size
@@ -121,27 +121,36 @@ class SAC:
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        if type(self.network_type) == str:
+            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
 
-        self.q1 = (
-            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
-            .to(self.device)
-            .float()
-        )
-
-        self.q2 = (
-            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
-            .to(self.device)
-            .float()
-        )
-
-        self.policy = (
-            get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, discrete, False, sac=True
+            self.q1 = (
+                get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+                .to(self.device)
+                .float()
             )
-            .to(self.device)
-            .float()
-        )
+
+            self.q2 = (
+                get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+                .to(self.device)
+                .float()
+            )
+
+            self.policy = (
+                get_model("p", self.network_type)(
+                    state_dim, action_dim, self.layers, discrete, False, sac=True
+                )
+                .to(self.device)
+                .float()
+            )
+        else:
+            self.model = self.network_type(**kwargs)
+            try:
+                self.q1 = self.model.q1.to(self.device)
+                self.q2 = self.model.q2.to(self.device)
+                self.policy = self.model.policy.to(self.device)
+            except:
+                raise KeyError("network_type class must contain q1, q2, and policy attributes")
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()
         self.q2_targ = deepcopy(self.q2).to(self.device).float()

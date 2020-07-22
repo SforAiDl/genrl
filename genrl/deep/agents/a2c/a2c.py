@@ -7,7 +7,7 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from ....environments.vec_env import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean, BaseActorCritic
 from ..base import OnPolicyAgent
 
 
@@ -17,7 +17,7 @@ class A2C(OnPolicyAgent):
     The synchronous version of A3C
     Paper: https://arxiv.org/abs/1602.01783
 
-    :param network_type: The deep neural network layer types ['mlp']
+    :param network_type: The deep neural network
     :param env: The environment to learn from
     :param gamma: Discount factor
     :param actor_batch_size: Update batch size
@@ -35,7 +35,7 @@ class A2C(OnPolicyAgent):
     :param rollout_size: Rollout Buffer Size
     :param val_coeff: Coefficient of value loss in overall loss function
     :param entropy_coeff: Coefficient of entropy loss in overall loss function
-    :type network_type: string
+    :type network_type: string or BaseActorCritic
     :type env: Gym Environment
     :type gamma: float
     :type actor_batch_size: int
@@ -57,7 +57,7 @@ class A2C(OnPolicyAgent):
 
     def __init__(
         self,
-        network_type: str,
+        network_type: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
@@ -73,7 +73,6 @@ class A2C(OnPolicyAgent):
     ):
 
         super(A2C, self).__init__(
-            network_type,
             env,
             batch_size,
             layers,
@@ -84,7 +83,7 @@ class A2C(OnPolicyAgent):
             rollout_size,
             **kwargs
         )
-
+        self.network_type = network_type
         self.max_ep_len = max_ep_len
         self.noise = noise
         self.noise_std = noise_std
@@ -94,25 +93,39 @@ class A2C(OnPolicyAgent):
         self.empty_logs()
         self.create_model()
 
+
     def create_model(self) -> None:
         """
         Creates actor critic model and initialises optimizers
         """
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
-            self.env, self.network_type
-        )
+
+        if type(self.network_type) == str:
+            # Use a predefined architecture:
+            input_dim, action_dim, discrete, action_lim = get_env_properties(
+                self.env, self.network_type
+            )
+
+            self.ac = get_model("ac", self._type)(
+                input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
+            ).to(self.device)
+
+        else:
+            # Using a Custom network:
+            if "get_action" and "get_value" not in dir(self.network_type):
+                raise KeyError("network_type class contain have methods get_action an get_value")
+            else:
+                self.ac = self.network_type(**kwargs).to(self.device)
 
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        self.ac = get_model("ac", self.network_type)(
-            input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
-        ).to(self.device)
-
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        try:
+            self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
+            self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        except:
+            raise KeyError("network_type must contain attributes actor and critic")
 
         self.rollout = RolloutBuffer(self.rollout_size, self.env)
 

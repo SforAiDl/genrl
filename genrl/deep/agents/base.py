@@ -8,6 +8,7 @@ from genrl.deep.common.utils import load_params, set_seeds
 
 
 class BaseAgent(ABC):
+
     def __init__(self, network_type: str, env: Any, epochs: int = 100, **kwargs):
         self.network_type = network_type
         self.env = env
@@ -79,7 +80,7 @@ class BaseAgent(ABC):
 class OnPolicyAgent(BaseAgent):
     def __init__(
         self,
-        network_type: str,
+        network_type: Union[str, BaseAgent],
         env: Any,
         batch_size: int = 256,
         layers: Tuple = (64, 64),

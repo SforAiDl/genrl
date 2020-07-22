@@ -53,10 +53,12 @@ class CNNPolicy(BasePolicy):
     :param action_dim: Action dimensions of the environment
     :param fc_layers: Sizes of hidden layers
     :param discrete: True if action space is discrete, else False
+    :param channels: Channel sizes for cnn layers
     :type framestack: int
     :type action_dim: int
     :type fc_layers: tuple or list
     :type discrete: bool
+    :type channels: list or tuple
     """
 
     def __init__(
@@ -73,7 +75,16 @@ class CNNPolicy(BasePolicy):
         )
         self.action_dim = action_dim
 
-        self.conv, output_size = cnn((framestack, 16, 32))
+        if "channels" in kwargs:
+            channels = [framestack]
+            for i in range(len(kwargs["channels"])):
+                channels.append(kwargs["channels"][i])
+            channels = tuple(channels)
+
+        else:
+            channels = (framestack, 16, 32)
+
+        self.conv, output_size = cnn(channels)
 
         self.fc = mlp([output_size] + list(hidden) + [action_dim], sac=self.sac)
 

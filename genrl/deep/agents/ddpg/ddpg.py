@@ -8,7 +8,7 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from ....environments import VecEnv
-from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
+from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds, BaseActorCritic
 
 
 class DDPG:
@@ -17,7 +17,7 @@ class DDPG:
 
     Paper: https://arxiv.org/abs/1509.02971
 
-    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param network_type: The deep neural network layer types ['mlp', 'cnn'] or Custom Class
     :param env: The environment to learn from
     :param gamma: discount factor
     :param replay_size: Replay memory size
@@ -59,7 +59,7 @@ class DDPG:
 
     def __init__(
         self,
-        network_type: str,
+        network_type: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
@@ -122,19 +122,28 @@ class DDPG:
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete:
-            raise Exception(
-                "Discrete Environments not supported for {}.".format(__class__.__name__)
-            )
+        if type(self.network_type) == str:
+            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+            if discrete:
+                raise Exception(
+                    "Discrete Environments not supported for {}.".format(__class__.__name__)
+                )
+
+            self.ac = get_model("ac", self.network_type)(
+                state_dim, action_dim, self.layers, "Qsa", False
+            ).to(self.device)
+
+        else:
+            if "get_action" and "get_value" not in dir(network_type):
+                raise KeyError("network_type class must have methods get_action an get_value")
+            else:
+                self.ac = self.network_type(**kwargs).to(self.device)
+
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "Qsa", False
-        ).to(self.device)
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -142,9 +151,12 @@ class DDPG:
         for param in self.ac_target.parameters():
             param.requires_grad = False
 
-        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
-        self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
+        try:
+            self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
+            self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
+            self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
+        except:
+            raise KeyError("network_type class must have attributes actor and critic")
 
     def update_params_before_select_action(self, timestep: int) -> None:
         """

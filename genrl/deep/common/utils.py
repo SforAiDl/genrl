@@ -17,7 +17,6 @@ def get_model(type_: str, name_: str) -> Union:
     :param name_: Name of the specific structure of model. (
 Eg. "mlp" or "cnn")
     :type type_: string
-    :type name_: string
     :returns: Required class. Eg. MlpActorCritic
     """
     if type_ == "ac":
