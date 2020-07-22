@@ -8,12 +8,12 @@ import torch.nn as nn
 
 from ....environments import VecEnv
 from ...common import (
+    BaseActorCritic,
     ReplayBuffer,
     get_env_properties,
     get_model,
     safe_mean,
     set_seeds,
-    BaseActorCritic,
 )
 
 
@@ -124,45 +124,29 @@ class TD3:
             set_seeds(seed, self.env)
 
         self.empty_logs()
-        self.create_model()
+        self.create_model() if type(
+            self.network_type
+        ) == str else self.create_custom_model()
 
     def create_model(self) -> None:
-        if type(self.network_type) == str:
-            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-            if discrete:
-                raise Exception(
-                    "Discrete Environments not supported for {}.".format(
-                        __class__.__name__
-                    )
-                )
-
-            self.ac = get_model("ac", self.network_type)(
-                state_dim, action_dim, self.layers, "Qsa", False
-            ).to(self.device)
-
-            self.ac.qf2 = get_model("v", self.network_type)(
-                state_dim, action_dim, hidden=self.layers, val_type="Qsa"
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        if discrete:
+            raise Exception(
+                "Discrete Environments not supported for {}.".format(__class__.__name__)
             )
-        else:
-            if "get_action" and "get_value" not in dir(network_type):
-                raise KeyError(
-                    "network_type class must have methods get_action an get_value"
-                )
-            else:
-                self.ac = self.network_type(**kwargs)
-
-        try:
-            self.ac.qf1 = self.ac.critic
-            self.ac.qf2 = self.ac.value
-        except:
-            raise KeyError(
-                "network_type class must contain attributes actor, critic and value"
-            )
-
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
+
+        self.ac = get_model("ac", self.network_type)(
+            state_dim, action_dim, self.layers, "Qsa", False
+        ).to(self.device)
+
+        self.ac.qf1 = self.ac.critic
+        self.ac.qf2 = get_model("v", self.network_type)(
+            state_dim, action_dim, hidden=self.layers, val_type="Qsa"
+        )
 
         self.ac.qf1.to(self.device)
         self.ac.qf2.to(self.device)
@@ -177,12 +161,43 @@ class TD3:
         self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
         self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
 
+        self.optimizer_policy = torch.optim.Adam(
+            self.ac.actor.parameters(), lr=self.lr_p
+        )
+
+    def create_custom_model(self) -> None:
+        if self.noise is not None:
+            self.noise = self.noise(
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+            )
+
+        self.ac = self.network_type(**kwargs).to(self.device)
+
         try:
+            self.ac.qf1 = self.ac.critic
+            self.ac.qf2 = self.ac.value
+
+            self.ac.qf1.to(self.device)
+            self.ac.qf2.to(self.device)
+
+            self.ac_target = deepcopy(self.ac).to(self.device)
+
+            # freeze target network params
+            for param in self.ac_target.parameters():
+                param.requires_grad = False
+
+            self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
+            self.q_params = list(self.ac.qf1.parameters()) + list(
+                self.ac.qf2.parameters()
+            )
+            self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
+
             self.optimizer_policy = torch.optim.Adam(
                 self.ac.actor.parameters(), lr=self.lr_p
             )
-        except:
-            raise KeyError("network_type class must have attributes actor and critic")
+
+        except KeyError:
+            print("network_type must contain actor, critic and value attributes")
 
     def update_params_before_select_action(self, timestep: int) -> None:
         """

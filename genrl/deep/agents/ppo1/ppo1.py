@@ -88,43 +88,46 @@ class PPO1(OnPolicyAgent):
         self.activation = kwargs.get("activation", "relu")
 
         self.empty_logs()
-        self.create_model()
+        self.create_model() if type(
+            self.network_type
+        ) == str else self.create_custom_model()
 
     def create_model(self):
         # Instantiate networks and optimizers
-        if type(self.network_type) == str:
-            input_dim, action_dim, discrete, action_lim = get_env_properties(
-                self.env, self.network_type
-            )
+        input_dim, action_dim, discrete, action_lim = get_env_properties(
+            self.env, self.network_type
+        )
 
-            self.ac = get_model("ac", self.network_type)(
-                input_dim,
-                action_dim,
-                self.layers,
-                "V",
-                discrete,
-                action_lim=action_lim,
-                activation=self.activation,
-            ).to(self.device)
-        else:
-            if "get_action" and "get_value" not in dir(self.network_type):
-                raise KeyError(
-                    "network_type class must have methods get_action and get value"
-                )
-            else:
-                self.ac = self.network_type(**kwargs).to(self.device)
+        self.ac = get_model("ac", self.network_type)(
+            input_dim,
+            action_dim,
+            self.layers,
+            "V",
+            discrete,
+            action_lim=action_lim,
+            activation=self.activation,
+        ).to(self.device)
 
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+
+        self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95)
+
+    def create_custom_model(self):
+        # Instantiate custom networks and optimizers
         try:
+            self.ac = self.network_type(**kwargs).to(self.device)
+
             self.optimizer_policy = opt.Adam(
                 self.ac.actor.parameters(), lr=self.lr_policy
             )
             self.optimizer_value = opt.Adam(
                 self.ac.critic.parameters(), lr=self.lr_value
             )
-        except:
-            raise KeyError("network_type class must have attributes actor and critic")
 
-        self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95)
+            self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95)
+        except KeyError:
+            print("network_type class must contain actor and critic attributes")
 
     def select_action(self, state: np.ndarray, deterministic=False) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)

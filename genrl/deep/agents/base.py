@@ -90,7 +90,8 @@ class OnPolicyAgent(BaseAgent):
         rollout_size: int = 2048,
         **kwargs
     ):
-        super(OnPolicyAgent, self).__init__(network_type, env, epochs, **kwargs)
+        super(OnPolicyAgent, self).__init__(env, epochs, **kwargs)
+        self.network_type = network_type
         self.batch_size = batch_size
         self.gamma = gamma
         self.lr_policy = lr_policy

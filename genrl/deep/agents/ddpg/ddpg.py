@@ -9,12 +9,12 @@ import torch.optim as opt
 
 from ....environments import VecEnv
 from ...common import (
+    BaseActorCritic,
     ReplayBuffer,
     get_env_properties,
     get_model,
     safe_mean,
     set_seeds,
-    BaseActorCritic,
 )
 
 
@@ -43,7 +43,7 @@ class DDPG:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :type network_type: string
+    :type network_type: string or BaseActorCritic
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -122,38 +122,28 @@ class DDPG:
         self.writer = None
 
         self.empty_logs()
-        self.create_model()
+        self.create_model() if type(
+            self.network_type
+        ) == str else self.create_custom_model()
 
     def create_model(self) -> None:
         """
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        if type(self.network_type) == str:
-            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-            if discrete:
-                raise Exception(
-                    "Discrete Environments not supported for {}.".format(
-                        __class__.__name__
-                    )
-                )
-
-            self.ac = get_model("ac", self.network_type)(
-                state_dim, action_dim, self.layers, "Qsa", False
-            ).to(self.device)
-
-        else:
-            if "get_action" and "get_value" not in dir(network_type):
-                raise KeyError(
-                    "network_type class must have methods get_action an get_value"
-                )
-            else:
-                self.ac = self.network_type(**kwargs).to(self.device)
-
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        if discrete:
+            raise Exception(
+                "Discrete Environments not supported for {}.".format(__class__.__name__)
+            )
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
+
+        self.ac = get_model("ac", self.network_type)(
+            state_dim, action_dim, self.layers, "Qsa", False
+        ).to(self.device)
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -161,12 +151,33 @@ class DDPG:
         for param in self.ac_target.parameters():
             param.requires_grad = False
 
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
+        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
+        self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
+
+    def create_custom_model(self) -> None:
+        """
+        Initialize the custom model
+        Initializes optimizer and replay buffers as well.
+        """
+        if self.noise is not None:
+            self.noise = self.noise(
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+            )
         try:
+            self.ac = self.network_type(**kwargs).to(self.device)
+
+            self.ac_target = deepcopy(self.ac).to(self.device)
+
+            # freeze target network params
+            for param in self.ac_target.parameters():
+                param.requires_grad = False
+
             self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
             self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
             self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)
-        except:
-            raise KeyError("network_type class must have attributes actor and critic")
+        except KeyError:
+            print("network_type class must contain actor and critic attributes")
 
     def update_params_before_select_action(self, timestep: int) -> None:
         """

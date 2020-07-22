@@ -9,15 +9,7 @@ import torch.optim as opt
 from torch.distributions import Normal
 
 from ....environments import VecEnv
-from ...common import (
-    ReplayBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-    set_seeds,
-    BaseValue,
-    BasePolicy,
-)
+from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
 
 
 class SAC:
@@ -122,49 +114,36 @@ class SAC:
         self.writer = None
 
         self.empty_logs()
-        self.create_model()
+        self.create_model() if type(
+            self.network_type
+        ) == str else self.create_custom_model()
 
     def create_model(self) -> None:
         """
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        if type(self.network_type) == str:
-            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
 
-            self.q1 = (
-                get_model("v", self.network_type)(
-                    state_dim, action_dim, "Qsa", self.layers
-                )
-                .to(self.device)
-                .float()
-            )
+        self.q1 = (
+            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+            .to(self.device)
+            .float()
+        )
 
-            self.q2 = (
-                get_model("v", self.network_type)(
-                    state_dim, action_dim, "Qsa", self.layers
-                )
-                .to(self.device)
-                .float()
-            )
+        self.q2 = (
+            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+            .to(self.device)
+            .float()
+        )
 
-            self.policy = (
-                get_model("p", self.network_type)(
-                    state_dim, action_dim, self.layers, discrete, False, sac=True
-                )
-                .to(self.device)
-                .float()
+        self.policy = (
+            get_model("p", self.network_type)(
+                state_dim, action_dim, self.layers, discrete, False, sac=True
             )
-        else:
-            self.model = self.network_type(**kwargs)
-            try:
-                self.q1 = self.model.q1.to(self.device)
-                self.q2 = self.model.q2.to(self.device)
-                self.policy = self.model.policy.to(self.device)
-            except:
-                raise KeyError(
-                    "network_type class must contain q1, q2, and policy attributes"
-                )
+            .to(self.device)
+            .float()
+        )
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
@@ -200,6 +179,55 @@ class SAC:
             self.action_bias = torch.FloatTensor(
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
             ).to(self.device)
+
+    def create_custom_model(self) -> None:
+        """
+        Initialize the custom model
+        Initializes optimizer and replay buffers as well.
+        """
+        try:
+
+            self.model = self.network(**kwargs)
+            self.q1 = self.model.value.to(self.device).float()
+            self.q2 = self.model.value.to(self.device).float()
+            self.policy = self.model.policy.to(device).float()
+
+            self.q1_targ = deepcopy(self.q1).to(self.device).float()
+            self.q2_targ = deepcopy(self.q2).to(self.device).float()
+
+            # freeze target parameters
+            for param in self.q1_targ.parameters():
+                param.requires_grad = False
+            for param in self.q2_targ.parameters():
+                param.requires_grad = False
+
+            # optimizers
+            self.q1_optimizer = opt.Adam(self.q1.parameters(), self.lr)
+            self.q2_optimizer = opt.Adam(self.q2.parameters(), self.lr)
+            self.policy_optimizer = opt.Adam(self.policy.parameters(), self.lr)
+
+            if self.entropy_tuning:
+                self.target_entropy = -torch.prod(
+                    torch.Tensor(self.env.action_space.shape).to(self.device)
+                ).item()
+                self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+                self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
+
+            self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
+
+            # set action scales
+            if self.env.action_space is None:
+                self.action_scale = torch.tensor(1.0).to(self.device)
+                self.action_bias = torch.tensor(0.0).to(self.device)
+            else:
+                self.action_scale = torch.FloatTensor(
+                    (self.env.action_space.high - self.env.action_space.low) / 2.0
+                ).to(self.device)
+                self.action_bias = torch.FloatTensor(
+                    (self.env.action_space.high + self.env.action_space.low) / 2.0
+                ).to(self.device)
+        except KeyError:
+            print("network_type class must contain value and policy attributes")
 
     def sample_action(
         self, state: np.ndarray, deterministic: bool = False
