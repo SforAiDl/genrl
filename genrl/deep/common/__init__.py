@@ -1,5 +1,6 @@
 from genrl.deep.common.actor_critic import MlpActorCritic  # noqa
 from genrl.deep.common.actor_critic import get_actor_critic_from_name  # noqa
+from genrl.deep.common.base import BaseActorCritic, BasePolicy, BaseValue  # noqa
 from genrl.deep.common.buffers import PrioritizedBuffer  # noqa
 from genrl.deep.common.buffers import PushReplayBuffer  # noqa
 from genrl.deep.common.buffers import ReplayBuffer  # noqa
@@ -29,4 +30,3 @@ from genrl.deep.common.values import CNNValue  # noqa
 from genrl.deep.common.values import MlpValue  # noqa
 from genrl.deep.common.values import _get_val_model  # noqa
 from genrl.deep.common.values import get_value_from_name  # noqa
-from genrl.deep.common.base import BaseActorCritic, BasePolicy, BaseValue  # noqa

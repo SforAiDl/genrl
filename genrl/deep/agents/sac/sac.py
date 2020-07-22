@@ -186,48 +186,47 @@ class SAC:
         Initializes optimizer and replay buffers as well.
         """
         try:
-
             self.model = self.network(**kwargs)
             self.q1 = self.model.value.to(self.device).float()
             self.q2 = self.model.value.to(self.device).float()
             self.policy = self.model.policy.to(device).float()
-
-            self.q1_targ = deepcopy(self.q1).to(self.device).float()
-            self.q2_targ = deepcopy(self.q2).to(self.device).float()
-
-            # freeze target parameters
-            for param in self.q1_targ.parameters():
-                param.requires_grad = False
-            for param in self.q2_targ.parameters():
-                param.requires_grad = False
-
-            # optimizers
-            self.q1_optimizer = opt.Adam(self.q1.parameters(), self.lr)
-            self.q2_optimizer = opt.Adam(self.q2.parameters(), self.lr)
-            self.policy_optimizer = opt.Adam(self.policy.parameters(), self.lr)
-
-            if self.entropy_tuning:
-                self.target_entropy = -torch.prod(
-                    torch.Tensor(self.env.action_space.shape).to(self.device)
-                ).item()
-                self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
-                self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
-
-            self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
-
-            # set action scales
-            if self.env.action_space is None:
-                self.action_scale = torch.tensor(1.0).to(self.device)
-                self.action_bias = torch.tensor(0.0).to(self.device)
-            else:
-                self.action_scale = torch.FloatTensor(
-                    (self.env.action_space.high - self.env.action_space.low) / 2.0
-                ).to(self.device)
-                self.action_bias = torch.FloatTensor(
-                    (self.env.action_space.high + self.env.action_space.low) / 2.0
-                ).to(self.device)
         except KeyError:
             print("network_type class must contain value and policy attributes")
+
+        self.q1_targ = deepcopy(self.q1).to(self.device).float()
+        self.q2_targ = deepcopy(self.q2).to(self.device).float()
+
+        # freeze target parameters
+        for param in self.q1_targ.parameters():
+            param.requires_grad = False
+        for param in self.q2_targ.parameters():
+            param.requires_grad = False
+
+        # optimizers
+        self.q1_optimizer = opt.Adam(self.q1.parameters(), self.lr)
+        self.q2_optimizer = opt.Adam(self.q2.parameters(), self.lr)
+        self.policy_optimizer = opt.Adam(self.policy.parameters(), self.lr)
+
+        if self.entropy_tuning:
+            self.target_entropy = -torch.prod(
+                torch.Tensor(self.env.action_space.shape).to(self.device)
+            ).item()
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+            self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
+
+        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
+
+        # set action scales
+        if self.env.action_space is None:
+            self.action_scale = torch.tensor(1.0).to(self.device)
+            self.action_bias = torch.tensor(0.0).to(self.device)
+        else:
+            self.action_scale = torch.FloatTensor(
+                (self.env.action_space.high - self.env.action_space.low) / 2.0
+            ).to(self.device)
+            self.action_bias = torch.FloatTensor(
+                (self.env.action_space.high + self.env.action_space.low) / 2.0
+            ).to(self.device)
 
     def sample_action(
         self, state: np.ndarray, deterministic: bool = False

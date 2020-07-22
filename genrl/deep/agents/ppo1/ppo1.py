@@ -8,11 +8,11 @@ import torch.optim as opt
 
 from ....environments import VecEnv
 from ...common import (
+    BaseActorCritic,
     RolloutBuffer,
     get_env_properties,
     get_model,
     safe_mean,
-    BaseActorCritic,
 )
 from ..base import OnPolicyAgent
 
