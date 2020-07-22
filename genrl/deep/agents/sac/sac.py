@@ -9,7 +9,15 @@ import torch.optim as opt
 from torch.distributions import Normal
 
 from ....environments import VecEnv
-from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds, BaseValue, BasePolicy
+from ...common import (
+    ReplayBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+    set_seeds,
+    BaseValue,
+    BasePolicy,
+)
 
 
 class SAC:
@@ -125,13 +133,17 @@ class SAC:
             state_dim, action_dim, discrete, _ = get_env_properties(self.env)
 
             self.q1 = (
-                get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+                get_model("v", self.network_type)(
+                    state_dim, action_dim, "Qsa", self.layers
+                )
                 .to(self.device)
                 .float()
             )
 
             self.q2 = (
-                get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
+                get_model("v", self.network_type)(
+                    state_dim, action_dim, "Qsa", self.layers
+                )
                 .to(self.device)
                 .float()
             )
@@ -150,7 +162,9 @@ class SAC:
                 self.q2 = self.model.q2.to(self.device)
                 self.policy = self.model.policy.to(self.device)
             except:
-                raise KeyError("network_type class must contain q1, q2, and policy attributes")
+                raise KeyError(
+                    "network_type class must contain q1, q2, and policy attributes"
+                )
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()
         self.q2_targ = deepcopy(self.q2).to(self.device).float()

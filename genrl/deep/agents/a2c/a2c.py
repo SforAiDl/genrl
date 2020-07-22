@@ -7,7 +7,13 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from ....environments.vec_env import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean, BaseActorCritic
+from ...common import (
+    RolloutBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+    BaseActorCritic,
+)
 from ..base import OnPolicyAgent
 
 
@@ -93,7 +99,6 @@ class A2C(OnPolicyAgent):
         self.empty_logs()
         self.create_model()
 
-
     def create_model(self) -> None:
         """
         Creates actor critic model and initialises optimizers
@@ -112,7 +117,9 @@ class A2C(OnPolicyAgent):
         else:
             # Using a Custom network:
             if "get_action" and "get_value" not in dir(self.network_type):
-                raise KeyError("network_type class contain have methods get_action an get_value")
+                raise KeyError(
+                    "network_type class contain have methods get_action an get_value"
+                )
             else:
                 self.ac = self.network_type(**kwargs).to(self.device)
 
@@ -122,8 +129,12 @@ class A2C(OnPolicyAgent):
             )
 
         try:
-            self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-            self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+            self.optimizer_policy = opt.Adam(
+                self.ac.actor.parameters(), lr=self.lr_policy
+            )
+            self.optimizer_value = opt.Adam(
+                self.ac.critic.parameters(), lr=self.lr_value
+            )
         except:
             raise KeyError("network_type must contain attributes actor and critic")
 

@@ -7,7 +7,14 @@ import torch
 import torch.nn as nn
 
 from ....environments import VecEnv
-from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds, BaseActorCritic
+from ...common import (
+    ReplayBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+    set_seeds,
+    BaseActorCritic,
+)
 
 
 class TD3:
@@ -124,9 +131,10 @@ class TD3:
             state_dim, action_dim, discrete, _ = get_env_properties(self.env)
             if discrete:
                 raise Exception(
-                    "Discrete Environments not supported for {}.".format(__class__.__name__)
+                    "Discrete Environments not supported for {}.".format(
+                        __class__.__name__
+                    )
                 )
-
 
             self.ac = get_model("ac", self.network_type)(
                 state_dim, action_dim, self.layers, "Qsa", False
@@ -137,7 +145,9 @@ class TD3:
             )
         else:
             if "get_action" and "get_value" not in dir(network_type):
-                raise KeyError("network_type class must have methods get_action an get_value")
+                raise KeyError(
+                    "network_type class must have methods get_action an get_value"
+                )
             else:
                 self.ac = self.network_type(**kwargs)
 
@@ -145,7 +155,9 @@ class TD3:
             self.ac.qf1 = self.ac.critic
             self.ac.qf2 = self.ac.value
         except:
-            raise KeyError("network_type class must contain attributes actor, critic and value")
+            raise KeyError(
+                "network_type class must contain attributes actor, critic and value"
+            )
 
         if self.noise is not None:
             self.noise = self.noise(

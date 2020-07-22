@@ -7,7 +7,13 @@ import torch.nn as nn
 import torch.optim as opt
 
 from ....environments import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean, BaseActorCritic
+from ...common import (
+    RolloutBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+    BaseActorCritic,
+)
 from ..base import OnPolicyAgent
 
 
@@ -102,13 +108,19 @@ class PPO1(OnPolicyAgent):
             ).to(self.device)
         else:
             if "get_action" and "get_value" not in dir(self.network_type):
-                raise KeyError("network_type class must have methods get_action and get value")
+                raise KeyError(
+                    "network_type class must have methods get_action and get value"
+                )
             else:
                 self.ac = self.network_type(**kwargs).to(self.device)
 
         try:
-            self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-            self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+            self.optimizer_policy = opt.Adam(
+                self.ac.actor.parameters(), lr=self.lr_policy
+            )
+            self.optimizer_value = opt.Adam(
+                self.ac.critic.parameters(), lr=self.lr_value
+            )
         except:
             raise KeyError("network_type class must have attributes actor and critic")
 

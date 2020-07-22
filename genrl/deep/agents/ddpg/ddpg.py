@@ -8,7 +8,14 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from ....environments import VecEnv
-from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds, BaseActorCritic
+from ...common import (
+    ReplayBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+    set_seeds,
+    BaseActorCritic,
+)
 
 
 class DDPG:
@@ -126,7 +133,9 @@ class DDPG:
             state_dim, action_dim, discrete, _ = get_env_properties(self.env)
             if discrete:
                 raise Exception(
-                    "Discrete Environments not supported for {}.".format(__class__.__name__)
+                    "Discrete Environments not supported for {}.".format(
+                        __class__.__name__
+                    )
                 )
 
             self.ac = get_model("ac", self.network_type)(
@@ -135,7 +144,9 @@ class DDPG:
 
         else:
             if "get_action" and "get_value" not in dir(network_type):
-                raise KeyError("network_type class must have methods get_action an get_value")
+                raise KeyError(
+                    "network_type class must have methods get_action an get_value"
+                )
             else:
                 self.ac = self.network_type(**kwargs).to(self.device)
 
@@ -143,7 +154,6 @@ class DDPG:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
-
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
