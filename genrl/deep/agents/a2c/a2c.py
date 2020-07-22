@@ -23,7 +23,7 @@ class A2C(OnPolicyAgent):
     The synchronous version of A3C
     Paper: https://arxiv.org/abs/1602.01783
 
-    :param network_type: The deep neural network
+    :param network: The deep neural network
     :param env: The environment to learn from
     :param gamma: Discount factor
     :param actor_batch_size: Update batch size
@@ -41,7 +41,7 @@ class A2C(OnPolicyAgent):
     :param rollout_size: Rollout Buffer Size
     :param val_coeff: Coefficient of value loss in overall loss function
     :param entropy_coeff: Coefficient of entropy loss in overall loss function
-    :type network_type: string or BaseActorCritic
+    :type network: string or BaseActorCritic
     :type env: Gym Environment
     :type gamma: float
     :type actor_batch_size: int
@@ -63,7 +63,7 @@ class A2C(OnPolicyAgent):
 
     def __init__(
         self,
-        network_type: Union[str, BaseActorCritic],
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
@@ -89,7 +89,7 @@ class A2C(OnPolicyAgent):
             rollout_size,
             **kwargs
         )
-        self.network_type = network_type
+        self.network = network
         self.max_ep_len = max_ep_len
         self.noise = noise
         self.noise_std = noise_std
@@ -97,52 +97,39 @@ class A2C(OnPolicyAgent):
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
 
         self.empty_logs()
-        self.create_model() if type(
-            self.network_type
-        ) == str else self.create_custom_model()
+        self.create_model()
 
     def create_model(self) -> None:
         """
         Creates actor critic model and initialises optimizers
         """
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
-            self.env, self.network_type
-        )
+        if isinstance(self.network, str):
+            input_dim, action_dim, discrete, action_lim = get_env_properties(
+                self.env, self.network
+            )
+            self.ac = get_model("ac", self.network)(
+                input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
+            ).to(self.device)
 
+        else:
+            self.ac = self.network(**kwargs)
+            action_dim = kwargs["action_dim"]
+
+        assert "actor" and "critic" in dir(
+            self.ac
+        ), "network must contain actor and critic attributes"
+        assert "get_value" and "get_action" in dir(
+            self.ac
+        ), "network must contain get_value and get_action methods"
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
-
-        self.ac = get_model("ac", self.network_type)(
-            input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
-        ).to(self.device)
 
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
         self.rollout = RolloutBuffer(self.rollout_size, self.env)
-
-    def create_custom_model(self) -> None:
-        """
-        Creates custom actor critic model and initialises optimizers
-        """
-        if self.noise is not None:
-            self.noise = self.noise(
-                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
-            )
-        try:
-            self.ac = self.network_type(**kwargs).to(self.device)
-
-            self.optimizer_policy = opt.Adam(
-                self.ac.actor.parameters(), lr=self.lr_policy
-            )
-            self.optimizer_value = opt.Adam(
-                self.ac.critic.parameters(), lr=self.lr_value
-            )
-            self.rollout = RolloutBuffer(self.rollout_size, self.env)
-        except KeyError:
-            print("network_type class must contain actor and critic attributes")
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
@@ -160,13 +147,8 @@ class A2C(OnPolicyAgent):
         state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on actor output
-        try:
-            action, dist = self.ac.get_action(state, deterministic=False)
-            value = self.ac.get_value(state)
-        except:
-            raise KeyError(
-                "network_type class must contain get_action and get_value methods"
-            )
+        action, dist = self.ac.get_action(state, deterministic=False)
+        value = self.ac.get_value(state)
 
         return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
 
@@ -222,7 +204,7 @@ calculate losses)
         :rtype: dict
         """
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "batch_size": self.batch_size,
             "gamma": self.gamma,
             "lr_actor": self.lr_actor,

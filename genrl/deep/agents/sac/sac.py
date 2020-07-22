@@ -18,7 +18,7 @@ class SAC:
 
     Paper: https://arxiv.org/abs/1812.05905
 
-    :param network_type: The deep neural network layer types ['mlp', 'cnn'] or CustomClass
+    :param network: The deep neural network layer types ['mlp', 'cnn'] or CustomClass
     :param env: The environment to learn from
     :param gamma: discount factor
     :param replay_size: Replay memory size
@@ -37,7 +37,7 @@ class SAC:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :type network_type: string
+    :type network: string
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -60,7 +60,7 @@ class SAC:
 
     def __init__(
         self,
-        network_type: str,
+        network: str,
         env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
@@ -81,7 +81,7 @@ class SAC:
         device: Union[torch.device, str] = "cpu",
     ):
 
-        self.network_type = network_type
+        self.network = network
         self.env = env
         self.gamma = gamma
         self.replay_size = replay_size
@@ -114,84 +114,43 @@ class SAC:
         self.writer = None
 
         self.empty_logs()
-        self.create_model() if type(
-            self.network_type
-        ) == str else self.create_custom_model()
+        self.create_model()
 
     def create_model(self) -> None:
         """
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        if isinstance(self.network, str):
+            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
 
-        self.q1 = (
-            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
-            .to(self.device)
-            .float()
-        )
-
-        self.q2 = (
-            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
-            .to(self.device)
-            .float()
-        )
-
-        self.policy = (
-            get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, discrete, False, sac=True
+            self.q1 = (
+                get_model("v", self.network)(state_dim, action_dim, "Qsa", self.layers)
+                .to(self.device)
+                .float()
             )
-            .to(self.device)
-            .float()
-        )
 
-        self.q1_targ = deepcopy(self.q1).to(self.device).float()
-        self.q2_targ = deepcopy(self.q2).to(self.device).float()
+            self.q2 = (
+                get_model("v", self.network)(state_dim, action_dim, "Qsa", self.layers)
+                .to(self.device)
+                .float()
+            )
 
-        # freeze target parameters
-        for param in self.q1_targ.parameters():
-            param.requires_grad = False
-        for param in self.q2_targ.parameters():
-            param.requires_grad = False
-
-        # optimizers
-        self.q1_optimizer = opt.Adam(self.q1.parameters(), self.lr)
-        self.q2_optimizer = opt.Adam(self.q2.parameters(), self.lr)
-        self.policy_optimizer = opt.Adam(self.policy.parameters(), self.lr)
-
-        if self.entropy_tuning:
-            self.target_entropy = -torch.prod(
-                torch.Tensor(self.env.action_space.shape).to(self.device)
-            ).item()
-            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
-            self.alpha_optim = opt.Adam([self.log_alpha], lr=self.lr)
-
-        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
-
-        # set action scales
-        if self.env.action_space is None:
-            self.action_scale = torch.tensor(1.0).to(self.device)
-            self.action_bias = torch.tensor(0.0).to(self.device)
+            self.policy = (
+                get_model("p", self.network)(
+                    state_dim, action_dim, self.layers, discrete, False, sac=True
+                )
+                .to(self.device)
+                .float()
+            )
         else:
-            self.action_scale = torch.FloatTensor(
-                (self.env.action_space.high - self.env.action_space.low) / 2.0
-            ).to(self.device)
-            self.action_bias = torch.FloatTensor(
-                (self.env.action_space.high + self.env.action_space.low) / 2.0
-            ).to(self.device)
-
-    def create_custom_model(self) -> None:
-        """
-        Initialize the custom model
-        Initializes optimizer and replay buffers as well.
-        """
-        try:
             self.model = self.network(**kwargs)
+            assert "value" and "policy" in dir(
+                self.model
+            ), "network must contain value and policy attributes"
             self.q1 = self.model.value.to(self.device).float()
             self.q2 = self.model.value.to(self.device).float()
             self.policy = self.model.policy.to(device).float()
-        except KeyError:
-            print("network_type class must contain value and policy attributes")
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
@@ -446,7 +405,7 @@ class SAC:
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "gamma": self.gamma,
             "lr": self.lr,
             "replay_size": self.replay_size,

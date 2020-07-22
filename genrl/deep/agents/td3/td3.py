@@ -23,7 +23,7 @@ class TD3:
 
     Paper: https://arxiv.org/abs/1509.02971
 
-    :param network_type: (str on BaseActorCritic) The deep neural network layer types ['mlp'] or a CustomClass
+    :param network: (str on BaseActorCritic) The deep neural network layer types ['mlp'] or a CustomClass
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
     :param replay_size: (int) Replay memory size
@@ -45,7 +45,7 @@ class TD3:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :type network_type: str or BaseActorCritic
+    :type network: str or BaseActorCritic
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -69,7 +69,7 @@ class TD3:
 
     def __init__(
         self,
-        network_type: Union[str, BaseActorCritic],
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000,
@@ -92,7 +92,7 @@ class TD3:
         device: Union[torch.device, str] = "cpu",
     ):
 
-        self.network_type = network_type
+        self.network = network
         self.env = env
         self.gamma = gamma
         self.replay_size = replay_size
@@ -124,29 +124,39 @@ class TD3:
             set_seeds(seed, self.env)
 
         self.empty_logs()
-        self.create_model() if type(
-            self.network_type
-        ) == str else self.create_custom_model()
+        self.create_model()
 
     def create_model(self) -> None:
-        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete:
-            raise Exception(
-                "Discrete Environments not supported for {}.".format(__class__.__name__)
+        if isinstance(self.network, str):
+            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+            assert not discrete, "Discrete Environments not supported for {}.".format(
+                __class__.__name__
             )
+
+            self.ac = get_model("ac", self.network)(
+                state_dim, action_dim, self.layers, "Qsa", False
+            ).to(self.device)
+
+            self.ac.qf2 = get_model("v", self.network)(
+                state_dim, action_dim, hidden=self.layers, val_type="Qsa"
+            )
+        else:
+            self.ac = self.network(**kwargs).to(device)
+            action_dim = kwargs["action_dim"]
+            assert (
+                "actor" and "critic" and "value" in dir(self.ac)
+            ), "network must contain actor, critic and value attributes"
+            assert "get_action" and "get_value" in dir(
+                self.ac
+            ), "network must contain get_action and get_action methods"
+            self.ac.qf2 = self.ac.value
+
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "Qsa", False
-        ).to(self.device)
-
         self.ac.qf1 = self.ac.critic
-        self.ac.qf2 = get_model("v", self.network_type)(
-            state_dim, action_dim, hidden=self.layers, val_type="Qsa"
-        )
 
         self.ac.qf1.to(self.device)
         self.ac.qf2.to(self.device)
@@ -164,40 +174,6 @@ class TD3:
         self.optimizer_policy = torch.optim.Adam(
             self.ac.actor.parameters(), lr=self.lr_p
         )
-
-    def create_custom_model(self) -> None:
-        if self.noise is not None:
-            self.noise = self.noise(
-                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
-            )
-
-        self.ac = self.network_type(**kwargs).to(self.device)
-
-        try:
-            self.ac.qf1 = self.ac.critic
-            self.ac.qf2 = self.ac.value
-
-            self.ac.qf1.to(self.device)
-            self.ac.qf2.to(self.device)
-
-            self.ac_target = deepcopy(self.ac).to(self.device)
-
-            # freeze target network params
-            for param in self.ac_target.parameters():
-                param.requires_grad = False
-
-            self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
-            self.q_params = list(self.ac.qf1.parameters()) + list(
-                self.ac.qf2.parameters()
-            )
-            self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
-
-            self.optimizer_policy = torch.optim.Adam(
-                self.ac.actor.parameters(), lr=self.lr_p
-            )
-
-        except KeyError:
-            print("network_type must contain actor, critic and value attributes")
 
     def update_params_before_select_action(self, timestep: int) -> None:
         """
@@ -378,7 +354,7 @@ class TD3:
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "gamma": self.gamma,
             "lr_p": self.lr_p,
             "lr_q": self.lr_q,

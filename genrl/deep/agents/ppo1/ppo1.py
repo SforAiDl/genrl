@@ -23,7 +23,7 @@ class PPO1(OnPolicyAgent):
 
     Paper: https://arxiv.org/abs/1707.06347
 
-    :param network_type: The deep neural network layer types ['mlp']
+    :param network: The deep neural network layer types ['mlp']
     :param env: The environment to learn from
     :param timesteps_per_actorbatch: timesteps per actor per update
     :param gamma: discount factor
@@ -38,7 +38,7 @@ class PPO1(OnPolicyAgent):
     :param device: device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
     :param load_model: model loading path
-    :type network_type: str or BaseActorCritic
+    :type network: str or BaseActorCritic
     :type env: Gym environment
     :type timesteps_per_actorbatch: int
     :type gamma: float
@@ -56,7 +56,7 @@ class PPO1(OnPolicyAgent):
 
     def __init__(
         self,
-        network_type: Union[str, BaseActorCritic],
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
@@ -81,53 +81,44 @@ class PPO1(OnPolicyAgent):
             **kwargs
         )
 
-        self.network_type = network_type
+        self.network = network
         self.clip_param = clip_param
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
         self.value_coeff = kwargs.get("value_coeff", 0.5)
         self.activation = kwargs.get("activation", "relu")
 
         self.empty_logs()
-        self.create_model() if type(
-            self.network_type
-        ) == str else self.create_custom_model()
+        self.create_model()
 
     def create_model(self):
         # Instantiate networks and optimizers
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
-            self.env, self.network_type
-        )
+        if isinstance(self.network, str):
+            input_dim, action_dim, discrete, action_lim = get_env_properties(
+                self.env, self.network
+            )
 
-        self.ac = get_model("ac", self.network_type)(
-            input_dim,
-            action_dim,
-            self.layers,
-            "V",
-            discrete,
-            action_lim=action_lim,
-            activation=self.activation,
-        ).to(self.device)
+            self.ac = get_model("ac", self.network)(
+                input_dim,
+                action_dim,
+                self.layers,
+                "V",
+                discrete,
+                action_lim=action_lim,
+                activation=self.activation,
+            ).to(self.device)
+        else:
+            self.ac = self.network(**kwargs).to(device)
 
+        assert "actor" and "critic" in dir(
+            self.ac
+        ), "network must contain actor and critic attributes"
+        assert "get_value" and "get_action" in dir(
+            self.ac
+        ), "network must contain get_value and get_action methods"
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
         self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95)
-
-    def create_custom_model(self):
-        # Instantiate custom networks and optimizers
-        try:
-            self.ac = self.network_type(**kwargs).to(self.device)
-
-            self.optimizer_policy = opt.Adam(
-                self.ac.actor.parameters(), lr=self.lr_policy
-            )
-            self.optimizer_value = opt.Adam(
-                self.ac.critic.parameters(), lr=self.lr_value
-            )
-
-            self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95)
-        except KeyError:
-            print("network_type class must contain actor and critic attributes")
 
     def select_action(self, state: np.ndarray, deterministic=False) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)
@@ -197,7 +188,7 @@ class PPO1(OnPolicyAgent):
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "batch_size": self.batch_size,
             "gamma": self.gamma,
             "clip_param": self.clip_param,
