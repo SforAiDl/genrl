@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import Tuple
 
 import numpy as np
-import torch
 from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import BaseDQN

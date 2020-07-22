@@ -1,6 +1,5 @@
 from typing import Tuple
 
-import torch
 from torch import nn as nn
 
 from genrl.deep.agents.dqn.utils import NoisyLinear, noisy_mlp

@@ -1,5 +1,3 @@
-import torch
-
 from genrl.deep.agents.dqn.base import BaseDQN
 
 

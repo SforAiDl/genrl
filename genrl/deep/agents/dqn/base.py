@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import Any, Dict, List
 
 import numpy as np
-import torch
 from torch import optim as opt
 from torch.nn import functional as F
 

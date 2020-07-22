@@ -1,4 +1,3 @@
-import torch
 from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import BaseDQN
