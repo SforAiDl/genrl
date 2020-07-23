@@ -2,7 +2,7 @@ from typing import List
 
 import numpy as np
 
-from ..bandits import Bandit
+from genrl.classical.bandit.bandits import Bandit
 
 
 class BanditPolicy(object):

@@ -7,8 +7,8 @@ import torch
 import torch.optim as opt
 from torch.autograd import Variable
 
-from ....environments import VecEnv
-from ...common import (
+from genrl.environments import VecEnv
+from genrl.deep.common import (
     PrioritizedBuffer,
     ReplayBuffer,
     get_env_properties,
@@ -16,7 +16,7 @@ from ...common import (
     safe_mean,
     set_seeds,
 )
-from .utils import (
+from genrl.deep.agents.dqn.utils import (
     CategoricalDQNValue,
     CategoricalDQNValueCNN,
     DuelingDQNValueCNN,
