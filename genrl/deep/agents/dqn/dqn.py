@@ -34,7 +34,7 @@ class DQN:
 
     Paper (Double DQN) https://arxiv.org/abs/1509.06461
 
-    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param network: The deep neural network layer types ['mlp', 'cnn']
     :param env: The environment to learn from
     :param double_dqn: For training Double DQN
     :param dueling_dqn:  For training Dueling DQN
@@ -51,7 +51,7 @@ class DQN:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; 'cpu' for cpu and 'cuda' for gpu
-    :type network_type: string
+    :type network: string
     :type env: Gym environment
     :type double_dqn: bool
     :type dueling_dqn: bool
@@ -72,7 +72,7 @@ class DQN:
 
     def __init__(
         self,
-        network_type: str,
+        network: str,
         env: Union[gym.Env, VecEnv],
         double_dqn: bool = False,
         dueling_dqn: bool = False,
@@ -119,7 +119,7 @@ class DQN:
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
-        self.network_type = network_type
+        self.network = network
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -143,7 +143,7 @@ class DQN:
         Initializes optimizer and replay buffers as well.
         """
         state_dim, action_dim, _, _ = get_env_properties(self.env)
-        if self.network_type == "mlp":
+        if self.network == "mlp":
             if self.dueling_dqn:
                 self.model = DuelingDQNValueMlp(state_dim, action_dim)
             elif self.categorical_dqn:
@@ -151,11 +151,9 @@ class DQN:
             elif self.noisy_dqn:
                 self.model = NoisyDQNValue(state_dim, action_dim)
             else:
-                self.model = get_model("v", self.network_type)(
-                    state_dim, action_dim, "Qs"
-                )
+                self.model = get_model("v", self.network)(state_dim, action_dim, "Qs")
 
-        elif self.network_type == "cnn":
+        elif self.network == "cnn":
             self.framestack = self.env.framestack
 
             if self.dueling_dqn:
@@ -167,7 +165,7 @@ class DQN:
                     action_dim, self.num_atoms, self.framestack
                 )
             else:
-                self.model = get_model("v", self.network_type)(
+                self.model = get_model("v", self.network)(
                     action_dim, self.framestack, "Qs"
                 )
 
@@ -267,7 +265,7 @@ class DQN:
         reward = Variable(torch.FloatTensor(reward))
         done = Variable(torch.FloatTensor(done))
 
-        if self.network_type == "cnn":
+        if self.network == "cnn":
             state = state.view(
                 -1, self.framestack, self.env.screen_size, self.env.screen_size,
             )

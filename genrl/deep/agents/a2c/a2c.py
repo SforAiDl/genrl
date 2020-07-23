@@ -27,8 +27,8 @@ class A2C(OnPolicyAgent):
     :param env: The environment to learn from
     :param gamma: Discount factor
     :param actor_batch_size: Update batch size
-    :param lr_actor: Policy Network learning rate
-    :param lr_critic: Value Network learning rate
+    :param lr_actor: Policy network learning rate
+    :param lr_critic: Value network learning rate
     :param num_episodes: Number of episodes
     :param timesteps_per_actorbatch: Number of timesteps per epoch
     :param max_ep_len: Maximum timesteps in an episode
@@ -63,7 +63,7 @@ class A2C(OnPolicyAgent):
 
     def __init__(
         self,
-        network: Union[str, BaseActorCritic],
+        network,
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
@@ -79,6 +79,7 @@ class A2C(OnPolicyAgent):
     ):
 
         super(A2C, self).__init__(
+            network,
             env,
             batch_size,
             layers,
@@ -89,7 +90,6 @@ class A2C(OnPolicyAgent):
             rollout_size,
             **kwargs
         )
-        self.network = network
         self.max_ep_len = max_ep_len
         self.noise = noise
         self.noise_std = noise_std

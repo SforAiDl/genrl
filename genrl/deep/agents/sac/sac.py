@@ -9,7 +9,14 @@ import torch.optim as opt
 from torch.distributions import Normal
 
 from ....environments import VecEnv
-from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
+from ...common import (
+    BaseActorCritic,
+    ReplayBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+    set_seeds,
+)
 
 
 class SAC:
@@ -37,7 +44,7 @@ class SAC:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :type network: string
+    :type network:
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -60,7 +67,7 @@ class SAC:
 
     def __init__(
         self,
-        network: str,
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         gamma: float = 0.99,
         replay_size: int = 1000000,
@@ -156,7 +163,9 @@ class SAC:
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
 
         # freeze target parameters
-        for param in zip(self.q1_targ.parameters(), self.q2_targ.parameters()):
+        for param in self.q1_targ.parameters():
+            param.requires_grad = False
+        for param in self.q2_targ.parameters():
             param.requires_grad = False
 
         # optimizers

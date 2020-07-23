@@ -70,6 +70,7 @@ class PPO1(OnPolicyAgent):
     ):
 
         super(PPO1, self).__init__(
+            network,
             env,
             batch_size=batch_size,
             layers=layers,
@@ -81,7 +82,6 @@ class PPO1(OnPolicyAgent):
             **kwargs
         )
 
-        self.network = network
         self.clip_param = clip_param
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
         self.value_coeff = kwargs.get("value_coeff", 0.5)

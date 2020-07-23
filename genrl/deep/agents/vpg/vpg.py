@@ -7,7 +7,13 @@ import torch.optim as opt
 from torch.autograd import Variable
 
 from ....environments import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from ...common import (
+    BaseActorCritic,
+    RolloutBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+)
 from ..base import OnPolicyAgent
 
 
@@ -17,7 +23,7 @@ class VPG(OnPolicyAgent):
 
     Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
 
-    :param network_type: The deep neural network layer types ['mlp']
+    :param network: The deep neural network layer types ['mlp']
     :param env: The environment to learn from
     :param timesteps_per_actorbatch: timesteps per actor per update
     :param gamma: discount factor
@@ -29,7 +35,7 @@ class VPG(OnPolicyAgent):
 'cpu' for cpu and 'cuda' for gpu
     :param load_model: model loading path
     :param rollout_size: Rollout Buffer Size
-    :type network_type: str
+    :type network: str or BaseActorCritic
     :type env: Gym environment(s)
     :type timesteps_per_actorbatch: int
     :type gamma: float
@@ -44,7 +50,7 @@ class VPG(OnPolicyAgent):
 
     def __init__(
         self,
-        network_type: str,
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
@@ -56,7 +62,7 @@ class VPG(OnPolicyAgent):
     ):
 
         super(VPG, self).__init__(
-            network_type,
+            network,
             env,
             batch_size,
             layers,
@@ -75,14 +81,22 @@ class VPG(OnPolicyAgent):
         """
         Initialize the actor and critic networks
         """
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
-            self.env, self.network_type
-        )
+        if isinstance(self.network, str):
+            input_dim, action_dim, discrete, action_lim = get_env_properties(
+                self.env, self.network
+            )
 
-        # Instantiate networks and optimizers
-        self.actor = get_model("p", self.network_type)(
-            input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
-        ).to(self.device)
+            # Instantiate networks and optimizers
+            self.actor = get_model("p", self.network)(
+                input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
+            ).to(self.device)
+        else:
+            self.model = self.network(**kwargs).to(self.device)
+            assert "actor" in dir(self.model), "network must contain actor attribute"
+            assert "get_action" in dir(
+                self.model
+            ), "network must contain get_action method"
+            self.actor = self.model.actor.to(self.device)
 
         self.optimizer_policy = opt.Adam(self.actor.parameters(), lr=self.lr_policy)
 
@@ -144,7 +158,7 @@ class VPG(OnPolicyAgent):
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "batch_size": self.batch_size,
             "gamma": self.gamma,
             "lr_policy": self.lr_policy,

@@ -115,22 +115,22 @@ def load_params(algo: Any) -> None:
 
 
 def get_env_properties(
-    env: Union[gym.Env, VecEnv], network_type: str = "mlp"
+    env: Union[gym.Env, VecEnv], network: str = "mlp"
 ) -> (Tuple[int]):
     """
     Finds important properties of environment
 
     :param env: Environment that the agent is interacting with
     :type env: Gym Environment
-    :param network_type: Type of network architecture, eg. "mlp", "cnn"
-    :type network_type: str
+    :param network: Type of network architecture, eg. "mlp", "cnn"
+    :type network: str
     :returns: (State space dimensions, Action space dimensions,
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
-    if network_type == "cnn":
+    if network == "cnn":
         input_dim = env.framestack
-    elif network_type == "mlp":
+    elif network == "mlp":
         input_dim = env.observation_space.shape[0]
 
     if isinstance(env.action_space, gym.spaces.Discrete):

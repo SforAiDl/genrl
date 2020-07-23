@@ -4,12 +4,19 @@ from typing import Any, Dict, Tuple, Union
 import numpy as np
 import torch
 
+from genrl.deep.common.actor_critic import BaseActorCritic
 from genrl.deep.common.utils import load_params, set_seeds
 
 
 class BaseAgent(ABC):
-    def __init__(self, network_type: str, env: Any, epochs: int = 100, **kwargs):
-        self.network_type = network_type
+    def __init__(
+        self,
+        network: Union[str, BaseActorCritic],
+        env: Any,
+        epochs: int = 100,
+        **kwargs
+    ):
+        self.network = network
         self.env = env
         self.epochs = epochs
         self.seed = kwargs.get("seed", None)
@@ -79,7 +86,7 @@ class BaseAgent(ABC):
 class OnPolicyAgent(BaseAgent):
     def __init__(
         self,
-        network_type: Union[str, BaseAgent],
+        network: Union[str, BaseActorCritic],
         env: Any,
         batch_size: int = 256,
         layers: Tuple = (64, 64),
@@ -90,8 +97,7 @@ class OnPolicyAgent(BaseAgent):
         rollout_size: int = 2048,
         **kwargs
     ):
-        super(OnPolicyAgent, self).__init__(env, epochs, **kwargs)
-        self.network_type = network_type
+        super(OnPolicyAgent, self).__init__(network, env, epochs, **kwargs)
         self.batch_size = batch_size
         self.gamma = gamma
         self.lr_policy = lr_policy
