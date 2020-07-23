@@ -1,16 +1,14 @@
 from typing import List
 
 import numpy as np
+import torch
 from torch import nn as nn
 
-from genrl.deep.agents.dqn.base import BaseDQN
+from genrl.deep.agents.dqn.base import DQN
 
 
 def ddqn_q_target(
-    agent: BaseDQN,
-    next_states: torch.Tensor,
-    rewards: torch.Tensor,
-    dones: torch.Tensor,
+    agent: DQN, next_states: torch.Tensor, rewards: torch.Tensor, dones: torch.Tensor,
 ) -> torch.Tensor:
     """Double Q-learning target
 
@@ -18,7 +16,7 @@ def ddqn_q_target(
     class in any DQN algorithm
 
     Args:
-        agent (:obj:`BaseDQN`): The agent
+        agent (:obj:`DQN`): The agent
         next_states (:obj:`torch.Tensor`): Next states being encountered by the agent
         rewards (:obj:`torch.Tensor`): Rewards received by the agent
         dones (:obj:`torch.Tensor`): Game over status of each environment
@@ -40,7 +38,7 @@ def ddqn_q_target(
 
 
 def get_projection_distribution(
-    agent: BaseDQN, next_state: np.ndarray, rewards: List[float], dones: List[bool],
+    agent: DQN, next_state: np.ndarray, rewards: List[float], dones: List[bool],
 ):
     """Projection Distribution
 

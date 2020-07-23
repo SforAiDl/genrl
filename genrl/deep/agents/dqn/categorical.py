@@ -2,14 +2,15 @@ from copy import deepcopy
 from typing import Tuple
 
 import numpy as np
+import torch
 from torch import optim as opt
 
-from genrl.deep.agents.dqn.base import BaseDQN
+from genrl.deep.agents.dqn.base import DQN
 from genrl.deep.agents.dqn.utils import get_projection_distribution
 from genrl.deep.common import get_env_properties, get_model
 
 
-class CategoricalDQN(BaseDQN):
+class CategoricalDQN(DQN):
     """Categorical DQN Algorithm
 
     Paper: https://arxiv.org/pdf/1707.06887.pdf
@@ -49,16 +50,18 @@ class CategoricalDQN(BaseDQN):
         v_max: int = 10,
         **kwargs
     ):
-        super(CategoricalDQN, self).__init__(*args, **kwargs)
         self.noisy_layers = noisy_layers
         self.num_atoms = num_atoms
         self.v_min = v_min
         self.v_max = v_max
 
-        self.empty_logs()
-        self.create_model()
+        super(CategoricalDQN, self).__init__(*args, create_model=False, **kwargs)
 
-    def create_model(self, *args) -> None:
+        self.empty_logs()
+        if self.create_model:
+            self._create_model()
+
+    def _create_model(self, *args) -> None:
         """Function to initialize Q-value model
 
         Initialises Q-value mode based on network type ["cnn", "mlp"]

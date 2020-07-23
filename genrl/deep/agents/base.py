@@ -13,6 +13,7 @@ class BaseAgent(ABC):
         self,
         network_type: str,
         env: Any,
+        create_model: bool = True,
         batch_size: int = 64,
         gamma: float = 0.99,
         layers: Tuple = (64, 64),
@@ -22,6 +23,7 @@ class BaseAgent(ABC):
     ):
         self.network_type = network_type
         self.env = env
+        self.create_model = create_model
         self.batch_size = batch_size
         self.gamma = gamma
         self.layers = layers
@@ -42,7 +44,7 @@ class BaseAgent(ABC):
         if self.seed is not None:
             set_seeds(self.seed, self.env)
 
-    def create_model(self) -> None:
+    def _create_model(self) -> None:
         """
         Initialize all the policy networks in this method, and also \
         initialize the optimizers and the buffers.

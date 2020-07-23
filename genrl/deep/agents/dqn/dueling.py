@@ -2,11 +2,11 @@ from copy import deepcopy
 
 from torch import optim as opt
 
-from genrl.deep.agents.dqn.base import BaseDQN
+from genrl.deep.agents.dqn.base import DQN
 from genrl.deep.common import get_env_properties, get_model
 
 
-class DuelingDQN(BaseDQN):
+class DuelingDQN(DQN):
     """Dueling DQN class
 
     Paper: https://arxiv.org/abs/1511.06581
@@ -33,11 +33,13 @@ class DuelingDQN(BaseDQN):
     """
 
     def __init__(self, *args, **kwargs):
-        super(DuelingDQN, self).__init__(*args, **kwargs)
-        self.empty_logs()
-        self.create_model()
+        super(DuelingDQN, self).__init__(*args, create_model=False, **kwargs)
 
-    def create_model(self, *args) -> None:
+        self.empty_logs()
+        if self.create_model:
+            self._create_model()
+
+    def _create_model(self, **kwargs) -> None:
         """Function to initialize Q-value model
 
         Initialises Q-value mode based on network type ["cnn", "mlp"]
@@ -49,5 +51,5 @@ class DuelingDQN(BaseDQN):
         )
         self.target_model = deepcopy(self.model)
 
-        self.replay_buffer = self.buffer_class(self.replay_size, *args)
+        self.replay_buffer = self.buffer_class(self.replay_size, **kwargs)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)

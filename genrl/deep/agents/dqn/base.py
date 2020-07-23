@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Any, Dict, List
 
 import numpy as np
+import torch
 from torch import optim as opt
 from torch.nn import functional as F
 
@@ -9,7 +10,7 @@ from genrl.deep.agents.base import OffPolicyAgent
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
-class BaseDQN(OffPolicyAgent):
+class DQN(OffPolicyAgent):
     """Base DQN Class
 
     Paper: https://arxiv.org/abs/1312.5602
@@ -43,12 +44,16 @@ class BaseDQN(OffPolicyAgent):
         epsilon_decay: int = 1000,
         **kwargs
     ):
-        super(BaseDQN, self).__init__(*args, **kwargs)
+        super(DQN, self).__init__(*args, **kwargs)
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
 
-    def create_model(self, *args) -> None:
+        self.empty_logs()
+        if self.create_model:
+            self._create_model()
+
+    def _create_model(self, **kwargs) -> None:
         """Function to initialize Q-value model
 
         This will create the Q-value function of the agent. Depends on the network type,
@@ -69,7 +74,7 @@ class BaseDQN(OffPolicyAgent):
         )
         self.target_model = deepcopy(self.model)
 
-        self.replay_buffer = self.buffer_class(self.replay_size, *args)
+        self.replay_buffer = self.buffer_class(self.replay_size, **kwargs)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
 
     def update_target_model(self) -> None:
@@ -231,15 +236,3 @@ class BaseDQN(OffPolicyAgent):
         self.logs = {}
         self.logs["value_loss"] = []
         self.logs["epsilon"] = []
-
-
-class DQN(BaseDQN):
-    """Vanilla DQN class
-
-    Simply calls the `create_model` function from the base class
-    """
-
-    def __init__(self, *args, **kwargs):
-        super(DQN, self).__init__(*args, **kwargs)
-        self.empty_logs()
-        self.create_model()

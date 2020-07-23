@@ -1,7 +1,9 @@
-from genrl.deep.agents.dqn.base import BaseDQN
+import torch
+
+from genrl.deep.agents.dqn.base import DQN
 
 
-class DoubleDQN(BaseDQN):
+class DoubleDQN(DQN):
     """Double DQN Class
 
     Paper: https://arxiv.org/abs/1509.06461
@@ -28,9 +30,10 @@ class DoubleDQN(BaseDQN):
     """
 
     def __init__(self, *args, **kwargs):
-        super(DoubleDQN, self).__init__(*args, **kwargs)
+        super(DoubleDQN, self).__init__(*args, create_model=False, **kwargs)
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: torch.Tensor, dones: torch.Tensor

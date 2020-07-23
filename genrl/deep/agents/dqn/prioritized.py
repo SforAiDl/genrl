@@ -1,9 +1,10 @@
+import torch
 from torch import optim as opt
 
-from genrl.deep.agents.dqn.base import BaseDQN
+from genrl.deep.agents.dqn.base import DQN
 
 
-class PrioritizedReplayDQN(BaseDQN):
+class PrioritizedReplayDQN(DQN):
     """Prioritized Replay DQN Class
 
     Paper: https://arxiv.org/abs/1511.05952
@@ -32,14 +33,16 @@ class PrioritizedReplayDQN(BaseDQN):
     """
 
     def __init__(self, *args, alpha: float = 0.6, beta: float = 0.4, **kwargs):
-        super(PrioritizedReplayDQN, self).__init__(
-            *args, buffer_type="prioritized", **kwargs
-        )
         self.alpha = alpha
         self.beta = beta
 
+        super(PrioritizedReplayDQN, self).__init__(
+            *args, buffer_type="prioritized", create_model=False, **kwargs
+        )
+
         self.empty_logs()
-        self.create_model(self.alpha)
+        if self.create_model:
+            self._create_model(alpha=self.alpha)
 
     def get_q_loss(self) -> torch.Tensor:
         """Function to calculate the loss of the Q-function

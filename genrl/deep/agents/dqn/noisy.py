@@ -3,11 +3,11 @@ from typing import Tuple
 
 from torch import optim as opt
 
-from genrl.deep.agents.dqn.base import BaseDQN
+from genrl.deep.agents.dqn.base import DQN
 from genrl.deep.common import get_env_properties, get_model
 
 
-class NoisyDQN(BaseDQN):
+class NoisyDQN(DQN):
     """Noisy DQN Algorithm
 
     Paper: https://arxiv.org/abs/1706.10295
@@ -36,13 +36,15 @@ class NoisyDQN(BaseDQN):
     """
 
     def __init__(self, *args, noisy_layers: Tuple = (128, 128), **kwargs):
-        super(NoisyDQN, self).__init__(*args, **kwargs)
         self.noisy_layers = noisy_layers
 
-        self.empty_logs()
-        self.create_model()
+        super(NoisyDQN, self).__init__(*args, create_model=False, **kwargs)
 
-    def create_model(self, *args) -> None:
+        self.empty_logs()
+        if self.create_model:
+            self._create_model()
+
+    def _create_model(self, **kwargs) -> None:
         """Function to initialize Q-value model
 
         Initialises Q-value mode based on network type ["cnn", "mlp"]
@@ -54,7 +56,7 @@ class NoisyDQN(BaseDQN):
         )
         self.target_model = deepcopy(self.model)
 
-        self.replay_buffer = self.buffer_class(self.replay_size, *args)
+        self.replay_buffer = self.buffer_class(self.replay_size, **kwargs)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
 
     def update_params(self, update_interval: int) -> None:

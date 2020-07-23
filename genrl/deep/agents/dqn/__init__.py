@@ -1,4 +1,4 @@
-from genrl.deep.agents.dqn.base import DQN, BaseDQN  # noqa
+from genrl.deep.agents.dqn.base import DQN  # noqa
 from genrl.deep.agents.dqn.categorical import CategoricalDQN  # noqa
 from genrl.deep.agents.dqn.double import DoubleDQN  # noqa
 from genrl.deep.agents.dqn.dueling import DuelingDQN  # noqa

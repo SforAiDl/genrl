@@ -86,9 +86,10 @@ class A2C(OnPolicyAgent):
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self) -> None:
+    def _create_model(self) -> None:
         """
         Creates actor critic model and initialises optimizers
         """

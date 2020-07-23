@@ -67,9 +67,10 @@ class VPG(OnPolicyAgent):
         )
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self):
+    def _create_model(self):
         """
         Initialize the actor and critic networks
         """

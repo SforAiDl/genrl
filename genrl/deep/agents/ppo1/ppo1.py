@@ -82,9 +82,10 @@ class PPO1(OnPolicyAgent):
         self.activation = kwargs.get("activation", "relu")
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self):
+    def _create_model(self):
         # Instantiate networks and optimizers
         input_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network_type
