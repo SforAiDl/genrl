@@ -156,9 +156,7 @@ class SAC:
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
 
         # freeze target parameters
-        for param in self.q1_targ.parameters():
-            param.requires_grad = False
-        for param in self.q2_targ.parameters():
+        for param in zip(self.q1_targ.parameters(), self.q2_targ.parameters()):
             param.requires_grad = False
 
         # optimizers
