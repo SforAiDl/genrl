@@ -30,7 +30,8 @@ class DoubleDQN(DQN):
     """
 
     def __init__(self, *args, **kwargs):
-        super(DoubleDQN, self).__init__(*args, create_model=False, **kwargs)
+        super(DoubleDQN, self).__init__(*args, **kwargs)
+
         self.empty_logs()
         if self.create_model:
             self._create_model()

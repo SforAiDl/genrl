@@ -60,7 +60,7 @@ class DQN(OffPolicyAgent):
         types of Q-value models needed.
 
         Supported:
-            "v" and "Qs" to `get_value_from_name` -> Regular Q-value function
+            "v" and "Qs" -> Regular Q-value function
             "dv" and "mlpdueling" -> Dueling Q-value function
             "dv" and "mlpnoisy" -> Noisy Q-value function
             "dv" and "mlpcategorical -> Categorical Q-value function
@@ -153,23 +153,31 @@ class DQN(OffPolicyAgent):
         )
         return target_q_values.unsqueeze(-1)
 
+    def sample_from_buffer(self, **kwargs):
+        """
+        Samples experiences from the buffer and converts them into usable formats
+        """
+        batch = self.replay_buffer.sample(self.batch_size, **kwargs)
+        batch.states = batch.states.reshape(-1, *self.env.obs_shape)
+        batch.actions = batch.actions.reshape(-1, *self.env.action_shape).long()
+        batch.rewards = torch.FloatTensor(batch.rewards).reshape(-1)
+        batch.next_states = batch.next_states.reshape(-1, *self.env.obs_shape)
+        batch.dones = torch.FloatTensor(batch.dones).reshape(-1)
+        return batch
+
     def get_q_loss(self) -> torch.Tensor:
         """Function to calculate the loss of the Q-function
 
         Returns:
             loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
         """
-        states, actions, rewards, next_states, dones = self.replay_buffer.sample(
-            self.batch_size
-        )
-        states = states.reshape(-1, *self.env.obs_shape)
-        actions = actions.reshape(-1, *self.env.action_shape).long()
-        rewards = torch.FloatTensor(rewards).reshape(-1)
-        next_states = next_states.reshape(-1, *self.env.obs_shape)
-        dones = torch.FloatTensor(dones).reshape(-1)
+        batch = self.sample_from_buffer()
 
-        q_values = self.get_q_values(states, actions)
-        target_q_values = self.get_target_q_values(next_states, rewards, dones)
+        q_values = self.get_q_values(batch.states, batch.actions)
+        target_q_values = self.get_target_q_values(
+            batch.next_states, batch.rewards, batch.dones
+        )
+
         loss = F.mse_loss(q_values, target_q_values)
         self.logs["value_loss"].append(loss.item())
         return loss

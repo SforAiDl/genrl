@@ -55,7 +55,7 @@ class CategoricalDQN(DQN):
         self.v_min = v_min
         self.v_max = v_max
 
-        super(CategoricalDQN, self).__init__(*args, create_model=False, **kwargs)
+        super(CategoricalDQN, self).__init__(*args, **kwargs)
 
         self.empty_logs()
         if self.create_model:

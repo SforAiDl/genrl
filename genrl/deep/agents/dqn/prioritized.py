@@ -37,7 +37,7 @@ class PrioritizedReplayDQN(DQN):
         self.beta = beta
 
         super(PrioritizedReplayDQN, self).__init__(
-            *args, buffer_type="prioritized", create_model=False, **kwargs
+            *args, buffer_type="prioritized", **kwargs
         )
 
         self.empty_logs()
@@ -50,29 +50,18 @@ class PrioritizedReplayDQN(DQN):
         Returns:
             loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
         """
-        (
-            states,
-            actions,
-            rewards,
-            next_states,
-            dones,
-            indices,
-            weights,
-        ) = self.replay_buffer.sample(self.batch_size, self.beta)
+        batch = self.sample_from_buffer(beta=self.beta)
 
-        states = states.reshape(-1, *self.env.obs_shape)
-        actions = actions.reshape(-1, *self.env.action_shape).long()
-        next_states = next_states.reshape(-1, *self.env.obs_shape)
+        q_values = self.get_q_values(batch.states, batch.actions)
+        target_q_values = self.get_target_q_values(
+            batch.next_states, batch.rewards, batch.dones
+        )
 
-        rewards = torch.FloatTensor(rewards).reshape(-1)
-        dones = torch.FloatTensor(dones).reshape(-1)
-
-        q_values = self.get_q_values(states, actions)
-        target_q_values = self.get_target_q_values(next_states, rewards, dones)
-
-        loss = weights * (q_values - target_q_values.detach()) ** 2
+        loss = batch.weights * (q_values - target_q_values.detach()) ** 2
         priorities = loss + 1e-5
         loss = loss.mean()
-        self.replay_buffer.update_priorities(indices, priorities.detach().cpu().numpy())
+        self.replay_buffer.update_priorities(
+            batch.indices, priorities.detach().cpu().numpy()
+        )
         self.logs["value_loss"].append(loss.item())
         return loss

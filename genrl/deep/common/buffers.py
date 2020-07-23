@@ -1,9 +1,27 @@
 import random
 from collections import deque
-from typing import Tuple
+from typing import NamedTuple, Tuple
 
 import numpy as np
 import torch
+
+
+class ReplayBufferSamples(NamedTuple):
+    states: torch.Tensor
+    actions: torch.Tensor
+    next_observations: torch.Tensor
+    dones: torch.Tensor
+    rewards: torch.Tensor
+
+
+class PrioritizedReplayBufferSamples(NamedTuple):
+    states: torch.Tensor
+    actions: torch.Tensor
+    next_observations: torch.Tensor
+    dones: torch.Tensor
+    rewards: torch.Tensor
+    indices: torch.Tensor
+    weights: torch.Tensor
 
 
 class ReplayBuffer:
@@ -110,12 +128,14 @@ class PushReplayBuffer:
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
-        return (
-            torch.from_numpy(v).float()
-            for v in [state, action, reward, next_state, done]
+        return ReplayBufferSamples(
+            *[
+                torch.from_numpy(v).float()
+                for v in [state, action, reward, next_state, done]
+            ]
         )
 
-    def get_len(self) -> int:
+    def __len__(self) -> int:
         """
         Gives number of experiences in buffer currently
 
@@ -190,9 +210,20 @@ Importance Sampling (IS) weights)
 
         samples = [self.buffer[i] for i in indices]
         (states, actions, rewards, next_states, dones) = map(np.stack, zip(*samples))
-        return (
-            torch.as_tensor(v, dtype=torch.float32)
-            for v in [states, actions, rewards, next_states, dones, indices, weights]
+
+        return PrioritizedReplayBufferSamples(
+            *[
+                torch.as_tensor(v, dtype=torch.float32)
+                for v in [
+                    states,
+                    actions,
+                    rewards,
+                    next_states,
+                    dones,
+                    indices,
+                    weights,
+                ]
+            ]
         )
 
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:

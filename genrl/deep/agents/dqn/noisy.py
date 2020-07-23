@@ -38,7 +38,7 @@ class NoisyDQN(DQN):
     def __init__(self, *args, noisy_layers: Tuple = (128, 128), **kwargs):
         self.noisy_layers = noisy_layers
 
-        super(NoisyDQN, self).__init__(*args, create_model=False, **kwargs)
+        super(NoisyDQN, self).__init__(*args, **kwargs)
 
         self.empty_logs()
         if self.create_model:

@@ -33,7 +33,7 @@ class DuelingDQN(DQN):
     """
 
     def __init__(self, *args, **kwargs):
-        super(DuelingDQN, self).__init__(*args, create_model=False, **kwargs)
+        super(DuelingDQN, self).__init__(*args, **kwargs)
 
         self.empty_logs()
         if self.create_model:
