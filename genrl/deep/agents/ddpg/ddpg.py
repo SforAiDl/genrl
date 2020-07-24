@@ -86,6 +86,7 @@ class DDPG:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
+        **kwargs
     ):
 
         self.network = network
@@ -139,8 +140,8 @@ class DDPG:
                 state_dim, action_dim, self.layers, "Qsa", False
             ).to(self.device)
         else:
-            self.ac = self.network(**kwargs).to(device)
-            action_dim = kwargs["action_dim"]
+            self.ac = self.network.to(self.device)
+            action_dim = self.network.action_dim
 
         self.ac_target = deepcopy(self.ac).to(self.device)
         if self.noise is not None:

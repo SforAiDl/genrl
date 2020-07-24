@@ -86,6 +86,7 @@ class SAC:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
+        **kwargs
     ):
 
         self.network = network
@@ -151,13 +152,13 @@ class SAC:
                 .float()
             )
         else:
-            self.model = self.network(**kwargs)
+            self.model = self.network
             assert "value" and "policy" in dir(
                 self.model
             ), "network must contain value and policy attributes"
             self.q1 = self.model.value.to(self.device).float()
             self.q2 = self.model.value.to(self.device).float()
-            self.policy = self.model.policy.to(device).float()
+            self.policy = self.model.policy.to(self.device).float()
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()
         self.q2_targ = deepcopy(self.q2).to(self.device).float()

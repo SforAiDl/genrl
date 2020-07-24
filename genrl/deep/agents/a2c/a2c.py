@@ -112,8 +112,8 @@ class A2C(OnPolicyAgent):
             ).to(self.device)
 
         else:
-            self.ac = self.network(**kwargs)
-            action_dim = kwargs["action_dim"]
+            self.ac = self.network
+            action_dim = self.network.action_dim
 
         assert "actor" and "critic" in dir(
             self.ac

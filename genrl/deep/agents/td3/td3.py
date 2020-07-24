@@ -126,7 +126,7 @@ class TD3:
         self.empty_logs()
         self.create_model()
 
-    def create_model(self) -> None:
+    def create_model(self, **kwargs) -> None:
         if isinstance(self.network, str):
             state_dim, action_dim, discrete, _ = get_env_properties(self.env)
             assert not discrete, "Discrete Environments not supported for {}.".format(
@@ -141,8 +141,8 @@ class TD3:
                 state_dim, action_dim, hidden=self.layers, val_type="Qsa"
             )
         else:
-            self.ac = self.network(**kwargs).to(device)
-            action_dim = kwargs["action_dim"]
+            self.ac = self.network.to(self.device)
+            action_dim = self.network.action_dim
             assert (
                 "actor" and "critic" and "value" in dir(self.ac)
             ), "network must contain actor, critic and value attributes"

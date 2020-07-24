@@ -91,7 +91,7 @@ class VPG(OnPolicyAgent):
                 input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
             ).to(self.device)
         else:
-            self.model = self.network(**kwargs).to(self.device)
+            self.model = self.network.to(self.device)
             assert "actor" in dir(self.model), "network must contain actor attribute"
             assert "get_action" in dir(
                 self.model

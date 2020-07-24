@@ -107,7 +107,7 @@ class PPO1(OnPolicyAgent):
                 activation=self.activation,
             ).to(self.device)
         else:
-            self.ac = self.network(**kwargs).to(device)
+            self.ac = self.network.to(self.device)
 
         assert "actor" and "critic" in dir(
             self.ac
