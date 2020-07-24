@@ -1,6 +1,6 @@
 Example code to run the algo
 
-`
+```python
 import gym
 
 from genrl import A2C
@@ -12,7 +12,7 @@ env = VectorEnv("CartPole-v0")
 agent = A2C(network_type='mlp', env=env, rollout_size=2048)
 trainer = OnPolicyTrainer(agent, env, log_mode=['stdout', 'tensorboard'], log_key="Episode")
 trainer.train()
-`
+```
 
 Hyperparameters for the A2C agent 
 (https://github.com/SforAiDl/genrl/blob/master/genrl/deep/agents/a2c/a2c.py): 
