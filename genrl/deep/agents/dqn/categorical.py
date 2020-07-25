@@ -54,10 +54,11 @@ class CategoricalDQN(DQN):
         self.num_atoms = num_atoms
         self.v_min = v_min
         self.v_max = v_max
-        self.dqn_type = "categorical"
-        self.noisy = True
 
         super(CategoricalDQN, self).__init__(*args, **kwargs)
+
+        self.dqn_type = "categorical"
+        self.noisy = True
 
         self.empty_logs()
         if self.create_model:

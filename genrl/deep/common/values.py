@@ -5,6 +5,7 @@ import torch
 from torch.nn import functional as F
 
 from genrl.deep.common.base import BaseValue
+from genrl.deep.common.noise import NoisyLinear
 from genrl.deep.common.utils import cnn, mlp, noisy_mlp
 
 
@@ -38,8 +39,6 @@ def _get_val_model(
         return arch([state_dim + action_dim, *fc_layers, 1], activation=activation)
     elif val_type == "Qs":
         return arch([state_dim, *fc_layers, action_dim], activation=activation)
-    elif val_type == "na":
-        return lambda *x: x
     else:
         raise ValueError
 
@@ -123,8 +122,8 @@ class MlpDuelingValue(MlpValue):
         hidden (:obj:`tuple`): Hidden layer dimensions
     """
 
-    def __init__(self, *args):
-        super(MlpDuelingValue, self).__init__(*args, val_type="na")
+    def __init__(self, *args, **kwargs):
+        super(MlpDuelingValue, self).__init__(*args, **kwargs)
         self.feature = mlp([self.input_dim, *self.fc_layers[:-1]])
         self.advantage = mlp([self.fc_layers[-1], self.action_dim])
         self.value = mlp([self.fc_layers[-1], 1])
@@ -145,8 +144,8 @@ class CnnDuelingValue(CnnValue):
         fc_layers (:obj:`tuple`): Hidden layer dimensions
     """
 
-    def __init__(self, *args):
-        super(CnnDuelingValue, self).__init__(*args, val_type="na")
+    def __init__(self, *args, **kwargs):
+        super(CnnDuelingValue, self).__init__(*args, **kwargs)
         self.advantage = mlp([self.output_size, *self.fc_layers, self.action_dim])
         self.value = mlp([self.output_size, *self.fc_layers, 1])
 
@@ -159,14 +158,14 @@ class CnnDuelingValue(CnnValue):
 
 class MlpNoisyValue(MlpValue):
     def __init__(self, *args, noisy_layers: Tuple = (128, 512), **kwargs):
-        super(MlpNoisyValue, self).__init__(*args, val_type="na")
+        super(MlpNoisyValue, self).__init__(*args, **kwargs)
 
         self.noisy_layers = noisy_layers
         self.num_atoms = kwargs["num_atoms"] if "num_atoms" in kwargs else 1
 
         self.model = noisy_mlp(
             [self.input_dim, *self.fc_layers],
-            [*self.noisy_layers, self.action_dim],
+            [*self.noisy_layers, self.action_dim * self.num_atoms],
             self.activation,
         )
 
@@ -181,7 +180,7 @@ class MlpNoisyValue(MlpValue):
 
 class CnnNoisyValue(CnnValue, MlpNoisyValue):
     def __init__(self, *args, **kwargs):
-        super(CnnNoisyValue, self).__init__(*args, val_type="na", **kwargs)
+        super(CnnNoisyValue, self).__init__(*args, **kwargs)
 
 
 class MlpCategoricalValue(MlpNoisyValue):
@@ -196,10 +195,8 @@ class MlpCategoricalValue(MlpNoisyValue):
             Categorical DQN value distribution
     """
 
-    def __init__(self, *args, noisy_layers: Tuple = (128, 512), num_atoms: int = 51):
-        super(MlpCategoricalValue, self).__init__(
-            *args, val_type="na", num_atoms=num_atoms
-        )
+    def __init__(self, *args, **kwargs):
+        super(MlpCategoricalValue, self).__init__(*args, **kwargs)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         features = self.model(state)
@@ -221,9 +218,7 @@ class CnnCategoricalValue(CnnValue, MlpCategoricalValue):
     """
 
     def __init__(self, *args, noisy_layers: Tuple = (128, 512), num_atoms: int = 51):
-        super(CnnCategoricalValue, self).__init__(
-            *args, val_type="na", num_atoms=num_atoms
-        )
+        super(CnnCategoricalValue, self).__init__(*args, num_atoms=num_atoms, **kwargs)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         features = self._cnn_forward(state)

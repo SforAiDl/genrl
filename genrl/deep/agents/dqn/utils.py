@@ -116,5 +116,4 @@ def get_projection_distribution(
     projection_distribution.view(-1).index_add_(
         0, (upper + offset).view(-1), (next_dist * (bz - lower.float())).view(-1)
     )
-
     return projection_distribution

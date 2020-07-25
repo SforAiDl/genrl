@@ -34,6 +34,7 @@ class TestDQN:
     def test_dueling_dqn(self):
         env = VectorEnv("CartPole-v0")
         algo = DuelingDQN("mlp", env, replay_size=100)
+        assert algo.dqn_type == "dueling"
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
@@ -43,6 +44,7 @@ class TestDQN:
     def test_prioritized_dqn(self):
         env = VectorEnv("CartPole-v0")
         algo = PrioritizedReplayDQN("mlp", env, replay_size=100)
+        assert algo.alpha
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
@@ -52,6 +54,8 @@ class TestDQN:
     def test_noisy_dqn(self):
         env = VectorEnv("CartPole-v0")
         algo = NoisyDQN("mlp", env, replay_size=100)
+        assert algo.dqn_type == "noisy"
+        assert algo.noisy
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
@@ -61,6 +65,8 @@ class TestDQN:
     def test_categorical_dqn(self):
         env = VectorEnv("CartPole-v0")
         algo = CategoricalDQN("mlp", env, replay_size=100)
+        assert algo.dqn_type == "categorical"
+        assert algo.noisy
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
