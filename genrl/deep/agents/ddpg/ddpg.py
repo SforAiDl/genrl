@@ -153,13 +153,6 @@ class DDPG:
         for param in self.ac_target.parameters():
             param.requires_grad = False
 
-        assert "actor" and "critic" in dir(
-            self.ac
-        ), "network must contain actor and critic attributes"
-        assert "get_value" and "get_action" in dir(
-            self.ac
-        ), "network must contain get_action an get_value methods"
-
         self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_p)
         self.optimizer_q = opt.Adam(self.ac.critic.parameters(), lr=self.lr_q)

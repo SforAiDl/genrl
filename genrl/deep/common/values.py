@@ -106,14 +106,7 @@ class CNNValue(BaseValue):
 
         activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
-        if "channels" in kwargs:
-            channels = [framestack]
-            for i in range(len(kwargs["channels"])):
-                channels.append(kwargs["channels"][i])
-            channels = tupe(channels)
-
-        else:
-            channels = (framestack, 16, 32)
+        channels = (framestack, 16, 32)
 
         self.conv, output_size = cnn(channels, activation=activation)
 

@@ -8,7 +8,7 @@ from torch.autograd import Variable
 
 from ....environments import VecEnv
 from ...common import (
-    BaseActorCritic,
+    BasePolicy,
     RolloutBuffer,
     get_env_properties,
     get_model,
@@ -50,7 +50,7 @@ class VPG(OnPolicyAgent):
 
     def __init__(
         self,
-        network: Union[str, BaseActorCritic],
+        network: Union[str, BasePolicy],
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
@@ -91,12 +91,7 @@ class VPG(OnPolicyAgent):
                 input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
             ).to(self.device)
         else:
-            self.model = self.network.to(self.device)
-            assert "actor" in dir(self.model), "network must contain actor attribute"
-            assert "get_action" in dir(
-                self.model
-            ), "network must contain get_action method"
-            self.actor = self.model.actor.to(self.device)
+            self.actor = self.network.to(self.device)
 
         self.optimizer_policy = opt.Adam(self.actor.parameters(), lr=self.lr_policy)
 

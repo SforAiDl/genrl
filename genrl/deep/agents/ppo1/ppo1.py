@@ -109,12 +109,6 @@ class PPO1(OnPolicyAgent):
         else:
             self.ac = self.network.to(self.device)
 
-        assert "actor" and "critic" in dir(
-            self.ac
-        ), "network must contain actor and critic attributes"
-        assert "get_value" and "get_action" in dir(
-            self.ac
-        ), "network must contain get_value and get_action methods"
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 

@@ -13,6 +13,7 @@ from genrl.deep.common.noise import ActionNoise  # noqa
 from genrl.deep.common.noise import NormalActionNoise  # noqa
 from genrl.deep.common.noise import OrnsteinUhlenbeckActionNoise  # noqa
 from genrl.deep.common.policies import (  # noqa
+    BasePolicy,
     CNNPolicy,
     MlpPolicy,
     get_policy_from_name,

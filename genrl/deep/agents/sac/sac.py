@@ -153,11 +153,11 @@ class SAC:
             )
         else:
             self.model = self.network
-            assert "value" and "policy" in dir(
+            assert "q1" and "q2" in dir(
                 self.model
-            ), "network must contain value and policy attributes"
-            self.q1 = self.model.value.to(self.device).float()
-            self.q2 = self.model.value.to(self.device).float()
+            ), "network must contain q1 and q2 attributes"
+            self.q1 = self.model.q1.to(self.device).float()
+            self.q2 = self.model.q2.to(self.device).float()
             self.policy = self.model.policy.to(self.device).float()
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()

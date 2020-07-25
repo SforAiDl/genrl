@@ -112,15 +112,9 @@ class A2C(OnPolicyAgent):
             ).to(self.device)
 
         else:
-            self.ac = self.network
+            self.ac = self.network.to(self.device)
             action_dim = self.network.action_dim
 
-        assert "actor" and "critic" in dir(
-            self.ac
-        ), "network must contain actor and critic attributes"
-        assert "get_value" and "get_action" in dir(
-            self.ac
-        ), "network must contain get_value and get_action methods"
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)

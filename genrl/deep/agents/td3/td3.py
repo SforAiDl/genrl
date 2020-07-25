@@ -143,13 +143,8 @@ class TD3:
         else:
             self.ac = self.network.to(self.device)
             action_dim = self.network.action_dim
-            assert (
-                "actor" and "critic" and "value" in dir(self.ac)
-            ), "network must contain actor, critic and value attributes"
-            assert "get_action" and "get_value" in dir(
-                self.ac
-            ), "network must contain get_action and get_action methods"
-            self.ac.qf2 = self.ac.value
+            assert "qf2" in dir(self.ac), "network must contain qf2 attribute"
+            self.ac.qf2 = self.network.qf2
 
         if self.noise is not None:
             self.noise = self.noise(
