@@ -1,6 +1,6 @@
 import collections
 from copy import deepcopy
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, Dict, List
 
 import numpy as np
 import torch

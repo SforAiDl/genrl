@@ -82,21 +82,21 @@ def categorical_greedy_action(agent: DQN, state: torch.Tensor) -> np.ndarray:
     return action
 
 
-def categorical_q_values(agent: DQN, state: np.ndarray):
+def categorical_q_values(agent: DQN, batch: collections.namedtuple):
     """Get Q values given state for a Categorical DQN
 
     Args:
         agent (:obj:`DQN`): The agent
-        states (:obj:`torch.Tensor`): States for which Q-values need to be found
-        actions (:obj:`torch.Tensor`): Actions taken at respective states
+        states (:obj:`torch.Tensor`): States being replayed
+        actions (:obj:`torch.Tensor`): Actions being replayed
 
     Returns:
         q_values (:obj:`torch.Tensor`): Q values for the given states and actions
     """
-    q_values = agent.model(batch.states)
+    q_values = agent.model(states)
 
     # Size of q_values should be [..., action_dim, 51] here
-    actions = batch.actions.unsqueeze(1).expand(-1, 1, self.num_atoms)
+    actions = actions.unsqueeze(1).expand(-1, 1, self.num_atoms)
     q_values = q_values.gather(1, actions)
 
     # But after this the shape of q_values would be [..., 1, 51] where as
@@ -110,7 +110,7 @@ def categorical_q_values(agent: DQN, state: np.ndarray):
 
 
 def categorical_q_target(
-    agent: DQN, next_state: np.ndarray, rewards: List[float], dones: List[bool],
+    agent: DQN, next_states: np.ndarray, rewards: List[float], dones: List[bool],
 ):
     """Projected Distribution of Q-values
 
@@ -125,12 +125,12 @@ def categorical_q_target(
     Returns:
         target_q_values (object): Projected Q-value Distribution or Target Q Values
     """
-    batch_size = next_state.size(0)
+    batch_size = next_states.size(0)
 
     delta_z = float(agent.v_max - agent.v_min) / (agent.num_atoms - 1)
     support = torch.linspace(agent.v_min, agent.v_max, agent.num_atoms)
 
-    next_q_values = agent.target_model(next_state).data.cpu() * support
+    next_q_values = agent.target_model(next_states).data.cpu() * support
     next_action = torch.argmax(next_q_values.sum(2), axis=1)
     next_action = next_action[:, np.newaxis, np.newaxis].expand(
         next_q_values.size(0), 1, next_q_values.size(2)
@@ -181,15 +181,7 @@ def categorical_q_loss(agent: DQN, batch: collections.namedtuple):
     target_q_values = agent.get_target_q_values(
         batch.next_states, batch.rewards, batch.dones
     )
-    q_values = agent.model(batch.states)
-    # Size of q_values should be [..., action_dim, 51] here
-    actions = batch.actions.unsqueeze(1).expand(-1, 1, agent.num_atoms)
-    q_values = q_values.gather(1, actions)
-    # But after this the shape of q_values would be [..., 1, 51] where as
-    # it needs to be the same as the target_q_values: [..., 51]
-    q_values = q_values.squeeze(1)  # Hence the squeeze
-    # Clamp Q-values to get positive and stable Q-values
-    q_values = q_values.clamp(0.01, 0.99)
+    q_values = agent.get_q_values(batch.states, batch.actions)
 
     # For the loss, we take the difference
     loss = -(target_q_values * q_values.log()).sum(1).mean()
