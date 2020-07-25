@@ -33,23 +33,5 @@ class DuelingDQN(DQN):
     """
 
     def __init__(self, *args, **kwargs):
+        self.dqn_type = "dueling"
         super(DuelingDQN, self).__init__(*args, **kwargs)
-
-        self.empty_logs()
-        if self.create_model:
-            self._create_model()
-
-    def _create_model(self, **kwargs) -> None:
-        """Function to initialize Q-value model
-
-        Initialises Q-value mode based on network type ["cnn", "mlp"]
-        """
-        input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
-
-        self.model = get_model("dv", self.network_type + "dueling")(
-            input_dim, action_dim, self.layers
-        )
-        self.target_model = deepcopy(self.model)
-
-        self.replay_buffer = self.buffer_class(self.replay_size, **kwargs)
-        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)

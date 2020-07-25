@@ -6,7 +6,8 @@ import numpy as np
 import torch
 from torch import nn as nn
 
-from ...environments import VecEnv
+from genrl.deep.common.noise import NoisyLinear
+from genrl.environments import VecEnv
 
 
 def get_model(type_: str, name_: str) -> Union:
@@ -102,6 +103,33 @@ activation layers)
     cnn_layers = nn.Sequential(*cnn_layers)
     output_size = int(out_channels * (output_size ** 2))
     return cnn_layers, output_size
+
+
+def noisy_mlp(fc_layers: List[int], noisy_layers: List[int], activation="relu"):
+    """Noisy MLP generating helper function
+
+    Args:
+        fc_layers (:obj:`list` of :obj:`int`): List of fully connected layers
+        noisy_layers (:obj:`list` of :obj:`int`): :ist of noisy layers
+        activation (str): Activation function to be used. ["tanh", "relu"]
+
+    Returns:
+        Noisy MLP model
+    """
+    model = []
+    act = nn.Tanh if activation == "tanh" else nn.ReLU()
+
+    for layer in range(len(fc_layers) - 1):
+        model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), act]
+
+    model += [nn.Linear(fc_layers[-1], noisy_layers[0]), act]
+
+    for layer in range(len(noisy_layers) - 1):
+        model += [NoisyLinear(noisy_layers[layer], noisy_layers[layer + 1])]
+        if layer < len(noisy_layers) - 2:
+            model += [act]
+
+    return nn.Sequential(*model)
 
 
 def get_env_properties(

@@ -54,27 +54,14 @@ class CategoricalDQN(DQN):
         self.num_atoms = num_atoms
         self.v_min = v_min
         self.v_max = v_max
+        self.dqn_type = "categorical"
+        self.noisy = True
 
         super(CategoricalDQN, self).__init__(*args, **kwargs)
 
         self.empty_logs()
         if self.create_model:
-            self._create_model()
-
-    def _create_model(self, *args) -> None:
-        """Function to initialize Q-value model
-
-        Initialises Q-value mode based on network type ["cnn", "mlp"]
-        """
-        input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
-
-        self.model = get_model("dv", self.network_type + "categorical")(
-            input_dim, action_dim, self.layers, self.noisy_layers, self.num_atoms
-        )
-        self.target_model = deepcopy(self.model)
-
-        self.replay_buffer = self.buffer_class(self.replay_size, *args)
-        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
+            self._create_model(noisy_layers=self.noisy_layers, num_atoms=self.num_atoms)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
@@ -106,41 +93,16 @@ class CategoricalDQN(DQN):
         Returns:
             loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
         """
-        states, actions, rewards, next_states, dones = self.replay_buffer.sample(
-            self.batch_size
-        )
-        states = states.reshape(-1, *self.env.obs_shape)
-        actions = actions.reshape(-1, *self.env.action_shape).long()
-        rewards = torch.FloatTensor(rewards).reshape(-1)
-        next_states = next_states.reshape(-1, *self.env.obs_shape)
-        dones = torch.FloatTensor(dones).reshape(-1)
+        batch = self.sample_from_buffer()
 
         projection_distribution = get_projection_distribution(
-            self, next_states, rewards, dones
+            self, batch.next_states, batch.rewards, batch.dones
         )
-        dist = self.model(states)
-        actions = actions.unsqueeze(1).expand(-1, 1, self.num_atoms)
+        dist = self.model(batch.states)
+        actions = batch.actions.unsqueeze(1).expand(-1, 1, self.num_atoms)
         dist = dist.gather(1, actions).squeeze(1)
         dist.data.clamp_(0.01, 0.99)
 
         loss = -(projection_distribution * dist.log()).sum(1).mean()
         self.logs["value_loss"].append(loss.item())
         return loss
-
-    def update_params(self, update_interval: int) -> None:
-        """Update parameters of the model
-
-        Args:
-            update_interval (int): Interval between successive updates of the target model
-        """
-        for timestep in range(update_interval):
-            loss = self.get_q_loss()
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            self.model.reset_noise()
-            self.target_model.reset_noise()
-
-            if timestep % update_interval == 0:
-                self.update_target_model()

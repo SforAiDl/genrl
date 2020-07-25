@@ -122,6 +122,7 @@ class OffPolicyAgent(BaseAgent):
     def __init__(self, *args, replay_size=1000000, buffer_type="push", **kwargs):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size
+        self.buffer_type = buffer_type
 
         if buffer_type == "push":
             self.buffer_class = PushReplayBuffer

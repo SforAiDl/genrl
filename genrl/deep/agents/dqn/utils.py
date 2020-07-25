@@ -37,6 +37,29 @@ def ddqn_q_target(
     return target_q_values
 
 
+def prioritized_q_loss(agent: DQN):
+    """Function to calculate the loss of the Q-function
+
+    Returns:
+        loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
+    """
+    batch = agent.sample_from_buffer(beta=agent.beta)
+
+    q_values = agent.get_q_values(batch.states, batch.actions)
+    target_q_values = agent.get_target_q_values(
+        batch.next_states, batch.rewards, batch.dones
+    )
+
+    loss = batch.weights * (q_values - target_q_values.detach()) ** 2
+    priorities = loss + 1e-5
+    loss = loss.mean()
+    agent.replay_buffer.update_priorities(
+        batch.indices, priorities.detach().cpu().numpy()
+    )
+    agent.logs["value_loss"].append(loss.item())
+    return loss
+
+
 def get_projection_distribution(
     agent: DQN, next_state: np.ndarray, rewards: List[float], dones: List[bool],
 ):
@@ -95,96 +118,3 @@ def get_projection_distribution(
     )
 
     return projection_distribution
-
-
-def noisy_mlp(fc_layers: List[int], noisy_layers: List[int], activation="relu"):
-    """Noisy MLP generating helper function
-
-    Args:
-        fc_layers (:obj:`list` of :obj:`int`): List of fully connected layers
-        noisy_layers (:obj:`list` of :obj:`int`): :ist of noisy layers
-        activation (str): Activation function to be used. ["tanh", "relu"]
-
-    Returns:
-        Noisy MLP model
-    """
-    model = []
-    act = nn.Tanh if activation == "tanh" else nn.ReLU()
-
-    for layer in range(len(fc_layers) - 1):
-        model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), act]
-
-    model += [nn.Linear(fc_layers[-1], noisy_layers[0]), act]
-
-    for layer in range(len(noisy_layers) - 1):
-        model += [NoisyLinear(noisy_layers[layer], noisy_layers[layer + 1])]
-        if layer < len(noisy_layers) - 2:
-            model += [act]
-
-    return nn.Sequential(*model)
-
-
-class NoisyLinear(nn.Module):
-    """Noisy Linear Layer Class
-
-    Class to represent a Noisy Linear class (noisy version of nn.Linear)
-
-    Attributes:
-        in_features (int): Input dimensions
-        out_features (int): Output dimensions
-        std_init (float): Weight initialisation constant
-    """
-
-    def __init__(self, in_features: int, out_features: int, std_init: float = 0.4):
-        super(NoisyLinear, self).__init__()
-
-        self.in_features = in_features
-        self.out_features = out_features
-        self.std_init = std_init
-
-        self.weight_mu = nn.Parameter(torch.FloatTensor(out_features, in_features))
-        self.weight_sigma = nn.Parameter(torch.FloatTensor(out_features, in_features))
-        self.register_buffer(
-            "weight_epsilon", torch.FloatTensor(out_features, in_features)
-        )
-
-        self.bias_mu = nn.Parameter(torch.FloatTensor(out_features))
-        self.bias_sigma = nn.Parameter(torch.FloatTensor(out_features))
-        self.register_buffer("bias_epsilon", torch.FloatTensor(out_features))
-
-        self.reset_parameters()
-        self.reset_noise()
-
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
-        if self.training:
-            weight = self.weight_mu + self.weight_sigma.mul(self.weight_epsilon)
-            bias = self.bias_mu + self.bias_sigma.mul(self.bias_epsilon)
-        else:
-            weight = self.weight_mu
-            bias = self.bias_mu
-        return nn.functional.linear(state, weight, bias)
-
-    def reset_parameters(self) -> None:
-        """Reset parameters of layer
-        """
-        mu_range = 1 / np.sqrt(self.weight_mu.size(1))
-
-        self.weight_mu.data.uniform_(-mu_range, mu_range)
-        self.weight_sigma.data.fill_(self.std_init / np.sqrt(self.weight_sigma.size(1)))
-
-        self.bias_mu.data.uniform_(-mu_range, mu_range)
-        self.bias_sigma.data.fill_(self.std_init / np.sqrt(self.bias_sigma.size(0)))
-
-    def reset_noise(self) -> None:
-        """Reset noise components of layer
-        """
-        epsilon_in = self._scale_noise(self.in_features)
-        epsilon_out = self._scale_noise(self.out_features)
-
-        self.weight_epsilon.copy_(epsilon_out.ger(epsilon_in))
-        self.bias_epsilon.copy_(self._scale_noise(self.out_features))
-
-    def _scale_noise(self, size: int) -> torch.Tensor:
-        inp = torch.randn(size)
-        inp = inp.sign().mul(inp.abs().sqrt())
-        return inp

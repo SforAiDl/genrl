@@ -9,17 +9,17 @@ import torch
 class ReplayBufferSamples(NamedTuple):
     states: torch.Tensor
     actions: torch.Tensor
-    next_observations: torch.Tensor
-    dones: torch.Tensor
     rewards: torch.Tensor
+    next_states: torch.Tensor
+    dones: torch.Tensor
 
 
 class PrioritizedReplayBufferSamples(NamedTuple):
     states: torch.Tensor
     actions: torch.Tensor
-    next_observations: torch.Tensor
-    dones: torch.Tensor
     rewards: torch.Tensor
+    next_states: torch.Tensor
+    dones: torch.Tensor
     indices: torch.Tensor
     weights: torch.Tensor
 
@@ -128,12 +128,10 @@ class PushReplayBuffer:
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
-        return ReplayBufferSamples(
-            *[
-                torch.from_numpy(v).float()
-                for v in [state, action, reward, next_state, done]
-            ]
-        )
+        return [
+            torch.from_numpy(v).float()
+            for v in [state, action, reward, next_state, done]
+        ]
 
     def __len__(self) -> int:
         """
@@ -211,20 +209,10 @@ Importance Sampling (IS) weights)
         samples = [self.buffer[i] for i in indices]
         (states, actions, rewards, next_states, dones) = map(np.stack, zip(*samples))
 
-        return PrioritizedReplayBufferSamples(
-            *[
-                torch.as_tensor(v, dtype=torch.float32)
-                for v in [
-                    states,
-                    actions,
-                    rewards,
-                    next_states,
-                    dones,
-                    indices,
-                    weights,
-                ]
-            ]
-        )
+        return [
+            torch.as_tensor(v, dtype=torch.float32)
+            for v in [states, actions, rewards, next_states, dones, indices, weights,]
+        ]
 
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:
         """

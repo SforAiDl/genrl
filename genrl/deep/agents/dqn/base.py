@@ -7,6 +7,10 @@ from torch import optim as opt
 from torch.nn import functional as F
 
 from genrl.deep.agents.base import OffPolicyAgent
+from genrl.deep.common.buffers import (
+    PrioritizedReplayBufferSamples,
+    ReplayBufferSamples,
+)
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
@@ -48,12 +52,14 @@ class DQN(OffPolicyAgent):
         self.max_epsilon = max_epsilon
         self.min_epsilon = min_epsilon
         self.epsilon_decay = epsilon_decay
+        self.dqn_type = ""
+        self.noisy = False
 
         self.empty_logs()
         if self.create_model:
             self._create_model()
 
-    def _create_model(self, **kwargs) -> None:
+    def _create_model(self, *args, **kwargs) -> None:
         """Function to initialize Q-value model
 
         This will create the Q-value function of the agent. Depends on the network type,
@@ -69,12 +75,12 @@ class DQN(OffPolicyAgent):
         """
         input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
 
-        self.model = get_model("v", self.network_type)(
-            input_dim, action_dim, "Qs", self.layers
+        self.model = get_model("v", self.network_type + self.dqn_type)(
+            input_dim, action_dim, "Qs", self.layers, **kwargs
         )
         self.target_model = deepcopy(self.model)
 
-        self.replay_buffer = self.buffer_class(self.replay_size, **kwargs)
+        self.replay_buffer = self.buffer_class(self.replay_size, *args)
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
 
     def update_target_model(self) -> None:
@@ -158,11 +164,21 @@ class DQN(OffPolicyAgent):
         Samples experiences from the buffer and converts them into usable formats
         """
         batch = self.replay_buffer.sample(self.batch_size, **kwargs)
-        batch.states = batch.states.reshape(-1, *self.env.obs_shape)
-        batch.actions = batch.actions.reshape(-1, *self.env.action_shape).long()
-        batch.rewards = torch.FloatTensor(batch.rewards).reshape(-1)
-        batch.next_states = batch.next_states.reshape(-1, *self.env.obs_shape)
-        batch.dones = torch.FloatTensor(batch.dones).reshape(-1)
+
+        states = batch[0].reshape(-1, *self.env.obs_shape)
+        actions = batch[1].reshape(-1, *self.env.action_shape).long()
+        rewards = torch.FloatTensor(batch[2]).reshape(-1)
+        next_states = batch[3].reshape(-1, *self.env.obs_shape)
+        dones = torch.FloatTensor(batch[4]).reshape(-1)
+
+        if self.buffer_type == "push":
+            batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
+        elif self.buffer_type == "prioritized":
+            indices, weights = batch[5], batch[6]
+            batch = PrioritizedReplayBufferSamples(
+                *[states, actions, rewards, next_states, dones, indices, weights]
+            )
+
         return batch
 
     def get_q_loss(self) -> torch.Tensor:
@@ -193,6 +209,10 @@ class DQN(OffPolicyAgent):
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+
+            if self.noisy:
+                self.model.reset_noise()
+                self.target_model.reset_noise()
 
             if timestep % update_interval == 0:
                 self.update_target_model()

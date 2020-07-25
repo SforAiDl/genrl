@@ -42,7 +42,7 @@ class PrioritizedReplayDQN(DQN):
 
         self.empty_logs()
         if self.create_model:
-            self._create_model(alpha=self.alpha)
+            self._create_model(self.alpha)
 
     def get_q_loss(self) -> torch.Tensor:
         """Function to calculate the loss of the Q-function

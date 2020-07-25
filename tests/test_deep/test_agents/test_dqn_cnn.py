@@ -17,7 +17,7 @@ class TestDQNCNN:
         env = VectorEnv("Pong-v0", env_type="atari")
         algo = DQN("cnn", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -26,7 +26,7 @@ class TestDQNCNN:
         env = VectorEnv("Pong-v0", env_type="atari")
         algo = DoubleDQN("cnn", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -35,7 +35,7 @@ class TestDQNCNN:
         env = VectorEnv("Pong-v0", env_type="atari")
         algo = DuelingDQN("cnn", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -44,7 +44,7 @@ class TestDQNCNN:
         env = VectorEnv("Pong-v0", env_type="atari")
         algo = PrioritizedReplayDQN("cnn", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -53,7 +53,7 @@ class TestDQNCNN:
         env = VectorEnv("Pong-v0", env_type="atari")
         algo = NoisyDQN("cnn", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -62,7 +62,7 @@ class TestDQNCNN:
         env = VectorEnv("Pong-v0", env_type="atari")
         algo = CategoricalDQN("cnn", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")

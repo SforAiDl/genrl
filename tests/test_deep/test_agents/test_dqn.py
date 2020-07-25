@@ -17,7 +17,7 @@ class TestDQN:
         env = VectorEnv("CartPole-v0")
         algo = DQN("mlp", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -26,7 +26,7 @@ class TestDQN:
         env = VectorEnv("CartPole-v0")
         algo = DoubleDQN("mlp", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -35,7 +35,7 @@ class TestDQN:
         env = VectorEnv("CartPole-v0")
         algo = DuelingDQN("mlp", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -44,7 +44,7 @@ class TestDQN:
         env = VectorEnv("CartPole-v0")
         algo = PrioritizedReplayDQN("mlp", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -53,7 +53,7 @@ class TestDQN:
         env = VectorEnv("CartPole-v0")
         algo = NoisyDQN("mlp", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -62,7 +62,7 @@ class TestDQN:
         env = VectorEnv("CartPole-v0")
         algo = CategoricalDQN("mlp", env, replay_size=100)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=1
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")

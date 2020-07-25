@@ -1,16 +1,18 @@
 from typing import Tuple, Type, Union
 
 import numpy as np
+import torch
+from torch.nn import functional as F
 
-from .base import BaseValue
-from .utils import cnn, mlp
+from genrl.deep.common.base import BaseValue
+from genrl.deep.common.utils import cnn, mlp, noisy_mlp
 
 
 def _get_val_model(
     arch: str,
     val_type: str,
     state_dim: str,
-    hidden: Tuple,
+    fc_layers: Tuple,
     action_dim: int = None,
     activation: str = "relu",
 ):
@@ -31,13 +33,13 @@ def _get_val_model(
     :returns: Neural Network model to be used for the Value function
     """
     if val_type == "V":
-        return arch([state_dim] + list(hidden) + [1], activation=activation)
+        return arch([state_dim, *fc_layers, 1], activation=activation)
     elif val_type == "Qsa":
-        return arch(
-            [state_dim + action_dim] + list(hidden) + [1], activation=activation
-        )
+        return arch([state_dim + action_dim, *fc_layers, 1], activation=activation)
     elif val_type == "Qs":
-        return arch([state_dim] + list(hidden) + [action_dim], activation=activation)
+        return arch([state_dim, *fc_layers, action_dim], activation=activation)
+    elif val_type == "na":
+        return lambda *x: x
     else:
         raise ValueError
 
@@ -59,25 +61,26 @@ class MlpValue(BaseValue):
 
     def __init__(
         self,
-        state_dim: int,
+        input_dim: int,
         action_dim: int = None,
         val_type: str = "V",
-        hidden: Tuple = (32, 32),
+        fc_layers: Tuple = (32, 32),
         **kwargs,
     ):
         super(MlpValue, self).__init__()
-
-        self.state_dim = state_dim
+        self.input_dim = input_dim
         self.action_dim = action_dim
+        self.val_type = val_type
+        self.fc_layers = fc_layers
 
-        activation = kwargs["activation"] if "activation" in kwargs else "relu"
+        self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
         self.model = _get_val_model(
-            mlp, val_type, state_dim, hidden, action_dim, activation
+            mlp, val_type, input_dim, fc_layers, action_dim, self.activation
         )
 
 
-class CNNValue(BaseValue):
+class CnnValue(MlpValue):
     """
     CNN Value Function class
 
@@ -92,35 +95,157 @@ class CNNValue(BaseValue):
     :type fc_layers: tuple or list
     """
 
-    def __init__(
-        self,
-        framestack: int,
-        action_dim: int,
-        val_type: str = "Qs",
-        fc_layers: Tuple = (256,),
-        **kwargs,
-    ):
-        super(CNNValue, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(CnnValue, self).__init__(*args, **kwargs)
 
-        self.action_dim = action_dim
+        self.conv, self.output_size = cnn(
+            (self.input_dim, 16, 32), activation=self.activation
+        )
+        self.model = mlp([self.output_size, *self.fc_layers, self.action_dim])
 
-        activation = kwargs["activation"] if "activation" in kwargs else "relu"
-
-        self.conv, output_size = cnn((framestack, 16, 32), activation=activation)
-
-        self.fc = _get_val_model(mlp, val_type, output_size, fc_layers, action_dim)
-
-    def forward(self, state: np.ndarray) -> np.ndarray:
+    def _cnn_forward(self, state):
         state = self.conv(state)
         state = state.view(state.size(0), -1)
-        value = self.fc(state)
-        return value
+        return state
+
+    def forward(self, state: np.ndarray) -> np.ndarray:
+        value = self._cnn_forward(state)
+        print(value.shape)
+        return self.model.forward(value)
 
 
-value_registry = {"mlp": MlpValue, "cnn": CNNValue}
+class MlpDuelingValue(MlpValue):
+    """Class for Dueling DQN's MLP Q-Value function
+
+    Attributes:
+        state_dim (int): Observation space dimensions
+        action_dim (int): Action space dimensions
+        hidden (:obj:`tuple`): Hidden layer dimensions
+    """
+
+    def __init__(self, *args):
+        super(MlpDuelingValue, self).__init__(*args, val_type="na")
+        self.feature = mlp([self.input_dim, *self.fc_layers[:-1]])
+        self.advantage = mlp([self.fc_layers[-1], self.action_dim])
+        self.value = mlp([self.fc_layers[-1], 1])
+
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
+        features = F.relu(self.feature(state))
+        advantage = self.advantage(features)
+        value = self.value(features)
+        return value + advantage - advantage.mean()
 
 
-def get_value_from_name(name_: str) -> Union[Type[MlpValue], Type[CNNValue]]:
+class CnnDuelingValue(CnnValue):
+    """Class for Dueling DQN's MLP Q-Value function
+
+    Attributes:
+        framestack (int): No. of frames being passed into the Q-value function
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Hidden layer dimensions
+    """
+
+    def __init__(self, *args):
+        super(CnnDuelingValue, self).__init__(*args, val_type="na")
+        self.advantage = mlp([self.output_size, *self.fc_layers, self.action_dim])
+        self.value = mlp([self.output_size, *self.fc_layers, 1])
+
+    def forward(self, inp: torch.Tensor) -> torch.Tensor:
+        inp = self._cnn_forward(inp)
+        advantage = self.advantage(inp)
+        value = self.value(inp)
+        return value + advantage - advantage.mean()
+
+
+class MlpNoisyValue(MlpValue):
+    def __init__(self, *args, noisy_layers: Tuple = (128, 512), **kwargs):
+        super(MlpNoisyValue, self).__init__(*args, val_type="na")
+
+        self.noisy_layers = noisy_layers
+        self.num_atoms = kwargs["num_atoms"] if "num_atoms" in kwargs else 1
+
+        self.model = noisy_mlp(
+            [self.input_dim, *self.fc_layers],
+            [*self.noisy_layers, self.action_dim],
+            self.activation,
+        )
+
+    def reset_noise(self) -> None:
+        """
+        Resets noise for any Noisy layers in Value function
+        """
+        for layer in self.model:
+            if isinstance(layer, NoisyLinear):
+                layer.reset_noise()
+
+
+class CnnNoisyValue(CnnValue, MlpNoisyValue):
+    def __init__(self, *args, **kwargs):
+        super(CnnNoisyValue, self).__init__(*args, val_type="na", **kwargs)
+
+
+class MlpCategoricalValue(MlpNoisyValue):
+    """Class for Categorical DQN's MLP Q-Value function
+
+    Attributes:
+        state_dim (int): Observation space dimensions
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Fully connected layer dimensions
+        noisy_layers (:obj:`tuple`): Noisy layer dimensions
+        num_atoms (int): Number of atoms used to discretise the
+            Categorical DQN value distribution
+    """
+
+    def __init__(self, *args, noisy_layers: Tuple = (128, 512), num_atoms: int = 51):
+        super(MlpCategoricalValue, self).__init__(
+            *args, val_type="na", num_atoms=num_atoms
+        )
+
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
+        features = self.model(state)
+        return F.softmax(features.view(-1, self.num_atoms), dim=0).view(
+            -1, self.action_dim, self.num_atoms
+        )
+
+
+class CnnCategoricalValue(CnnValue, MlpCategoricalValue):
+    """Class for Categorical DQN's CNN Q-Value function
+
+    Attributes:
+        framestack (int): No. of frames being passed into the Q-value function
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Fully connected layer dimensions
+        noisy_layers (:obj:`tuple`): Noisy layer dimensions
+        num_atoms (int): Number of atoms used to discretise the
+            Categorical DQN value distribution
+    """
+
+    def __init__(self, *args, noisy_layers: Tuple = (128, 512), num_atoms: int = 51):
+        super(CnnCategoricalValue, self).__init__(
+            *args, val_type="na", num_atoms=num_atoms
+        )
+
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
+        features = self._cnn_forward(state)
+        features = self.model(features)
+        return F.softmax(features.view(-1, self.num_atoms), dim=0).view(
+            -1, self.action_dim, self.num_atoms
+        )
+
+
+value_registry = {
+    "mlp": MlpValue,
+    "cnn": CnnValue,
+    "mlpdueling": MlpDuelingValue,
+    "cnndueling": CnnDuelingValue,
+    "mlpnoisy": MlpNoisyValue,
+    "cnnnoisy": CnnNoisyValue,
+    "mlpcategorical": MlpCategoricalValue,
+    "cnncategorical": CnnCategoricalValue,
+}
+
+
+def get_value_from_name(name_: str) -> Union[Type[MlpValue], Type[CnnValue]]:
     """
     Gets the value function given the name of the value function
 

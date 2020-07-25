@@ -37,42 +37,9 @@ class NoisyDQN(DQN):
 
     def __init__(self, *args, noisy_layers: Tuple = (128, 128), **kwargs):
         self.noisy_layers = noisy_layers
-
+        self.noisy = True
         super(NoisyDQN, self).__init__(*args, **kwargs)
 
         self.empty_logs()
         if self.create_model:
-            self._create_model()
-
-    def _create_model(self, **kwargs) -> None:
-        """Function to initialize Q-value model
-
-        Initialises Q-value mode based on network type ["cnn", "mlp"]
-        """
-        input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
-
-        self.model = get_model("dv", self.network_type + "noisy")(
-            input_dim, action_dim, fc_layers=self.layers, noisy_layers=self.noisy_layers
-        )
-        self.target_model = deepcopy(self.model)
-
-        self.replay_buffer = self.buffer_class(self.replay_size, **kwargs)
-        self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
-
-    def update_params(self, update_interval: int) -> None:
-        """Update parameters of the model
-
-        Args:
-            update_interval (int): Interval between successive updates of the target model
-        """
-        for timestep in range(update_interval):
-            loss = self.get_q_loss()
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-
-            self.model.reset_noise()
-            self.target_model.reset_noise()
-
-            if timestep % update_interval == 0:
-                self.update_target_model()
+            self._create_model(noisy_layers=self.noisy_layers)
