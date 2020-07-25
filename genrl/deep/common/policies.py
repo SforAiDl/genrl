@@ -75,7 +75,9 @@ class CNNPolicy(BasePolicy):
         )
         self.action_dim = action_dim
 
-        self.conv, output_size = cnn(framestack, 16, 32)
+        channels = (framestack, 16, 32)
+
+        self.conv, output_size = cnn(channels)
 
         self.fc = mlp([output_size] + list(hidden) + [action_dim], sac=self.sac)
 
