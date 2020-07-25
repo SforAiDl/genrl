@@ -1,5 +1,6 @@
+import collections
 from copy import deepcopy
-from typing import Any, Dict, List
+from typing import Any, Dict, List, NamedTuple
 
 import numpy as np
 import torch
@@ -23,6 +24,7 @@ class DQN(OffPolicyAgent):
         network_type (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
@@ -62,16 +64,7 @@ class DQN(OffPolicyAgent):
     def _create_model(self, *args, **kwargs) -> None:
         """Function to initialize Q-value model
 
-        This will create the Q-value function of the agent. Depends on the network type,
-        types of Q-value models needed.
-
-        Supported:
-            "v" and "Qs" -> Regular Q-value function
-            "dv" and "mlpdueling" -> Dueling Q-value function
-            "dv" and "mlpnoisy" -> Noisy Q-value function
-            "dv" and "mlpcategorical -> Categorical Q-value function
-
-        You can replace "mlp" with "cnn" for using a CNN based Q-value function
+        This will create the Q-value function of the agent.
         """
         input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
 
@@ -102,6 +95,19 @@ class DQN(OffPolicyAgent):
         self.epsilon = self.calculate_epsilon_by_frame()
         self.logs["epsilon"].append(self.epsilon)
 
+    def get_greedy_action(self, state: torch.Tensor) -> np.ndarray:
+        """Greedy action selection
+
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+
+        Returns:
+            action (:obj:`np.ndarray`): Action taken by the agent
+        """
+        q_values = self.model(state).detach().numpy()
+        action = np.argmax(q_values, axis=-1)
+        return action
+
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
@@ -116,13 +122,12 @@ class DQN(OffPolicyAgent):
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
+        state = torch.FloatTensor(state)
+        action = self.get_greedy_action(state)
         if not deterministic:
             if np.random.rand() < self.epsilon:
-                return np.asarray(self.env.sample())
-
-        state = torch.FloatTensor(state)
-        q_values = self.model(state).detach().numpy()
-        return np.argmax(q_values, axis=-1)
+                action = np.asarray(self.env.sample())
+        return action
 
     def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Get Q values corresponding to specific states and actions
@@ -151,26 +156,39 @@ class DQN(OffPolicyAgent):
         Returns:
             target_q_values (:obj:`torch.Tensor`): Target Q values for the DQN
         """
-        next_q_target_values = self.target_model(next_states)
-        max_next_q_target_values = next_q_target_values.max(1)[0]
-
-        target_q_values = rewards + self.gamma * torch.mul(
+        next_q_target_values = self.target_model(
+            next_states
+        )  # Next Q-values according to target model
+        max_next_q_target_values = next_q_target_values.max(1)[
+            0
+        ]  # Maximum of next q_target values
+        target_q_values = rewards + self.gamma * torch.mul(  # Expected Target Q values
             max_next_q_target_values, (1 - dones)
         )
-        return target_q_values.unsqueeze(-1)
+        return target_q_values.unsqueeze(
+            -1
+        )  # Needs to be unsqueezed to match dimension of Q-values
 
-    def sample_from_buffer(self, **kwargs):
+    def sample_from_buffer(self):
         """
         Samples experiences from the buffer and converts them into usable formats
         """
-        batch = self.replay_buffer.sample(self.batch_size, **kwargs)
+        # Samples from the buffer
+        if self.buffer_type == "push":
+            batch = self.replay_buffer.sample(self.batch_size)
+        elif self.buffer_type == "prioritized":
+            batch = self.replay_buffer.sample(self.batch_size, beta=self.beta)
+        else:
+            raise NotImplementedError
 
+        # Parameters need to be reshaped and preprocessed before they're ready to send to Neural Networks.
         states = batch[0].reshape(-1, *self.env.obs_shape)
         actions = batch[1].reshape(-1, *self.env.action_shape).long()
         rewards = torch.FloatTensor(batch[2]).reshape(-1)
         next_states = batch[3].reshape(-1, *self.env.obs_shape)
         dones = torch.FloatTensor(batch[4]).reshape(-1)
 
+        # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
         if self.buffer_type == "push":
             batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
         elif self.buffer_type == "prioritized":
@@ -178,24 +196,22 @@ class DQN(OffPolicyAgent):
             batch = PrioritizedReplayBufferSamples(
                 *[states, actions, rewards, next_states, dones, indices, weights]
             )
-
         return batch
 
-    def get_q_loss(self) -> torch.Tensor:
-        """Function to calculate the loss of the Q-function
+    def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
+        """Normal Function to calculate the loss of the Q-function
+
+        Args:
+            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
 
         Returns:
             loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
         """
-        batch = self.sample_from_buffer()
-
         q_values = self.get_q_values(batch.states, batch.actions)
         target_q_values = self.get_target_q_values(
             batch.next_states, batch.rewards, batch.dones
         )
-
         loss = F.mse_loss(q_values, target_q_values)
-        self.logs["value_loss"].append(loss.item())
         return loss
 
     def update_params(self, update_interval: int) -> None:
@@ -205,21 +221,28 @@ class DQN(OffPolicyAgent):
             update_interval (int): Interval between successive updates of the target model
         """
         for timestep in range(update_interval):
-            loss = self.get_q_loss()
+            batch = self.sample_from_buffer()
+            loss = self.get_q_loss(batch)
+            self.logs["value_loss"].append(loss.item())
+
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
 
+            # In case the model uses Noisy layers, we must reset the noise every timestep
             if self.noisy:
                 self.model.reset_noise()
                 self.target_model.reset_noise()
 
+            # Every few timesteps, we update the target Q network
             if timestep % update_interval == 0:
                 self.update_target_model()
 
     def calculate_epsilon_by_frame(self) -> float:
         """Helper function to calculate epsilon after every timestep
         """
+        # Exponentially decays exploration rate from max epsilon to min epsilon
+        # The greater the value of epsilon_decay, the slower the decrease in epsilon
         return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
             -1.0 * self.timestep / self.epsilon_decay
         )

@@ -1,6 +1,7 @@
 import torch
 
 from genrl.deep.agents.dqn.base import DQN
+from genrl.deep.agents.dqn.utils import ddqn_q_target
 
 
 class DoubleDQN(DQN):
@@ -50,14 +51,4 @@ class DoubleDQN(DQN):
         Returns:
             target_q_values (:obj:`torch.Tensor`): Target Q values for the DQN
         """
-        next_q_values = self.model(next_states)
-        next_best_actions = next_q_values.max(1)[1].unsqueeze(1)
-
-        rewards, dones = rewards.unsqueeze(-1), dones.unsqueeze(-1)
-
-        next_q_target_values = self.target_model(next_states)
-        max_next_q_target_values = next_q_target_values.gather(1, next_best_actions)
-        target_q_values = rewards + self.gamma * torch.mul(
-            max_next_q_target_values, (1 - dones)
-        )
-        return target_q_values
+        return ddqn_q_target(self, next_states, rewards, dones)

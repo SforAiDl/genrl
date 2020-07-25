@@ -1,10 +1,8 @@
-from copy import deepcopy
 from typing import Tuple
 
 from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import DQN
-from genrl.deep.common import get_env_properties, get_model
 
 
 class NoisyDQN(DQN):
@@ -36,10 +34,11 @@ class NoisyDQN(DQN):
     """
 
     def __init__(self, *args, noisy_layers: Tuple = (128, 128), **kwargs):
-        self.noisy_layers = noisy_layers
-        self.noisy = True
         super(NoisyDQN, self).__init__(*args, **kwargs)
 
+        self.noisy_layers = noisy_layers
+        self.noisy = True
+        self.dqn_type = "noisy"
         self.empty_logs()
         if self.create_model:
             self._create_model(noisy_layers=self.noisy_layers)

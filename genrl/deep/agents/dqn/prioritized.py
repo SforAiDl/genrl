@@ -1,7 +1,10 @@
+import collections
+
 import torch
 from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import DQN
+from genrl.deep.agents.dqn.utils import prioritized_q_loss
 
 
 class PrioritizedReplayDQN(DQN):
@@ -44,24 +47,13 @@ class PrioritizedReplayDQN(DQN):
         if self.create_model:
             self._create_model(self.alpha)
 
-    def get_q_loss(self) -> torch.Tensor:
-        """Function to calculate the loss of the Q-function
+    def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
+        """Normal Function to calculate the loss of the Q-function
+
+        Args:
+            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
 
         Returns:
             loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
         """
-        batch = self.sample_from_buffer(beta=self.beta)
-
-        q_values = self.get_q_values(batch.states, batch.actions)
-        target_q_values = self.get_target_q_values(
-            batch.next_states, batch.rewards, batch.dones
-        )
-
-        loss = batch.weights * (q_values - target_q_values.detach()) ** 2
-        priorities = loss + 1e-5
-        loss = loss.mean()
-        self.replay_buffer.update_priorities(
-            batch.indices, priorities.detach().cpu().numpy()
-        )
-        self.logs["value_loss"].append(loss.item())
-        return loss
+        return prioritized_q_loss(self, batch)

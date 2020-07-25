@@ -1,9 +1,6 @@
-from copy import deepcopy
-
 from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import DQN
-from genrl.deep.common import get_env_properties, get_model
 
 
 class DuelingDQN(DQN):
@@ -33,5 +30,8 @@ class DuelingDQN(DQN):
     """
 
     def __init__(self, *args, **kwargs):
-        self.dqn_type = "dueling"
         super(DuelingDQN, self).__init__(*args, **kwargs)
+
+        self.dqn_type = "dueling"
+        if self.create_model:
+            self._create_model()

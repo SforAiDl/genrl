@@ -1,13 +1,17 @@
-from copy import deepcopy
-from typing import Tuple
+import collections
+from typing import List, Tuple
 
 import numpy as np
 import torch
 from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import DQN
-from genrl.deep.agents.dqn.utils import get_projection_distribution
-from genrl.deep.common import get_env_properties, get_model
+from genrl.deep.agents.dqn.utils import (
+    categorical_greedy_action,
+    categorical_q_loss,
+    categorical_q_target,
+    categorical_q_values,
+)
 
 
 class CategoricalDQN(DQN):
@@ -19,6 +23,7 @@ class CategoricalDQN(DQN):
         network_type (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
@@ -50,12 +55,11 @@ class CategoricalDQN(DQN):
         v_max: int = 10,
         **kwargs
     ):
+        super(CategoricalDQN, self).__init__(*args, **kwargs)
         self.noisy_layers = noisy_layers
         self.num_atoms = num_atoms
         self.v_min = v_min
         self.v_max = v_max
-
-        super(CategoricalDQN, self).__init__(*args, **kwargs)
 
         self.dqn_type = "categorical"
         self.noisy = True
@@ -64,46 +68,53 @@ class CategoricalDQN(DQN):
         if self.create_model:
             self._create_model(noisy_layers=self.noisy_layers, num_atoms=self.num_atoms)
 
-    def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
-        """Select action given state
-
-        Epsilon-greedy action-selection
+    def get_greedy_action(self, state: torch.Tensor) -> np.ndarray:
+        """Greedy action selection
 
         Args:
             state (:obj:`np.ndarray`): Current state of the environment
-            deterministic (bool): Should the policy be deterministic or stochastic
 
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
-        if not deterministic:
-            if np.random.rand() < self.epsilon:
-                return np.asarray(self.env.sample())
+        return categorical_greedy_action(self, state)
 
-        state = torch.FloatTensor(state)
-        dist = self.model(state).data.cpu()
-        dist = dist * torch.linspace(self.v_min, self.v_max, self.num_atoms)
-        action = dist.sum(2).max(1)[1].numpy()
-        return action
+    def get_q_values(self, states: np.ndarray, actions: np.ndarray):
+        """Get Q values corresponding to specific states and actions
 
-    def get_q_loss(self):
-        """Function to calculate the loss of the Q-function
+        Args:
+            states (:obj:`torch.Tensor`): States for which Q-values need to be found
+            actions (:obj:`torch.Tensor`): Actions taken at respective states
+
+        Returns:
+            q_values (:obj:`torch.Tensor`): Q values for the given states and actions
+        """
+        return categorical_q_values(self, states, actions)
+
+    def get_target_q_values(
+        self, next_states: np.ndarray, rewards: List[float], dones: List[bool]
+    ):
+        """Projected Distribution of Q-values
+
+        Helper function for Categorical/Distributional DQN
+
+        Args:
+            next_states (:obj:`torch.Tensor`): Next states being encountered by the agent
+            rewards (:obj:`torch.Tensor`): Rewards received by the agent
+            dones (:obj:`torch.Tensor`): Game over status of each environment
+
+        Returns:
+            target_q_values (object): Projected Q-value Distribution or Target Q Values
+        """
+        return categorical_q_target(self, next_states, rewards, dones)
+
+    def get_q_loss(self, batch: collections.namedtuple):
+        """Categorical DQN loss function to calculate the loss of the Q-function
+
+        Args:
+            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
 
         Returns:
             loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
         """
-        batch = self.sample_from_buffer()
-
-        projection_distribution = get_projection_distribution(
-            self, batch.next_states, batch.rewards, batch.dones
-        )
-        dist = self.model(batch.states)
-        actions = batch.actions.unsqueeze(1).expand(-1, 1, self.num_atoms)
-        dist = dist.gather(1, actions).squeeze(1)
-        dist.data.clamp_(0.01, 0.99)
-
-        loss = -(projection_distribution * dist.log()).sum(1).mean()
-        self.logs["value_loss"].append(loss.item())
-        return loss
+        return categorical_q_loss(self, batch)

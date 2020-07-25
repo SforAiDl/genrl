@@ -34,7 +34,7 @@ class BaseAgent(ABC):
         self.render = kwargs["render"] if "render" in kwargs else False
 
         # Assign device
-        device = kwargs[device] if "device" in kwargs else "cpu"
+        device = kwargs["device"] if "device" in kwargs else "cpu"
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
         else:

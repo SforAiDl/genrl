@@ -9,6 +9,12 @@ from genrl.deep.agents import (
     PrioritizedReplayDQN,
 )
 from genrl.deep.common import OffPolicyTrainer
+from genrl.deep.common.values import (
+    MlpCategoricalValue,
+    MlpDuelingValue,
+    MlpNoisyValue,
+    MlpValue,
+)
 from genrl.environments import VectorEnv
 
 
@@ -16,6 +22,7 @@ class TestDQN:
     def test_vanilla_dqn(self):
         env = VectorEnv("CartPole-v0")
         algo = DQN("mlp", env, replay_size=100)
+        assert isinstance(algo.model, MlpValue)
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
@@ -25,6 +32,7 @@ class TestDQN:
     def test_double_dqn(self):
         env = VectorEnv("CartPole-v0")
         algo = DoubleDQN("mlp", env, replay_size=100)
+        assert isinstance(algo.model, MlpValue)
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
@@ -35,6 +43,7 @@ class TestDQN:
         env = VectorEnv("CartPole-v0")
         algo = DuelingDQN("mlp", env, replay_size=100)
         assert algo.dqn_type == "dueling"
+        assert isinstance(algo.model, MlpDuelingValue)
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
@@ -44,6 +53,7 @@ class TestDQN:
     def test_prioritized_dqn(self):
         env = VectorEnv("CartPole-v0")
         algo = PrioritizedReplayDQN("mlp", env, replay_size=100)
+        assert isinstance(algo.model, MlpValue)
         assert algo.alpha
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
@@ -56,6 +66,7 @@ class TestDQN:
         algo = NoisyDQN("mlp", env, replay_size=100)
         assert algo.dqn_type == "noisy"
         assert algo.noisy
+        assert isinstance(algo.model, MlpNoisyValue)
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
@@ -67,6 +78,7 @@ class TestDQN:
         algo = CategoricalDQN("mlp", env, replay_size=100)
         assert algo.dqn_type == "categorical"
         assert algo.noisy
+        assert isinstance(algo.model, MlpCategoricalValue)
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
         )
