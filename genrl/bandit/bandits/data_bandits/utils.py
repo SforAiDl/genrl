@@ -2,6 +2,8 @@ import urllib.request
 from pathlib import Path
 from typing import Union
 
+import pandas as pd
+
 
 def download_data(
     path: str, url: str, force: bool = False, filename: Union[str, None] = None
@@ -26,6 +28,12 @@ def download_data(
     if fpath.is_file() and not force:
         return str(fpath)
 
+    try_data_download(fpath, path, url)
+
+    return str(fpath)
+
+
+def try_data_download(fpath: Path, path: Path, url: str):
     try:
         print(f"Downloading {url} to {fpath.resolve()}")
         urllib.request.urlretrieve(url, fpath)
@@ -38,4 +46,28 @@ def download_data(
         else:
             raise e
 
-    return str(fpath)
+
+def fetch_data_without_header(
+    path: Union[str, Path], fname: str, delimiter: str = ",", na_values: list = []
+):
+    if Path(path).is_dir():
+        path = Path(path).joinpath(fname)
+    if Path(path).is_file():
+        df = pd.read_csv(
+            path, header=None, delimiter=delimiter, na_values=na_values
+        ).dropna()
+    else:
+        raise FileNotFoundError(f"File not found at location {path}, use download flag")
+    return df
+
+
+def fetch_data_with_header(
+    path: Union[str, Path], fname: str, delimiter: str = ",", na_values: list = []
+):
+    if Path(path).is_dir():
+        path = Path(path).joinpath(fname)
+    if Path(path).is_file():
+        df = pd.read_csv(path, delimiter=delimiter, na_values=na_values).dropna()
+    else:
+        raise FileNotFoundError(f"File not found at location {path}, use download flag")
+    return df

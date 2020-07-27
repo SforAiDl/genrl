@@ -7,7 +7,10 @@ import pandas as pd
 import torch
 
 from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import download_data
+from genrl.bandit.bandits.data_bandits.utils import (
+    download_data,
+    fetch_data_without_header,
+)
 
 URL = (
     "https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz"
@@ -40,19 +43,15 @@ class CovertypeDataBandit(DataBasedBandit):
         FileNotFoundError: If file is not found at specified path.
     """
 
-    def __init__(
-        self,
-        path: str = "./data/Covertype/",
-        download: bool = False,
-        force_download: bool = False,
-        url: Union[str, None] = None,
-        device: str = "cpu",
-    ):
-        super(CovertypeDataBandit, self).__init__(device)
+    def __init__(self, **kwargs):
+        super(CovertypeDataBandit, self).__init__(kwargs.get("device", "cpu"))
+
+        path = kwargs.get("path", "./data/Covertype/")
+        download = kwargs.get("download", None)
+        force_download = kwargs.get("force_download", None)
+        url = kwargs.get("url", URL)
 
         if download:
-            if url is None:
-                url = URL
             gz_fpath = download_data(path, url, force_download)
             with gzip.open(gz_fpath, "rb") as f_in:
                 fpath = Path(gz_fpath).parent.joinpath("covtype.data")
@@ -60,14 +59,8 @@ class CovertypeDataBandit(DataBasedBandit):
                     shutil.copyfileobj(f_in, f_out)
             self._df = pd.read_csv(fpath, header=None, na_values=["?"]).dropna()
         else:
-            if Path(path).is_dir():
-                path = Path(path).joinpath("covtype.data")
-            if Path(path).is_file():
-                self._df = pd.read_csv(path, header=None, na_values=["?"]).dropna()
-            else:
-                raise FileNotFoundError(
-                    f"File not found at location {path}, use download flag"
-                )
+            self._df = fetch_data_without_header(path, "covtype.data", na_values=["?"])
+
         self.n_actions = len(self._df.iloc[:, -1].unique())
         self.context_dim = self._df.shape[1] - 1
         self.len = len(self._df)

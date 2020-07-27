@@ -6,7 +6,10 @@ import pandas as pd
 import torch
 
 from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import download_data
+from genrl.bandit.bandits.data_bandits.utils import (
+    download_data,
+    fetch_data_without_header,
+)
 
 URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
 
@@ -18,7 +21,7 @@ class MushroomDataBandit(DataBasedBandit):
         https://archive.ics.uci.edu/ml/datasets/Mushroom
 
     Args:
-        path (str, optional): Path to the data. Defaults to "./data/Magic/".
+        path (str, optional): Path to the data. Defaults to "./data/Mushroom/".
         download (bool, optional): Whether to download the data. Defaults to False.
         force_download (bool, optional): Whether to force download even if file exists.
             Defaults to False.
@@ -46,47 +49,34 @@ class MushroomDataBandit(DataBasedBandit):
     """
 
     def __init__(
-        self,
-        path: str = "./data/Mushroom/",
-        download: bool = False,
-        force_download: bool = False,
-        url: Union[str, None] = None,
-        r_pass: int = 0,
-        r_edible: int = 5,
-        r_poisonous_lucky: int = 5,
-        r_poisonous_unlucky: int = -35,
-        lucky_prob: float = 0.5,
-        device: str = "cpu",
+        self, **kwargs,
     ):
-        super(MushroomDataBandit, self).__init__(device)
+        super(MushroomDataBandit, self).__init__(kwargs.get("device", "cpu"))
+
+        path = kwargs.get("path", "./data/Mushroom/")
+        download = kwargs.get("download", None)
+        force_download = kwargs.get("force_download", None)
+        url = kwargs.get("url", URL)
 
         if download:
-            if url is None:
-                url = URL
             fpath = download_data(path, url, force_download)
             self.df = pd.read_csv(fpath, header=None)
         else:
-            if Path(path).is_dir():
-                path = Path(path).joinpath("agaricus-lepiota.data")
-            if Path(path).is_file():
-                self.df = pd.read_csv(path, header=None)
-            else:
-                raise FileNotFoundError(
-                    f"File not found at location {path}, use download flag"
-                )
+            self.df = fetch_data_without_header(path, "agaricus-lepiota.data")
 
         for col in self.df.columns:
             dummies = pd.get_dummies(self.df[col], prefix=col, drop_first=False)
             self.df = pd.concat([self.df, dummies], axis=1)
             self.df = self.df.drop(col, axis=1)
 
-        self.r_pass = r_pass
-        self.r_edible = r_edible
-        self.r_poisonous_lucky = r_poisonous_lucky
-        self.r_poisonous_unlucky = r_poisonous_unlucky
-        self.lucky_prob = lucky_prob
-        self.r_poisonous_exp = r_poisonous_lucky * lucky_prob + r_poisonous_unlucky * (
-            1 - lucky_prob
+        self.r_pass = kwargs.get("r_pass", 0)
+        self.r_edible = kwargs.get("r_edible", 5)
+        self.r_poisonous_lucky = kwargs.get("r_poisonous_lucky", 5)
+        self.r_poisonous_unlucky = kwargs.get("r_poisonous_unlucky", -35)
+        self.lucky_prob = kwargs.get("lucky_prob", 0.5)
+        self.r_poisonous_exp = (
+            self.r_poisonous_lucky * self.lucky_prob
+            + self.r_poisonous_unlucky * (1 - self.lucky_prob)
         )
         self.n_actions = 2
         self.context_dim = self.df.shape[1] - 2

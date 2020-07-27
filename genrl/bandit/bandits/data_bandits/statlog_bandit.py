@@ -6,7 +6,10 @@ import pandas as pd
 import torch
 
 from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import download_data
+from genrl.bandit.bandits.data_bandits.utils import (
+    download_data,
+    fetch_data_without_header,
+)
 
 URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/shuttle/shuttle.trn.Z"
 
@@ -18,7 +21,7 @@ class StatlogDataBandit(DataBasedBandit):
         https://archive.ics.uci.edu/ml/datasets/Statlog+(Shuttle)
 
     Args:
-        path (str, optional): Path to the data. Defaults to "./data/Magic/".
+        path (str, optional): Path to the data. Defaults to "./data/Statlog/".
         download (bool, optional): Whether to download the data. Defaults to False.
         force_download (bool, optional): Whether to force download even if file exists.
             Defaults to False.
@@ -37,32 +40,21 @@ class StatlogDataBandit(DataBasedBandit):
         FileNotFoundError: If file is not found at specified path.
     """
 
-    def __init__(
-        self,
-        path: str = "./data/Statlog/",
-        download: bool = False,
-        force_download: bool = False,
-        url: Union[str, None] = None,
-        device: str = "cpu",
-    ):
-        super(StatlogDataBandit, self).__init__(device)
+    def __init__(self, **kwargs):
+        super(StatlogDataBandit, self).__init__(kwargs.get("device", "cpu"))
+
+        path = kwargs.get("path", "./data/Statlog/")
+        download = kwargs.get("download", None)
+        force_download = kwargs.get("force_download", None)
+        url = kwargs.get("url", URL)
 
         if download:
-            if url is None:
-                url = URL
             z_fpath = download_data(path, url, force_download)
             subprocess.run(["uncompress", "-f", "-k", z_fpath])
             fpath = Path(z_fpath).parent.joinpath("shuttle.trn")
             self.df = pd.read_csv(fpath, header=None, delimiter=" ")
         else:
-            if Path(path).is_dir():
-                path = Path(path).joinpath("shuttle.trn")
-            if Path(path).is_file():
-                self.df = pd.read_csv(path, header=None, delimiter=" ")
-            else:
-                raise FileNotFoundError(
-                    f"File not found at location {path}, use download flag"
-                )
+            self.df = fetch_data_without_header(path, "shuttle.trn", delimiter=" ")
 
         self.n_actions = len(self.df.iloc[:, -1].unique())
         self.context_dim = self.df.shape[1] - 1

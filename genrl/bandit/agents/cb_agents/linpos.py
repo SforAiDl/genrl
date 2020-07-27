@@ -22,21 +22,13 @@ class LinearPosteriorAgent(DCBAgent):
             "cpu" for cpu or "cuda" for cuda. Defaults to "cpu".
     """
 
-    def __init__(
-        self,
-        bandit: DataBasedBandit,
-        init_pulls: int = 3,
-        lambda_prior: float = 0.25,
-        a0: float = 6.0,
-        b0: float = 6.0,
-        device: str = "cpu",
-    ):
-        super(LinearPosteriorAgent, self).__init__(bandit, device)
+    def __init__(self, bandit: DataBasedBandit, **kwargs):
+        super(LinearPosteriorAgent, self).__init__(bandit, kwargs.get("device", "cpu"))
 
-        self.init_pulls = init_pulls
-        self.lambda_prior = lambda_prior
-        self.a0 = a0
-        self.b0 = b0
+        self.init_pulls = kwargs.get("init_pulls", 3)
+        self.lambda_prior = kwargs.get("lambda_prior", 0.25)
+        self.a0 = kwargs.get("a0", 6.0)
+        self.b0 = kwargs.get("b0", 6.0)
         self.mu = torch.zeros(
             size=(self.n_actions, self.context_dim + 1),
             device=self.device,

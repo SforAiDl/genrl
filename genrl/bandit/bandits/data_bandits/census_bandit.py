@@ -5,7 +5,10 @@ import pandas as pd
 import torch
 
 from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import download_data
+from genrl.bandit.bandits.data_bandits.utils import (
+    download_data,
+    fetch_data_with_header,
+)
 
 URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/census1990-mld/USCensus1990.data.txt"
 
@@ -37,30 +40,19 @@ class CensusDataBandit(DataBasedBandit):
         FileNotFoundError: If file is not found at specified path.
     """
 
-    def __init__(
-        self,
-        path: str = "./data/Census/",
-        download: bool = False,
-        force_download: bool = False,
-        url: Union[str, None] = None,
-        device: str = "cpu",
-    ):
-        super(CensusDataBandit, self).__init__(device)
+    def __init__(self, **kwargs):
+        super(CensusDataBandit, self).__init__(kwargs.get("device", "cpu"))
+
+        path = kwargs.get("path", "./data/Census/")
+        download = kwargs.get("download", None)
+        force_download = kwargs.get("force_download", None)
+        url = kwargs.get("url", URL)
 
         if download:
-            if url is None:
-                url = URL
             fpath = download_data(path, url, force_download)
             self._df = pd.read_csv(fpath)
         else:
-            if Path(path).is_dir():
-                path = Path(path).joinpath("USCensus1990.data.txt")
-            if Path(path).is_file():
-                self._df = pd.read_csv(path)
-            else:
-                raise FileNotFoundError(
-                    f"File not found at location {path}, use download flag"
-                )
+            self._df = fetch_data_with_header(path, "USCensus1990.data.txt")
 
         self.n_actions = len(self._df["dOccup"].unique())
         self._context_columns = [

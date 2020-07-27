@@ -5,7 +5,10 @@ import pandas as pd
 import torch
 
 from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import download_data
+from genrl.bandit.bandits.data_bandits.utils import (
+    download_data,
+    fetch_data_with_header,
+)
 
 URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/magic/magic04.data"
 
@@ -36,30 +39,19 @@ class MagicDataBandit(DataBasedBandit):
         FileNotFoundError: If file is not found at specified path.
     """
 
-    def __init__(
-        self,
-        path: str = "./data/Magic/",
-        download: bool = False,
-        force_download: bool = False,
-        url: Union[str, None] = None,
-        device: str = "cpu",
-    ):
-        super(MagicDataBandit, self).__init__()
+    def __init__(self, **kwargs):
+        super(MagicDataBandit, self).__init__(kwargs.get("device", "cpu"))
+
+        path = kwargs.get("path", "./data/Magic/")
+        download = kwargs.get("download", None)
+        force_download = kwargs.get("force_download", None)
+        url = kwargs.get("url", URL)
 
         if download:
-            if url is None:
-                url = URL
             fpath = download_data(path, url, force_download)
             self.df = pd.read_csv(fpath, header=None)
         else:
-            if Path(path).is_dir():
-                path = Path(path).joinpath("magic04.data")
-            if Path(path).is_file():
-                self.df = pd.read_csv(path, header=None)
-            else:
-                raise FileNotFoundError(
-                    f"File not found at location {path}, use download flag"
-                )
+            self.df = fetch_data_with_header(path, "magic04.data")
 
         col = self.df.columns[-1]
         dummies = pd.get_dummies(self.df[col], prefix=col, drop_first=False)

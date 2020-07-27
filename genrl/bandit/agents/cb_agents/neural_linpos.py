@@ -38,45 +38,32 @@ class NeuralLinearPosteriorAgent(DCBAgent):
             "cpu" for cpu or "cuda" for cuda. Defaults to "cpu".
     """
 
-    def __init__(
-        self,
-        bandit: DataBasedBandit,
-        init_pulls: int = 3,
-        hidden_dims: List[int] = [50, 50],
-        init_lr: float = 0.1,
-        lr_decay: float = 0.5,
-        lr_reset: bool = True,
-        max_grad_norm: float = 0.5,
-        dropout_p: Optional[float] = None,
-        eval_with_dropout: bool = False,
-        nn_update_ratio: int = 2,
-        lambda_prior: float = 0.25,
-        a0: float = 3.0,
-        b0: float = 3.0,
-        device: str = "cpu",
-    ):
-        super(NeuralLinearPosteriorAgent, self).__init__(bandit, device)
-        self.init_pulls = init_pulls
-        self.lambda_prior = lambda_prior
-        self.a0 = a0
-        self.b0 = b0
+    def __init__(self, bandit: DataBasedBandit, **kwargs):
+        super(NeuralLinearPosteriorAgent, self).__init__(
+            bandit, kwargs.get("device", "cpu")
+        )
+        self.init_pulls = kwargs.get("init_pulls", 3)
+        self.lambda_prior = kwargs.get("lambda_prior", 0.25)
+        self.a0 = kwargs.get("a0", 6.0)
+        self.b0 = kwargs.get("b0", 6.0)
+        hidden_dims = kwargs.get("hidden_dims", [50, 50])
         self.latent_dim = hidden_dims[-1]
-        self.nn_update_ratio = nn_update_ratio
+        self.nn_update_ratio = kwargs.get("nn_update_ratio", 2)
         self.model = (
             NeuralBanditModel(
                 self.context_dim,
-                hidden_dims,
+                kwargs.get("hidden_dims", [50, 50]),
                 self.n_actions,
-                init_lr,
-                max_grad_norm,
-                lr_decay,
-                lr_reset,
-                dropout_p,
+                kwargs.get("init_lr", 0.1),
+                kwargs.get("max_grad_norm", 0.5),
+                kwargs.get("lr_decay", 0.5),
+                kwargs.get("lr_reset", True),
+                kwargs.get("dropout_p", None),
             )
-            .to(self.device)
             .to(torch.float)
+            .to(self.device)
         )
-        self.eval_with_dropout = eval_with_dropout
+        self.eval_with_dropout = kwargs.get("eval_with_dropout", False)
         self.mu = torch.zeros(
             size=(self.n_actions, self.latent_dim + 1),
             device=self.device,

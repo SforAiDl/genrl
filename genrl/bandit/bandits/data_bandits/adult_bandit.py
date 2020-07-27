@@ -5,7 +5,10 @@ import pandas as pd
 import torch
 
 from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import download_data
+from genrl.bandit.bandits.data_bandits.utils import (
+    download_data,
+    fetch_data_without_header,
+)
 
 URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
 
@@ -36,32 +39,21 @@ class AdultDataBandit(DataBasedBandit):
         FileNotFoundError: If file is not found at specified path.
     """
 
-    def __init__(
-        self,
-        path: str = "./data/Adult/",
-        download: bool = False,
-        force_download: bool = False,
-        url: Union[str, None] = None,
-        device: str = "cpu",
-    ):
-        super(AdultDataBandit, self).__init__(device)
+    def __init__(self, **kwargs):
+        super(AdultDataBandit, self).__init__(kwargs.get("device", "cpu"))
+
+        path = kwargs.get("path", "./data/Adult/")
+        download = kwargs.get("download", None)
+        force_download = kwargs.get("force_download", None)
+        url = kwargs.get("url", URL)
 
         if download:
-            if url is None:
-                url = URL
             fpath = download_data(path, url, force_download)
             self._df = pd.read_csv(fpath, header=None, na_values=["?", " ?"]).dropna()
         else:
-            if Path(path).is_dir():
-                path = Path(path).joinpath("adult.data")
-            if Path(path).is_file():
-                self._df = pd.read_csv(
-                    path, header=None, na_values=["?", " ?"]
-                ).dropna()
-            else:
-                raise FileNotFoundError(
-                    f"File not found at location {path}, use download flag"
-                )
+            self._df = fetch_data_without_header(
+                path, "adult.data", na_values=["?", " ?"]
+            )
 
         for col in self._df.columns[[1, 3, 5, 6, 7, 8, 9, 13, 14]]:
             dummies = pd.get_dummies(self._df[col], prefix=col, drop_first=False)

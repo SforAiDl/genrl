@@ -37,43 +37,30 @@ class NeuralNoiseSamplingAgent(DCBAgent):
             "cpu" for cpu or "cuda" for cuda. Defaults to "cpu".
     """
 
-    def __init__(
-        self,
-        bandit: DataBasedBandit,
-        init_pulls: int = 3,
-        hidden_dims: List[int] = [50, 50],
-        init_lr: float = 0.1,
-        lr_decay: float = 0.5,
-        lr_reset: bool = True,
-        max_grad_norm: float = 0.5,
-        dropout_p: Optional[float] = None,
-        eval_with_dropout: bool = False,
-        noise_std_dev: float = 0.05,
-        eps: float = 0.1,
-        noise_update_batch_size: int = 256,
-        device: str = "cpu",
-    ):
-        super(NeuralNoiseSamplingAgent, self).__init__(bandit, device)
-        self.init_pulls = init_pulls
+    def __init__(self, bandit: DataBasedBandit, **kwargs):
+        super(NeuralNoiseSamplingAgent, self).__init__(
+            bandit, kwargs.get("device", "cpu")
+        )
+        self.init_pulls = kwargs.get("init_pulls", 3)
         self.model = (
             NeuralBanditModel(
                 self.context_dim,
-                hidden_dims,
+                kwargs.get("hidden_dims", [50, 50]),
                 self.n_actions,
-                init_lr,
-                max_grad_norm,
-                lr_decay,
-                lr_reset,
-                dropout_p,
+                kwargs.get("init_lr", 0.1),
+                kwargs.get("max_grad_norm", 0.5),
+                kwargs.get("lr_decay", 0.5),
+                kwargs.get("lr_reset", True),
+                kwargs.get("dropout_p", None),
             )
-            .to(self.device)
             .to(torch.float)
+            .to(self.device)
         )
-        self.eval_with_dropout = eval_with_dropout
-        self.noise_std_dev = noise_std_dev
-        self.eps = eps
+        self.eval_with_dropout = kwargs.get("eval_with_dropout", False)
+        self.noise_std_dev = kwargs.get("noise_std_dev", 0.05)
+        self.eps = kwargs.get("eps", 0.1)
         self.db = TransitionDB(self.device)
-        self.noise_update_batch_size = noise_update_batch_size
+        self.noise_update_batch_size = kwargs.get("noise_update_batch_size", 256)
         self.t = 0
         self.update_count = 0
 

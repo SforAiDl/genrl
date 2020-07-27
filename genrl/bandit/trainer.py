@@ -1,6 +1,6 @@
 import traceback
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, List
 
 import numpy as np
 
@@ -30,18 +30,7 @@ class BanditTrainer:
         self.log_mode = log_mode
         self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
-    def train(
-        self,
-        timesteps: int = 10_000,
-        update_interval: int = 20,
-        update_after: int = 500,
-        batch_size: int = 64,
-        train_epochs: int = 20,
-        log_every: int = 100,
-        ignore_init: int = 0,
-        init_train_epochs: Optional[int] = None,
-        train_epochs_decay_steps: Optional[int] = None,
-    ) -> None:
+    def train(self, timesteps: int, **kwargs) -> None:
         """Train the agent.
 
         Args:
@@ -63,6 +52,15 @@ class BanditTrainer:
         Returns:
             dict: Dictionary of metrics recorded during training.
         """
+
+        update_interval = kwargs.get("update_interval", 20)
+        update_after = kwargs.get("update_after", 500)
+        train_epochs = kwargs.get("train_epochs", 20)
+        log_every = kwargs.get("log_every", 100)
+        ignore_init = kwargs.get("ignore_init", 0)
+        init_train_epochs = kwargs.get("init_train_epochs", None)
+        train_epochs_decay_steps = kwargs.get("train_epochs_decay_steps", None)
+
         start_time = datetime.now()
         print(
             f"\nStarted at {start_time:%d-%m-%y %H:%M:%S}\n"
@@ -90,7 +88,9 @@ class BanditTrainer:
                     train_epochs = int(train_epochs_schedule[t])
 
                 if t > update_after and t % update_interval == 0:
-                    self.agent.update_params(action, batch_size, train_epochs)
+                    self.agent.update_params(
+                        action, kwargs.get("batch_size", 64), train_epochs
+                    )
 
                 if t > ignore_init:
                     regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
