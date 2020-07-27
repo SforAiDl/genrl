@@ -5,26 +5,26 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import genrl
-from genrl.deep.common.trainer import BanditTrainer, Trainer
+from genrl.bandit import BanditTrainer
 
 ALGOS = {
-    "bootstrap": genrl.BootstrapNeuralAgent,
-    "fixed": genrl.FixedAgent,
-    "linpos": genrl.LinearPosteriorAgent,
-    "neural-greedy": genrl.NeuralGreedyAgent,
-    "neural-linpos": genrl.NeuralLinearPosteriorAgent,
-    "neural-noise": genrl.NeuralNoiseSamplingAgent,
-    "variational": genrl.VariationalAgent,
+    "bootstrap": genrl.bandit.BootstrapNeuralAgent,
+    "fixed": genrl.bandit.FixedAgent,
+    "linpos": genrl.bandit.LinearPosteriorAgent,
+    "neural-greedy": genrl.bandit.NeuralGreedyAgent,
+    "neural-linpos": genrl.bandit.NeuralLinearPosteriorAgent,
+    "neural-noise": genrl.bandit.NeuralNoiseSamplingAgent,
+    "variational": genrl.bandit.VariationalAgent,
 }
 BANDITS = {
-    "adult": genrl.AdultDataBandit,
-    "census": genrl.CensusDataBandit,
-    "covertype": genrl.CovertypeDataBandit,
-    "magic": genrl.MagicDataBandit,
-    "mushroom": genrl.MushroomDataBandit,
-    "statlog": genrl.StatlogDataBandit,
-    "bernoulli": genrl.BernoulliCB,
-    "gaussian": genrl.GaussianCB,
+    "adult": genrl.bandit.AdultDataBandit,
+    "census": genrl.bandit.CensusDataBandit,
+    "covertype": genrl.bandit.CovertypeDataBandit,
+    "magic": genrl.bandit.MagicDataBandit,
+    "mushroom": genrl.bandit.MushroomDataBandit,
+    "statlog": genrl.bandit.StatlogDataBandit,
+    "bernoulli": genrl.bandit.BernoulliMAB,
+    "gaussian": genrl.bandit.GaussianMAB,
 }
 
 
@@ -32,7 +32,7 @@ def run(args, agent, bandit, plot=True):
     logdir = Path(args.logdir).joinpath(
         f"{agent.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    trainer = genrl.deep.common.trainer.BanditTrainer(
+    trainer = BanditTrainer(
         agent, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
 
