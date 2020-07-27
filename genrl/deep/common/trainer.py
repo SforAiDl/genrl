@@ -330,7 +330,7 @@ many steps)
             np.zeros(self.env.n_envs),
             np.zeros(self.env.n_envs),
         )
-        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
+        total_steps = self.max_ep_len * self.epochs * self.env.n_envs
 
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
@@ -370,7 +370,6 @@ many steps)
                     self.agent.noise.reset()
 
                 if sum(episode) % self.log_interval == 0:
-                    # print(self.rewards)
                     self.logger.write(
                         {
                             "timestep": timestep,

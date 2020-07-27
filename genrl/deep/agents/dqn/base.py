@@ -66,7 +66,11 @@ class DQN(OffPolicyAgent):
 
         This will create the Q-value function of the agent.
         """
-        input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
+        input_dim, action_dim, discrete, _ = get_env_properties(
+            self.env, self.network_type
+        )
+        if not discrete:
+            raise Exception("Only Discrete Environments are supported for DQN")
 
         self.model = get_model("v", self.network_type + self.dqn_type)(
             input_dim, action_dim, "Qs", self.layers, **kwargs
@@ -122,12 +126,26 @@ class DQN(OffPolicyAgent):
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
-        state = torch.FloatTensor(state)
+        state = torch.as_tensor(state).float()
         action = self.get_greedy_action(state)
         if not deterministic:
             if np.random.rand() < self.epsilon:
                 action = np.asarray(self.env.sample())
         return action
+
+    def _reshape_batch(self, batch: List):
+        """Function to reshape experiences for DQN
+
+        Most of the DQN experiences need to be reshaped before sending to the
+        Neural Networks
+        """
+        states = batch[0].reshape(-1, *self.env.obs_shape)
+        actions = batch[1].reshape(-1, *self.env.action_shape).long()
+        rewards = torch.FloatTensor(batch[2]).reshape(-1)
+        next_states = batch[3].reshape(-1, *self.env.obs_shape)
+        dones = torch.FloatTensor(batch[4]).reshape(-1)
+
+        return states, actions, rewards, next_states, dones
 
     def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Get Q values corresponding to specific states and actions
@@ -156,61 +174,15 @@ class DQN(OffPolicyAgent):
         Returns:
             target_q_values (:obj:`torch.Tensor`): Target Q values for the DQN
         """
-        next_q_target_values = self.target_model(
-            next_states
-        )  # Next Q-values according to target model
-        max_next_q_target_values = next_q_target_values.max(1)[
-            0
-        ]  # Maximum of next q_target values
+        # Next Q-values according to target model
+        next_q_target_values = self.target_model(next_states)
+        # Maximum of next q_target values
+        max_next_q_target_values = next_q_target_values.max(1)[0]
         target_q_values = rewards + self.gamma * torch.mul(  # Expected Target Q values
             max_next_q_target_values, (1 - dones)
         )
-        return target_q_values.unsqueeze(
-            -1
-        )  # Needs to be unsqueezed to match dimension of Q-values
-
-    def sample_from_buffer(self, beta=None):
-        """
-        Samples experiences from the buffer and converts them into usable formats
-        """
-        # Samples from the buffer
-        if beta is not None:
-            batch = self.replay_buffer.sample(self.batch_size, beta=beta)
-        else:
-            batch = self.replay_buffer.sample(self.batch_size)
-
-        # Parameters need to be reshaped and preprocessed before they're ready to send to Neural Networks.
-        states = batch[0].reshape(-1, *self.env.obs_shape)
-        actions = batch[1].reshape(-1, *self.env.action_shape).long()
-        rewards = torch.FloatTensor(batch[2]).reshape(-1)
-        next_states = batch[3].reshape(-1, *self.env.obs_shape)
-        dones = torch.FloatTensor(batch[4]).reshape(-1)
-
-        # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if self.buffer_type == "push":
-            batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
-        elif self.buffer_type == "prioritized":
-            indices, weights = batch[5], batch[6]
-            batch = PrioritizedReplayBufferSamples(
-                *[states, actions, rewards, next_states, dones, indices, weights]
-            )
-        return batch
-
-    def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
-        """Normal Function to calculate the loss of the Q-function
-
-        Args:
-            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
-
-        Returns:
-            loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
-        """
-        q_values = self.get_q_values(batch.states, batch.actions)
-        target_q_values = self.get_target_q_values(
-            batch.next_states, batch.rewards, batch.dones
-        )
-        loss = F.mse_loss(q_values, target_q_values)
-        return loss
+        # Needs to be unsqueezed to match dimension of q_values
+        return target_q_values.unsqueeze(-1)
 
     def update_params(self, update_interval: int) -> None:
         """Update parameters of the model
@@ -218,6 +190,8 @@ class DQN(OffPolicyAgent):
         Args:
             update_interval (int): Interval between successive updates of the target model
         """
+        self.update_target_model()
+
         for timestep in range(update_interval):
             batch = self.sample_from_buffer()
             loss = self.get_q_loss(batch)
@@ -231,10 +205,6 @@ class DQN(OffPolicyAgent):
             if self.noisy:
                 self.model.reset_noise()
                 self.target_model.reset_noise()
-
-            # Every few timesteps, we update the target Q network
-            if timestep % update_interval == 0:
-                self.update_target_model()
 
     def calculate_epsilon_by_frame(self) -> float:
         """Helper function to calculate epsilon after every timestep

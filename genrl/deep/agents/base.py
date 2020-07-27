@@ -1,10 +1,17 @@
+import collections
 from abc import ABC
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import torch
+from torch.nn import functional as F
 
-from genrl.deep.common.buffers import PrioritizedBuffer, PushReplayBuffer
+from genrl.deep.common.buffers import (
+    PrioritizedBuffer,
+    PrioritizedReplayBufferSamples,
+    PushReplayBuffer,
+    ReplayBufferSamples,
+)
 from genrl.deep.common.utils import set_seeds
 
 
@@ -65,7 +72,7 @@ class BaseAgent(ABC):
     def update_params(self, update_interval: int) -> None:
         """
         Takes the step for optimizer.
-        This internally call _get_loss().
+        This internally calls functions to calculate loss.
         """
         raise NotImplementedError
 
@@ -119,7 +126,9 @@ class OnPolicyAgent(BaseAgent):
 
 
 class OffPolicyAgent(BaseAgent):
-    def __init__(self, *args, replay_size=1000000, buffer_type="push", **kwargs):
+    def __init__(
+        self, *args, replay_size: int = 1000000, buffer_type: str = "push", **kwargs
+    ):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size
         self.buffer_type = buffer_type
@@ -130,3 +139,62 @@ class OffPolicyAgent(BaseAgent):
             self.buffer_class = PrioritizedBuffer
         else:
             raise NotImplementedError
+
+    def update_params_before_select_action(self, timestep: int) -> None:
+        """Update any parameters before selecting action like epsilon for decaying epsilon greedy
+
+        Args:
+            timestep (int): Timestep in the training process
+        """
+        pass
+
+    def update_target_model(self) -> None:
+        """Function to update the target Q model
+
+        Updates the target model with the training model's weights when called
+        """
+        raise NotImplementedError
+
+    def _reshape_batch(self, batch: List):
+        """Function to reshape experiences
+
+        Can be modified for individual algorithm usage
+        """
+        return [*batch]
+
+    def sample_from_buffer(self, beta: float = None):
+        """Samples experiences from the buffer and converts them into usable formats
+        """
+        # Samples from the buffer
+        if beta is not None:
+            batch = self.replay_buffer.sample(self.batch_size, beta=beta)
+        else:
+            batch = self.replay_buffer.sample(self.batch_size)
+
+        states, actions, rewards, next_states, dones = self._reshape_batch(batch)
+
+        # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
+        if self.buffer_type == "push":
+            batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
+        elif self.buffer_type == "prioritized":
+            indices, weights = batch[5], batch[6]
+            batch = PrioritizedReplayBufferSamples(
+                *[states, actions, rewards, next_states, dones, indices, weights]
+            )
+        return batch
+
+    def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
+        """Normal Function to calculate the loss of the Q-function
+
+        Args:
+            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
+
+        Returns:
+            loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
+        """
+        q_values = self.get_q_values(batch.states, batch.actions)
+        target_q_values = self.get_target_q_values(
+            batch.next_states, batch.rewards, batch.dones
+        )
+        loss = F.mse_loss(q_values, target_q_values)
+        return loss

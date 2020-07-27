@@ -109,7 +109,6 @@ class CnnValue(MlpValue):
 
     def forward(self, state: np.ndarray) -> np.ndarray:
         value = self._cnn_forward(state)
-        print(value.shape)
         return self.model.forward(value)
 
 
