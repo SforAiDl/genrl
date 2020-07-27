@@ -1,7 +1,7 @@
 import gzip
 import shutil
 from pathlib import Path
-from typing import Tuple, Union
+from typing import Tuple
 
 import pandas as pd
 import torch
