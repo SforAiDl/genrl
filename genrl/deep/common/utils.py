@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from ...environments import VecEnv
+from genrl.environments import VecEnv
 
 
 def get_model(type_: str, name_: str) -> Union:
