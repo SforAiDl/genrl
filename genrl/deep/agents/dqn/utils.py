@@ -38,7 +38,7 @@ def ddqn_q_target(
     return target_q_values
 
 
-def prioritized_q_loss(agent: DQN):
+def prioritized_q_loss(agent: DQN, batch: collections.namedtuple):
     """Function to calculate the loss of the Q-function
 
     Returns:
@@ -82,7 +82,7 @@ def categorical_greedy_action(agent: DQN, state: torch.Tensor) -> np.ndarray:
     return action
 
 
-def categorical_q_values(agent: DQN, batch: collections.namedtuple):
+def categorical_q_values(agent: DQN, states: torch.Tensor, actions: torch.Tensor):
     """Get Q values given state for a Categorical DQN
 
     Args:
@@ -96,7 +96,7 @@ def categorical_q_values(agent: DQN, batch: collections.namedtuple):
     q_values = agent.model(states)
 
     # Size of q_values should be [..., action_dim, 51] here
-    actions = actions.unsqueeze(1).expand(-1, 1, self.num_atoms)
+    actions = actions.unsqueeze(1).expand(-1, 1, agent.num_atoms)
     q_values = q_values.gather(1, actions)
 
     # But after this the shape of q_values would be [..., 1, 51] where as

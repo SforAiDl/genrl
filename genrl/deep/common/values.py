@@ -217,8 +217,8 @@ class CnnCategoricalValue(CnnValue, MlpCategoricalValue):
             Categorical DQN value distribution
     """
 
-    def __init__(self, *args, noisy_layers: Tuple = (128, 512), num_atoms: int = 51):
-        super(CnnCategoricalValue, self).__init__(*args, num_atoms=num_atoms, **kwargs)
+    def __init__(self, *args, num_atoms: int = 51):
+        super(CnnCategoricalValue, self).__init__(*args, num_atoms=num_atoms)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         features = self._cnn_forward(state)

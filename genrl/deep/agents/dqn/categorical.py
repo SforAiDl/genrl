@@ -79,7 +79,7 @@ class CategoricalDQN(DQN):
         """
         return categorical_greedy_action(self, state)
 
-    def get_q_values(self, states: np.ndarray, actions: np.ndarray):
+    def get_q_values(self, states: torch.Tensor, actions: torch.Tensor):
         """Get Q values corresponding to specific states and actions
 
         Args:

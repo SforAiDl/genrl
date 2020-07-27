@@ -36,12 +36,11 @@ class PrioritizedReplayDQN(DQN):
     """
 
     def __init__(self, *args, alpha: float = 0.6, beta: float = 0.4, **kwargs):
-        self.alpha = alpha
-        self.beta = beta
-
         super(PrioritizedReplayDQN, self).__init__(
             *args, buffer_type="prioritized", **kwargs
         )
+        self.alpha = alpha
+        self.beta = beta
 
         self.empty_logs()
         if self.create_model:

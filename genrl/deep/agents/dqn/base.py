@@ -169,17 +169,15 @@ class DQN(OffPolicyAgent):
             -1
         )  # Needs to be unsqueezed to match dimension of Q-values
 
-    def sample_from_buffer(self):
+    def sample_from_buffer(self, beta=None):
         """
         Samples experiences from the buffer and converts them into usable formats
         """
         # Samples from the buffer
-        if self.buffer_type == "push":
-            batch = self.replay_buffer.sample(self.batch_size)
-        elif self.buffer_type == "prioritized":
-            batch = self.replay_buffer.sample(self.batch_size, beta=self.beta)
+        if beta is not None:
+            batch = self.replay_buffer.sample(self.batch_size, beta=beta)
         else:
-            raise NotImplementedError
+            batch = self.replay_buffer.sample(self.batch_size)
 
         # Parameters need to be reshaped and preprocessed before they're ready to send to Neural Networks.
         states = batch[0].reshape(-1, *self.env.obs_shape)
