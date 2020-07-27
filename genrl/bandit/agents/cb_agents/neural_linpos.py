@@ -1,4 +1,3 @@
-
 import torch
 from scipy.stats import invgamma
 
@@ -50,14 +49,14 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         self.nn_update_ratio = kwargs.get("nn_update_ratio", 2)
         self.model = (
             NeuralBanditModel(
-                self.context_dim,
-                kwargs.get("hidden_dims", [50, 50]),
-                self.n_actions,
-                kwargs.get("init_lr", 0.1),
-                kwargs.get("max_grad_norm", 0.5),
-                kwargs.get("lr_decay", 0.5),
-                kwargs.get("lr_reset", True),
-                kwargs.get("dropout_p", None),
+                context_dim=self.context_dim,
+                hidden_dims=kwargs.get("hidden_dims", [50, 50]),
+                n_actions=self.n_actions,
+                init_lr=kwargs.get("init_lr", 0.1),
+                max_grad_norm=kwargs.get("max_grad_norm", 0.5),
+                lr_decay=kwargs.get("lr_decay", 0.5),
+                lr_reset=kwargs.get("lr_reset", True),
+                dropout_p=kwargs.get("dropout_p", None),
             )
             .to(torch.float)
             .to(self.device)
