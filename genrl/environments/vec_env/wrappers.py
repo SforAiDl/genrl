@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from .vector_envs import VecEnv
+from genrl.environments.vec_env.vector_envs import VecEnv
 
 
 class VecEnvWrapper(VecEnv):

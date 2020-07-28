@@ -6,15 +6,15 @@ import torch
 import torch.optim as opt
 from torch.autograd import Variable
 
-from ....environments import VecEnv
-from ...common import (
+from genrl.deep.agents.base import OnPolicyAgent
+from genrl.deep.common import (
     BasePolicy,
     RolloutBuffer,
     get_env_properties,
     get_model,
     safe_mean,
 )
-from ..base import OnPolicyAgent
+from genrl.environments import VecEnv
 
 
 class VPG(OnPolicyAgent):

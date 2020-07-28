@@ -6,8 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from ....environments import VecEnv
-from ...common import (
+
+from genrl.deep.common import (
     BaseActorCritic,
     ReplayBuffer,
     get_env_properties,
@@ -15,6 +15,8 @@ from ...common import (
     safe_mean,
     set_seeds,
 )
+
+from genrl.environments import VecEnv
 
 
 class TD3:

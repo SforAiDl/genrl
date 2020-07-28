@@ -6,15 +6,16 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 
-from ....environments import VecEnv
-from ...common import (
+
+from genrl.deep.agents.base import OnPolicyAgent
+from genrl.deep.common import (
     BaseActorCritic,
     RolloutBuffer,
     get_env_properties,
     get_model,
     safe_mean,
 )
-from ..base import OnPolicyAgent
+from genrl.environments import VecEnv
 
 
 class PPO1(OnPolicyAgent):

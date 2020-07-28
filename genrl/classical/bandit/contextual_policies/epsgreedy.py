@@ -1,7 +1,7 @@
 import numpy as np
 
-from ..contextual_bandits import ContextualBandit
-from .base import CBPolicy
+from genrl.classical.bandit.contextual_bandits import ContextualBandit
+from genrl.classical.bandit.contextual_policies.base import CBPolicy
 
 
 class EpsGreedyCBPolicy(CBPolicy):

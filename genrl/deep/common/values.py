@@ -2,8 +2,8 @@ from typing import Tuple, Type, Union
 
 import numpy as np
 
-from .base import BaseValue
-from .utils import cnn, mlp
+from genrl.deep.common.base import BaseValue
+from genrl.deep.common.utils import cnn, mlp
 
 
 def _get_val_model(
