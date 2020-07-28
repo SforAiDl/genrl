@@ -316,7 +316,7 @@ many steps)
         self.warmup_steps = warmup_steps
         self.update_interval = update_interval
         self.start_update = start_update
-        self.network_type = self.agent.network_type
+        self.network = self.agent.network
 
     def train(self) -> None:
         """
