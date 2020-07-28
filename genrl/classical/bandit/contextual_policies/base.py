@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import numpy as np
 
-from ..contextual_bandits import ContextualBandit
+from genrl.classical.bandit.contextual_bandits import ContextualBandit
 
 
 class CBPolicy(object):

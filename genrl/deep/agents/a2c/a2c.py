@@ -6,9 +6,9 @@ import torch
 from torch import optim as opt
 from torch.nn import functional as F
 
-from ....environments.vec_env import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
-from ..base import OnPolicyAgent
+from genrl.deep.agents.base import OnPolicyAgent
+from genrl.deep.common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from genrl.environments.vec_env import VecEnv
 
 
 class A2C(OnPolicyAgent):
