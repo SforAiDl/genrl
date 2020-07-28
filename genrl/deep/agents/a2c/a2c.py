@@ -6,17 +6,15 @@ import torch
 import torch.nn.functional as F
 import torch.optim as opt
 
-
 from genrl.deep.agents.base import OnPolicyAgent
 from genrl.deep.common import (
-    BaseActorCritic
-    RolloutBuffer, 
-    get_env_properties, 
-    get_model, 
-    safe_mean
+    BaseActorCritic,
+    RolloutBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
 )
 from genrl.environments.vec_env import VecEnv
-
 
 
 class A2C(OnPolicyAgent):

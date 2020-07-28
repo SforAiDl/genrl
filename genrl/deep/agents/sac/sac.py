@@ -16,9 +16,7 @@ from genrl.deep.common import (
     safe_mean,
     set_seeds,
 )
-
 from genrl.environments import VecEnv
-
 
 
 class SAC:

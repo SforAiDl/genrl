@@ -7,18 +7,15 @@ import torch
 import torch.nn.functional as F
 import torch.optim as opt
 
-
 from genrl.deep.common import (
-    BaseActorCritic
+    BaseActorCritic,
     ReplayBuffer,
     get_env_properties,
     get_model,
     safe_mean,
     set_seeds,
 )
-
 from genrl.environments import VecEnv
-
 
 
 class DDPG:
