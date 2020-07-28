@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 
-
 from genrl.deep.agents.base import OnPolicyAgent
 from genrl.deep.common import (
     BaseActorCritic,

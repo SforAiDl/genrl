@@ -6,7 +6,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-
 from genrl.deep.common import (
     BaseActorCritic,
     ReplayBuffer,
@@ -15,7 +14,6 @@ from genrl.deep.common import (
     safe_mean,
     set_seeds,
 )
-
 from genrl.environments import VecEnv
 
 
