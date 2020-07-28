@@ -2,15 +2,15 @@ from typing import List
 
 import gym
 
-from ..environments import (
+from genrl.environments import (
     AtariPreprocessing,
     FireReset,
     FrameStack,
     GymWrapper,
     NoopReset,
 )
-from ..environments.time_limit import AtariTimeLimit, TimeLimit
-from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
+from genrl.environments.time_limit import AtariTimeLimit, TimeLimit
+from genrl.environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
 def VectorEnv(

@@ -8,8 +8,14 @@ import torch.nn as nn
 import torch.optim as opt
 from torch.distributions import Normal
 
-from ....environments import VecEnv
-from ...common import ReplayBuffer, get_env_properties, get_model, safe_mean, set_seeds
+from genrl.deep.common import (
+    ReplayBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+    set_seeds,
+)
+from genrl.environments import VecEnv
 
 
 class SAC:
