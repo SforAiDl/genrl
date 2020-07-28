@@ -6,10 +6,10 @@ import gym
 import numpy as np
 import torch
 
-from genrl.environments import VecEnv
 from genrl.deep.common.buffers import PrioritizedBuffer, ReplayBuffer
 from genrl.deep.common.logger import Logger
 from genrl.deep.common.utils import safe_mean, set_seeds
+from genrl.environments import VecEnv
 
 
 class Trainer(ABC):

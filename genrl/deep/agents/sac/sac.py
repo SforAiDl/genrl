@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.optim as opt
 from torch.distributions import Normal
 
-from genrl.environments import VecEnv
 from genrl.deep.common import (
     ReplayBuffer,
     get_env_properties,
@@ -16,6 +15,7 @@ from genrl.deep.common import (
     safe_mean,
     set_seeds,
 )
+from genrl.environments import VecEnv
 
 
 class SAC:
