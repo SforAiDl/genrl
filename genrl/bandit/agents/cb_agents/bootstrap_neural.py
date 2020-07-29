@@ -79,8 +79,8 @@ class BootstrapNeuralAgent(DCBAgent):
 
         selected_model = self.models[np.random.randint(self.n)]
         selected_model.use_dropout = self.eval_with_dropout
-        _, predicted_rewards = selected_model(context)
-        action = torch.argmax(predicted_rewards).to(torch.int)
+        results = selected_model(context)
+        action = torch.argmax(results["pred_rewards"]).to(torch.int)
         return action
 
     def update_db(self, context: torch.Tensor, action: int, reward: int):

@@ -126,21 +126,21 @@ class NeuralNoiseSamplingAgent(DCBAgent):
                 noise.append(torch.normal(0, self.noise_std_dev, size=p.shape))
                 p += noise[-1]
 
-        x, predicted_rewards = self.model(context)
+        results = self.model(context)
 
         with torch.no_grad():
             for i, p in enumerate(self.model.parameters()):
                 p -= noise[i]
 
-        return x, predicted_rewards
+        return results["x"], results["pred_rewards"]
 
     def _update_noise(self):
         x, _, _ = self.db.get_data(self.noise_update_batch_size)
         with torch.no_grad():
-            y_pred, _ = self.model(x)
+            results = self.model(x)
             y_pred_noisy, _ = self._noisy_pred(x)
 
-        p = torch.distributions.Categorical(logits=y_pred)
+        p = torch.distributions.Categorical(logits=results["x"])
         q = torch.distributions.Categorical(logits=y_pred_noisy)
         kl = torch.distributions.kl.kl_divergence(p, q).mean()
 

@@ -71,8 +71,8 @@ class VariationalAgent(DCBAgent):
             return torch.tensor(
                 self.t % self.n_actions, device=self.device, dtype=torch.int
             )
-        _, predicted_rewards, _ = self.model(context)
-        action = torch.argmax(predicted_rewards).to(torch.int)
+        results = self.model(context)
+        action = torch.argmax(results["pred_rewards"]).to(torch.int)
         return action
 
     def update_db(self, context: torch.Tensor, action: int, reward: int):
