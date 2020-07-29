@@ -98,7 +98,7 @@ class BanditTrainer:
                     if t % log_every == 0:
                         self.logger.write(
                             {
-                                "Timestep": t,
+                                "timestep": t,
                                 "regret/regret": self.bandit.regret_hist[-1],
                                 "reward/reward": reward,
                                 "regret/cumulative_regret": self.bandit.cum_regret,
