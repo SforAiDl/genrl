@@ -50,7 +50,7 @@ class StatlogDataBandit(DataBasedBandit):
 
         if download:
             z_fpath = download_data(path, url, force_download)
-            subprocess.run(["uncompress", "-f", "-k", z_fpath])
+            subprocess.run(["uncompress", "-f", z_fpath])
             fpath = Path(z_fpath).parent.joinpath("shuttle.trn")
             self.df = pd.read_csv(fpath, header=None, delimiter=" ")
         else:
