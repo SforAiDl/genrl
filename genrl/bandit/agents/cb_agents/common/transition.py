@@ -21,10 +21,11 @@ class TransitionDB(object):
     def __init__(self, device: Union[str, torch.device] = "cpu"):
 
         if type(device) is str:
-            if "cuda" in device and torch.cuda.is_available():
-                self.device = torch.device(device)
-            else:
-                self.device = torch.device("cpu")
+            self.device = (
+                torch.device(device)
+                if "cuda" in device and torch.cuda.is_available()
+                else torch.device("cpu")
+            )
         else:
             self.device = device
 

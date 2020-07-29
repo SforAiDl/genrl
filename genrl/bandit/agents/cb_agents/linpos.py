@@ -82,19 +82,15 @@ class LinearPosteriorAgent(DCBAgent):
             dtype=torch.float,
         )
         try:
-            beta = (
-                torch.tensor(
-                    np.stack(
-                        [
-                            np.random.multivariate_normal(
-                                self.mu[i], var[i] * self.cov[i]
-                            )
-                            for i in range(self.n_actions)
-                        ]
-                    )
-                    .to(self.device)
-                    .to(torch.float)
+            beta = torch.tensor(
+                np.stack(
+                    [
+                        np.random.multivariate_normal(self.mu[i], var[i] * self.cov[i])
+                        for i in range(self.n_actions)
+                    ]
                 )
+                .to(self.device)
+                .to(torch.float)
             )
         except np.linalg.LinAlgError as e:  # noqa F841
             beta = (
