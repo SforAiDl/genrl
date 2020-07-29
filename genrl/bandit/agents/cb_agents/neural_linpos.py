@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from scipy.stats import invgamma
 
@@ -118,25 +119,26 @@ class NeuralLinearPosteriorAgent(DCBAgent):
         )
         try:
             beta = (
-                torch.stack(
-                    [
-                        torch.distributions.MultivariateNormal(
-                            self.mu[i], var[i] * self.cov[i]
-                        ).sample()
-                        for i in range(self.n_actions)
-                    ]
+                torch.tensor(
+                    np.stack(
+                        [
+                            np.random.multivariate_normal(
+                                self.mu[i], var[i] * self.cov[i]
+                            )
+                            for i in range(self.n_actions)
+                        ]
+                    )
+                    .to(self.device)
+                    .to(torch.float)
                 )
-                .to(self.device)
-                .to(torch.float)
             )
-        except RuntimeError as e:  # noqa F841
-            # print(f"Eror: {e}")
+        except np.linalg.LinAlgError as e:  # noqa F841
             beta = (
                 torch.stack(
                     [
                         torch.distributions.MultivariateNormal(
-                            torch.zeros(self.latent_dim + 1),
-                            torch.eye(self.latent_dim + 1),
+                            torch.zeros(self.context_dim + 1),
+                            torch.eye(self.context_dim + 1),
                         ).sample()
                         for i in range(self.n_actions)
                     ]
