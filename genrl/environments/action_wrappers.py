@@ -5,7 +5,7 @@ import numpy as np
 from gym.core import ActionWrapper
 from gym.spaces import Box
 
-from .vec_env import VecEnv
+from genrl.environments.vec_env import VecEnv
 
 
 class ClipAction(ActionWrapper):
