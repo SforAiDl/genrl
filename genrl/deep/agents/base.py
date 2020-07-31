@@ -6,12 +6,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from genrl.deep.common.buffers import (
-    PrioritizedBuffer,
-    PrioritizedReplayBufferSamples,
-    PushReplayBuffer,
-    ReplayBufferSamples,
-)
+from genrl.deep.common.buffers import PrioritizedBuffer, PushReplayBuffer
 from genrl.deep.common.utils import set_seeds
 
 
@@ -127,7 +122,7 @@ class OnPolicyAgent(BaseAgent):
 
 class OffPolicyAgent(BaseAgent):
     def __init__(
-        self, *args, replay_size: int = 1000000, buffer_type: str = "push", **kwargs
+        self, *args, replay_size: int = 1000, buffer_type: str = "push", **kwargs
     ):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size

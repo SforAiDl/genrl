@@ -3,7 +3,6 @@ from typing import List, Tuple
 
 import numpy as np
 import torch
-import torch.optim as opt
 
 from genrl.deep.agents.dqn.base import DQN
 from genrl.deep.agents.dqn.utils import (

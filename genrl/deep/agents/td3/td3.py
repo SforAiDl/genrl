@@ -21,49 +21,6 @@ class TD3:
     Twin Delayed DDPG
 
     Paper: https://arxiv.org/abs/1509.02971
-
-    :param network_type: (str) The deep neural network layer types ['mlp']
-    :param env: (Gym environment) The environment to learn from
-    :param gamma: (float) discount factor
-    :param replay_size: (int) Replay memory size
-    :param batch_size: (int) Update batch size
-    :param lr_p: (float) Policy network learning rate
-    :param lr_q: (float) Q network learning rate
-    :param polyak: (float) Polyak averaging weight to update target network
-    :param policy_frequency: (int) Update actor and target networks every
-        policy_frequency steps
-    :param epochs: (int) Number of epochs
-    :param start_steps: (int) Number of exploratory steps at start
-    :param steps_per_epoch: (int) Number of steps per epoch
-    :param noise_std: (float) Standard deviation for action noise
-    :param max_ep_len: (int) Maximum steps per episode
-    :param start_update: (int) Number of steps before first parameter update
-    :param update_interval: (int) Number of steps between parameter updates
-    :param layers: (tuple or list) Number of neurons in hidden layers
-    :param seed (int): seed for torch and gym
-    :param render (boolean): if environment is to be rendered
-    :param device (str): device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
-    :type network_type: str
-    :type env: Gym environment
-    :type gamma: float
-    :type replay_size: int
-    :type batch_size: int
-    :type lr_p: float
-    :type lr_q: float
-    :type polyak: float
-    :type policy_frequency: int
-    :type epochs: int
-    :type start_steps: int
-    :type steps_per_epoch: int
-    :type noise_std: float
-    :type max_ep_len: int
-    :type start_update: int
-    :type update_interval: int
-    :type layers: tuple or list
-    :type seed: int
-    :type render: boolean
-    :type device: str
     """
 
     def __init__(
@@ -74,6 +31,7 @@ class TD3:
         noise_std: float = 0.1,
         **kwargs,
     ):
+        super(TD3, self).__init__(*args, **kwargs)
         self.polyak = polyak
         self.noise = noise
         self.noise_std = noise_std

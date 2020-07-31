@@ -1,7 +1,6 @@
 import collections
 
 import torch
-import torch.optim as opt
 
 from genrl.deep.agents.dqn.base import DQN
 from genrl.deep.agents.dqn.utils import prioritized_q_loss

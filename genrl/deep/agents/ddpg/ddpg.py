@@ -58,7 +58,9 @@ class DDPG(OffPolicyAgent):
             self._create_model()
 
     def _create_model(self) -> None:
-        input_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        input_dim, action_dim, discrete, _ = get_env_properties(
+            self.env, self.network_type
+        )
         if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)

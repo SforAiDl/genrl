@@ -190,8 +190,6 @@ class DQN(OffPolicyAgent):
         Args:
             update_interval (int): Interval between successive updates of the target model
         """
-        self.update_target_model()
-
         for timestep in range(update_interval):
             batch = self.sample_from_buffer()
             loss = self.get_q_loss(batch)
@@ -206,11 +204,16 @@ class DQN(OffPolicyAgent):
                 self.model.reset_noise()
                 self.target_model.reset_noise()
 
+            # Every few timesteps, we update the target Q network
+            if timestep % update_interval == 0:
+                self.update_target_model()
+
     def calculate_epsilon_by_frame(self) -> float:
         """Helper function to calculate epsilon after every timestep
+
+        Exponentially decays exploration rate from max epsilon to min epsilon
+        The greater the value of epsilon_decay, the slower the decrease in epsilon
         """
-        # Exponentially decays exploration rate from max epsilon to min epsilon
-        # The greater the value of epsilon_decay, the slower the decrease in epsilon
         return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
             -1.0 * self.timestep / self.epsilon_decay
         )
