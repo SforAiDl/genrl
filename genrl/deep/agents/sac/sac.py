@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-import torch.distributions.Normal as Normal
+import torch.distributions.normal.Normal as Normal
 import torch.nn as nn
 import torch.optim as opt
 

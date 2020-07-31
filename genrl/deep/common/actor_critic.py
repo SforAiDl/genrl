@@ -1,7 +1,7 @@
 from typing import Tuple
 
 import torch
-import torch.distributions.Categorical as Categorical
+import torch.distributions.categorical.Categorical as Categorical
 import torch.nn as nn
 from gym import spaces
 

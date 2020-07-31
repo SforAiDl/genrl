@@ -4,7 +4,7 @@ from typing import List, Tuple, Union
 import gym
 import numpy as np
 import torch
-from torch import nn as nn
+import torch.nn as nn
 
 from genrl.deep.common.noise import NoisyLinear
 from genrl.environments import VecEnv
