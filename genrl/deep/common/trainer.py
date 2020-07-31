@@ -513,7 +513,7 @@ class OnPolicyTrainer(Trainer):
             if epoch % self.log_interval == 0:
                 self.logger.write(
                     {
-                        "Timestep": epoch * self.agent.rollout_size,
+                        "timestep": epoch * self.agent.rollout_size,
                         "Episode": epoch,
                         **self.agent.get_logging_params(),
                     },

@@ -45,8 +45,8 @@ class A2C(OnPolicyAgent):
     :type env: Gym Environment
     :type gamma: float
     :type actor_batch_size: int
-    :type lr_a: float
-    :type lr_c: float
+    :type lr_policy: float
+    :type lr_value: float
     :type num_episodes: int
     :type timesteps_per_actorbatch: int
     :type max_ep_len: int
