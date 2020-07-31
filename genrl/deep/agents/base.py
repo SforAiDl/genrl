@@ -183,6 +183,20 @@ class OffPolicyAgent(BaseAgent):
             )
         return batch
 
+    def get_p_loss(self, states: torch.Tensor) -> torch.Tensor:
+        """Function to get the Policy loss
+
+        Args:
+            states (:obj:`torch.Tensor`): States for which Q-values need to be found
+
+        Returns:
+            loss (:obj:`torch.Tensor`): Calculated policy loss
+        """
+        next_best_actions = self.ac.get_action(states, True)[0]
+        q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
+        policy_loss = -torch.mean(q_values)
+        return policy_loss
+
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
         """Normal Function to calculate the loss of the Q-function
 
@@ -190,7 +204,7 @@ class OffPolicyAgent(BaseAgent):
             batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
 
         Returns:
-            loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
+            loss (:obj:`torch.Tensor`): Calculated loss of the Q-function
         """
         q_values = self.get_q_values(batch.states, batch.actions)
         target_q_values = self.get_target_q_values(
@@ -198,3 +212,27 @@ class OffPolicyAgent(BaseAgent):
         )
         loss = F.mse_loss(q_values, target_q_values)
         return loss
+
+    def update_params(self, update_interval: int) -> None:
+        """Takes the step for optimizer.
+
+        Args:
+            update_interval (int): No of timestep between target model updates
+        """
+        self.update_target_model()
+        for timestep in range(update_interval):
+            batch = self.sample_from_buffer()
+
+            value_loss = self.get_q_loss(batch)
+            self.logs["value_loss"].append(value_loss.item())
+
+            policy_loss = self.get_p_loss(batch.states)
+            self.logs["policy_loss"].append(policy_loss.item())
+
+            self.optimizer_policy.zero_grad()
+            policy_loss.backward()
+            self.optimizer_policy.step()
+
+            self.optimizer_value.zero_grad()
+            value_loss.backward()
+            self.optimizer_value.step()

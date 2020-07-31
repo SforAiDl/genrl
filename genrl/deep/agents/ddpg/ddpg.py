@@ -15,6 +15,31 @@ from genrl.environments import VecEnv
 
 
 class DDPG(OffPolicyAgent):
+    """DDPG Class
+
+    Paper: https://arxiv.org/abs/1509.02971
+
+    Attributes:
+        network_type (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
+        batch_size (int): Mini batch size for loading experiences
+        gamma (float): The discount factor for rewards
+        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+            of the Q-value function
+        lr_value (float): Learning rate for the Q-value function
+        replay_size (int): Capacity of the Replay Buffer
+        buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
+        polyak (float): Soft target update coefficient
+        noise (:obj:`ActionNoise`): Action Noise added to the policy output
+        noise_std (float): Standard deviation of action noise
+        seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
+        device (str): Hardware being used for training. Options:
+            ["cuda" -> GPU, "cpu" -> CPU]
+    """
+
     def __init__(
         self,
         *args,
@@ -49,10 +74,6 @@ class DDPG(OffPolicyAgent):
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
-        # # freeze target network params
-        # for param in self.ac_target.parameters():
-        #     param.requires_grad = False
-
         self.replay_buffer = self.buffer_class(self.replay_size)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
@@ -62,7 +83,6 @@ class DDPG(OffPolicyAgent):
 
         Updates the target model with the training model's weights when called
         """
-        # with torch.no_grad():
         for param, param_target in zip(
             self.ac.parameters(), self.ac_target.parameters()
         ):
@@ -73,7 +93,6 @@ class DDPG(OffPolicyAgent):
         self, state: np.ndarray, deterministic: bool = True
     ) -> np.ndarray:
         state = torch.as_tensor(state).float()
-        # with torch.no_grad():
         action, _ = self.ac.get_action(state, deterministic)
         action = action.detach().cpu().numpy()
 
@@ -101,7 +120,7 @@ class DDPG(OffPolicyAgent):
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        """Get target Q values for the DQN
+        """Get target Q values for the DDPG
 
         Args:
             next_states (:obj:`torch.Tensor`): Next states for which target Q-values
@@ -118,47 +137,6 @@ class DDPG(OffPolicyAgent):
         )
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
         return target_q_values
-
-    def get_p_loss(self, states: np.ndarray) -> torch.Tensor:
-        """Get policy loss for DDPG
-
-        Args:
-            states (:obj:`np.ndarray`): State at which the loss needs to be found
-
-        Returns:
-            policy_loss (:obj:`torch.Tensor`): Policy loss at the state
-        """
-        next_best_actions = self.ac.get_action(states, True)[0]
-        q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
-        policy_loss = -torch.mean(q_values)
-        return policy_loss
-
-    def update_params(self, update_interval: int) -> None:
-        """
-        Takes the step for optimizer.
-
-        :param timestep: timestep
-        :type timestep: int
-        """
-
-        for timestep in range(update_interval):
-            batch = self.sample_from_buffer()
-
-            value_loss = self.get_q_loss(batch)
-            self.logs["value_loss"].append(value_loss.item())
-
-            policy_loss = self.get_p_loss(batch.states)
-            self.logs["policy_loss"].append(policy_loss.item())
-
-            self.optimizer_policy.zero_grad()
-            policy_loss.backward()
-            self.optimizer_policy.step()
-
-            self.optimizer_value.zero_grad()
-            value_loss.backward()
-            self.optimizer_value.step()
-
-            self.update_target_model()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {

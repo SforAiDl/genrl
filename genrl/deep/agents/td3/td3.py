@@ -68,61 +68,15 @@ class TD3:
 
     def __init__(
         self,
-        network_type: str,
-        env: Union[gym.Env, VecEnv],
-        create_model: bool = True,
-        gamma: float = 0.99,
-        replay_size: int = 1000,
-        batch_size: int = 100,
-        lr_p: float = 0.001,
-        lr_q: float = 0.001,
+        *args,
         polyak: float = 0.995,
-        policy_frequency: int = 2,
-        epochs: int = 100,
-        start_steps: int = 10000,
-        steps_per_epoch: int = 4000,
         noise: Optional[Any] = None,
         noise_std: float = 0.1,
-        max_ep_len: int = 1000,
-        start_update: int = 1000,
-        update_interval: int = 50,
-        layers: Tuple = (256, 256),
-        seed: Optional[int] = None,
-        render: bool = False,
-        device: Union[torch.device, str] = "cpu",
+        **kwargs,
     ):
-
-        self.network_type = network_type
-        self.env = env
-        self.create_model = create_model
-        self.gamma = gamma
-        self.replay_size = replay_size
-        self.batch_size = batch_size
-        self.lr_p = lr_p
-        self.lr_q = lr_q
         self.polyak = polyak
-        self.policy_frequency = policy_frequency
-        self.epochs = epochs
-        self.start_steps = start_steps
-        self.steps_per_epoch = steps_per_epoch
         self.noise = noise
         self.noise_std = noise_std
-        self.max_ep_len = max_ep_len
-        self.start_update = start_update
-        self.update_interval = update_interval
-        self.layers = layers
-        self.seed = seed
-        self.render = render
-
-        # Assign device
-        if "cuda" in device and torch.cuda.is_available():
-            self.device = torch.device(device)
-        else:
-            self.device = torch.device("cpu")
-
-        # Assign seed
-        if seed is not None:
-            set_seeds(seed, self.env)
 
         self.empty_logs()
         if self.create_model:
@@ -143,13 +97,10 @@ class TD3:
             state_dim, action_dim, self.layers, "Qsa", False
         ).to(self.device)
 
-        self.ac.qf1 = self.ac.critic
+        self.ac.qf1 = self.ac.critic.to(self.device)
         self.ac.qf2 = get_model("v", self.network_type)(
             state_dim, action_dim, hidden=self.layers, val_type="Qsa"
-        )
-
-        self.ac.qf1.to(self.device)
-        self.ac.qf2.to(self.device)
+        ).to(self.device)
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
