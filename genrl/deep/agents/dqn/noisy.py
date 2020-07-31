@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from torch import optim as opt
+import torch.optim as opt
 
 from genrl.deep.agents.dqn.base import DQN
 

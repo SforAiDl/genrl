@@ -2,9 +2,9 @@ from typing import Any, Tuple
 
 import numpy as np
 
-from .utils import RunningMeanStd
-from .vector_envs import VecEnv
-from .wrappers import VecEnvWrapper
+from genrl.environments.vec_env.utils import RunningMeanStd
+from genrl.environments.vec_env.vector_envs import VecEnv
+from genrl.environments.vec_env.wrappers import VecEnvWrapper
 
 
 class VecNormalize(VecEnvWrapper):

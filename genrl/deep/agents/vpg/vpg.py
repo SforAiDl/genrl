@@ -3,12 +3,11 @@ from typing import Any, Dict, Tuple, Union
 import gym
 import numpy as np
 import torch
-from torch import optim as opt
-from torch.autograd import Variable
+import torch.optim as opt
 
-from ....environments import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
-from ..base import OnPolicyAgent
+from genrl.deep.agents.base import OnPolicyAgent
+from genrl.deep.common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from genrl.environments import VecEnv
 
 
 class VPG(OnPolicyAgent):
@@ -100,7 +99,7 @@ class VPG(OnPolicyAgent):
         :returns: The action
         :rtype: int, float, ...
         """
-        state = Variable(torch.as_tensor(state).float().to(self.device))
+        state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on policy_fn output
         action, dist = self.actor.get_action(state, deterministic=deterministic)

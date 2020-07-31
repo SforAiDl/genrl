@@ -1,7 +1,7 @@
 import numpy as np
 
-from ...bandit import Bandit
-from .base import BanditPolicy
+from genrl.classical.bandit import Bandit
+from genrl.classical.bandit.policies.base import BanditPolicy
 
 
 class EpsGreedyPolicy(BanditPolicy):

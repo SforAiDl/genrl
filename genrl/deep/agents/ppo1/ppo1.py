@@ -3,12 +3,12 @@ from typing import Any, Dict, Tuple, Union
 import gym
 import numpy as np
 import torch
-from torch import nn as nn
-from torch import optim as opt
+import torch.nn as nn
+import torch.optim as opt
 
-from ....environments import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
-from ..base import OnPolicyAgent
+from genrl.deep.agents.base import OnPolicyAgent
+from genrl.deep.common import RolloutBuffer, get_env_properties, get_model, safe_mean
+from genrl.environments import VecEnv
 
 
 class PPO1(OnPolicyAgent):

@@ -2,8 +2,8 @@ from typing import Tuple
 
 import numpy as np
 
-from .base import BasePolicy
-from .utils import cnn, mlp
+from genrl.deep.common.base import BasePolicy
+from genrl.deep.common.utils import cnn, mlp
 
 
 class MlpPolicy(BasePolicy):

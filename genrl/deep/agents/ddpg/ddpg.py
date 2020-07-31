@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-from torch import optim as opt
+import torch.nn.functional as F
+import torch.optim as opt
 
 from genrl.deep.agents.base import OffPolicyAgent
 from genrl.deep.common.noise import ActionNoise
