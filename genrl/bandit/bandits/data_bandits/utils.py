@@ -1,3 +1,5 @@
+import gzip
+import shutil
 import urllib.request
 from pathlib import Path
 from typing import Union
@@ -70,4 +72,18 @@ def fetch_data_with_header(
         df = pd.read_csv(path, delimiter=delimiter, na_values=na_values).dropna()
     else:
         raise FileNotFoundError(f"File not found at location {path}, use download flag")
+    return df
+
+
+def fetch_zipped_data_without_header(
+    gz_fpath: str, delimiter: str = ",", na_values: list = []
+):
+    with gzip.open(gz_fpath, "rb") as f_in:
+        fpath = Path(gz_fpath).parent.joinpath("covtype.data")
+        with open(fpath, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
+    df = pd.read_csv(
+        fpath, header=None, delimiter=delimiter, na_values=na_values
+    ).dropna()
+    fpath.unlink()
     return df

@@ -39,19 +39,19 @@ class AdultDataBandit(DataBasedBandit):
     """
 
     def __init__(self, **kwargs):
-        super(AdultDataBandit, self).__init__("Adult", kwargs.get("device", "cpu"))
+        super(AdultDataBandit, self).__init__(kwargs.get("device", "cpu"))
 
-        self.dir = kwargs.get("path", self.dir)
+        path = kwargs.get("path", "./data/Adult/")
         download = kwargs.get("download", None)
         force_download = kwargs.get("force_download", None)
         url = kwargs.get("url", URL)
 
         if download:
-            fpath = download_data(self.dir, url, force_download)
+            fpath = download_data(path, url, force_download)
             self._df = pd.read_csv(fpath, header=None, na_values=["?", " ?"]).dropna()
         else:
             self._df = fetch_data_without_header(
-                self.dir, "adult.data", na_values=["?", " ?"]
+                path, "adult.data", na_values=["?", " ?"]
             )
 
         for col in self._df.columns[[1, 3, 5, 6, 7, 8, 9, 13, 14]]:

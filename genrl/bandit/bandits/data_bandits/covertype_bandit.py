@@ -7,7 +7,10 @@ import pandas as pd
 import torch
 
 from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import download_data
+from genrl.bandit.bandits.data_bandits.utils import (
+    download_data,
+    fetch_zipped_data_without_header,
+)
 
 URL = (
     "https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz"
@@ -41,26 +44,18 @@ class CovertypeDataBandit(DataBasedBandit):
     """
 
     def __init__(self, **kwargs):
-        super(CovertypeDataBandit, self).__init__(
-            "Covertype", kwargs.get("device", "cpu")
-        )
+        super(CovertypeDataBandit, self).__init__(kwargs.get("device", "cpu"))
 
-        self.dir = kwargs.get("path", self.dir)
+        path = Path(kwargs.get("path", "./data/Covertype/"))
         download = kwargs.get("download", None)
         force_download = kwargs.get("force_download", None)
         url = kwargs.get("url", URL)
 
         if download:
-            gz_fpath = download_data(self.dir, url, force_download)
+            gz_fpath = download_data(path, url, force_download)
+            self._df = fetch_zipped_data_without_header(gz_fpath)
         else:
-            gz_fpath = self.dir.joinpath("covtype.data.gz")
-
-        with gzip.open(gz_fpath, "rb") as f_in:
-            fpath = Path(gz_fpath).parent.joinpath("covtype.data")
-            with open(fpath, "wb") as f_out:
-                shutil.copyfileobj(f_in, f_out)
-        self._df = pd.read_csv(fpath, header=None, na_values=["?"]).dropna()
-        fpath.unlink()
+            self._df = fetch_covertype_data(path)
 
         self.n_actions = len(self._df.iloc[:, -1].unique())
         self.context_dim = self._df.shape[1] - 1
@@ -100,3 +95,13 @@ class CovertypeDataBandit(DataBasedBandit):
             device=self.device,
             dtype=torch.float,
         )
+
+
+def fetch_covertype_data(path):
+    path = Path(path)
+    if path.suffix == ".data":
+        return pd.read_csv(path, header=None, na_values=["?"]).dropna()
+    else:
+        if path.is_dir():
+            path = path.joinpath("covtype.data.gz")
+        return fetch_zipped_data_without_header(path)

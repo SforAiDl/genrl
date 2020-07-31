@@ -17,8 +17,7 @@ class DataBasedBandit(Bandit):
         device (torch.device): Device to use for tensor operations.
     """
 
-    def __init__(self, name: str, device: str = "cpu"):
-        self.dir = Path(__file__).resolve().parent.joinpath("data").joinpath(name)
+    def __init__(self, device: str = "cpu"):
 
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)

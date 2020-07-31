@@ -41,20 +41,20 @@ class StatlogDataBandit(DataBasedBandit):
     """
 
     def __init__(self, **kwargs):
-        super(StatlogDataBandit, self).__init__("Statlog", kwargs.get("device", "cpu"))
+        super(StatlogDataBandit, self).__init__(kwargs.get("device", "cpu"))
 
-        self.dir = kwargs.get("path", self.dir)
+        path = kwargs.get("path", "./data/Statlog/")
         download = kwargs.get("download", None)
         force_download = kwargs.get("force_download", None)
         url = kwargs.get("url", URL)
 
         if download:
-            z_fpath = download_data(self.dir, url, force_download)
+            z_fpath = download_data(path, url, force_download)
             subprocess.run(["uncompress", "-f", z_fpath])
             fpath = Path(z_fpath).parent.joinpath("shuttle.trn")
             self.df = pd.read_csv(fpath, header=None, delimiter=" ")
         else:
-            self.df = fetch_data_without_header(self.dir, "shuttle.trn", delimiter=" ")
+            self.df = fetch_data_without_header(path, "shuttle.trn", delimiter=" ")
 
         self.n_actions = len(self.df.iloc[:, -1].unique())
         self.context_dim = self.df.shape[1] - 1
