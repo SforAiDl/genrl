@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List, Tuple, Union
 
 import torch
@@ -16,11 +17,14 @@ class DataBasedBandit(Bandit):
         device (torch.device): Device to use for tensor operations.
     """
 
-    def __init__(self, device: str = "cpu"):
+    def __init__(self, name: str, device: str = "cpu"):
+        self.dir = Path(__file__).resolve().parent.joinpath("data").joinpath(name)
+
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)
         else:
             self.device = torch.device("cpu")
+
         self._reset()
 
     @property

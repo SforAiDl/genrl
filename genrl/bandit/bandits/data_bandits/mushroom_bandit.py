@@ -50,18 +50,20 @@ class MushroomDataBandit(DataBasedBandit):
     def __init__(
         self, **kwargs,
     ):
-        super(MushroomDataBandit, self).__init__(kwargs.get("device", "cpu"))
+        super(MushroomDataBandit, self).__init__(
+            "Mushroom", kwargs.get("device", "cpu")
+        )
 
-        path = kwargs.get("path", "./data/Mushroom/")
+        self.dir = kwargs.get("path", self.dir)
         download = kwargs.get("download", None)
         force_download = kwargs.get("force_download", None)
         url = kwargs.get("url", URL)
 
         if download:
-            fpath = download_data(path, url, force_download)
+            fpath = download_data(self.dir, url, force_download)
             self.df = pd.read_csv(fpath, header=None)
         else:
-            self.df = fetch_data_without_header(path, "agaricus-lepiota.data")
+            self.df = fetch_data_without_header(self.dir, "agaricus-lepiota.data")
 
         for col in self.df.columns:
             dummies = pd.get_dummies(self.df[col], prefix=col, drop_first=False)

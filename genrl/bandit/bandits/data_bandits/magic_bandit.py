@@ -39,18 +39,18 @@ class MagicDataBandit(DataBasedBandit):
     """
 
     def __init__(self, **kwargs):
-        super(MagicDataBandit, self).__init__(kwargs.get("device", "cpu"))
+        super(MagicDataBandit, self).__init__("Magic", kwargs.get("device", "cpu"))
 
-        path = kwargs.get("path", "./data/Magic/")
+        self.dir = kwargs.get("path", self.dir)
         download = kwargs.get("download", None)
         force_download = kwargs.get("force_download", None)
         url = kwargs.get("url", URL)
 
         if download:
-            fpath = download_data(path, url, force_download)
+            fpath = download_data(self.dir, url, force_download)
             self.df = pd.read_csv(fpath, header=None)
         else:
-            self.df = fetch_data_with_header(path, "magic04.data")
+            self.df = fetch_data_with_header(self.dir, "magic04.data")
 
         col = self.df.columns[-1]
         dummies = pd.get_dummies(self.df[col], prefix=col, drop_first=False)

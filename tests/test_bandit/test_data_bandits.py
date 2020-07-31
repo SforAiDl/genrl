@@ -53,16 +53,17 @@ class TestDataBandit:
         for i in range(bandit.n_actions):
             _, _ = bandit.step(i)
 
-    def test_census_data_bandit(self) -> None:
-        bandit = CensusDataBandit(download=True)
-        _ = bandit.reset()
-        for i in range(bandit.n_actions):
-            _, _ = bandit.step(i)
+    # Test requires downloading a large file.
+    # def test_census_data_bandit(self) -> None:
+    #     bandit = CensusDataBandit(download=True)
+    #     _ = bandit.reset()
+    #     for i in range(bandit.n_actions):
+    #         _, _ = bandit.step(i)
 
-        bandit = CensusDataBandit(download=False)
-        _ = bandit.reset()
-        for i in range(bandit.n_actions):
-            _, _ = bandit.step(i)
+    #     bandit = CensusDataBandit(download=False)
+    #     _ = bandit.reset()
+    #     for i in range(bandit.n_actions):
+    #         _, _ = bandit.step(i)
 
     def test_magic_data_bandit(self) -> None:
         bandit = MagicDataBandit(download=True)

@@ -40,18 +40,18 @@ class CensusDataBandit(DataBasedBandit):
     """
 
     def __init__(self, **kwargs):
-        super(CensusDataBandit, self).__init__(kwargs.get("device", "cpu"))
+        super(CensusDataBandit, self).__init__("Census", kwargs.get("device", "cpu"))
 
-        path = kwargs.get("path", "./data/Census/")
+        self.dir = kwargs.get("path", self.dir)
         download = kwargs.get("download", None)
         force_download = kwargs.get("force_download", None)
         url = kwargs.get("url", URL)
 
         if download:
-            fpath = download_data(path, url, force_download)
+            fpath = download_data(self.dir, url, force_download)
             self._df = pd.read_csv(fpath)
         else:
-            self._df = fetch_data_with_header(path, "USCensus1990.data.txt")
+            self._df = fetch_data_with_header(self.dir, "USCensus1990.data.txt")
 
         self.n_actions = len(self._df["dOccup"].unique())
         self._context_columns = [

@@ -14,4 +14,3 @@ logs/
 .coverage
 .mypy*
 *.pt
-data/
