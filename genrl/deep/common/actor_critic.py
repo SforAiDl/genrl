@@ -1,9 +1,9 @@
 from typing import Tuple
 
 import torch
-import torch.distributions.categorical.Categorical as Categorical
 import torch.nn as nn
 from gym import spaces
+from torch.distributions import Categorical
 
 from genrl.deep.common.base import BaseActorCritic
 from genrl.deep.common.policies import MlpPolicy
