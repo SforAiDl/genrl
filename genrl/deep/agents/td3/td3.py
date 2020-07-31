@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-from torch import nn as nn
+import torch.nn as nn
 
 from genrl.deep.common import (
     ReplayBuffer,
