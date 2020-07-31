@@ -1,8 +1,8 @@
 from typing import Any, List, Optional, Tuple
 
 import gym
-import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
 
 from genrl.classical.common.models import get_model_from_name
 

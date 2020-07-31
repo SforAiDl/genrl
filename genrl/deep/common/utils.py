@@ -1,11 +1,12 @@
 import random
-from typing import Any, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import gym
 import numpy as np
 import torch
 import torch.nn as nn
 
+from genrl.deep.common.noise import NoisyLinear
 from genrl.environments import VecEnv
 
 
@@ -32,6 +33,10 @@ Eg. "mlp" or "cnn")
         from genrl.deep.common.policies import get_policy_from_name
 
         return get_policy_from_name(name_)
+    elif type_ == "dv":
+        from genrl.deep.agents.dqn.values import get_dqn_value_from_name
+
+        return get_dqn_value_from_name(name_)
     raise ValueError
 
 
@@ -100,19 +105,31 @@ activation layers)
     return cnn_layers, output_size
 
 
-def load_params(algo: Any) -> None:
-    """
-    Function load parameters for an algorithm from a given checkpoint file
+def noisy_mlp(fc_layers: List[int], noisy_layers: List[int], activation="relu"):
+    """Noisy MLP generating helper function
 
-    :param algo: The agent object
-    :type algo: Object
-    """
-    path = algo.load_model
+    Args:
+        fc_layers (:obj:`list` of :obj:`int`): List of fully connected layers
+        noisy_layers (:obj:`list` of :obj:`int`): :ist of noisy layers
+        activation (str): Activation function to be used. ["tanh", "relu"]
 
-    try:
-        algo.checkpoint = torch.load(path)
-    except FileNotFoundError:
-        raise Exception("Invalid file name")
+    Returns:
+        Noisy MLP model
+    """
+    model = []
+    act = nn.Tanh if activation == "tanh" else nn.ReLU()
+
+    for layer in range(len(fc_layers) - 1):
+        model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), act]
+
+    model += [nn.Linear(fc_layers[-1], noisy_layers[0]), act]
+
+    for layer in range(len(noisy_layers) - 1):
+        model += [NoisyLinear(noisy_layers[layer], noisy_layers[layer + 1])]
+        if layer < len(noisy_layers) - 2:
+            model += [act]
+
+    return nn.Sequential(*model)
 
 
 def get_env_properties(
