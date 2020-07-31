@@ -4,8 +4,8 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-from torch import optim as opt
-from torch.nn import functional as F
+import torch.nn.functional as F
+import torch.optim as opt
 
 from genrl.deep.common.buffers import ReplayBuffer
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
