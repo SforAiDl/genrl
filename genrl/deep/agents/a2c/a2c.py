@@ -21,8 +21,8 @@ class A2C(OnPolicyAgent):
     :param env: The environment to learn from
     :param gamma: Discount factor
     :param actor_batch_size: Update batch size
-    :param lr_actor: Policy Network learning rate
-    :param lr_critic: Value Network learning rate
+    :param lr_policy: Policy Network learning rate
+    :param lr_value: Value Network learning rate
     :param num_episodes: Number of episodes
     :param timesteps_per_actorbatch: Number of timesteps per epoch
     :param max_ep_len: Maximum timesteps in an episode
@@ -39,8 +39,8 @@ class A2C(OnPolicyAgent):
     :type env: Gym Environment
     :type gamma: float
     :type actor_batch_size: int
-    :type lr_a: float
-    :type lr_c: float
+    :type lr_policy: float
+    :type lr_value: float
     :type num_episodes: int
     :type timesteps_per_actorbatch: int
     :type max_ep_len: int
@@ -63,38 +63,33 @@ class A2C(OnPolicyAgent):
         gamma: float = 0.99,
         lr_policy: float = 0.01,
         lr_value: float = 0.1,
-        epochs: int = 100,
-        max_ep_len: int = 1000,
         layers: Tuple = (32, 32),
+        rollout_size: int = 2048,
         noise: Any = None,
         noise_std: float = 0.1,
-        rollout_size: int = 2048,
         **kwargs
     ):
-
         super(A2C, self).__init__(
             network_type,
             env,
-            batch_size,
-            layers,
-            gamma,
-            lr_policy,
-            lr_value,
-            epochs,
-            rollout_size,
+            batch_size=batch_size,
+            layers=layers,
+            gamma=gamma,
+            lr_policy=lr_policy,
+            lr_value=lr_value,
+            rollout_size=rollout_size,
             **kwargs
         )
-
-        self.max_ep_len = max_ep_len
         self.noise = noise
         self.noise_std = noise_std
         self.value_coeff = kwargs.get("value_coeff", 0.5)
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self) -> None:
+    def _create_model(self) -> None:
         """
         Creates actor critic model and initialises optimizers
         """
@@ -198,7 +193,6 @@ calculate losses)
             "policy_weights": self.ac.actor.state_dict(),
             "value_weights": self.ac.critic.state_dict(),
         }
-
         return hyperparams
 
     def load_weights(self, weights) -> None:
@@ -213,7 +207,6 @@ calculate losses)
         :returns: Logging parameters for monitoring training
         :rtype: dict
         """
-
         logs = {
             "policy_loss": safe_mean(self.logs["policy_loss"]),
             "value_loss": safe_mean(self.logs["value_loss"]),
@@ -228,7 +221,6 @@ calculate losses)
         """
         Empties logs
         """
-
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
