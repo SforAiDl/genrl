@@ -70,6 +70,7 @@ class TD3:
         self,
         network_type: str,
         env: Union[gym.Env, VecEnv],
+        create_model: bool = True,
         gamma: float = 0.99,
         replay_size: int = 1000,
         batch_size: int = 100,
@@ -93,6 +94,7 @@ class TD3:
 
         self.network_type = network_type
         self.env = env
+        self.create_model = create_model
         self.gamma = gamma
         self.replay_size = replay_size
         self.batch_size = batch_size
@@ -123,9 +125,10 @@ class TD3:
             set_seeds(seed, self.env)
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self) -> None:
+    def _create_model(self) -> None:
         state_dim, action_dim, discrete, _ = get_env_properties(self.env)
         if discrete:
             raise Exception(

@@ -362,7 +362,7 @@ many steps)
                 for i, ep_len in enumerate(episode_len)
             ]
 
-            self.buffer.extend(zip(state, action, reward, next_state, done))
+            self.buffer.push((state, action, reward, next_state, done))
             state = next_state.copy()
 
             if np.any(done) or np.any(episode_len == self.max_ep_len):

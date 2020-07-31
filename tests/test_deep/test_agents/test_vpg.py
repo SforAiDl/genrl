@@ -6,7 +6,7 @@ from genrl.environments import VectorEnv
 
 
 def test_vpg():
-    env = VectorEnv("CartPole-v0", 1)
+    env = VectorEnv("CartPole-v0")
     algo = VPG("mlp", env)
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
@@ -14,8 +14,8 @@ def test_vpg():
 
 
 def test_vpg_cnn():
-    env = VectorEnv("Pong-v0", 1, env_type="atari")
-    algo = VPG("cnn", env)
+    env = VectorEnv("Pong-v0", env_type="atari")
+    algo = VPG("cnn", env, rollout_size=128)
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")
