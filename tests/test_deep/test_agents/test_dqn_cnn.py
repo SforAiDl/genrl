@@ -1,70 +1,85 @@
 import shutil
 
-from genrl import DQN
+from genrl.deep.agents import (
+    DQN,
+    CategoricalDQN,
+    DoubleDQN,
+    DuelingDQN,
+    NoisyDQN,
+    PrioritizedReplayDQN,
+)
 from genrl.deep.common import OffPolicyTrainer
+from genrl.deep.common.values import (
+    CnnCategoricalValue,
+    CnnDuelingValue,
+    CnnNoisyValue,
+    CnnValue,
+)
 from genrl.environments import VectorEnv
 
 
-def test_dqn_cnn():
-    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
+class TestDQNCNN:
+    def test_vanilla_dqn(self):
+        env = VectorEnv("Pong-v0", env_type="atari")
+        algo = DQN("cnn", env, replay_size=100)
+        assert isinstance(algo.model, CnnValue)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
-    # DQN
-    algo = DQN("cnn", env)
+    def test_double_dqn(self):
+        env = VectorEnv("Pong-v0", env_type="atari")
+        algo = DoubleDQN("cnn", env, replay_size=100)
+        assert isinstance(algo.model, CnnValue)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
-    trainer = OffPolicyTrainer(
-        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
-    )
-    trainer.train()
-    shutil.rmtree("./logs")
+    def test_dueling_dqn(self):
+        env = VectorEnv("Pong-v0", env_type="atari")
+        algo = DuelingDQN("cnn", env, replay_size=100)
+        assert algo.dqn_type == "dueling"
+        assert isinstance(algo.model, CnnDuelingValue)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
+    def test_prioritized_dqn(self):
+        env = VectorEnv("Pong-v0", env_type="atari")
+        algo = PrioritizedReplayDQN("cnn", env, replay_size=100)
+        assert isinstance(algo.model, CnnValue)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
-def test_double_dqn_cnn():
-    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
+    def test_noisy_dqn(self):
+        env = VectorEnv("Pong-v0", env_type="atari")
+        algo = NoisyDQN("cnn", env, replay_size=100)
+        assert algo.dqn_type == "noisy"
+        assert algo.noisy
+        assert isinstance(algo.model, CnnNoisyValue)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
-    # Double DQN with prioritized replay buffer
-    algo = DQN("cnn", env, double_dqn=True, prioritized_replay=True)
-
-    trainer = OffPolicyTrainer(
-        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
-    )
-    trainer.train()
-    shutil.rmtree("./logs")
-
-
-def test_noisy_dqn_cnn():
-    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
-
-    # Noisy DQN
-    algo = DQN("cnn", env, noisy_dqn=True)
-
-    trainer = OffPolicyTrainer(
-        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
-    )
-    trainer.train()
-    shutil.rmtree("./logs")
-
-
-def test_dueling_dqn_cnn():
-    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
-
-    # Dueling DDQN
-    algo = DQN("cnn", env, dueling_dqn=True, double_dqn=True)
-
-    trainer = OffPolicyTrainer(
-        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
-    )
-    trainer.train()
-    shutil.rmtree("./logs")
-
-
-def test_categorical_dqn_cnn():
-    env = VectorEnv("Pong-v0", n_envs=2, env_type="atari")
-
-    # Categorical DQN
-    algo = DQN("cnn", env, categorical_dqn=True)
-
-    trainer = OffPolicyTrainer(
-        algo, env, log_mode=["csv"], logdir="./logs", epochs=1, steps_per_epoch=200
-    )
-    trainer.train()
-    shutil.rmtree("./logs")
+    def test_categorical_dqn(self):
+        env = VectorEnv("Pong-v0", env_type="atari")
+        algo = CategoricalDQN("cnn", env, replay_size=100)
+        assert algo.dqn_type == "categorical"
+        assert algo.noisy
+        assert isinstance(algo.model, CnnCategoricalValue)
+        trainer = OffPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+        )
+        trainer.train()
+        shutil.rmtree("./logs")

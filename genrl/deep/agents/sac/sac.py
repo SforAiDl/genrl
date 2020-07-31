@@ -25,7 +25,7 @@ class SAC:
 
     Paper: https://arxiv.org/abs/1812.05905
 
-    :param network: The deep neural network layer types ['mlp', 'cnn'] or CustomClass
+    :param network: The deep neural network layer types ['mlp', 'cnn'] or a CustomClass
     :param env: The environment to learn from
     :param gamma: discount factor
     :param replay_size: Replay memory size
@@ -44,7 +44,7 @@ class SAC:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :type network:
+    :type network: string
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -69,6 +69,7 @@ class SAC:
         self,
         network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
+        create_model: bool = True,
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 256,
@@ -86,11 +87,11 @@ class SAC:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        **kwargs
     ):
 
         self.network = network
         self.env = env
+        self.create_model = create_model
         self.gamma = gamma
         self.replay_size = replay_size
         self.batch_size = batch_size
@@ -122,9 +123,10 @@ class SAC:
         self.writer = None
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self) -> None:
+    def _create_model(self) -> None:
         """
         Initialize the model
         Initializes optimizer and replay buffers as well.

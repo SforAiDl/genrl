@@ -3,11 +3,11 @@ from shutil import rmtree
 
 import gym
 import torch
-import torch.nn as nn
+from torch import nn as nn
 
 from genrl import PPO1
 from genrl.deep.common import (
-    CNNValue,
+    CnnValue,
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
@@ -30,7 +30,7 @@ class TestUtils:
         assert ac == MlpActorCritic
         assert p == MlpPolicy
         assert v == MlpValue
-        assert v_ == CNNValue
+        assert v_ == CnnValue
 
     def test_mlp(self):
         """

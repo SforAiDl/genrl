@@ -23,7 +23,7 @@ class TD3:
 
     Paper: https://arxiv.org/abs/1509.02971
 
-    :param network: (str on BaseActorCritic) The deep neural network layer types ['mlp'] or a CustomClass
+    :param network: (str or BaseActorCritic) The deep neural network layer types ['mlp'] or a CustomClass
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
     :param replay_size: (int) Replay memory size
@@ -45,7 +45,7 @@ class TD3:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :type network: str or BaseActorCritic
+    :type network: str
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -71,6 +71,7 @@ class TD3:
         self,
         network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
+        create_model: bool = True,
         gamma: float = 0.99,
         replay_size: int = 1000,
         batch_size: int = 100,
@@ -94,6 +95,7 @@ class TD3:
 
         self.network = network
         self.env = env
+        self.create_model = create_model
         self.gamma = gamma
         self.replay_size = replay_size
         self.batch_size = batch_size
@@ -124,9 +126,10 @@ class TD3:
             set_seeds(seed, self.env)
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self, **kwargs) -> None:
+    def _create_model(self, **kwargs) -> None:
         if isinstance(self.network, str):
             state_dim, action_dim, discrete, _ = get_env_properties(self.env)
             assert not discrete, "Discrete Environments not supported for {}.".format(

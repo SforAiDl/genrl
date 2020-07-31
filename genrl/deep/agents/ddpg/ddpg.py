@@ -7,14 +7,9 @@ import torch
 import torch.nn.functional as F
 import torch.optim as opt
 
-from genrl.deep.common import (
-    BaseActorCritic,
-    ReplayBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-    set_seeds,
-)
+from genrl.deep.common.actor_critic import BaseActorCritic
+from genrl.deep.common.buffers import ReplayBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
 from genrl.environments import VecEnv
 
 
@@ -24,7 +19,7 @@ class DDPG:
 
     Paper: https://arxiv.org/abs/1509.02971
 
-    :param network: The deep neural network layer types ['mlp', 'cnn'] or Custom Class
+    :param network: The deep neural network layer types ['mlp', 'cnn'] or a CustomClass
     :param env: The environment to learn from
     :param gamma: discount factor
     :param replay_size: Replay memory size
@@ -43,7 +38,7 @@ class DDPG:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :type network: string or BaseActorCritic
+    :type network: string
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -68,6 +63,7 @@ class DDPG:
         self,
         network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
+        create_model: bool = True,
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 100,
@@ -86,11 +82,11 @@ class DDPG:
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        **kwargs
     ):
 
         self.network = network
         self.env = env
+        self.create_model = create_model
         self.gamma = gamma
         self.replay_size = replay_size
         self.batch_size = batch_size
@@ -123,9 +119,10 @@ class DDPG:
         self.writer = None
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self) -> None:
+    def _create_model(self) -> None:
         """
         Initialize the model
         Initializes optimizer and replay buffers as well.

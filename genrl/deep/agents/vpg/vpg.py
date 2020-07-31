@@ -4,7 +4,6 @@ import gym
 import numpy as np
 import torch
 import torch.optim as opt
-from torch.autograd import Variable
 
 from genrl.deep.agents.base import OnPolicyAgent
 from genrl.deep.common import (
@@ -54,7 +53,6 @@ class VPG(OnPolicyAgent):
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
-        epochs: int = 1000,
         lr_policy: float = 0.01,
         layers: Tuple = (32, 32),
         rollout_size: int = 2048,
@@ -64,20 +62,20 @@ class VPG(OnPolicyAgent):
         super(VPG, self).__init__(
             network,
             env,
-            batch_size,
-            layers,
-            gamma,
-            lr_policy,
-            None,
-            epochs,
-            rollout_size,
+            batch_size=batch_size,
+            layers=layers,
+            gamma=gamma,
+            lr_policy=lr_policy,
+            lr_value=None,
+            rollout_size=rollout_size,
             **kwargs
         )
 
         self.empty_logs()
-        self.create_model()
+        if self.create_model:
+            self._create_model()
 
-    def create_model(self):
+    def _create_model(self):
         """
         Initialize the actor and critic networks
         """
@@ -110,7 +108,7 @@ class VPG(OnPolicyAgent):
         :returns: The action
         :rtype: int, float, ...
         """
-        state = Variable(torch.as_tensor(state).float().to(self.device))
+        state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on policy_fn output
         action, dist = self.actor.get_action(state, deterministic=deterministic)
