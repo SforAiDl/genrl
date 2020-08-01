@@ -1,5 +1,3 @@
-import gzip
-import shutil
 from pathlib import Path
 from typing import Tuple
 
