@@ -4,7 +4,7 @@ from typing import Tuple
 
 import numpy as np
 
-from .vec_wrappers import VecEnv, VecEnvWrapper
+from genrl.environments.vec_env.wrappers import VecEnv, VecEnvWrapper
 
 
 class VecMonitor(VecEnvWrapper):
@@ -49,7 +49,7 @@ class VecMonitor(VecEnvWrapper):
 
     def step(self, actions: np.ndarray) -> Tuple:
         """
-        Steps through all the environments and normalizes the observations and rewards (if enabled)
+        Steps through all the environments and records important information
 
         :param actions: Actions to be taken for the Vectorized Environment
         :type actions: Numpy Array
@@ -61,12 +61,12 @@ class VecMonitor(VecEnvWrapper):
         self.episode_lens += 1
 
         new_infos = infos.copy()
-        for i in range(self.n_envs):
-            if dones[i]:
+        for i, done in enumerate(dones):
+            if done:
                 episode_info = {
-                    "r": self.episode_returns[i],
-                    "l": self.episode_lens[i],
-                    "t": round(time.time() - self.tstart, 4),
+                    "Episode Rewards": self.episode_returns[i],
+                    "Episode Length": self.episode_lens[i],
+                    "Time taken": round(time.time() - self.tstart, 4),
                 }
 
                 for key in self.keys:
