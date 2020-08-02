@@ -63,7 +63,7 @@ class A2C(OnPolicyAgent):
 
     def __init__(
         self,
-        network,
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
