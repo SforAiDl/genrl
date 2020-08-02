@@ -27,18 +27,8 @@ class A2C(OnPolicyAgent):
     :param env: The environment to learn from
     :param gamma: Discount factor
     :param actor_batch_size: Update batch size
-<<<<<<< HEAD
-<<<<<<< HEAD
-    :param lr_actor: Policy network learning rate
-    :param lr_critic: Value network learning rate
-=======
     :param lr_policy: Policy Network learning rate
     :param lr_value: Value Network learning rate
->>>>>>> 95456f84011395050d3856ae81892114713b0c08
-=======
-    :param lr_actor: Policy network learning rate
-    :param lr_critic: Value network learning rate
->>>>>>> 12fe41394cb55dc67de9185fd352e3e646af5293
     :param num_episodes: Number of episodes
     :param timesteps_per_actorbatch: Number of timesteps per epoch
     :param max_ep_len: Maximum timesteps in an episode
