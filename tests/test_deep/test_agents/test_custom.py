@@ -1,6 +1,6 @@
 import shutil
 
-from genrl import A2C, DDPG, PPO1, SAC, TD3, VPG
+from genrl import PPO1, TD3, VPG
 from genrl.deep.common import (
     MlpActorCritic,
     MlpPolicy,
