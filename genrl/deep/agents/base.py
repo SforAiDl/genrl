@@ -1,9 +1,10 @@
 from abc import ABC
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import torch
 
+from genrl.deep.common.actor_critic import BaseActorCritic
 from genrl.deep.common.buffers import PrioritizedBuffer, PushReplayBuffer
 from genrl.deep.common.utils import set_seeds
 
@@ -11,7 +12,7 @@ from genrl.deep.common.utils import set_seeds
 class BaseAgent(ABC):
     def __init__(
         self,
-        network_type: str,
+        network: Union[str, BaseActorCritic],
         env: Any,
         create_model: bool = True,
         batch_size: int = 64,
@@ -21,7 +22,7 @@ class BaseAgent(ABC):
         lr_value: float = 0.001,
         **kwargs
     ):
-        self.network_type = network_type
+        self.network = network
         self.env = env
         self.create_model = create_model
         self.batch_size = batch_size

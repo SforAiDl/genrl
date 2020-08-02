@@ -21,7 +21,7 @@ class DQN(OffPolicyAgent):
     Paper: https://arxiv.org/abs/1312.5602
 
     Attributes:
-        network_type (str): The network type of the Q-value function.
+        network (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
         create_model (bool): Whether the model of the algo should be created when initialised
@@ -66,9 +66,9 @@ class DQN(OffPolicyAgent):
 
         This will create the Q-value function of the agent.
         """
-        input_dim, action_dim, _, _ = get_env_properties(self.env, self.network_type)
+        input_dim, action_dim, _, _ = get_env_properties(self.env, self.network)
 
-        self.model = get_model("v", self.network_type + self.dqn_type)(
+        self.model = get_model("v", self.network + self.dqn_type)(
             input_dim, action_dim, "Qs", self.layers, **kwargs
         )
         self.target_model = deepcopy(self.model)

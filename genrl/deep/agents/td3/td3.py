@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 
 from genrl.deep.common import (
+    BaseActorCritic,
     ReplayBuffer,
     get_env_properties,
     get_model,
@@ -22,7 +23,7 @@ class TD3:
 
     Paper: https://arxiv.org/abs/1509.02971
 
-    :param network_type: (str) The deep neural network layer types ['mlp']
+    :param network: (str or BaseActorCritic) The deep neural network layer types ['mlp'] or a CustomClass
     :param env: (Gym environment) The environment to learn from
     :param gamma: (float) discount factor
     :param replay_size: (int) Replay memory size
@@ -44,7 +45,7 @@ class TD3:
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
-    :type network_type: str
+    :type network: str
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -68,7 +69,7 @@ class TD3:
 
     def __init__(
         self,
-        network_type: str,
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         create_model: bool = True,
         gamma: float = 0.99,
@@ -92,7 +93,7 @@ class TD3:
         device: Union[torch.device, str] = "cpu",
     ):
 
-        self.network_type = network_type
+        self.network = network
         self.env = env
         self.create_model = create_model
         self.gamma = gamma
@@ -128,25 +129,32 @@ class TD3:
         if self.create_model:
             self._create_model()
 
-    def _create_model(self) -> None:
-        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete:
-            raise Exception(
-                "Discrete Environments not supported for {}.".format(__class__.__name__)
+    def _create_model(self, **kwargs) -> None:
+        if isinstance(self.network, str):
+            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+            assert not discrete, "Discrete Environments not supported for {}.".format(
+                __class__.__name__
             )
+
+            self.ac = get_model("ac", self.network)(
+                state_dim, action_dim, self.layers, "Qsa", False
+            ).to(self.device)
+
+            self.ac.qf2 = get_model("v", self.network)(
+                state_dim, action_dim, hidden=self.layers, val_type="Qsa"
+            )
+        else:
+            self.ac = self.network.to(self.device)
+            action_dim = self.network.action_dim
+            assert "qf2" in dir(self.ac), "network must contain qf2 attribute"
+            self.ac.qf2 = self.network.qf2
+
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "Qsa", False
-        ).to(self.device)
-
         self.ac.qf1 = self.ac.critic
-        self.ac.qf2 = get_model("v", self.network_type)(
-            state_dim, action_dim, hidden=self.layers, val_type="Qsa"
-        )
 
         self.ac.qf1.to(self.device)
         self.ac.qf2.to(self.device)
@@ -344,7 +352,7 @@ class TD3:
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "gamma": self.gamma,
             "lr_p": self.lr_p,
             "lr_q": self.lr_q,

@@ -1,5 +1,6 @@
 from genrl.deep.common.actor_critic import MlpActorCritic  # noqa
 from genrl.deep.common.actor_critic import get_actor_critic_from_name  # noqa
+from genrl.deep.common.base import BaseActorCritic  # noqa
 from genrl.deep.common.buffers import PrioritizedBuffer  # noqa
 from genrl.deep.common.buffers import PushReplayBuffer  # noqa
 from genrl.deep.common.buffers import ReplayBuffer  # noqa
@@ -11,7 +12,12 @@ from genrl.deep.common.logger import get_logger_by_name  # noqa
 from genrl.deep.common.noise import ActionNoise  # noqa
 from genrl.deep.common.noise import NormalActionNoise  # noqa
 from genrl.deep.common.noise import OrnsteinUhlenbeckActionNoise  # noqa
-from genrl.deep.common.policies import MlpPolicy, get_policy_from_name  # noqa
+from genrl.deep.common.policies import (  # noqa
+    BasePolicy,
+    CNNPolicy,
+    MlpPolicy,
+    get_policy_from_name,
+)
 from genrl.deep.common.rollout_storage import RolloutBuffer  # noqa
 from genrl.deep.common.trainer import OffPolicyTrainer, OnPolicyTrainer, Trainer
 from genrl.deep.common.utils import cnn  # noqa

@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 import torch.optim as opt
 
+from genrl.deep.common.actor_critic import BaseActorCritic
 from genrl.deep.common.buffers import ReplayBuffer
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
 from genrl.environments import VecEnv
@@ -18,7 +19,7 @@ class DDPG:
 
     Paper: https://arxiv.org/abs/1509.02971
 
-    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param network: The deep neural network layer types ['mlp', 'cnn'] or a CustomClass
     :param env: The environment to learn from
     :param gamma: discount factor
     :param replay_size: Replay memory size
@@ -37,7 +38,7 @@ class DDPG:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :type network_type: string
+    :type network: string
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -60,7 +61,7 @@ class DDPG:
 
     def __init__(
         self,
-        network_type: str,
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         create_model: bool = True,
         gamma: float = 0.99,
@@ -83,7 +84,7 @@ class DDPG:
         device: Union[torch.device, str] = "cpu",
     ):
 
-        self.network_type = network_type
+        self.network = network
         self.env = env
         self.create_model = create_model
         self.gamma = gamma
@@ -126,21 +127,24 @@ class DDPG:
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete:
-            raise Exception(
-                "Discrete Environments not supported for {}.".format(__class__.__name__)
+        if isinstance(self.network, str):
+            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+            assert not discrete, "Discrete Environments not supported for {}.".format(
+                __class__.__name__
             )
+
+            self.ac = get_model("ac", self.network)(
+                state_dim, action_dim, self.layers, "Qsa", False
+            ).to(self.device)
+        else:
+            self.ac = self.network.to(self.device)
+            action_dim = self.network.action_dim
+
+        self.ac_target = deepcopy(self.ac).to(self.device)
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
-
-        self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "Qsa", False
-        ).to(self.device)
-
-        self.ac_target = deepcopy(self.ac).to(self.device)
 
         # freeze target network params
         for param in self.ac_target.parameters():
@@ -340,7 +344,7 @@ class DDPG:
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "gamma": self.gamma,
             "batch_size": self.batch_size,
             "replay_size": self.replay_size,
