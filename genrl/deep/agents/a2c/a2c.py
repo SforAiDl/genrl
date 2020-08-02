@@ -27,8 +27,13 @@ class A2C(OnPolicyAgent):
     :param env: The environment to learn from
     :param gamma: Discount factor
     :param actor_batch_size: Update batch size
+<<<<<<< HEAD
     :param lr_actor: Policy network learning rate
     :param lr_critic: Value network learning rate
+=======
+    :param lr_policy: Policy Network learning rate
+    :param lr_value: Value Network learning rate
+>>>>>>> 95456f84011395050d3856ae81892114713b0c08
     :param num_episodes: Number of episodes
     :param timesteps_per_actorbatch: Number of timesteps per epoch
     :param max_ep_len: Maximum timesteps in an episode
@@ -45,8 +50,8 @@ class A2C(OnPolicyAgent):
     :type env: Gym Environment
     :type gamma: float
     :type actor_batch_size: int
-    :type lr_a: float
-    :type lr_c: float
+    :type lr_policy: float
+    :type lr_value: float
     :type num_episodes: int
     :type timesteps_per_actorbatch: int
     :type max_ep_len: int

@@ -19,7 +19,7 @@ from genrl.deep.common.policies import (  # noqa
     get_policy_from_name,
 )
 from genrl.deep.common.rollout_storage import RolloutBuffer  # noqa
-from genrl.deep.common.trainer import OffPolicyTrainer, OnPolicyTrainer, Trainer  # noqa
+from genrl.deep.common.trainer import OffPolicyTrainer, OnPolicyTrainer, Trainer
 from genrl.deep.common.utils import cnn  # noqa
 from genrl.deep.common.utils import get_env_properties  # noqa
 from genrl.deep.common.utils import get_model  # noqa
