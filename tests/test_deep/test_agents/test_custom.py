@@ -1,10 +1,11 @@
 import shutil
 
-from genrl import PPO1, TD3, VPG
+from genrl import A2C, DDPG, PPO1, SAC, TD3, VPG
 from genrl.deep.common import (
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
+    NormalActionNoise,
     OffPolicyTrainer,
     OnPolicyTrainer,
     OrnsteinUhlenbeckActionNoise,
@@ -43,14 +44,12 @@ class custom_multiactorcritic(MlpActorCritic):
 
 def test_custom_vpg():
     env = VectorEnv("CartPole-v0", 1)
-    algo = VPG(
-        custom_policy(
-            state_dim=env.observation_space.shape[0],
-            action_dim=env.action_space.n,
-            hidden=(64, 64),
-        ),
-        env,
-    )
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.n
+    policy = custom_policy(state_dim, action_dim, hidden=(64, 64))
+
+    algo = VPG(policy, env)
+
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")
@@ -58,14 +57,12 @@ def test_custom_vpg():
 
 def test_ppo1_custom():
     env = VectorEnv("CartPole-v0", 1)
-    algo = PPO1(
-        custom_actorcritic(
-            state_dim=env.observation_space.shape[0],
-            action_dim=env.action_space.n,
-            hidden=(64, 64),
-        ),
-        env,
-    )
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.n
+    actorcritic = custom_actorcritic(state_dim, action_dim, hidden=(64, 64))
+
+    algo = PPO1(actorcritic, env)
+
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")
@@ -73,15 +70,12 @@ def test_ppo1_custom():
 
 def test_td3_custom():
     env = VectorEnv("Pendulum-v0", 2)
-    algo = TD3(
-        custom_multiactorcritic(
-            state_dim=env.observation_space.shape[0],
-            action_dim=env.action_space.shape[0],
-            hidden=(1, 1),
-        ),
-        env,
-        noise=OrnsteinUhlenbeckActionNoise,
-    )
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.shape[0]
+    multiactorcritic = custom_multiactorcritic(state_dim, action_dim, hidden=(1, 1))
+
+    algo = TD3(multiactorcritic, env, noise=OrnsteinUhlenbeckActionNoise)
+
     trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")
