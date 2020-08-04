@@ -4,14 +4,6 @@ genrl.deep.common package
 Submodules
 ----------
 
-genrl.deep.common.VecEnv module
--------------------------------
-
-.. automodule:: genrl.deep.common.VecEnv
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 genrl.deep.common.actor\_critic module
 --------------------------------------
 
@@ -56,6 +48,14 @@ genrl.deep.common.policies module
 ---------------------------------
 
 .. automodule:: genrl.deep.common.policies
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+genrl.deep.common.rollout\_storage module
+-----------------------------------------
+
+.. automodule:: genrl.deep.common.rollout_storage
    :members:
    :undoc-members:
    :show-inheritance:

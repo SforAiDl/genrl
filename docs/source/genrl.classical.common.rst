@@ -20,6 +20,14 @@ genrl.classical.common.trainer module
    :undoc-members:
    :show-inheritance:
 
+genrl.classical.common.values module
+------------------------------------
+
+.. automodule:: genrl.classical.common.values
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 Module contents
 ---------------

@@ -4,18 +4,13 @@ from typing import Any, Dict, Optional, Tuple, Union
 import gym
 import numpy as np
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 import torch.optim as opt
 
-from ....environments import VecEnv
-from ...common import (
-    ReplayBuffer,
-    get_env_properties,
-    get_model,
-    load_params,
-    save_params,
-    set_seeds,
-)
+from genrl.deep.common.actor_critic import BaseActorCritic
+from genrl.deep.common.buffers import ReplayBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
+from genrl.environments import VecEnv
 
 
 class DDPG:
@@ -24,7 +19,7 @@ class DDPG:
 
     Paper: https://arxiv.org/abs/1509.02971
 
-    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param network: The deep neural network layer types ['mlp', 'cnn'] or a CustomClass
     :param env: The environment to learn from
     :param gamma: discount factor
     :param replay_size: Replay memory size
@@ -37,19 +32,13 @@ class DDPG:
     :param steps_per_epoch: Number of steps per epoch
     :param noise_std: Standard deviation for action noise
     :param max_ep_len: Maximum steps per episode
-    :param deterministic_actions: True if actions are deterministic
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of steps between parameter updates
-    :param save_interval: Number of steps between saves of models
     :param layers: Number of neurons in hidden layers
-    :param tensorboard_log: the log location for tensorboard
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :param run_num: model run number if it has already been trained
-    :param save_model: model save directory
-    :param load_model: model loading path
-    :type network_type: string
+    :type network: string
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -62,24 +51,19 @@ class DDPG:
     :type steps_per_epoch: int
     :type noise_std: float
     :type max_ep_len: int
-    :type deterministic_actions: bool
     :type start_update: int
     :type update_interval: int
-    :type save_interval: int
     :type layers: tuple
-    :type tensorboard_log: string
     :type seed: int
     :type render: bool
     :type device: string
-    :type run_num: int
-    :type save_model: string
-    :type load_model: string
     """
 
     def __init__(
         self,
-        network_type: str,
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
+        create_model: bool = True,
         gamma: float = 0.99,
         replay_size: int = 1000000,
         batch_size: int = 100,
@@ -92,22 +76,17 @@ class DDPG:
         noise: Optional[Any] = None,
         noise_std: float = 0.1,
         max_ep_len: int = 1000,
-        deterministic_actions: bool = False,
         start_update: int = 1000,
         update_interval: int = 50,
         layers: Tuple = (32, 32),
-        tensorboard_log: str = None,
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
-        run_num: int = None,
-        save_model: str = None,
-        load_model: str = None,
-        save_interval: int = 5000,
     ):
 
-        self.network_type = network_type
+        self.network = network
         self.env = env
+        self.create_model = create_model
         self.gamma = gamma
         self.replay_size = replay_size
         self.batch_size = batch_size
@@ -120,19 +99,11 @@ class DDPG:
         self.noise = noise
         self.noise_std = noise_std
         self.max_ep_len = max_ep_len
-        self.deterministic_actions = deterministic_actions
         self.start_update = start_update
         self.update_interval = update_interval
-        self.save_interval = save_interval
         self.layers = layers
-        self.tensorboard_log = tensorboard_log
         self.seed = seed
         self.render = render
-        self.run_num = run_num
-        self.save_model = save_model
-        self.load_model = load_model
-        self.save = save_params
-        self.load = load_params
 
         # Assign device
         if "cuda" in device and torch.cuda.is_available():
@@ -146,42 +117,34 @@ class DDPG:
 
         # Setup tensorboard writer
         self.writer = None
-        if self.tensorboard_log is not None:  # pragma: no cover
-            from torch.utils.tensorboard import SummaryWriter
 
-            self.writer = SummaryWriter(log_dir=self.tensorboard_log)
+        self.empty_logs()
+        if self.create_model:
+            self._create_model()
 
-        self.create_model()
-
-    def create_model(self) -> None:
+    def _create_model(self) -> None:
         """
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
-        if discrete:
-            raise Exception(
-                "Discrete Environments not supported for {}.".format(__class__.__name__)
+        if isinstance(self.network, str):
+            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+            assert not discrete, "Discrete Environments not supported for {}.".format(
+                __class__.__name__
             )
+
+            self.ac = get_model("ac", self.network)(
+                state_dim, action_dim, self.layers, "Qsa", False
+            ).to(self.device)
+        else:
+            self.ac = self.network.to(self.device)
+            action_dim = self.network.action_dim
+
+        self.ac_target = deepcopy(self.ac).to(self.device)
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
-
-        self.ac = get_model("ac", self.network_type)(
-            state_dim, action_dim, self.layers, "Qsa", False
-        ).to(self.device)
-
-        # load paramaters if already trained
-        if self.load_model is not None:
-            self.load(self)
-            self.ac.load_state_dict(self.checkpoint["weights"])
-            for key, item in self.checkpoint.items():
-                if key not in ["weights", "save_model"]:
-                    setattr(self, key, item)
-            print("Loaded pretrained model")
-
-        self.ac_target = deepcopy(self.ac).to(self.device)
 
         # freeze target network params
         for param in self.ac_target.parameters():
@@ -200,19 +163,23 @@ class DDPG:
         """
         pass
 
-    def select_action(self, state: np.ndarray) -> np.ndarray:
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
         """
         Selection of action
 
         :param state: Observation state
+        :param deterministic: Action selection type
         :type state: int, float, ...
+        :type deterministic: bool
         :returns: Action based on the state and epsilon value
         :rtype: int, float, ...
         """
         with torch.no_grad():
             action, _ = self.ac.get_action(
                 torch.as_tensor(state, dtype=torch.float32).to(self.device),
-                deterministic=self.deterministic_actions,
+                deterministic=deterministic,
             )
             action = action.detach().cpu().numpy()
 
@@ -258,13 +225,9 @@ class DDPG:
             )
             target = reward + self.gamma * (1 - done) * q_pi_target
 
-        q_pi = self.ac.get_value(
-            torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
-        )
-
-        total_loss = nn.MSELoss()(quality, target) - torch.mean(q_pi)
-        return total_loss
-        # return nn.MSELoss()(quality, target)
+        value_loss = F.mse_loss(quality, target)
+        self.logs["value_loss"].append(value_loss.item())
+        return value_loss
 
     def get_p_loss(self, state: np.ndarray) -> torch.Tensor:
         """
@@ -278,7 +241,11 @@ class DDPG:
         q_pi = self.ac.get_value(
             torch.cat([state, self.ac.get_action(state, True)[0]], dim=-1)
         )
-        return -torch.mean(q_pi)
+
+        policy_loss = torch.mean(q_pi)
+        self.logs["policy_loss"].append(policy_loss.item())
+
+        return -policy_loss
 
     def update_params(self, update_interval: int) -> None:
         """
@@ -291,32 +258,19 @@ class DDPG:
             batch = self.replay_buffer.sample(self.batch_size)
             state, action, reward, next_state, done = (x.to(self.device) for x in batch)
 
+            self.optimizer_q.zero_grad()
+            loss_q = self.get_q_loss(state, action, reward, next_state, done)
+            loss_q.backward()
+            self.optimizer_q.step()
+
             # freeze critic params for policy update
             for param in self.ac.critic.parameters():
                 param.requires_grad = False
 
             self.optimizer_policy.zero_grad()
-            self.optimizer_q.zero_grad()
-
-            loss = self.get_q_loss(state, action, reward, next_state, done)
-            loss.backward()
-
-            self.optimizer_q.step()
+            loss_p = self.get_p_loss(state)
+            loss_p.backward()
             self.optimizer_policy.step()
-
-            # self.optimizer_q.zero_grad()
-            # loss_q = self.get_q_loss(state, action, reward, next_state, done)
-            # loss_q.backward()
-            # self.optimizer_q.step()
-
-            # freeze critic params for policy update
-            # for param in self.ac.critic.parameters():
-            #     param.requires_grad = False
-
-            # self.optimizer_policy.zero_grad()
-            # loss_p = self.get_p_loss(state)
-            # loss_p.backward()
-            # self.optimizer_policy.step()
 
             # unfreeze critic params
             for param in self.ac.critic.parameters():
@@ -386,19 +340,11 @@ class DDPG:
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.update_params(self.update_interval)
 
-            if self.save_model is not None:
-                if timestep >= self.start_update and timestep % self.save_interval == 0:
-                    self.checkpoint = self.get_hyperparams()
-                    self.save(self, timestep)
-                    print("Saved current model")
-
         self.env.close()
-        if self.tensorboard_log:
-            self.writer.close()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "gamma": self.gamma,
             "batch_size": self.batch_size,
             "replay_size": self.replay_size,
@@ -410,6 +356,34 @@ class DDPG:
         }
 
         return hyperparams
+
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.load_state_dict(weights["weights"])
+
+    def get_logging_params(self) -> Dict[str, Any]:
+        """
+        :returns: Logging parameters for monitoring training
+        :rtype: dict
+        """
+        logs = {
+            "policy_loss": safe_mean(self.logs["policy_loss"]),
+            "value_loss": safe_mean(self.logs["value_loss"]),
+        }
+
+        self.empty_logs()
+
+        return logs
+
+    def empty_logs(self):
+        """
+        Empties logs
+        """
+        self.logs = {}
+        self.logs["policy_loss"] = []
+        self.logs["value_loss"] = []
 
 
 if __name__ == "__main__":

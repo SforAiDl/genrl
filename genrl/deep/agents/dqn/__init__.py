@@ -1,8 +1,7 @@
-from genrl.deep.agents.dqn.dqn import DQN  # noqa
-from genrl.deep.agents.dqn.utils import CategoricalDQNValueCNN  # noqa
-from genrl.deep.agents.dqn.utils import DuelingDQNValueCNN  # noqa
-from genrl.deep.agents.dqn.utils import DuelingDQNValueMlp  # noqa
-from genrl.deep.agents.dqn.utils import NoisyDQNValue  # noqa
-from genrl.deep.agents.dqn.utils import NoisyDQNValueCNN  # noqa
-
-from genrl.deep.agents.dqn.utils import CategoricalDQNValue  # noqa; noqa; noqa
+from genrl.deep.agents.dqn.base import DQN  # noqa
+from genrl.deep.agents.dqn.categorical import CategoricalDQN  # noqa
+from genrl.deep.agents.dqn.double import DoubleDQN  # noqa
+from genrl.deep.agents.dqn.dueling import DuelingDQN  # noqa
+from genrl.deep.agents.dqn.noisy import NoisyDQN  # noqa
+from genrl.deep.agents.dqn.prioritized import PrioritizedReplayDQN  # noqa
+from genrl.deep.agents.dqn.utils import ddqn_q_target  # noqa
