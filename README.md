@@ -14,6 +14,10 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/c3f6e7d31c078528e0e1/maintainability)](https://codeclimate.com/github/SforAiDl/genrl/maintainability)
 ![Lint, Test, Code Coverage](https://github.com/SforAiDl/genrl/workflows/Lint,%20Test,%20Code%20Coverage/badge.svg)
 
+---
+
+[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/0)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/0)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/1)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/1)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/2)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/2)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/3)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/3)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/4)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/4)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/5)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/5)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/6)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/6)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/7)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/7)
+
 **GenRL is a PyTorch reinforcement learning library centered around reproducible and generalizable algorithm implementations.** 
 
 Reinforcement learning research is moving faster than ever before. In order to keep up with the growing trend and ensure that RL research remains reproducible, GenRL aims to aid faster paper reproduction and benchmarking by providing the following main features:
