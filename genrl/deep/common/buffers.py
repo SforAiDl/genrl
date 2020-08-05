@@ -1,30 +1,44 @@
 import random
 from collections import deque
-from typing import Tuple
+from typing import NamedTuple, Tuple
 
 import numpy as np
 import torch
 
-from .utils import get_action_dim, get_obs_shape
+
+class ReplayBufferSamples(NamedTuple):
+    states: torch.Tensor
+    actions: torch.Tensor
+    rewards: torch.Tensor
+    next_states: torch.Tensor
+    dones: torch.Tensor
+
+
+class PrioritizedReplayBufferSamples(NamedTuple):
+    states: torch.Tensor
+    actions: torch.Tensor
+    rewards: torch.Tensor
+    next_states: torch.Tensor
+    dones: torch.Tensor
+    indices: torch.Tensor
+    weights: torch.Tensor
 
 
 class ReplayBuffer:
     def __init__(self, size, env):
-        self.obs_shape = get_obs_shape(env.observation_space)
-        self.action_dim = get_action_dim(env.action_space)
         self.buffer_size = size
         self.n_envs = env.n_envs
 
         self.observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32
+            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32
         )
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs, self.action_dim), dtype=np.float32
+            (self.buffer_size, self.n_envs,) + env.action_shape, dtype=np.float32
         )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.next_observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + self.obs_shape, dtype=np.float32
+            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32
         )
         self.pos = 0
 
@@ -101,9 +115,6 @@ class PushReplayBuffer:
         """
         self.memory.append(inp)
 
-    def extend(self, inp):
-        self.memory.extend(inp)
-
     def sample(
         self, batch_size: int
     ) -> (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
@@ -117,12 +128,12 @@ class PushReplayBuffer:
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
-        return (
+        return [
             torch.from_numpy(v).float()
             for v in [state, action, reward, next_state, done]
-        )
+        ]
 
-    def get_len(self) -> int:
+    def __len__(self) -> int:
         """
         Gives number of experiences in buffer currently
 
@@ -156,7 +167,7 @@ class PrioritizedBuffer:
         :type inp: tuple
         :returns: None
         """
-        max_priority = max(self.priorities) if self.buffer else 1.0
+        max_priority = max(self.priorities) if self.priorities else 1.0
         self.buffer.append(inp)
         self.priorities.append(max_priority)
 
@@ -186,25 +197,22 @@ Importance Sampling (IS) weights)
 `rewards`, `dones`, `indices` and `weights`)
         """
         total = len(self.buffer)
-
         priorities = np.asarray(self.priorities)
-
         probabilities = priorities ** self.alpha
         probabilities /= probabilities.sum()
-
         indices = np.random.choice(total, batch_size, p=probabilities)
 
         weights = (total * probabilities[indices]) ** (-beta)
         weights /= weights.max()
         weights = np.asarray(weights, dtype=np.float32)
 
-        samples = np.asarray(self.buffer, dtype=deque)[indices]
+        samples = [self.buffer[i] for i in indices]
         (states, actions, rewards, next_states, dones) = map(np.stack, zip(*samples))
 
-        return (
+        return [
             torch.as_tensor(v, dtype=torch.float32)
-            for v in [states, actions, rewards, next_states, dones, indices, weights]
-        )
+            for v in [states, actions, rewards, next_states, dones, indices, weights,]
+        ]
 
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:
         """
@@ -217,20 +225,15 @@ specific indices)
         :type batch_priorities: list or tuple
         """
         for idx, priority in zip(batch_indices, batch_priorities):
-            self.priorities[int(idx)] = priority
+            self.priorities[int(idx)] = priority.mean()
 
-    def get_len(self) -> int:
+    def __len__(self) -> int:
         """
         Gives number of experiences in buffer currently
 
         :returns: Length of replay memory
         """
         return len(self.buffer)
-
-    def extend(self, inp):
-        max_priority = [max(self.priorities) if self.buffer else 1.0 for i in inp]
-        self.buffer.extend(inp)
-        self.priorities.extend(max_priority)
 
     @property
     def pos(self):

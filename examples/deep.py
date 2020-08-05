@@ -6,7 +6,6 @@ from genrl.environments import VectorEnv
 
 
 def main(args):
-
     ALGOS = {
         "sac": SAC,
         "a2c": A2C,
@@ -24,8 +23,12 @@ def main(args):
     trainer = None
 
     if args.algo in ["ppo", "vpg", "a2c"]:
-        agent = algo(args.arch, env)  # , batch_size=args.batch_size)
-        trainer = OnPolicyTrainer(
+        offpolicy = False
+        trainerclass = OnPolicyTrainer
+        agent = algo(
+            args.arch, env, rollout_size=args.rollout_size
+        )  # , batch_size=args.batch_size)
+        trainer = trainerclass(
             agent,
             env,
             logger,

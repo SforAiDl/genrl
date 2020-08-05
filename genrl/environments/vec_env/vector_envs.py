@@ -59,6 +59,8 @@ class VecEnv(ABC):
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
+        self.episode_reward = np.zeros((self.n_envs))
+
     def __getattr__(self, name: str) -> Any:
         env = super(VecEnv, self).__getattribute__("env")
         return getattr(env, name)
@@ -115,6 +117,22 @@ class VecEnv(ABC):
     def action_spaces(self):
         return [i.action_space for i in self.envs]
 
+    @property
+    def obs_shape(self):
+        if isinstance(self.observation_space, gym.spaces.Discrete):
+            obs_shape = (1,)
+        elif isinstance(self.observation_space, gym.spaces.Box):
+            obs_shape = self.observation_space.shape
+        return obs_shape
+
+    @property
+    def action_shape(self):
+        if isinstance(self.action_space, gym.spaces.Box):
+            action_shape = self.action_space.shape
+        elif isinstance(self.action_space, gym.spaces.Discrete):
+            action_shape = (1,)
+        return action_shape
+
 
 class SerialVecEnv(VecEnv):
     """
@@ -124,8 +142,7 @@ class SerialVecEnv(VecEnv):
     def __init__(self, *args, **kwargs):
         super(SerialVecEnv, self).__init__(*args, **kwargs)
         self.states = np.zeros(
-            (self.n_envs, *self.observation_space.shape),
-            dtype=self.observation_space.dtype,
+            (self.n_envs, *self.obs_shape), dtype=self.observation_space.dtype,
         )
         self.rewards = np.zeros((self.n_envs))
         self.dones = np.zeros((self.n_envs))
@@ -143,6 +160,7 @@ class SerialVecEnv(VecEnv):
             if done:
                 obs = env.reset()
             self.states[i] = obs
+            self.episode_reward[i] += reward
             self.rewards[i] = reward
             self.dones[i] = done
             self.infos[i] = info
@@ -160,6 +178,7 @@ class SerialVecEnv(VecEnv):
         """
         for i, env in enumerate(self.envs):
             self.states[i] = env.reset()
+        self.episode_reward = np.zeros((self.n_envs))
 
         return np.copy(self.states)
 
@@ -169,6 +188,9 @@ class SerialVecEnv(VecEnv):
         """
         for env in self.envs:
             env.close()
+
+    def get_spaces(self):
+        return self.observation_space, self.action_space
 
     def images(self) -> List:
         """
@@ -184,7 +206,7 @@ class SerialVecEnv(VecEnv):
 images in 'human' and returns tiled images in 'rgb_array')
         :type mode: string
         """
-        self.envs[0].render()
+        self.env.render()
 
         # images = np.asarray(self.images())
         # batch, height, width, channel = images.shape
@@ -253,6 +275,8 @@ class SubProcessVecEnv(VecEnv):
         for parent_conn in self.parent_conns:
             parent_conn.send(("reset", None))
 
+        self.episode_reward = np.zeros((self.n_envs))
+
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
         return np.asarray(obs)
 
@@ -273,6 +297,7 @@ class SubProcessVecEnv(VecEnv):
         self.waiting = False
 
         observations, rewards, dones, infos = zip(*result)
+        self.episode_reward += np.asarray(rewards)
         return (np.asarray(v) for v in [observations, rewards, dones, infos])
 
     def close(self):
