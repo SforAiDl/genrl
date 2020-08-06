@@ -43,6 +43,21 @@ class MlpActorCritic(BaseActorCritic):
         self.critic = MlpValue(state_dim, action_dim, val_type, hidden, **kwargs)
 
 
+class MlpSingleActorMultiCritic(MlpActorCritic):
+    def __init__(self, *args, num_critics=2, **kwargs):
+        super(MlpSingleActorMultiCritic, self).__init__(*args, **kwargs)
+
+        self.critic = [
+            MlpValue(state_dim, action_dim, val_type, hidden, **kwargs)
+            for _ in range(self.num_critics)
+        ]
+
+    def get_value(self, state: torch.Tensor) -> torch.Tensor:
+        state = torch.as_tensor(state).float()
+        values = [self.critic[i].get_value(state)]
+        return values
+
+
 class CNNActorCritic(BaseActorCritic):
     """
     CNN Actor Critic

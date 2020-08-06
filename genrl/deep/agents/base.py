@@ -6,7 +6,12 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from genrl.deep.common.buffers import PrioritizedBuffer, PushReplayBuffer
+from genrl.deep.common.buffers import (
+    PrioritizedBuffer,
+    PrioritizedReplayBufferSamples,
+    PushReplayBuffer,
+    ReplayBufferSamples,
+)
 from genrl.deep.common.utils import set_seeds
 
 
@@ -50,17 +55,6 @@ class BaseAgent(ABC):
         """
         Initialize all the policy networks in this method, and also \
         initialize the optimizers and the buffers.
-        """
-        raise NotImplementedError
-
-    def select_action(self, state: np.ndarray) -> np.ndarray:
-        """
-        Selection of action
-
-        :param state: Observation state
-        :type state: int, float, ...
-        :returns: Action based on the state and epsilon value
-        :rtype: int, float, ...
         """
         raise NotImplementedError
 
@@ -135,6 +129,33 @@ class OffPolicyAgent(BaseAgent):
         else:
             raise NotImplementedError
 
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> np.ndarray:
+        """Select action given state
+
+        Policy Gradient action-selection
+
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+            deterministic (bool): Should the policy be deterministic or stochastic
+
+        Returns:
+            action (:obj:`np.ndarray`): Action taken by the agent
+        """
+        state = torch.as_tensor(state).float()
+        action, _ = self.ac.get_action(state, deterministic)
+        action = action.detach().cpu().numpy()
+
+        # add noise to output from policy network
+        if "noise" in self.__dict__ and self.noise is not None:
+            action += self.noise()
+            action = np.clip(
+                action, self.env.action_space.low[0], self.env.action_space.high[0]
+            )
+
+        return action
+
     def update_params_before_select_action(self, timestep: int) -> None:
         """Update any parameters before selecting action like epsilon for decaying epsilon greedy
 
@@ -207,27 +228,3 @@ class OffPolicyAgent(BaseAgent):
         )
         loss = F.mse_loss(q_values, target_q_values)
         return loss
-
-    def update_params(self, update_interval: int) -> None:
-        """Takes the step for optimizer.
-
-        Args:
-            update_interval (int): No of timestep between target model updates
-        """
-        self.update_target_model()
-        for timestep in range(update_interval):
-            batch = self.sample_from_buffer()
-
-            value_loss = self.get_q_loss(batch)
-            self.logs["value_loss"].append(value_loss.item())
-
-            policy_loss = self.get_p_loss(batch.states)
-            self.logs["policy_loss"].append(policy_loss.item())
-
-            self.optimizer_policy.zero_grad()
-            policy_loss.backward()
-            self.optimizer_policy.step()
-
-            self.optimizer_value.zero_grad()
-            value_loss.backward()
-            self.optimizer_value.step()

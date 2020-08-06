@@ -140,6 +140,38 @@ class DDPG(OffPolicyAgent):
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
         return target_q_values
 
+    def update_params(self, update_interval: int) -> None:
+        """Takes the step for optimizer.
+
+        Args:
+            update_interval (int): No of timestep between target model updates
+        """
+        self.update_target_model()
+        for timestep in range(update_interval):
+            batch = self.sample_from_buffer()
+
+            value_loss = self.get_q_loss(batch)
+            self.logs["value_loss"].append(value_loss.item())
+
+            # freeze critic params for policy update
+            for param in self.ac.critic.parameters():
+                param.requires_grad = False
+
+            policy_loss = self.get_p_loss(batch.states)
+            self.logs["policy_loss"].append(policy_loss.item())
+
+            self.optimizer_policy.zero_grad()
+            policy_loss.backward()
+            self.optimizer_policy.step()
+
+            # unfreeze critic params
+            for param in self.ac.critic.parameters():
+                param.requires_grad = True
+
+            self.optimizer_value.zero_grad()
+            value_loss.backward()
+            self.optimizer_value.step()
+
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network_type": self.network_type,

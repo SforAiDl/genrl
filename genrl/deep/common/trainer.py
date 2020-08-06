@@ -277,7 +277,7 @@ many steps)
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
-        steps_per_epoch: int = 4000,
+        steps_per_epoch: int = 500,
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
         log_interval: int = 10,
