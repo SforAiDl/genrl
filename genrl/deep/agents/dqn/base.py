@@ -1,17 +1,11 @@
-import collections
 from copy import deepcopy
 from typing import Any, Dict, List
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.optim as opt
 
 from genrl.deep.agents.base import OffPolicyAgent
-from genrl.deep.common.buffers import (
-    PrioritizedReplayBufferSamples,
-    ReplayBufferSamples,
-)
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 

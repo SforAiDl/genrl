@@ -1,16 +1,13 @@
-import collections
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List
 
-import gym
 import numpy as np
 import torch
-from torch import optim as opt
+import torch.optim as opt
 
 from genrl.deep.agents.base import OffPolicyAgent
 from genrl.deep.common.noise import ActionNoise
-from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
-from genrl.environments import VecEnv
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
 class DDPG(OffPolicyAgent):
@@ -208,8 +205,8 @@ class DDPG(OffPolicyAgent):
             "replay_size": self.replay_size,
             "polyak": self.polyak,
             "noise_std": self.noise_std,
-            "lr_policy": self.lr_p,
-            "lr_value": self.lr_q,
+            "lr_policy": self.lr_policy,
+            "lr_value": self.lr_value,
             "weights": self.ac.state_dict(),
         }
         return hyperparams
