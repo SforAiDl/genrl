@@ -6,10 +6,10 @@ import gym
 import numpy as np
 import torch
 
-from ...environments import VecEnv
-from .buffers import PrioritizedBuffer, ReplayBuffer
-from .logger import Logger
-from .utils import safe_mean, set_seeds
+from genrl.deep.common.buffers import PrioritizedBuffer, ReplayBuffer
+from genrl.deep.common.logger import Logger
+from genrl.deep.common.utils import safe_mean, set_seeds
+from genrl.environments import VecEnv
 
 
 class Trainer(ABC):
@@ -316,7 +316,7 @@ many steps)
         self.warmup_steps = warmup_steps
         self.update_interval = update_interval
         self.start_update = start_update
-        self.network_type = self.agent.network_type
+        self.network = self.agent.network
 
     def train(self) -> None:
         """
@@ -512,7 +512,7 @@ class OnPolicyTrainer(Trainer):
             if epoch % self.log_interval == 0:
                 self.logger.write(
                     {
-                        "Timestep": epoch * self.agent.rollout_size,
+                        "timestep": epoch * self.agent.rollout_size,
                         "Episode": epoch,
                         **self.agent.get_logging_params(),
                     },

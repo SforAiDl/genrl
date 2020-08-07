@@ -3,7 +3,6 @@ from typing import List, Tuple
 
 import numpy as np
 import torch
-from torch import optim as opt
 
 from genrl.deep.agents.dqn.base import DQN
 from genrl.deep.agents.dqn.utils import (
@@ -20,7 +19,7 @@ class CategoricalDQN(DQN):
     Paper: https://arxiv.org/pdf/1707.06887.pdf
 
     Attributes:
-        network_type (str): The network type of the Q-value function.
+        network (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
         create_model (bool): Whether the model of the algo should be created when initialised

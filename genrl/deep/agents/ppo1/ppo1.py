@@ -6,9 +6,15 @@ import torch
 from torch import nn as nn
 from torch import optim as opt
 
-from ....environments import VecEnv
-from ...common import RolloutBuffer, get_env_properties, get_model, safe_mean
-from ..base import OnPolicyAgent
+from genrl.deep.agents.base import OnPolicyAgent
+from genrl.deep.common import (
+    BaseActorCritic,
+    RolloutBuffer,
+    get_env_properties,
+    get_model,
+    safe_mean,
+)
+from genrl.environments import VecEnv
 
 
 class PPO1(OnPolicyAgent):
@@ -17,7 +23,7 @@ class PPO1(OnPolicyAgent):
 
     Paper: https://arxiv.org/abs/1707.06347
 
-    :param network_type: The deep neural network layer types ['mlp']
+    :param network: The deep neural network layer types ['mlp']
     :param env: The environment to learn from
     :param timesteps_per_actorbatch: timesteps per actor per update
     :param gamma: discount factor
@@ -32,7 +38,7 @@ class PPO1(OnPolicyAgent):
     :param device: device to use for tensor operations; 'cpu' for cpu
         and 'cuda' for gpu
     :param load_model: model loading path
-    :type network_type: str
+    :type network: str or BaseActorCritic
     :type env: Gym environment
     :type timesteps_per_actorbatch: int
     :type gamma: float
@@ -50,7 +56,7 @@ class PPO1(OnPolicyAgent):
 
     def __init__(
         self,
-        network_type: str,
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         batch_size: int = 256,
         gamma: float = 0.99,
@@ -64,7 +70,7 @@ class PPO1(OnPolicyAgent):
     ):
 
         super(PPO1, self).__init__(
-            network_type,
+            network,
             env,
             batch_size=batch_size,
             layers=layers,
@@ -87,19 +93,22 @@ class PPO1(OnPolicyAgent):
 
     def _create_model(self):
         # Instantiate networks and optimizers
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
-            self.env, self.network_type
-        )
+        if isinstance(self.network, str):
+            input_dim, action_dim, discrete, action_lim = get_env_properties(
+                self.env, self.network
+            )
 
-        self.ac = get_model("ac", self.network_type)(
-            input_dim,
-            action_dim,
-            self.layers,
-            "V",
-            discrete,
-            action_lim=action_lim,
-            activation=self.activation,
-        ).to(self.device)
+            self.ac = get_model("ac", self.network)(
+                input_dim,
+                action_dim,
+                self.layers,
+                "V",
+                discrete,
+                action_lim=action_lim,
+                activation=self.activation,
+            ).to(self.device)
+        else:
+            self.ac = self.network.to(self.device)
 
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
@@ -174,7 +183,7 @@ class PPO1(OnPolicyAgent):
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "batch_size": self.batch_size,
             "gamma": self.gamma,
             "clip_param": self.clip_param,

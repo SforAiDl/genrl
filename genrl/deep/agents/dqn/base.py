@@ -4,8 +4,8 @@ from typing import Any, Dict, List
 
 import numpy as np
 import torch
-from torch import optim as opt
-from torch.nn import functional as F
+import torch.nn.functional as F
+import torch.optim as opt
 
 from genrl.deep.agents.base import OffPolicyAgent
 from genrl.deep.common.buffers import (
@@ -21,7 +21,7 @@ class DQN(OffPolicyAgent):
     Paper: https://arxiv.org/abs/1312.5602
 
     Attributes:
-        network_type (str): The network type of the Q-value function.
+        network (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
         create_model (bool): Whether the model of the algo should be created when initialised

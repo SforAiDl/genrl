@@ -1,7 +1,5 @@
 from typing import Tuple
 
-from torch import optim as opt
-
 from genrl.deep.agents.dqn.base import DQN
 
 
@@ -11,7 +9,7 @@ class NoisyDQN(DQN):
     Paper: https://arxiv.org/abs/1706.10295
 
     Attributes:
-        network_type (str): The network type of the Q-value function.
+        network (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
         batch_size (int): Mini batch size for loading experiences

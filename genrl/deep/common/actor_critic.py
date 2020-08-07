@@ -1,14 +1,14 @@
 from typing import Tuple
 
 import torch
+import torch.nn as nn
 from gym import spaces
-from torch import nn
 from torch.distributions import Categorical
 
-from .base import BaseActorCritic
-from .policies import MlpPolicy
-from .utils import cnn
-from .values import MlpValue
+from genrl.deep.common.base import BaseActorCritic
+from genrl.deep.common.policies import MlpPolicy
+from genrl.deep.common.utils import cnn
+from genrl.deep.common.values import MlpValue
 
 
 class MlpActorCritic(BaseActorCritic):

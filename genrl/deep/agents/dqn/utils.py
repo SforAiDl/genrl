@@ -3,7 +3,6 @@ from typing import List
 
 import numpy as np
 import torch
-from torch import nn as nn
 
 from genrl.deep.agents.dqn.base import DQN
 

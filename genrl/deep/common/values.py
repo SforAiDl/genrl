@@ -178,8 +178,29 @@ class MlpNoisyValue(MlpValue):
 
 
 class CnnNoisyValue(CnnValue, MlpNoisyValue):
+    """Class for Noisy DQN's CNN Q-Value function
+
+    Attributes:
+        input_dim (int): Number of previous frames to stack together
+        action_dim (int): Action space dimensions
+        fc_layers (:obj:`tuple`): Fully connected layer dimensions
+        noisy_layers (:obj:`tuple`): Noisy layer dimensions
+        num_atoms (int): Number of atoms used to discretise the
+            Categorical DQN value distribution
+    """
+
     def __init__(self, *args, **kwargs):
         super(CnnNoisyValue, self).__init__(*args, **kwargs)
+
+        self.model = noisy_mlp(
+            [self.output_size, *self.fc_layers],
+            [*self.noisy_layers, self.action_dim * self.num_atoms],
+            self.activation,
+        )
+
+    def forward(self, state: np.ndarray) -> np.ndarray:
+        value = self._cnn_forward(state)
+        return self.model.forward(value)
 
 
 class MlpCategoricalValue(MlpNoisyValue):
@@ -204,7 +225,7 @@ class MlpCategoricalValue(MlpNoisyValue):
         )
 
 
-class CnnCategoricalValue(CnnValue, MlpCategoricalValue):
+class CnnCategoricalValue(CnnNoisyValue):
     """Class for Categorical DQN's CNN Q-Value function
 
     Attributes:
@@ -216,8 +237,8 @@ class CnnCategoricalValue(CnnValue, MlpCategoricalValue):
             Categorical DQN value distribution
     """
 
-    def __init__(self, *args, num_atoms: int = 51):
-        super(CnnCategoricalValue, self).__init__(*args, num_atoms=num_atoms)
+    def __init__(self, *args, **kwargs):
+        super(CnnCategoricalValue, self).__init__(*args, **kwargs)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         features = self._cnn_forward(state)

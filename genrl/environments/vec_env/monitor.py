@@ -4,7 +4,7 @@ from typing import Tuple
 
 import numpy as np
 
-from .wrappers import VecEnv, VecEnvWrapper
+from genrl.environments.vec_env.wrappers import VecEnv, VecEnvWrapper
 
 
 class VecMonitor(VecEnvWrapper):
