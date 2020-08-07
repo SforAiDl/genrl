@@ -42,9 +42,12 @@ class DDPG(OffPolicyAgent):
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        self.ac = get_model("ac", self.network_type)(
-            input_dim, action_dim, self.layers, "Qsa", discrete=discrete
-        ).to(self.device)
+        if isinstance(self.network, str):
+            self.ac = get_model("ac", self.network)(
+                input_dim, action_dim, self.layers, "Qsa", discrete=discrete
+            ).to(self.device)
+        else:
+            self.ac = self.network
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 

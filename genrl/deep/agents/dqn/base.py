@@ -72,9 +72,12 @@ class DQN(OffPolicyAgent):
         if not discrete:
             raise Exception("Only Discrete Environments are supported for DQN")
 
-        self.model = get_model("v", self.network_type + self.dqn_type)(
-            input_dim, action_dim, "Qs", self.layers, **kwargs
-        )
+        if isinstance(self.network, str):
+            self.model = get_model("v", self.network + self.dqn_type)(
+                input_dim, action_dim, "Qs", self.layers, **kwargs
+            )
+        else:
+            self.model = self.network
         self.target_model = deepcopy(self.model)
 
         self.replay_buffer = self.buffer_class(self.replay_size, *args)

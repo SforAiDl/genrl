@@ -7,7 +7,12 @@ import torch
 from torch.nn import functional as F
 
 from genrl.deep.common.actor_critic import BaseActorCritic
-from genrl.deep.common.buffers import PrioritizedBuffer, PushReplayBuffer
+from genrl.deep.common.buffers import (
+    PrioritizedBuffer,
+    PrioritizedReplayBufferSamples,
+    PushReplayBuffer,
+    ReplayBufferSamples,
+)
 from genrl.deep.common.utils import set_seeds
 
 
