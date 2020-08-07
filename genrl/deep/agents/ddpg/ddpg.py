@@ -27,7 +27,8 @@ class DDPG(OffPolicyAgent):
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
-        lr_value (float): Learning rate for the Q-value function
+        lr_policy (float): Learning rate for the policy/actor
+        lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer
         buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
         polyak (float): Target model update parameter (1 for hard update)
@@ -98,6 +99,17 @@ class DDPG(OffPolicyAgent):
     def select_action(
         self, state: np.ndarray, deterministic: bool = True
     ) -> np.ndarray:
+        """Select action given state
+
+        Deterministic Action Selection with Noise
+
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+            deterministic (bool): Should the policy be deterministic or stochastic
+
+        Returns:
+            action (:obj:`np.ndarray`): Action taken by the agent
+        """
         state = torch.as_tensor(state).float()
         action, _ = self.ac.get_action(state, deterministic)
         action = action.detach().cpu().numpy()
@@ -159,6 +171,11 @@ class DDPG(OffPolicyAgent):
         return policy_loss
 
     def update_params(self, update_interval: int) -> None:
+        """Update parameters of the model
+
+        Args:
+            update_interval (int): Interval between successive updates of the target model
+        """
         for timestep in range(update_interval):
             batch = self.sample_from_buffer()
 
@@ -179,6 +196,11 @@ class DDPG(OffPolicyAgent):
             self.update_target_model()
 
     def get_hyperparams(self) -> Dict[str, Any]:
+        """Get relevant hyperparameters to save
+
+        Returns:
+            hyperparams (:obj:`dict`): Hyperparameters to be saved
+        """
         hyperparams = {
             "network": self.network,
             "gamma": self.gamma,
@@ -193,15 +215,18 @@ class DDPG(OffPolicyAgent):
         return hyperparams
 
     def load_weights(self, weights) -> None:
-        """
-        Load weights for the agent from pretrained model
+        """Load weights for the agent from pretrained model
+
+        Args:
+            weights (:obj:`dict`): Dictionary of different neural net weights
         """
         self.ac.load_state_dict(weights["weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
-        """
-        :returns: Logging parameters for monitoring training
-        :rtype: dict
+        """Gets relevant parameters for logging
+
+        Returns:
+            logs (:obj:`dict`): Logging parameters for monitoring training
         """
         logs = {
             "policy_loss": safe_mean(self.logs["policy_loss"]),
@@ -211,8 +236,7 @@ class DDPG(OffPolicyAgent):
         return logs
 
     def empty_logs(self):
-        """
-        Empties logs
+        """Empties logs
         """
         self.logs = {}
         self.logs["policy_loss"] = []

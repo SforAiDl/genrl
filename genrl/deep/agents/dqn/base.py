@@ -234,6 +234,9 @@ class DQN(OffPolicyAgent):
 
     def load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
+
+        Args:
+            weights (:obj:`Dict`): Dictionary of different neural net weights
         """
         self.model.load_state_dict(weights["weights"])
 
