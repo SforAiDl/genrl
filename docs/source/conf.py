@@ -55,12 +55,9 @@ exclude_patterns = []
 #
 html_theme = "sphinx_rtd_theme"
 
-html_logo = 'assets/images/genrl.png'
-html_favicon = 'assets/images/genrl_cropped.png'
-html_theme_options = {
-    'style_nav_header_background': 'white',
-    'logo_only': True
-}
+html_logo = "assets/images/genrl.png"
+html_favicon = "assets/images/genrl_cropped.png"
+html_theme_options = {"style_nav_header_background": "white", "logo_only": True}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
