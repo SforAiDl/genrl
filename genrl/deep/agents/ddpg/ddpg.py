@@ -14,6 +14,31 @@ from genrl.environments import VecEnv
 
 
 class DDPG(OffPolicyAgent):
+    """Deep Deterministic Policy Gradient Algorithm
+
+    Paper: https://arxiv.org/abs/1509.02971
+
+    Attributes:
+        network (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
+        batch_size (int): Mini batch size for loading experiences
+        gamma (float): The discount factor for rewards
+        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+            of the Q-value function
+        lr_value (float): Learning rate for the Q-value function
+        replay_size (int): Capacity of the Replay Buffer
+        buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
+        polyak (float): Target model update parameter (1 for hard update)
+        noise (:obj:`ActionNoise`): Action Noise function added to aid in exploration
+        noise_std (float): Standard deviation of the action noise distribution
+        seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
+        device (str): Hardware being used for training. Options:
+            ["cuda" -> GPU, "cpu" -> CPU]
+    """
+
     def __init__(
         self,
         *args,
@@ -32,6 +57,10 @@ class DDPG(OffPolicyAgent):
             self._create_model()
 
     def _create_model(self) -> None:
+        """Function to initialize Actor-Critic architecture
+
+        This will create the Actor-Critic net for the agent and initialise the action noise
+        """
         input_dim, action_dim, discrete, _ = get_env_properties(self.env)
         if discrete:
             raise Exception(
@@ -51,10 +80,6 @@ class DDPG(OffPolicyAgent):
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
-        # # freeze target network params
-        # for param in self.ac_target.parameters():
-        #     param.requires_grad = False
-
         self.replay_buffer = self.buffer_class(self.replay_size)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
@@ -64,7 +89,6 @@ class DDPG(OffPolicyAgent):
 
         Updates the target model with the training model's weights when called
         """
-        # with torch.no_grad():
         for param, param_target in zip(
             self.ac.parameters(), self.ac_target.parameters()
         ):
@@ -75,7 +99,6 @@ class DDPG(OffPolicyAgent):
         self, state: np.ndarray, deterministic: bool = True
     ) -> np.ndarray:
         state = torch.as_tensor(state).float()
-        # with torch.no_grad():
         action, _ = self.ac.get_action(state, deterministic)
         action = action.detach().cpu().numpy()
 
@@ -136,13 +159,6 @@ class DDPG(OffPolicyAgent):
         return policy_loss
 
     def update_params(self, update_interval: int) -> None:
-        """
-        Takes the step for optimizer.
-
-        :param timestep: timestep
-        :type timestep: int
-        """
-
         for timestep in range(update_interval):
             batch = self.sample_from_buffer()
 
@@ -164,7 +180,7 @@ class DDPG(OffPolicyAgent):
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "gamma": self.gamma,
             "batch_size": self.batch_size,
             "replay_size": self.replay_size,
