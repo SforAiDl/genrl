@@ -16,7 +16,7 @@ def test_off_policy_trainer():
     env = VectorEnv("Pendulum-v0", 2)
     algo = DDPG("mlp", env, replay_size=100)
     trainer = OffPolicyTrainer(
-        algo, env, ["stdout"], epochs=1, evaluate_episodes=2, steps_per_epoch=300
+        algo, env, ["stdout"], epochs=1, evaluate_episodes=2, max_ep_len=300
     )
     assert trainer.off_policy
     trainer.train()
