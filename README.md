@@ -1,6 +1,6 @@
 <p align="center">
     <br>
-    <img src="https://github.com/SforAiDl/genrl/blob/master/assets/images/genrl.png" width="200"/>
+    <img src="https://github.com/SforAiDl/genrl/blob/master/docs/source/assets/images/genrl.png" width="200"/>
     <br>
 <p>
     
