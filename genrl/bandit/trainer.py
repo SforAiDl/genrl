@@ -1,4 +1,5 @@
 import traceback
+from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, List
 
@@ -7,7 +8,7 @@ import numpy as np
 from genrl.deep.common.logger import Logger
 
 
-class BanditTrainer:
+class BanditTrainer(ABC):
     """Bandit Trainer Class
 
     Args:
@@ -30,11 +31,12 @@ class BanditTrainer:
         self.log_mode = log_mode
         self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
+    @abstractmethod
     def train(self) -> None:
         """
         To be defined in inherited classes
         """
-        raise NotImplementedError
+        pass
 
 
 class MABTrainer(BanditTrainer):
