@@ -4,7 +4,7 @@ from genrl.bandit import (
     EpsGreedyMABAgent,
     GaussianMAB,
     GradientMABAgent,
-    MABTrainer
+    MABTrainer,
     ThompsonSamplingMABAgent,
     UCBMABAgent,
 )
