@@ -1,7 +1,7 @@
 import shutil
 
 from genrl.bandit import (
-    BanditTrainer,
+    DCBTrainer,
     BernoulliMAB,
     BootstrapNeuralAgent,
     CovertypeDataBandit,
@@ -31,7 +31,7 @@ class TestCBAgent:
         bandits.append(BernoulliMAB(bandits=10, arms=10))
         for bandit in bandits:
             agent = agent_class(bandit)
-            trainer = BanditTrainer(agent, bandit, log_mode=["stdout"])
+            trainer = DCBTrainer(agent, bandit, log_mode=["stdout"])
             trainer.train(timesteps=10, update_interval=2, update_after=5, batch_size=2)
             shutil.rmtree("./logs")
 
