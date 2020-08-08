@@ -3,7 +3,7 @@
 ```python
 import gym
 
-from genrl.bandit import UCBMABAgent, BernoulliMAB, MABTrainer
+from genrl.bandit import BernoulliMAB, MABTrainer, UCBMABAgent
 
 bandit = BernoulliMAB(bandits=10, arms=5, context_type="int")
 agent = UCBMABAgent(bandit, confidence=1.0)

@@ -1,10 +1,10 @@
 import shutil
 
 from genrl.bandit import (
-    DCBTrainer,
     BernoulliMAB,
     BootstrapNeuralAgent,
     CovertypeDataBandit,
+    DCBTrainer,
     FixedAgent,
     LinearPosteriorAgent,
     NeuralGreedyAgent,
