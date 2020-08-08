@@ -30,10 +30,4 @@ trainer = OnPolicyTrainer(agent, env, log_mode=['stdout', 'tensorboard'], log_ke
 trainer.train()
 ```
 
-Hyperparameters and arguments for the A2C agent:
-
-https://github.com/SforAiDl/genrl/blob/master/genrl/deep/agents/a2c/a2c.py 
-
-Hyperparameters and arguments for the OnPolicyTrainer:
-
-https://github.com/SforAiDl/genrl/blob/master/genrl/deep/common/trainer.py
+More details can be found in the docs for [`A2C`](https://genrl.readthedocs.io/en/latest/api/algorithms/genrl.deep.agents.a2c.html) and [`OnPolicyTrainer`](https://genrl.readthedocs.io/en/latest/api/common/deep.html#genrl.deep.common.trainer.OnPolicyTrainer).
