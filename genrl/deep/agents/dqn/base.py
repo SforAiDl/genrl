@@ -1,17 +1,11 @@
-import collections
 from copy import deepcopy
 from typing import Any, Dict, List
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.optim as opt
 
 from genrl.deep.agents.base import OffPolicyAgent
-from genrl.deep.common.buffers import (
-    PrioritizedReplayBufferSamples,
-    ReplayBufferSamples,
-)
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
@@ -21,7 +15,7 @@ class DQN(OffPolicyAgent):
     Paper: https://arxiv.org/abs/1312.5602
 
     Attributes:
-        network_type (str): The network type of the Q-value function.
+        network (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
         create_model (bool): Whether the model of the algo should be created when initialised
@@ -66,15 +60,16 @@ class DQN(OffPolicyAgent):
 
         This will create the Q-value function of the agent.
         """
-        input_dim, action_dim, discrete, _ = get_env_properties(
-            self.env, self.network_type
-        )
+        input_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
         if not discrete:
             raise Exception("Only Discrete Environments are supported for DQN")
 
-        self.model = get_model("v", self.network_type + self.dqn_type)(
-            input_dim, action_dim, "Qs", self.layers, **kwargs
-        )
+        if isinstance(self.network, str):
+            self.model = get_model("v", self.network + self.dqn_type)(
+                input_dim, action_dim, "Qs", self.layers, **kwargs
+            )
+        else:
+            self.model = self.network
         self.target_model = deepcopy(self.model)
 
         self.replay_buffer = self.buffer_class(self.replay_size, *args)
@@ -190,6 +185,8 @@ class DQN(OffPolicyAgent):
         Args:
             update_interval (int): Interval between successive updates of the target model
         """
+        self.update_target_model()
+
         for timestep in range(update_interval):
             batch = self.sample_from_buffer()
             loss = self.get_q_loss(batch)
@@ -203,10 +200,6 @@ class DQN(OffPolicyAgent):
             if self.noisy:
                 self.model.reset_noise()
                 self.target_model.reset_noise()
-
-            # Every few timesteps, we update the target Q network
-            if timestep % update_interval == 0:
-                self.update_target_model()
 
     def calculate_epsilon_by_frame(self) -> float:
         """Helper function to calculate epsilon after every timestep
@@ -236,6 +229,9 @@ class DQN(OffPolicyAgent):
 
     def load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
+
+        Args:
+            weights (:obj:`Dict`): Dictionary of different neural net weights
         """
         self.model.load_state_dict(weights["weights"])
 

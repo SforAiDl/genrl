@@ -10,7 +10,7 @@ class DoubleDQN(DQN):
     Paper: https://arxiv.org/abs/1509.06461
 
     Attributes:
-        network_type (str): The network type of the Q-value function.
+        network (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
         batch_size (int): Mini batch size for loading experiences

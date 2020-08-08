@@ -21,6 +21,7 @@ Contents
    
    install
    getting_started
+   tutorials/index
    algorithms/index
 
 .. Algorithms

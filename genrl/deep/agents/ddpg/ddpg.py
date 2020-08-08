@@ -1,26 +1,22 @@
-import collections
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List
 
-import gym
 import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.optim as opt
 
 from genrl.deep.agents.base import OffPolicyAgent
 from genrl.deep.common.noise import ActionNoise
-from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
-from genrl.environments import VecEnv
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
 class DDPG(OffPolicyAgent):
-    """DDPG Class
+    """Deep Deterministic Policy Gradient Algorithm
 
     Paper: https://arxiv.org/abs/1509.02971
 
     Attributes:
-        network_type (str): The network type of the Q-value function.
+        network (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
         create_model (bool): Whether the model of the algo should be created when initialised
@@ -28,12 +24,13 @@ class DDPG(OffPolicyAgent):
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
-        lr_value (float): Learning rate for the Q-value function
+        lr_policy (float): Learning rate for the policy/actor
+        lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer
         buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
-        polyak (float): Soft target update coefficient
-        noise (:obj:`ActionNoise`): Action Noise added to the policy output
-        noise_std (float): Standard deviation of action noise
+        polyak (float): Target model update parameter (1 for hard update)
+        noise (:obj:`ActionNoise`): Action Noise function added to aid in exploration
+        noise_std (float): Standard deviation of the action noise distribution
         seed (int): Seed for randomness
         render (bool): Should the env be rendered during training?
         device (str): Hardware being used for training. Options:
@@ -58,9 +55,11 @@ class DDPG(OffPolicyAgent):
             self._create_model()
 
     def _create_model(self) -> None:
-        input_dim, action_dim, discrete, _ = get_env_properties(
-            self.env, self.network_type
-        )
+        """Function to initialize Actor-Critic architecture
+
+        This will create the Actor-Critic net for the agent and initialise the action noise
+        """
+        input_dim, action_dim, discrete, _ = get_env_properties(self.env)
         if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
@@ -70,9 +69,12 @@ class DDPG(OffPolicyAgent):
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        self.ac = get_model("ac", self.network_type)(
-            input_dim, action_dim, self.layers, "Qsa", discrete=discrete
-        ).to(self.device)
+        if isinstance(self.network, str):
+            self.ac = get_model("ac", self.network)(
+                input_dim, action_dim, self.layers, "Qsa", discrete=discrete
+            ).to(self.device)
+        else:
+            self.ac = self.network
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
@@ -94,6 +96,17 @@ class DDPG(OffPolicyAgent):
     def select_action(
         self, state: np.ndarray, deterministic: bool = True
     ) -> np.ndarray:
+        """Select action given state
+
+        Deterministic Action Selection with Noise
+
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+            deterministic (bool): Should the policy be deterministic or stochastic
+
+        Returns:
+            action (:obj:`np.ndarray`): Action taken by the agent
+        """
         state = torch.as_tensor(state).float()
         action, _ = self.ac.get_action(state, deterministic)
         action = action.detach().cpu().numpy()
@@ -122,7 +135,7 @@ class DDPG(OffPolicyAgent):
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        """Get target Q values for the DDPG
+        """Get target Q values for the DQN
 
         Args:
             next_states (:obj:`torch.Tensor`): Next states for which target Q-values
@@ -140,22 +153,31 @@ class DDPG(OffPolicyAgent):
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
         return target_q_values
 
-    def update_params(self, update_interval: int) -> None:
-        """Takes the step for optimizer.
+    def get_p_loss(self, states: np.ndarray) -> torch.Tensor:
+        """Get policy loss for DDPG
 
         Args:
-            update_interval (int): No of timestep between target model updates
+            states (:obj:`np.ndarray`): State at which the loss needs to be found
+
+        Returns:
+            policy_loss (:obj:`torch.Tensor`): Policy loss at the state
         """
-        self.update_target_model()
+        next_best_actions = self.ac.get_action(states, True)[0]
+        q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
+        policy_loss = -torch.mean(q_values)
+        return policy_loss
+
+    def update_params(self, update_interval: int) -> None:
+        """Update parameters of the model
+
+        Args:
+            update_interval (int): Interval between successive updates of the target model
+        """
         for timestep in range(update_interval):
             batch = self.sample_from_buffer()
 
             value_loss = self.get_q_loss(batch)
             self.logs["value_loss"].append(value_loss.item())
-
-            # freeze critic params for policy update
-            for param in self.ac.critic.parameters():
-                param.requires_grad = False
 
             policy_loss = self.get_p_loss(batch.states)
             self.logs["policy_loss"].append(policy_loss.item())
@@ -164,38 +186,44 @@ class DDPG(OffPolicyAgent):
             policy_loss.backward()
             self.optimizer_policy.step()
 
-            # unfreeze critic params
-            for param in self.ac.critic.parameters():
-                param.requires_grad = True
-
             self.optimizer_value.zero_grad()
             value_loss.backward()
             self.optimizer_value.step()
 
+            self.update_target_model()
+
     def get_hyperparams(self) -> Dict[str, Any]:
+        """Get relevant hyperparameters to save
+
+        Returns:
+            hyperparams (:obj:`dict`): Hyperparameters to be saved
+        """
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "gamma": self.gamma,
             "batch_size": self.batch_size,
             "replay_size": self.replay_size,
             "polyak": self.polyak,
             "noise_std": self.noise_std,
-            "lr_policy": self.lr_p,
-            "lr_value": self.lr_q,
+            "lr_policy": self.lr_policy,
+            "lr_value": self.lr_value,
             "weights": self.ac.state_dict(),
         }
         return hyperparams
 
     def load_weights(self, weights) -> None:
-        """
-        Load weights for the agent from pretrained model
+        """Load weights for the agent from pretrained model
+
+        Args:
+            weights (:obj:`dict`): Dictionary of different neural net weights
         """
         self.ac.load_state_dict(weights["weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
-        """
-        :returns: Logging parameters for monitoring training
-        :rtype: dict
+        """Gets relevant parameters for logging
+
+        Returns:
+            logs (:obj:`dict`): Logging parameters for monitoring training
         """
         logs = {
             "policy_loss": safe_mean(self.logs["policy_loss"]),
@@ -205,8 +233,7 @@ class DDPG(OffPolicyAgent):
         return logs
 
     def empty_logs(self):
-        """
-        Empties logs
+        """Empties logs
         """
         self.logs = {}
         self.logs["policy_loss"] = []

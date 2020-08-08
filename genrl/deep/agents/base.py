@@ -1,11 +1,12 @@
 import collections
 from abc import ABC
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import torch
 from torch.nn import functional as F
 
+from genrl.deep.common.actor_critic import BaseActorCritic
 from genrl.deep.common.buffers import (
     PrioritizedBuffer,
     PrioritizedReplayBufferSamples,
@@ -16,9 +17,28 @@ from genrl.deep.common.utils import set_seeds
 
 
 class BaseAgent(ABC):
+    """Base Agent Class
+
+    Attributes:
+        network (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
+        batch_size (int): Mini batch size for loading experiences
+        gamma (float): The discount factor for rewards
+        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+            of the Q-value function
+        lr_policy (float): Learning rate for the policy/actor
+        lr_value (float): Learning rate for the Q-value function
+        seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
+        device (str): Hardware being used for training. Options:
+            ["cuda" -> GPU, "cpu" -> CPU]
+    """
+
     def __init__(
         self,
-        network_type: str,
+        network: Union[str, BaseActorCritic],
         env: Any,
         create_model: bool = True,
         batch_size: int = 64,
@@ -28,7 +48,7 @@ class BaseAgent(ABC):
         lr_value: float = 0.001,
         **kwargs
     ):
-        self.network_type = network_type
+        self.network = network
         self.env = env
         self.create_model = create_model
         self.batch_size = batch_size
@@ -52,29 +72,56 @@ class BaseAgent(ABC):
             set_seeds(self.seed, self.env)
 
     def _create_model(self) -> None:
+        """Function to initialize all models of the agent
         """
-        Initialize all the policy networks in this method, and also \
-        initialize the optimizers and the buffers.
+        raise NotImplementedError
+
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = False
+    ) -> np.ndarray:
+        """Select action given state
+
+        Action selection method
+
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+            deterministic (bool): Should the policy be deterministic or stochastic
+
+        Returns:
+            action (:obj:`np.ndarray`): Action taken by the agent
         """
         raise NotImplementedError
 
     def update_params(self, update_interval: int) -> None:
-        """
-        Takes the step for optimizer.
-        This internally calls functions to calculate loss.
+        """Update parameters of the model
+
+        Args:
+            update_interval (int): Interval between successive updates of the target model
         """
         raise NotImplementedError
 
     def get_hyperparameters(self) -> Dict[str, Any]:
-        """
-        Hyperparameters you want to return
+        """Get relevant hyperparameters to save
+
+        Returns:
+            hyperparams (:obj:`dict`): Hyperparameters to be saved
         """
         raise NotImplementedError
 
     def get_logging_params(self) -> Dict[str, Any]:
+        """Load weights for the agent from pretrained model
+
+        Args:
+            weights (:obj:`dict`): Dictionary of different neural net weights
+        """
         raise NotImplementedError
 
     def empty_logs(self):
+        """Gets relevant parameters for logging
+
+        Returns:
+            logs (:obj:`dict`): Logging parameters for monitoring training
+        """
         raise NotImplementedError
 
 
@@ -115,6 +162,27 @@ class OnPolicyAgent(BaseAgent):
 
 
 class OffPolicyAgent(BaseAgent):
+    """Off Policy Agent Base Class
+
+    Attributes:
+        network (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
+        batch_size (int): Mini batch size for loading experiences
+        gamma (float): The discount factor for rewards
+        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+            of the Q-value function
+        lr_policy (float): Learning rate for the policy/actor
+        lr_value (float): Learning rate for the Q-value function
+        replay_size (int): Capacity of the Replay Buffer
+        buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
+        seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
+        device (str): Hardware being used for training. Options:
+            ["cuda" -> GPU, "cpu" -> CPU]
+    """
+
     def __init__(
         self, *args, replay_size: int = 1000, buffer_type: str = "push", **kwargs
     ):
@@ -128,33 +196,6 @@ class OffPolicyAgent(BaseAgent):
             self.buffer_class = PrioritizedBuffer
         else:
             raise NotImplementedError
-
-    def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
-        """Select action given state
-
-        Policy Gradient action-selection
-
-        Args:
-            state (:obj:`np.ndarray`): Current state of the environment
-            deterministic (bool): Should the policy be deterministic or stochastic
-
-        Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
-        """
-        state = torch.as_tensor(state).float()
-        action, _ = self.ac.get_action(state, deterministic)
-        action = action.detach().cpu().numpy()
-
-        # add noise to output from policy network
-        if "noise" in self.__dict__ and self.noise is not None:
-            action += self.noise()
-            action = np.clip(
-                action, self.env.action_space.low[0], self.env.action_space.high[0]
-            )
-
-        return action
 
     def update_params_before_select_action(self, timestep: int) -> None:
         """Update any parameters before selecting action like epsilon for decaying epsilon greedy
@@ -175,11 +216,23 @@ class OffPolicyAgent(BaseAgent):
         """Function to reshape experiences
 
         Can be modified for individual algorithm usage
+
+        Args:
+            batch (:obj:`list`): List of experiences that are being replayed
+
+        Returns:
+            batch (:obj:`list`): Reshaped experiences for replay
         """
         return [*batch]
 
     def sample_from_buffer(self, beta: float = None):
         """Samples experiences from the buffer and converts them into usable formats
+
+        Args:
+            beta (float): Importance-Sampling beta for prioritized replay
+
+        Returns:
+            batch (:obj:`list`): Replay experiences sampled from the buffer
         """
         # Samples from the buffer
         if beta is not None:
@@ -214,7 +267,7 @@ class OffPolicyAgent(BaseAgent):
         return policy_loss
 
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
-        """Normal Function to calculate the loss of the Q-function
+        """Normal Function to calculate the loss of the Q-function or critic
 
         Args:
             batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences

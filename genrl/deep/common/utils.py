@@ -4,7 +4,7 @@ from typing import List, Tuple, Union
 import gym
 import numpy as np
 import torch
-from torch import nn as nn
+import torch.nn as nn
 
 from genrl.deep.common.noise import NoisyLinear
 from genrl.environments import VecEnv
@@ -18,7 +18,6 @@ def get_model(type_: str, name_: str) -> Union:
     :param name_: Name of the specific structure of model. (
 Eg. "mlp" or "cnn")
     :type type_: string
-    :type name_: string
     :returns: Required class. Eg. MlpActorCritic
     """
     if type_ == "ac":
@@ -133,22 +132,22 @@ def noisy_mlp(fc_layers: List[int], noisy_layers: List[int], activation="relu"):
 
 
 def get_env_properties(
-    env: Union[gym.Env, VecEnv], network_type: str = "mlp"
+    env: Union[gym.Env, VecEnv], network: str = "mlp"
 ) -> (Tuple[int]):
     """
     Finds important properties of environment
 
     :param env: Environment that the agent is interacting with
     :type env: Gym Environment
-    :param network_type: Type of network architecture, eg. "mlp", "cnn"
-    :type network_type: str
+    :param network: Type of network architecture, eg. "mlp", "cnn"
+    :type network: str
     :returns: (State space dimensions, Action space dimensions,
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
-    if network_type == "cnn":
+    if network == "cnn":
         input_dim = env.framestack
-    elif network_type == "mlp":
+    elif network == "mlp":
         input_dim = env.observation_space.shape[0]
 
     if isinstance(env.action_space, gym.spaces.Discrete):
