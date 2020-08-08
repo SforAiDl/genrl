@@ -92,7 +92,7 @@ def plot_multi_runs(args, multi_results, title):
 
 def run_multi_algos(args):
     bandit_class = BANDITS[args.bandit.lower()]
-    bandit = bandit_class()
+    bandit = bandit_class(download=args.download)
     multi_results = {}
     for name, algo in ALGOS.items():
         agent = algo(bandit)
@@ -104,7 +104,7 @@ def run_multi_bandits(args):
     algo = ALGOS[args.algo.lower()]
     multi_results = {}
     for name, bandit_class in BANDITS.items():
-        bandit = bandit_class()
+        bandit = bandit_class(download=args.download)
         agent = algo(bandit)
         multi_results[name] = run(args, agent, bandit)
     plot_multi_runs(args, multi_results, title=f"{algo.__name__}-Performance")
@@ -113,7 +113,7 @@ def run_multi_bandits(args):
 def run_single_algos_on_bandit(args):
     algo = ALGOS[args.algo.lower()]
     bandit_class = BANDITS[args.bandit.lower()]
-    bandit = bandit_class()
+    bandit = bandit_class(download=args.download)
     agent = algo(bandit)
     run(args, agent, bandit)
 
@@ -124,7 +124,7 @@ def run_experiment(args):
     results = {}
 
     bandit_class = BANDITS[args.bandit.lower()]
-    bandit = bandit_class()
+    bandit = bandit_class(download=args.download)
 
     bootstrap = genrl.BootstrapNeuralAgent(bandit=bandit)
     logdir = Path(args.logdir).joinpath(

@@ -7,6 +7,9 @@
 Train a Tabular Dyna-Q model from scratch on the `FrozenLake-v0` gym environment and plot rewards
 
 ```python
+import gym
+from genrl.classical import QLearning
+from genrl.classical.common import Trainer
 
 env = gym.make("FrozenLake-v0")
 agent = QLearning(env)
@@ -14,6 +17,29 @@ trainer = Trainer(agent, env, mode="dyna", model="tabular", n_episodes=10000)
 episode_rewards = trainer.train()
 trainer.plot(episode_rewards)
 ```
+
+### Bandits
+
+Use a Neural Netowrk based linear posterior inference method to train on the Covertype dataset.
+
+```python
+import genrl.bandit import CovertypeDataBandit, NeuralLinearPosteriorAgent, BanditTrainer
+
+bandit = CovertypeDataBandit()
+agent = NeuralLinearPosteriorAgent(bandit)
+trainer = BanditTrainer(
+    agent, bandit, logdir="logs/", log_mode=["stdout", "tensorboard"]
+)
+results = trainer.train(timesteps=100)
+```
+
+This can also be done through a command line interface. 
+
+```bash
+python -m genrl.bandit.main -a variational -b neural-linpos -t 100
+```
+
+ _The `--download` flag may need to be specified when running for the first time._
 
 ### Deep RL
 
