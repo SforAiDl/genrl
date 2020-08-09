@@ -16,5 +16,3 @@ Bandit
 
    genrl.bandit.agents.cb_agents
    genrl.bandit.agents.mab_agents
-
-
