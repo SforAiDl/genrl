@@ -40,7 +40,9 @@ class TD3:
     :param max_ep_len: (int) Maximum steps per episode
     :param start_update: (int) Number of steps before first parameter update
     :param update_interval: (int) Number of steps between parameter updates
-    :param layers: (tuple or list) Number of neurons in hidden layers
+    :param policy_layers: (tuple or list) Number of neurons in hidden layers of the policy network
+    :param q1_layers: (tuple or list) Number of neurons in hidden layers of the qf1 value network
+    :param q2_layers: (tuple or list) Number of neurons in hidden layers of the qf2 value network
     :param seed (int): seed for torch and gym
     :param render (boolean): if environment is to be rendered
     :param device (str): device to use for tensor operations; 'cpu' for cpu
@@ -61,7 +63,9 @@ class TD3:
     :type max_ep_len: int
     :type start_update: int
     :type update_interval: int
-    :type layers: tuple or list
+    :type policy_layers: tuple or list
+    :type 1_layers: tuple or list
+    :type q2_layers: tuple or list
     :type seed: int
     :type render: boolean
     :type device: str
@@ -87,7 +91,9 @@ class TD3:
         max_ep_len: int = 1000,
         start_update: int = 1000,
         update_interval: int = 50,
-        layers: Tuple = (256, 256),
+        policy_layers: Tuple = (256, 256),
+        q1_layers: Tuple = (256, 256),
+        q2_layers: Tuple = (256, 256),
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -111,7 +117,9 @@ class TD3:
         self.max_ep_len = max_ep_len
         self.start_update = start_update
         self.update_interval = update_interval
-        self.layers = layers
+        self.policy_layers = policy_layers
+        self.q1_layers = q1_layers
+        self.q2_layers = q2_layers
         self.seed = seed
         self.render = render
 
@@ -137,11 +145,11 @@ class TD3:
             )
 
             self.ac = get_model("ac", self.network)(
-                state_dim, action_dim, self.layers, "Qsa", False
+                state_dim, action_dim, self.policy_layers, self.q2_layers, "Qsa", False
             ).to(self.device)
 
             self.ac.qf2 = get_model("v", self.network)(
-                state_dim, action_dim, hidden=self.layers, val_type="Qsa"
+                state_dim, action_dim, hidden=self.q1_layers, val_type="Qsa"
             )
         else:
             self.ac = self.network.to(self.device)

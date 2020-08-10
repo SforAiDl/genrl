@@ -34,7 +34,8 @@ class DDPG:
     :param max_ep_len: Maximum steps per episode
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of steps between parameter updates
-    :param layers: Number of neurons in hidden layers
+    :param policy_layers: Number of neurons in hidden layers in the policy network
+    :param value_layers: Number of neurons in hidden layers in the value network
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
@@ -53,7 +54,8 @@ class DDPG:
     :type max_ep_len: int
     :type start_update: int
     :type update_interval: int
-    :type layers: tuple
+    :type policy_layers: tuple
+    :type value_layers: tuple
     :type seed: int
     :type render: bool
     :type device: string
@@ -78,7 +80,8 @@ class DDPG:
         max_ep_len: int = 1000,
         start_update: int = 1000,
         update_interval: int = 50,
-        layers: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -101,7 +104,8 @@ class DDPG:
         self.max_ep_len = max_ep_len
         self.start_update = start_update
         self.update_interval = update_interval
-        self.layers = layers
+        self.policy_layers = policy_layers
+        self.value_layers = value_layers
         self.seed = seed
         self.render = render
 
@@ -134,7 +138,12 @@ class DDPG:
             )
 
             self.ac = get_model("ac", self.network)(
-                state_dim, action_dim, self.layers, "Qsa", False
+                state_dim,
+                action_dim,
+                self.policy_layers,
+                self.value_layers,
+                "Qsa",
+                False,
             ).to(self.device)
         else:
             self.ac = self.network.to(self.device)

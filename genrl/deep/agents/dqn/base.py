@@ -27,7 +27,7 @@ class DQN(OffPolicyAgent):
         create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
-        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+        value_layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
         lr_value (float): Learning rate for the Q-value function
         replay_size (int): Capacity of the Replay Buffer
@@ -69,7 +69,7 @@ class DQN(OffPolicyAgent):
         input_dim, action_dim, _, _ = get_env_properties(self.env, self.network)
 
         self.model = get_model("v", self.network + self.dqn_type)(
-            input_dim, action_dim, "Qs", self.layers, **kwargs
+            input_dim, action_dim, "Qs", self.value_layers, **kwargs
         )
         self.target_model = deepcopy(self.model)
 

@@ -40,7 +40,9 @@ class SAC:
     :param max_ep_len: Maximum number of steps per episode
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of step between updates
-    :param layers: Neural network layer dimensions
+    :param policy_layers: Neural network layer dimensions for the policy
+    :param q1_layers: Neural network layer dimensions for q1
+    :param q2_layers: Neural network layer dimensions for q2
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
@@ -59,7 +61,9 @@ class SAC:
     :type max_ep_len: int
     :type start_update: int
     :type update_interval: int
-    :type layers: tuple
+    :type policy_layers: tuple
+    :type q2_layers: tuple
+    :type q1_layers: tuple
     :type seed: int
     :type render: bool
     :type device: string
@@ -83,7 +87,9 @@ class SAC:
         max_ep_len: int = 1000,
         start_update: int = 256,
         update_interval: int = 1,
-        layers: Tuple = (256, 256),
+        policy_layers: Tuple = (256, 256),
+        q1_layers: Tuple = (256, 256),
+        q2_layers: Tuple = (256, 256),
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -105,7 +111,9 @@ class SAC:
         self.max_ep_len = max_ep_len
         self.start_update = start_update
         self.update_interval = update_interval
-        self.layers = layers
+        self.policy_layers = policy_layers
+        self.q1_layers = q1_layers
+        self.q2_layers = q2_layers
         self.seed = seed
         self.render = render
 
@@ -135,20 +143,24 @@ class SAC:
             state_dim, action_dim, discrete, _ = get_env_properties(self.env)
 
             self.q1 = (
-                get_model("v", self.network)(state_dim, action_dim, "Qsa", self.layers)
+                get_model("v", self.network)(
+                    state_dim, action_dim, "Qsa", self.q1_layers
+                )
                 .to(self.device)
                 .float()
             )
 
             self.q2 = (
-                get_model("v", self.network)(state_dim, action_dim, "Qsa", self.layers)
+                get_model("v", self.network)(
+                    state_dim, action_dim, "Qsa", self.q2_layers
+                )
                 .to(self.device)
                 .float()
             )
 
             self.policy = (
                 get_model("p", self.network)(
-                    state_dim, action_dim, self.layers, discrete, False, sac=True
+                    state_dim, action_dim, self.policy_layers, discrete, False, sac=True
                 )
                 .to(self.device)
                 .float()
