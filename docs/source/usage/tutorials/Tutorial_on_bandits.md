@@ -1,12 +1,16 @@
 ### Training an EpsilonGreedy agent on a Bernoulli Multi Armed Bandit
 
-Multi armed bandits is one of the most basic problems in RL. Think of it like this, you have 'n' levers in front of you and each of these levers has a different reward function: the probability of getting a reward when a lever is pulled. Suppose you try out one of the levers and get a positive reward. What do you do next? Do you just keep pulling that lever every time or think what if there might be a better reward to pulling one of the other levers? This is the exploration - exploitation dilemma.
+Multi armed bandits is one of the most basic problems in RL. Think of it like this, you have 'n' levers in front of you and each of these levers will give you a different reward. For the purposes of formalising the problem the reward is written down in terms of a reward function i.e., the probability of getting a reward when a lever is pulled. 
 
-Exploitation - You use the information you have gathered till now, to make the best decision. In this case, after 1 try you know a lever is giving you a positive reward and you just 'exploit' it further(known as the greedy action).
+Suppose you try out one of the levers and get a positive reward. What do you do next? Should you just keep pulling that lever every time or think what if there might be a better reward to pulling one of the other levers? This is the exploration - exploitation dilemma.
 
-Exploration - You explore the untried levers in an attempt to maybe discover another one which has a higher payout than the one you currently have some knowledge about. This is exploring all your options without worrying about the short-term rewards, in hope of finding a lever with a bigger reward, in the long run.
+_Exploitation_ - Utilise the information you have gathered till now, to make the best decision. In this case, after 1 try you know a lever is giving you a positive reward and you just _exploit_ it further. Since you do not care about other arms if you keep _exploiting_, it is known as the greedy action.
 
-You have to use an algorithm which correctly trades off exploration and exploitation as we do not want a 'greedy' algorithm which only exploits and does not explore at all, because there are very high chances that it will converge to a sub-optimum policy. Neither do we want an algorithm which only explores, because this would lead to non-maximum rewards inspite of knowing the best action to be taken. In this case, the optimum policy will be to always pull the lever with the highest reward, but at the beginning we do not know the probability distribution of the rewards. So, we want a policy which explores actively at the beginning, building up an estimate for the reward values(defined as quality) of all the actions, and then exploiting that from that time onwards.
+_Exploration_ - You explore the untried levers in an attempt to maybe discover another one which has a higher payout than the one you currently have some knowledge about. This is exploring all your options without worrying about the short-term rewards, in hope of finding a lever with a bigger reward, in the long run.
+
+You have to use an algorithm which correctly trades off exploration and exploitation as we do not want a 'greedy' algorithm which only exploits and does not explore at all, because there are very high chances that it will converge to a sub-optimal policy. We do not want an algorithm that keeps exploring either as this would lead to sub-optimal rewards inspite of knowing the best action to be taken. In this case, the optimal policy will be to always pull the lever with the highest reward, but at the beginning we do not know the probability distribution of the rewards. 
+
+So, we want a policy which explores actively at the beginning, building up an estimate for the reward values(defined as _quality_) of all the actions, and then exploiting that from that time onwards.
 
 A Bernoulli Multi-Armed Banit has multiple arms with each having a different bernoulli distribution over its reward. Basically each arm has a probabilty associated with it which is the probability of getting a reward if that arm is pulled. Our aim is to find the arm which has the highest probabilty, thus giving us the maximum return.
 
@@ -24,7 +28,7 @@ $$q^* = q(a^*)$$
 
 Our goal is to find this $q^*$.
 
-The 'regret function' is defined as the sum of 'regrets' accumulated over all timesteps. This regret is the cost of not chosing the optimum arm and instead exploring. Mathematically it can be written as:
+The 'regret function' is defined as the sum of 'regret' accumulated over all timesteps. This regret is the cost of not choosing the optimal arm and instead of exploring. Mathematically it can be written as:
 
 $$L = E[\sum_{t=0}^T q^* - Q_t(a)]$$
 

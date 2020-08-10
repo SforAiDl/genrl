@@ -1,5 +1,5 @@
-### Training a UCB algorithm on a BernoulliMulti-ArmedBandit
-
+### Training a UCB algorithm on a Bernoulli Multi-Armed Bandit
+For an introduction to Multi Armed Bandits, refer to Tutorial On Bandits
 The UCB algorithm follows a basic principle - 'Optimism in the face of uncertainty'. What this means is that we should always select the action whose reward we are most uncertain of. We quantify the uncertainty of taking an action by calculating an upper bound of the quality(reward) for that action. We then select the greedy action with respect to this upper bound.
 
 Hoeffding's inequality:
