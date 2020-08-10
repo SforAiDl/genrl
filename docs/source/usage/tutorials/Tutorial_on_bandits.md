@@ -12,7 +12,7 @@ You have to use an algorithm which correctly trades off exploration and exploita
 
 So, we want a policy which explores actively at the beginning, building up an estimate for the reward values(defined as _quality_) of all the actions, and then exploiting that from that time onwards.
 
-A Bernoulli Multi-Armed Banit has multiple arms with each having a different bernoulli distribution over its reward. Basically each arm has a probabilty associated with it which is the probability of getting a reward if that arm is pulled. Our aim is to find the arm which has the highest probabilty, thus giving us the maximum return.
+A Bernoulli Multi-Armed Bandit has multiple arms with each having a different bernoulli distribution over its reward. Basically each arm has a probabilty associated with it which is the probability of getting a reward if that arm is pulled. Our aim is to find the arm which has the highest probabilty, thus giving us the maximum return.
 
 Notation:
 
@@ -61,4 +61,7 @@ agent = EpsGreedyMABAgent(bandit, eps=0.05)
 trainer = MABTrainer(agent, bandit)
 trainer.train(timesteps=10000)
 ```
+
 More details can be found in the docs for [BernoulliMAB](https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB), [EpsGreedyMABAgent](https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.epsgreedy), [MABTrainer](https://genrl.readthedocs.io/en/latest/api/common/bandit.html#module-genrl.bandit.trainer).
+
+You can also refer to the book "Reinforcement Learning: An Introduction", Chapter 2 for further information on bandits.
