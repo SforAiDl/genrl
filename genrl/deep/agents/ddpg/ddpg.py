@@ -59,7 +59,7 @@ class DDPG(OffPolicyAgent):
 
         This will create the Actor-Critic net for the agent and initialise the action noise
         """
-        input_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        input_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
         if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
