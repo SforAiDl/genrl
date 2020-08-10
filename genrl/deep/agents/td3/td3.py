@@ -1,17 +1,18 @@
 from copy import deepcopy
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 import gym
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from genrl.deep.agents import OffPolicyAgent
 from genrl.deep.common.noise import ActionNoise
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
-class TD3:
+class TD3(OffPolicyAgent):
     """Twin Delayed DDPG Algorithm
 
     Paper: https://arxiv.org/abs/1509.02971
@@ -25,7 +26,7 @@ class TD3:
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
-        lr_policy (float): Learning rate for the policy/actor
+        lr_policyolicy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer
         buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
@@ -47,7 +48,7 @@ class TD3:
         noise_std: float = 0.1,
         **kwargs,
     ):
-        super(TD3, self).__init(*args, **kwargs)
+        super(TD3, self).__init__(*args, **kwargs)
         self.polyak = polyak
         self.policy_frequency = policy_frequency
         self.noise = noise
@@ -65,12 +66,14 @@ class TD3:
             )
 
         if isinstance(self.network, str):
-            self.ac = get_model("ac", self.network)(
-                input_dim, action_dim, self.layers, "Qsa", False
-            ).to(self.device)
-
-            self.ac.qf2 = get_model("v", self.network)(
-                state_dim, action_dim, hidden=self.layers, val_type="Qsa"
+            # Below, the "12" corresponds to the Single Actor, Multi Critic network architecture
+            self.ac = get_model("ac", self.network + "12")(
+                input_dim,
+                action_dim,
+                hidden=self.layers,
+                val_type="Qsa",
+                discrete=False,
+                num_critics=2,
             )
         else:
             self.ac = self.network
@@ -80,143 +83,145 @@ class TD3:
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        self.ac.qf1 = self.ac.critic
+        self.ac_target = deepcopy(self.ac)
 
-        self.ac.qf1.to(self.device)
-        self.ac.qf2.to(self.device)
-
-        self.ac_target = deepcopy(self.ac).to(self.device)
-
-        # freeze target network params
-        for param in self.ac_target.parameters():
-            param.requires_grad = False
-
-        self.replay_buffer = ReplayBuffer(self.replay_size, self.env)
-        self.q_params = list(self.ac.qf1.parameters()) + list(self.ac.qf2.parameters())
-        self.optimizer_q = torch.optim.Adam(self.q_params, lr=self.lr_q)
-
-        self.optimizer_policy = torch.optim.Adam(
-            self.ac.actor.parameters(), lr=self.lr_p
+        self.replay_buffer = self.buffer_class(self.replay_size)
+        self.critic_params = list(self.ac.critic[0].parameters()) + list(
+            self.ac.critic[1].parameters()
         )
-
-    def update_params_before_select_action(self, timestep: int) -> None:
-        """
-        Update any parameters before selecting action like epsilon for decaying epsilon greedy
-
-        :param timestep: Timestep in the training process
-        :type timestep: int
-        """
-        pass
+        self.optimizer_value = torch.optim.Adam(self.critic_params, lr=self.lr_value)
+        self.optimizer_policy = torch.optim.Adam(
+            self.ac.actor.parameters(), lr=self.lr_policy
+        )
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
-        with torch.no_grad():
-            action = self.ac_target.get_action(
-                torch.as_tensor(state, dtype=torch.float32, device=self.device),
-                deterministic=deterministic,
-            )[0].numpy()
+        """Select action given state
+
+        Deterministic Action Selection with Noise
+
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+            deterministic (bool): Should the policy be deterministic or stochastic
+
+        Returns:
+            action (:obj:`np.ndarray`): Action taken by the agent
+        """
+        state = torch.as_tensor(state).float()
+        action, _ = self.ac.get_action(state, deterministic=deterministic)
+        action = action.detach().cpu().numpy()
 
         # add noise to output from policy network
         if self.noise is not None:
             action += self.noise()
 
         return np.clip(
-            action, -self.env.action_space.high[0], self.env.action_space.high[0]
+            action, self.env.action_space.low[0], self.env.action_space.high[0]
         )
 
-    def get_q_loss(
-        self,
-        state: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
-        next_state: np.ndarray,
-        done: np.ndarray,
+    def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        """Get Q values corresponding to specific states and actions
+
+        Args:
+            states (:obj:`torch.Tensor`): States for which Q-values need to be found
+            actions (:obj:`torch.Tensor`): Actions taken at respective states
+
+        Returns:
+            q_values (:obj:`torch.Tensor`): Q values for the given states and actions
+        """
+        q_values = self.ac.get_value(torch.cat([states, actions], dim=-1), mode="both")
+        return q_values
+
+    def get_target_q_values(
+        self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        q1 = self.ac.qf1.get_value(torch.cat([state, action], dim=-1))
-        q2 = self.ac.qf2.get_value(torch.cat([state, action], dim=-1))
+        """Get target Q values for the TD3
 
-        with torch.no_grad():
-            target_q1 = self.ac_target.qf1.get_value(
-                torch.cat(
-                    [
-                        next_state,
-                        self.ac_target.get_action(next_state, deterministic=True)[0],
-                    ],
-                    dim=-1,
-                )
-            )
-            target_q2 = self.ac_target.qf2.get_value(
-                torch.cat(
-                    [
-                        next_state,
-                        self.ac_target.get_action(next_state, deterministic=True)[0],
-                    ],
-                    dim=-1,
-                )
-            )
-            target_q = torch.min(target_q1, target_q2).unsqueeze(1)
+        Args:
+            next_states (:obj:`torch.Tensor`): Next states for which target Q-values
+                need to be found
+            rewards (:obj:`list`): Rewards at each timestep for each environment
+            dones (:obj:`list`): Game over status for each environment
 
-            target = reward.squeeze(1) + self.gamma * (1 - done) * target_q.squeeze(1)
-
-        l1 = nn.MSELoss()(q1, target)
-        l2 = nn.MSELoss()(q2, target)
-
-        return l1 + l2
-
-    def get_p_loss(self, state: np.array) -> torch.Tensor:
-        q_pi = self.ac.get_value(
-            torch.cat([state, self.ac.get_action(state, deterministic=True)[0]], dim=-1)
+        Returns:
+            target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
+        """
+        next_target_actions = self.ac_target.get_action(next_states, True)[0]
+        next_q_target_values = self.ac_target.get_value(
+            torch.cat([next_states, next_target_actions], dim=-1), mode="min"
         )
-        return -torch.mean(q_pi)
+        target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
+        return target_q_values
+
+    def get_q_loss(self, batch: NamedTuple) -> torch.Tensor:
+        """TD3 Function to calculate the loss of the critic
+
+        Args:
+            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
+
+        Returns:
+            loss (:obj:`torch.Tensor`): Calculated loss of the Q-function
+        """
+        q_values = self.get_q_values(batch.states, batch.actions)
+        target_q_values = self.get_target_q_values(
+            batch.next_states, batch.rewards, batch.dones
+        )
+        loss = F.mse_loss(q_values[0], target_q_values) + F.mse_loss(
+            q_values[1], target_q_values
+        )
+        return loss
+
+    def update_target_model(self) -> None:
+        """Function to update the target Q model
+
+        Updates the target model with the training model's weights when called
+        """
+        for param, param_target in zip(
+            self.ac.parameters(), self.ac_target.parameters()
+        ):
+            param_target.data.mul_(self.polyak)
+            param_target.data.add_((1 - self.polyak) * param.data)
 
     def update_params(self, update_interval: int) -> None:
+        """Update parameters of the model
+
+        Args:
+            update_interval (int): Interval between successive updates of the target model
+        """
         for timestep in range(update_interval):
-            batch = self.replay_buffer.sample(self.batch_size)
-            state, action, reward, next_state, done = (x.to(self.device) for x in batch)
-            self.optimizer_q.zero_grad()
-            # print(state.shape, action.shape, reward.shape, next_state.shape, done.shape)
-            loss_q = self.get_q_loss(state, action, reward, next_state, done)
-            loss_q.backward()
-            self.optimizer_q.step()
+            batch = self.sample_from_buffer()
+
+            value_loss = self.get_q_loss(batch)
+
+            self.optimizer_value.zero_grad()
+            value_loss.backward()
+            self.optimizer_value.step()
 
             # Delayed Update
             if timestep % self.policy_frequency == 0:
-                # freeze critic params for policy update
-                for param in self.q_params:
-                    param.requires_grad = False
+                policy_loss = self.get_p_loss(batch.states)
 
                 self.optimizer_policy.zero_grad()
-                loss_p = self.get_p_loss(state)
-                loss_p.backward()
+                policy_loss.backward()
                 self.optimizer_policy.step()
 
-                # unfreeze critic params
-                for param in self.ac.critic.parameters():
-                    param.requires_grad = True
+                self.logs["policy_loss"].append(policy_loss.item())
+                self.logs["value_loss"].append(value_loss.item())
 
-                # update target network
-                with torch.no_grad():
-                    for param, param_target in zip(
-                        self.ac.parameters(), self.ac_target.parameters()
-                    ):
-                        param_target.data.mul_(self.polyak)
-                        param_target.data.add_((1 - self.polyak) * param.data)
-
-                self.logs["policy_loss"].append(loss_p.item())
-                self.logs["value_loss"].append(loss_q.item())
+                self.update_target_model()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network": self.network,
             "gamma": self.gamma,
-            "lr_p": self.lr_p,
-            "lr_q": self.lr_q,
+            "lr_policy": self.lr_policy,
+            "lr_value": self.lr_value,
             "polyak": self.polyak,
             "policy_frequency": self.policy_frequency,
             "noise_std": self.noise_std,
-            "q1_weights": self.ac.qf1.state_dict(),
-            "q2_weights": self.ac.qf2.state_dict(),
+            "q1_weights": self.ac.critic[0].state_dict(),
+            "q2_weights": self.ac.critic[1].state_dict(),
             "actor_weights": self.ac.actor.state_dict(),
         }
 
@@ -227,8 +232,8 @@ class TD3:
         Load weights for the agent from pretrained model
         """
         self.ac.actor.load_state_dict(weights["actor_weights"])
-        self.ac.qf1.load_state_dict(weights["q1_weights"])
-        self.ac.qf2.load_state_dict(weights["q2_weights"])
+        self.ac.critic[0].load_state_dict(weights["q1_weights"])
+        self.ac.critic[1].load_state_dict(weights["q2_weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
         """

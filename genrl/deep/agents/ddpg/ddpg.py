@@ -135,7 +135,7 @@ class DDPG(OffPolicyAgent):
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        """Get target Q values for the DQN
+        """Get target Q values for the DDPG
 
         Args:
             next_states (:obj:`torch.Tensor`): Next states for which target Q-values
@@ -144,7 +144,7 @@ class DDPG(OffPolicyAgent):
             dones (:obj:`list`): Game over status for each environment
 
         Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the DQN
+            target_q_values (:obj:`torch.Tensor`): Target Q values for the DDPG
         """
         next_target_actions = self.ac_target.get_action(next_states, True)[0]
         next_q_target_values = self.ac_target.get_value(
