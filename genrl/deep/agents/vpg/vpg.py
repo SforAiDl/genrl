@@ -54,7 +54,7 @@ class VPG(OnPolicyAgent):
         batch_size: int = 256,
         gamma: float = 0.99,
         lr_policy: float = 0.01,
-        value_layers: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
         rollout_size: int = 2048,
         **kwargs
     ):
@@ -63,7 +63,7 @@ class VPG(OnPolicyAgent):
             network,
             env,
             batch_size=batch_size,
-            value_layers=value_layers,
+            policy_layers=policy_layers,
             gamma=gamma,
             lr_policy=lr_policy,
             lr_value=None,
@@ -88,7 +88,7 @@ class VPG(OnPolicyAgent):
             self.actor = get_model("p", self.network)(
                 input_dim,
                 action_dim,
-                self.value_layers,
+                self.policy_layers,
                 "V",
                 discrete,
                 action_lim=action_lim,
