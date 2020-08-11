@@ -10,7 +10,7 @@ import torch.optim as opt
 from genrl.deep.common.actor_critic import BaseActorCritic
 from genrl.deep.common.buffers import ReplayBuffer
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
-from genrl.environments import VecEnv
+from genrl.environments.vec_env import VecEnv
 
 
 class DDPG:
