@@ -14,41 +14,36 @@ from genrl.environments import VectorEnv
 
 
 class custom_policy(MlpPolicy):
-    def __init__(self, state_dim, action_dim, **kwargs):
-        super(custom_policy, self).__init__(
-            state_dim, action_dim, kwargs.get("policy_layers")
-        )
+    def __init__(self, state_dim, action_dim, policy_layers, **kwargs):
+        super(custom_policy, self).__init__(state_dim, action_dim, policy_layers)
         self.state_dim = state_dim
         self.action_dim = action_dim
 
 
 class custom_actorcritic(MlpActorCritic):
-    def __init__(self, state_dim, action_dim, **kwargs):
+    def __init__(self, state_dim, action_dim, policy_layers, value_layers, **kwargs):
         super(custom_actorcritic, self).__init__(
-            state_dim,
-            action_dim,
-            kwargs.get("policy_layers"),
-            kwargs.get("value_layers"),
+            state_dim, action_dim, policy_layers, value_layers,
         )
         self.state_dim = state_dim
         self.action_dim = action_dim
 
 
 class custom_multiactorcritic(MlpActorCritic):
-    def __init__(self, state_dim, action_dim, **kwargs):
+    def __init__(
+        self, state_dim, action_dim, policy_layers, q1_layers, q2_layers, **kwargs
+    ):
         super(custom_multiactorcritic, self).__init__(
             state_dim,
             action_dim,
-            kwargs.get("policy_layers"),
-            kwargs.get("q1_layers"),
+            policy_layers,
+            q1_layers,
             val_type="Qsa",
             discrete=False,
         )
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.qf2 = MlpValue(
-            state_dim, action_dim, val_type="Qsa", hidden=kwargs.get("q2_layers")
-        )
+        self.qf2 = MlpValue(state_dim, action_dim, val_type="Qsa", hidden=q2_layers)
         self.qf1 = self.critic
 
 
