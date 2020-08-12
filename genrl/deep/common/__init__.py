@@ -20,13 +20,3 @@ from genrl.deep.common.policies import (  # noqa
 )
 from genrl.deep.common.rollout_storage import RolloutBuffer  # noqa
 from genrl.deep.common.trainer import OffPolicyTrainer, OnPolicyTrainer, Trainer
-from genrl.deep.common.utils import cnn  # noqa
-from genrl.deep.common.utils import get_env_properties  # noqa
-from genrl.deep.common.utils import get_model  # noqa
-from genrl.deep.common.utils import mlp  # noqa
-from genrl.deep.common.utils import safe_mean  # noqa
-from genrl.deep.common.utils import set_seeds  # noqa
-from genrl.deep.common.values import CnnValue  # noqa
-from genrl.deep.common.values import MlpValue  # noqa
-from genrl.deep.common.values import _get_val_model  # noqa
-from genrl.deep.common.values import get_value_from_name  # noqa
