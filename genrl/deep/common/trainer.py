@@ -9,7 +9,7 @@ import torch
 from genrl.deep.common.buffers import PrioritizedBuffer, ReplayBuffer
 from genrl.deep.common.logger import Logger
 from genrl.deep.common.utils import safe_mean, set_seeds
-from genrl.environments import VecEnv
+from genrl.environments.vec_env import VecEnv
 
 
 class Trainer(ABC):
