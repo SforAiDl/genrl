@@ -14,13 +14,15 @@ We initialise the preferences for all the actions to be 0, meaning $\pi_t(a) = \
 
 After computing $\pi_t(a)$ for all actions at each timestep, the action is sampled using this probability. Then that action is performed and based on the reward we get, we update our preferences.
 
-The update rule:
+The update rule bacially performs stochastic gradient ascent:
 
 $H_{t+1}(a_t) = H_t(a_t) + \alpha (R_t - \bar{R_t})(1-\pi_t(a_t))$, for $a_t$: action taken at time 't'
 
 $H_{t+1}(a) = H_t(a) - \alpha (R_t - \bar{R_t})(\pi_t(a))$ for rest of the actions
 
 where, $\alpha$ is the step size, $R_t$ is the reward obtained at time 't' and $\bar{R_t}$ is the mean reward obtained upto time t. If current reward is larger than the mean reward, we increase our preference for that action taken at time 't'. If it is lower than the mean reward, we decrease our preference for that action. The preferences for the rest of the actions are updated in the opposite direction.
+
+For a more detailed mathematical analysis and derivation of the update rule, refer to chapter 2 of Sutton & Barto.
 
 Code to use the Gradient method on a Bernoulli Bandit Multi-Armed Bandit:
 
