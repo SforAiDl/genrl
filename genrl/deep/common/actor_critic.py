@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import List, Tuple
 
 import torch
 import torch.nn as nn
@@ -73,6 +73,22 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
             for _ in range(num_critics)
         ]
 
+    def forward(self, state: torch.Tensor, mode="first") -> List[torch.Tensor]:
+        """
+        Defines the computation at each step of the way
+        """
+        state = torch.as_tensor(state).float()
+
+        if mode == "both":
+            phi_states = [self.critic[i](state) for i in range(self.num_critics)]
+        elif mode == "min":
+            phi_states = [self.critic[i](state) for i in range(self.num_critics)]
+            phi_states = torch.min(*phi_states)
+        elif mode == "first":
+            phi_states = self.critic[0](state)
+
+        return phi_states
+
     def get_value(self, state: torch.Tensor, mode="first") -> torch.Tensor:
         """Get Values from the Critic
 
@@ -92,7 +108,7 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
             values = [self.critic[i].get_value(state) for i in range(self.num_critics)]
         elif mode == "min":
             values = [self.critic[i].get_value(state) for i in range(self.num_critics)]
-            values = torch.min(values[0], values[1])
+            values = torch.min(*values)
         elif mode == "first":
             values = self.critic[0].get_value(state)
         else:

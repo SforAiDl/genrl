@@ -236,6 +236,7 @@ class OffPolicyAgent(BaseAgent):
         """
         # Samples from the buffer
         if beta is not None:
+            print(beta)
             batch = self.replay_buffer.sample(self.batch_size, beta=beta)
         else:
             batch = self.replay_buffer.sample(self.batch_size)
