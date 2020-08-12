@@ -24,7 +24,7 @@ where, $\alpha$ is the step size, $R_t$ is the reward obtained at time 't' and $
 
 For a more detailed mathematical analysis and derivation of the update rule, refer to chapter 2 of Sutton & Barto.
 
-Code to use the Gradient method on a Bernoulli Bandit Multi-Armed Bandit:
+Code to use the Gradient method on a Bernoulli Multi-Armed Bandit:
 
 ```python
 import gym

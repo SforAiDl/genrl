@@ -43,7 +43,7 @@ Epsilon Greedy is the most basic exploratory policy which follows a simple princ
 
 For the bandit, you can set the number of bandits, number of arms, and also reward probabilities of each of these arms seperately.
 
-Code to train an Epsilon Greedy agent on a Bernoulli Bandit Multi-Armed Bandit:
+Code to train an Epsilon Greedy agent on a Bernoulli Multi-Armed Bandit:
 
 ```python
 import gym

@@ -24,7 +24,7 @@ Action taken: a = argmax$(Q_t(a) + U_t(a))$
 As we can see, the less an action has been tried, more the uncertainty is (due to $N_t(a)$ being in the denominator), which leads to that action having a higher chance of being explored. Also, theoretically, as ${N_t(a)}$ goes to infinity, the uncertainty decreases to 0 giving us the true value of the quality of that action: q(a). This allows us to 'exploit' the greedy action $a^*$ from then.
 
 
-Code to train a UCB agent on a Bernoulli Bandit Multi-Armed Bandit:
+Code to train a UCB agent on a Bernoulli Multi-Armed Bandit:
 
 ```python
 import gym

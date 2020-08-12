@@ -14,7 +14,7 @@ At each timestep, we sample the quality: $Q_t(a)$ for each arm from the posterio
 
 As we experience more successes for a particular arm, the value of $\alpha$ for that arm increases and similiarly, the more failures we experience, the value of $\beta$ increases. Higher the value of one of the parameters as compared to the other, the more skewed is the distribution in one of the directions. For eg. if $\alpha$ = 100 and $\beta$ = 50, we have seen considerably more successes than failures for this arm and so our estimate for its quality should be >0.5. This will be reflected in the posterior of this arm, i.e. the mean of the distribution, characterised by $\frac{\alpha}{\alpha + \beta}$ will be 0.66, which is >0.5 as we expected.
 
-Code to use Thompson Sampling on a Bernoulli Bandit Multi-Armed Bandit:
+Code to use Thompson Sampling on a Bernoulli Multi-Armed Bandit:
 
 ```python
 import gym
