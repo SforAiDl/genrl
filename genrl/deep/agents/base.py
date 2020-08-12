@@ -44,7 +44,7 @@ class BaseAgent(ABC):
         batch_size: int = 64,
         gamma: float = 0.99,
         layers: Tuple = (64, 64),
-        lr_policy: float = 0.001,
+        lr_policy: float = 0.0001,
         lr_value: float = 0.001,
         **kwargs
     ):

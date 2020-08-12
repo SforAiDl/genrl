@@ -40,9 +40,9 @@ class DDPG(OffPolicyAgent):
     def __init__(
         self,
         *args,
-        polyak: float = 0.995,
+        polyak: float = 0.999,
         noise: ActionNoise = None,
-        noise_std: float = 0.1,
+        noise_std: float = 0.2,
         **kwargs,
     ):
         super(DDPG, self).__init__(*args, **kwargs)
