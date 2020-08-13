@@ -87,6 +87,8 @@ class PPO1(OnPolicyAgent):
         self.value_coeff = kwargs.get("value_coeff", 0.5)
         self.activation = kwargs.get("activation", "relu")
 
+        self.buffer_class = kwargs.get("buffer_class", RolloutBuffer)
+
         self.empty_logs()
         if self.create_model:
             self._create_model()
@@ -113,7 +115,7 @@ class PPO1(OnPolicyAgent):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda=0.95)
+        self.rollout = self.buffer_class(self.rollout_size, self.env, gae_lambda=0.95)
 
     def select_action(self, state: np.ndarray, deterministic=False) -> np.ndarray:
         state = torch.as_tensor(state).float().to(self.device)

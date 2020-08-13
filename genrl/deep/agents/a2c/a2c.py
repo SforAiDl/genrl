@@ -92,6 +92,8 @@ class A2C(OnPolicyAgent):
         self.value_coeff = kwargs.get("value_coeff", 0.5)
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
 
+        self.buffer_class = kwargs.get("buffer_class", RolloutBuffer)
+
         self.empty_logs()
         if self.create_model:
             self._create_model()
@@ -120,7 +122,7 @@ class A2C(OnPolicyAgent):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(self.rollout_size, self.env)
+        self.rollout = self.buffer_class(self.rollout_size, self.env)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
