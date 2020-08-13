@@ -8,7 +8,6 @@ import torch
 import torch.nn as nn
 
 
-
 def save_params(algo: Any, timestep: int) -> None:
 
     algo_name = algo.__class__.__name__
@@ -37,5 +36,3 @@ def save_params(algo: Any, timestep: int) -> None:
     torch.save(
         algo.get_hyperparams(), "{}/{}-log-{}.pt".format(path, run_num, timestep)
     )
-
-

@@ -5,10 +5,11 @@ adversary to goal. Adversary is rewarded for its distance to the goal.
 """
 
 
-import numpy as np
-from multiagent.core import World, Agent, Landmark
-from multiagent.scenario import BaseScenario
 import random
+
+import numpy as np
+from multiagent.core import Agent, Landmark, World
+from multiagent.scenario import BaseScenario
 
 
 class CryptoAgent(Agent):
@@ -16,8 +17,8 @@ class CryptoAgent(Agent):
         super(CryptoAgent, self).__init__()
         self.key = None
 
-class Scenario(BaseScenario):
 
+class Scenario(BaseScenario):
     def make_world(self):
         world = World()
         # set any world properties first
@@ -28,7 +29,7 @@ class Scenario(BaseScenario):
         # add agents
         world.agents = [CryptoAgent() for i in range(num_agents)]
         for i, agent in enumerate(world.agents):
-            agent.name = 'agent %d' % i
+            agent.name = "agent %d" % i
             agent.collide = False
             agent.adversary = True if i < num_adversaries else False
             agent.speaker = True if i == 2 else False
@@ -36,13 +37,12 @@ class Scenario(BaseScenario):
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
-            landmark.name = 'landmark %d' % i
+            landmark.name = "landmark %d" % i
             landmark.collide = False
             landmark.movable = False
         # make initial conditions
         self.reset_world(world)
         return world
-
 
     def reset_world(self, world):
         # random properties for agents
@@ -74,14 +74,15 @@ class Scenario(BaseScenario):
             landmark.state.p_pos = np.random.uniform(-1, +1, world.dim_p)
             landmark.state.p_vel = np.zeros(world.dim_p)
 
-
     def benchmark_data(self, agent, world):
         # returns data for benchmarking purposes
         return (agent.state.c, agent.goal_a.color)
 
     # return all agents that are not adversaries
     def good_listeners(self, world):
-        return [agent for agent in world.agents if not agent.adversary and not agent.speaker]
+        return [
+            agent for agent in world.agents if not agent.adversary and not agent.speaker
+        ]
 
     # return all agents that are not adversaries
     def good_agents(self, world):
@@ -92,7 +93,11 @@ class Scenario(BaseScenario):
         return [agent for agent in world.agents if agent.adversary]
 
     def reward(self, agent, world):
-        return self.adversary_reward(agent, world) if agent.adversary else self.agent_reward(agent, world)
+        return (
+            self.adversary_reward(agent, world)
+            if agent.adversary
+            else self.agent_reward(agent, world)
+        )
 
     def agent_reward(self, agent, world):
         # Agents rewarded if Bob can reconstruct message, but adversary (Eve) cannot
@@ -120,7 +125,6 @@ class Scenario(BaseScenario):
             rew -= np.sum(np.square(agent.state.c - agent.goal_a.color))
         return rew
 
-
     def observation(self, agent, world):
         # goal color
         goal_color = np.zeros(world.dim_color)
@@ -134,7 +138,8 @@ class Scenario(BaseScenario):
         # communication of all other agents
         comm = []
         for other in world.agents:
-            if other is agent or (other.state.c is None) or not other.speaker: continue
+            if other is agent or (other.state.c is None) or not other.speaker:
+                continue
             comm.append(other.state.c)
 
         confer = np.array([0])
@@ -150,20 +155,24 @@ class Scenario(BaseScenario):
         # speaker
         if agent.speaker:
             if prnt:
-                print('speaker')
+                print("speaker")
                 print(agent.state.c)
-                print(np.concatenate([goal_color] + [key] + [confer] + [np.random.randn(1)]))
+                print(
+                    np.concatenate(
+                        [goal_color] + [key] + [confer] + [np.random.randn(1)]
+                    )
+                )
             return np.concatenate([goal_color] + [key])
         # listener
         if not agent.speaker and not agent.adversary:
             if prnt:
-                print('listener')
+                print("listener")
                 print(agent.state.c)
                 print(np.concatenate([key] + comm + [confer]))
             return np.concatenate([key] + comm)
         if not agent.speaker and agent.adversary:
             if prnt:
-                print('adversary')
+                print("adversary")
                 print(agent.state.c)
                 print(np.concatenate(comm + [confer]))
             return np.concatenate(comm)

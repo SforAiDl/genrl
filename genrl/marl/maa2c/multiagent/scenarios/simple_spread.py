@@ -1,5 +1,5 @@
 import numpy as np
-from multiagent.core import World, Agent, Landmark
+from multiagent.core import Agent, Landmark, World
 from multiagent.scenario import BaseScenario
 
 
@@ -10,22 +10,22 @@ class Scenario(BaseScenario):
         # world.dim_c = 2
         num_agents = 1
         num_landmarks = 1
-        print("NUMBER OF AGENTS:",num_agents)
-        print("NUMBER OF LANDMARKS:",num_landmarks)
+        print("NUMBER OF AGENTS:", num_agents)
+        print("NUMBER OF LANDMARKS:", num_landmarks)
         self.num_landmarks = num_landmarks
         world.collaborative = True
 
         # add agents
         world.agents = [Agent() for i in range(num_agents)]
         for i, agent in enumerate(world.agents):
-            agent.name = 'agent %d' % i
+            agent.name = "agent %d" % i
             agent.collide = True
             agent.silent = True
             agent.size = 0.15
         # add landmarks
         world.landmarks = [Landmark() for i in range(num_landmarks)]
         for i, landmark in enumerate(world.landmarks):
-            landmark.name = 'landmark %d' % i
+            landmark.name = "landmark %d" % i
             landmark.collide = False
             landmark.movable = False
         # make initial conditions
@@ -55,7 +55,10 @@ class Scenario(BaseScenario):
         occupied_landmarks = 0
         min_dists = 0
         for l in world.landmarks:
-            dists = [np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos))) for a in world.agents]
+            dists = [
+                np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos)))
+                for a in world.agents
+            ]
             min_dists += min(dists)
             rew -= min(dists)
             if min(dists) < 0.1:
@@ -66,7 +69,6 @@ class Scenario(BaseScenario):
                     rew -= 1
                     collisions += 1
         return (rew, collisions, min_dists, occupied_landmarks)
-
 
     def is_collision(self, agent1, agent2):
         if agent1.name == agent2.name:
@@ -80,7 +82,10 @@ class Scenario(BaseScenario):
         # Agents are rewarded based on minimum agent distance to each landmark, penalized for collisions
         rew = 0
         for l in world.landmarks:
-            dists = [np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos))) for a in world.agents]
+            dists = [
+                np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos)))
+                for a in world.agents
+            ]
             rew -= min(dists)
         if agent.collide:
             for a in world.agents:
@@ -101,21 +106,25 @@ class Scenario(BaseScenario):
         # comm = []
         other_pos = []
         for other in world.agents:
-            if other is agent: continue
+            if other is agent:
+                continue
             # comm.append(other.state.c)
             other_pos.append(other.state.p_pos - agent.state.p_pos)
         # return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos + comm)
-        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos)
+        return np.concatenate(
+            [agent.state.p_vel] + [agent.state.p_pos] + entity_pos + other_pos
+        )
 
-
-    def isFinished(self,agent,world):
+    def isFinished(self, agent, world):
         occupied_landmarks = 0
         for l in world.landmarks:
-            dists = [np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos))) for a in world.agents]
+            dists = [
+                np.sqrt(np.sum(np.square(a.state.p_pos - l.state.p_pos)))
+                for a in world.agents
+            ]
             # print(dists)
-            if min(dists)<0.1:
+            if min(dists) < 0.1:
                 occupied_landmarks += 1
 
-        if occupied_landmarks==self.num_landmarks:
+        if occupied_landmarks == self.num_landmarks:
             return True
-        

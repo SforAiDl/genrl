@@ -5,10 +5,8 @@ import gym
 import numpy as np
 import torch
 
-# from ...environments import VecEnv
-from buffers import PrioritizedBuffer, ReplayBuffer
-from logger import TensorboardLogger
-# from utils import save_params, set_seeds
+from genrl.deep.common.buffers import PrioritizedBuffer, ReplayBuffer
+from genrl.deep.common.logger import TensorboardLogger
 
 
 class Trainer(ABC):
@@ -427,8 +425,8 @@ class OnPolicyTrainer(Trainer):
         """
         for epoch in range(self.epochs):
             # self.agent.episode_reward = np.zeros(self.env.n_envs)
-            print("*"*100)
-            print("EPISODE:",epoch)
+            print("*" * 100)
+            print("EPISODE:", epoch)
             self.agent.episode_reward = np.zeros(1)
 
             state = self.env.reset()
@@ -453,7 +451,7 @@ class OnPolicyTrainer(Trainer):
             # if self.save_interval != 0 and epoch % self.save_interval == 0:
             #     self.checkpoint = self.agent.get_hyperparams()
             #     save_params(self.agent, epoch * self.agent.batch_size)
-                # save_params(self.agent, epoch * self.agent.timesteps_per_actorbatch)
+            # save_params(self.agent, epoch * self.agent.timesteps_per_actorbatch)
 
         self.env.close()
         self.logger.close()
