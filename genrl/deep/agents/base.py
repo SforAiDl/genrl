@@ -252,20 +252,6 @@ class OffPolicyAgent(BaseAgent):
             )
         return batch
 
-    def get_p_loss(self, states: torch.Tensor) -> torch.Tensor:
-        """Function to get the Policy loss
-
-        Args:
-            states (:obj:`torch.Tensor`): States for which Q-values need to be found
-
-        Returns:
-            loss (:obj:`torch.Tensor`): Calculated policy loss
-        """
-        next_best_actions = self.ac.get_action(states, True)[0]
-        q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
-        policy_loss = -torch.mean(q_values)
-        return policy_loss
-
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
         """Normal Function to calculate the loss of the Q-function or critic
 
@@ -281,3 +267,87 @@ class OffPolicyAgent(BaseAgent):
         )
         loss = F.mse_loss(q_values, target_q_values)
         return loss
+
+
+class OffPolicyAgentAC(OffPolicyAgent):
+    """Off Policy Agent Base Class
+
+    Attributes:
+        network (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
+        batch_size (int): Mini batch size for loading experiences
+        gamma (float): The discount factor for rewards
+        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+            of the Q-value function
+        lr_policy (float): Learning rate for the policy/actor
+        lr_value (float): Learning rate for the Q-value function
+        replay_size (int): Capacity of the Replay Buffer
+        buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
+        seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
+        device (str): Hardware being used for training. Options:
+            ["cuda" -> GPU, "cpu" -> CPU]
+    """
+
+    def __init__(self, *args, polyak=0.995, **kwargs):
+        super(OffPolicyAgentAC, self).__init__(*args, **kwargs)
+        self.polyak = polyak
+
+    def select_action(
+        self, state: np.ndarray, deterministic: bool = True
+    ) -> np.ndarray:
+        """Select action given state
+
+        Deterministic Action Selection with Noise
+
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+            deterministic (bool): Should the policy be deterministic or stochastic
+
+        Returns:
+            action (:obj:`np.ndarray`): Action taken by the agent
+        """
+        state = torch.as_tensor(state).float()
+        action, _ = self.ac.get_action(state, deterministic)
+        action = action.detach().cpu().numpy()
+
+        # add noise to output from policy network
+        if self.noise is not None:
+            action += self.noise()
+
+        return np.clip(
+            action, self.env.action_space.low[0], self.env.action_space.high[0]
+        )
+
+    def update_target_model(self) -> None:
+        """Function to update the target Q model
+
+        Updates the target model with the training model's weights when called
+        """
+        for param, param_target in zip(
+            self.ac.parameters(), self.ac_target.parameters()
+        ):
+            param_target.data.mul_(self.polyak)
+            param_target.data.add_((1 - self.polyak) * param.data)
+
+    def get_p_loss(self, states: torch.Tensor) -> torch.Tensor:
+        """Function to get the Policy loss
+
+        Args:
+            states (:obj:`torch.Tensor`): States for which Q-values need to be found
+
+        Returns:
+            loss (:obj:`torch.Tensor`): Calculated policy loss
+        """
+        next_best_actions = self.ac.get_action(states, True)[0]
+        q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
+        policy_loss = -torch.mean(q_values)
+        return policy_loss
+
+    def load_weights(self, weights) -> None:
+        """
+        Load weights for the agent from pretrained model
+        """
+        self.ac.load_state_dict(weights["weights"])
