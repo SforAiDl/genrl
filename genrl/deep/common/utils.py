@@ -1,13 +1,13 @@
-import os
 import random
-from typing import Any, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import gym
 import numpy as np
 import torch
 import torch.nn as nn
 
-from ...environments import VecEnv
+from genrl.deep.common.noise import NoisyLinear
+from genrl.environments import VecEnv
 
 
 def get_model(type_: str, name_: str) -> Union:
@@ -18,7 +18,6 @@ def get_model(type_: str, name_: str) -> Union:
     :param name_: Name of the specific structure of model. (
 Eg. "mlp" or "cnn")
     :type type_: string
-    :type name_: string
     :returns: Required class. Eg. MlpActorCritic
     """
     if type_ == "ac":
@@ -36,7 +35,9 @@ Eg. "mlp" or "cnn")
     raise ValueError
 
 
-def mlp(sizes: Tuple, sac: bool = False):
+def mlp(
+    sizes: Tuple, activation: str = "relu", sac: bool = False,
+):
     """
     Generates an MLP model given sizes of each layer
 
@@ -49,9 +50,13 @@ activation layers)
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
+
+    activation = nn.Tanh() if activation == "tanh" else nn.ReLU()
+
     for layer in range(limit - 1):
-        act = nn.ReLU if layer < limit - 2 else nn.Identity
-        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act()]
+        act = activation if layer < limit - 2 else nn.Identity()
+        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act]
+
     return nn.Sequential(*layers)
 
 
@@ -59,7 +64,7 @@ def cnn(
     channels: Tuple = (4, 16, 32),
     kernel_sizes: Tuple = (8, 4),
     strides: Tuple = (4, 2),
-    in_size: int = 84,
+    **kwargs,
 ) -> (Tuple):
     """
     (Generates a CNN model given input dimensions, channels, kernel_sizes and
@@ -76,14 +81,17 @@ strides)
     :returns: (Convolutional Neural Network with convolutional layers and
 activation layers)
     """
+
     cnn_layers = []
-    output_size = in_size
+    output_size = kwargs["in_size"] if "in_size" in kwargs else 84
+
+    act_fn = kwargs["activation"] if "activation" in kwargs else "relu"
+    activation = nn.Tanh() if act_fn == "tanh" else nn.ReLU()
 
     for i in range(len(channels) - 1):
         in_channels, out_channels = channels[i], channels[i + 1]
         kernel_size, stride = kernel_sizes[i], strides[i]
         conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride)
-        activation = nn.ReLU()
         cnn_layers += [conv, activation]
         output_size = (output_size - kernel_size) / stride + 1
 
@@ -92,70 +100,51 @@ activation layers)
     return cnn_layers, output_size
 
 
-def save_params(algo: Any, timestep: int) -> None:
+def noisy_mlp(fc_layers: List[int], noisy_layers: List[int], activation="relu"):
+    """Noisy MLP generating helper function
+
+    Args:
+        fc_layers (:obj:`list` of :obj:`int`): List of fully connected layers
+        noisy_layers (:obj:`list` of :obj:`int`): :ist of noisy layers
+        activation (str): Activation function to be used. ["tanh", "relu"]
+
+    Returns:
+        Noisy MLP model
     """
-    Function to save all parameters of a given agent
+    model = []
+    act = nn.Tanh if activation == "tanh" else nn.ReLU()
 
-    :param algo: The agent object
-    :param timestep: The timestep during training at which model is being saved
-    :type algo: Object
-    :type timestep: int
-    """
-    algo_name = algo.__class__.__name__
-    if isinstance(algo.env, VecEnv):
-        env_name = algo.env.envs[0].unwrapped.spec.id
-    else:
-        env_name = algo.env.unwrapped.spec.id
-    directory = algo.save_model
-    path = "{}/{}_{}".format(directory, algo_name, env_name)
+    for layer in range(len(fc_layers) - 1):
+        model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), act]
 
-    if algo.run_num is not None:
-        run_num = algo.run_num
-    else:
-        if not os.path.exists(path):
-            os.makedirs(path)
-            run_num = 0
-        elif list(os.scandir(path)) == []:
-            run_num = 0
-        else:
-            last_path = sorted(os.scandir(path), key=lambda d: d.stat().st_mtime)[
-                -1
-            ].path
-            run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
-        algo.run_num = run_num
+    model += [nn.Linear(fc_layers[-1], noisy_layers[0]), act]
 
-    torch.save(
-        algo.get_hyperparams(), "{}/{}-log-{}.pt".format(path, run_num, timestep)
-    )
+    for layer in range(len(noisy_layers) - 1):
+        model += [NoisyLinear(noisy_layers[layer], noisy_layers[layer + 1])]
+        if layer < len(noisy_layers) - 2:
+            model += [act]
+
+    return nn.Sequential(*model)
 
 
-def load_params(algo: Any) -> None:
-    """
-    Function load parameters for an algorithm from a given checkpoint file
-
-    :param algo: The agent object
-    :type algo: Object
-    """
-    path = algo.load_model
-
-    try:
-        algo.checkpoint = torch.load(path)
-    except FileNotFoundError:
-        raise Exception("Invalid file name")
-
-
-def get_env_properties(env: Union[gym.Env, VecEnv]) -> (Tuple[int]):
+def get_env_properties(
+    env: Union[gym.Env, VecEnv], network: str = "mlp"
+) -> (Tuple[int]):
     """
     Finds important properties of environment
 
     :param env: Environment that the agent is interacting with
     :type env: Gym Environment
-
+    :param network: Type of network architecture, eg. "mlp", "cnn"
+    :type network: str
     :returns: (State space dimensions, Action space dimensions,
 discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
-    state_dim = env.observation_space.shape[0]
+    if network == "cnn":
+        input_dim = env.framestack
+    elif network == "mlp":
+        input_dim = env.observation_space.shape[0]
 
     if isinstance(env.action_space, gym.spaces.Discrete):
         action_dim = env.action_space.n
@@ -168,7 +157,7 @@ discreteness of action space and action limit (highest action value)
     else:
         raise NotImplementedError
 
-    return state_dim, action_dim, discrete, action_lim
+    return input_dim, action_dim, discrete, action_lim
 
 
 def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
@@ -187,56 +176,6 @@ def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
     random.seed(seed)
     if env is not None:
         env.seed(seed)
-
-
-def get_obs_action_shape(obs, action):
-    """
-    Get the shapes of observation and action
-
-    :param obs: State space of environment
-    :param action: Action
-    :type obs: gym.Space
-    :type action: np.array
-    """
-    if isinstance(obs, gym.spaces.Discrete):
-        return 1, 1
-    elif isinstance(obs, gym.spaces.Box):
-        return obs.shape[0], int(np.prod(action.shape))
-    else:
-        raise NotImplementedError
-
-
-def get_obs_shape(observation_space):
-    """
-    Get the shape of the observation.
-
-    :param observation_space: Observation space
-    :type observation_space: gym.spaces.Space
-    :returns: The observation space's shape
-    :rtype: (Tuple[int, ...])
-    """
-    if isinstance(observation_space, gym.spaces.Box):
-        return observation_space.shape
-    elif isinstance(observation_space, gym.spaces.Discrete):
-        return (1,)
-    else:
-        raise NotImplementedError()
-
-
-def get_action_dim(action_space):
-    """
-    Get the dimension of the action space.
-    :param action_space: Action space
-    :type action_space: gym.spaces.Space
-    :returns: Action space's shape
-    :rtype: int
-    """
-    if isinstance(action_space, gym.spaces.Box):
-        return int(np.prod(action_space.shape))
-    elif isinstance(action_space, gym.spaces.Discrete):
-        return 1
-    else:
-        raise NotImplementedError()
 
 
 def safe_mean(log: List[int]):

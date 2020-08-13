@@ -13,8 +13,6 @@ class BaseWrapper(ABC):
         self.env = env
         self._batch_size = batch_size
 
-    # TODO(zeus3101) Add functionality for VecEnvs
-
     @property
     def batch_size(self) -> int:
         """

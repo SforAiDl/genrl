@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+import torch
+import torch.nn as nn
 
 
 class ActionNoise(ABC):
@@ -115,3 +117,69 @@ according to the Ornstein Uhlenbeck process)
             if self._initial_noise is not None
             else np.zeros_like(self._mean)
         )
+
+
+class NoisyLinear(nn.Module):
+    """Noisy Linear Layer Class
+
+    Class to represent a Noisy Linear class (noisy version of nn.Linear)
+
+    Attributes:
+        in_features (int): Input dimensions
+        out_features (int): Output dimensions
+        std_init (float): Weight initialisation constant
+    """
+
+    def __init__(self, in_features: int, out_features: int, std_init: float = 0.4):
+        super(NoisyLinear, self).__init__()
+
+        self.in_features = in_features
+        self.out_features = out_features
+        self.std_init = std_init
+
+        self.weight_mu = nn.Parameter(torch.FloatTensor(out_features, in_features))
+        self.weight_sigma = nn.Parameter(torch.FloatTensor(out_features, in_features))
+        self.register_buffer(
+            "weight_epsilon", torch.FloatTensor(out_features, in_features)
+        )
+
+        self.bias_mu = nn.Parameter(torch.FloatTensor(out_features))
+        self.bias_sigma = nn.Parameter(torch.FloatTensor(out_features))
+        self.register_buffer("bias_epsilon", torch.FloatTensor(out_features))
+
+        self.reset_parameters()
+        self.reset_noise()
+
+    def forward(self, state: torch.Tensor) -> torch.Tensor:
+        if self.training:
+            weight = self.weight_mu + self.weight_sigma.mul(self.weight_epsilon)
+            bias = self.bias_mu + self.bias_sigma.mul(self.bias_epsilon)
+        else:
+            weight = self.weight_mu
+            bias = self.bias_mu
+        return nn.functional.linear(state, weight, bias)
+
+    def reset_parameters(self) -> None:
+        """Reset parameters of layer
+        """
+        mu_range = 1 / np.sqrt(self.weight_mu.size(1))
+
+        self.weight_mu.data.uniform_(-mu_range, mu_range)
+        self.weight_sigma.data.fill_(self.std_init / np.sqrt(self.weight_sigma.size(1)))
+
+        self.bias_mu.data.uniform_(-mu_range, mu_range)
+        self.bias_sigma.data.fill_(self.std_init / np.sqrt(self.bias_sigma.size(0)))
+
+    def reset_noise(self) -> None:
+        """Reset noise components of layer
+        """
+        epsilon_in = self._scale_noise(self.in_features)
+        epsilon_out = self._scale_noise(self.out_features)
+
+        self.weight_epsilon.copy_(epsilon_out.ger(epsilon_in))
+        self.bias_epsilon.copy_(self._scale_noise(self.out_features))
+
+    def _scale_noise(self, size: int) -> torch.Tensor:
+        inp = torch.randn(size)
+        inp = inp.sign().mul(inp.abs().sqrt())
+        return inp
