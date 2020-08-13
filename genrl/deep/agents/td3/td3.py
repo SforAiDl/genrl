@@ -9,7 +9,6 @@ import torch.nn as nn
 from genrl.deep.common.base import BaseActorCritic
 from genrl.deep.common.buffers import ReplayBuffer
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
-
 from genrl.environments.vec_env import VecEnv
 
 
