@@ -13,3 +13,4 @@ from genrl.deep.common.noise import OrnsteinUhlenbeckActionNoise  # noqa
 from genrl.deep.common.policies import BasePolicy, CNNPolicy, MlpPolicy  # noqa
 from genrl.deep.common.rollout_storage import RolloutBuffer  # noqa
 from genrl.deep.common.trainer import OffPolicyTrainer, OnPolicyTrainer, Trainer
+from genrl.deep.common.values import CnnValue, MlpValue  # noqa
