@@ -1,3 +1,6 @@
+import os
+from shutil import rmtree
+
 from genrl import DDPG, PPO1
 from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
 from genrl.environments import VectorEnv
@@ -21,3 +24,31 @@ def test_off_policy_trainer():
     assert trainer.off_policy
     trainer.train()
     trainer.evaluate()
+
+
+def test_save_params():
+    """
+    test saving algorithm state dict
+    """
+    env = VectorEnv("CartPole-v0", 1)
+    algo = PPO1("mlp", env)
+    trainer = OnPolicyTrainer(
+        algo, env, ["stdout"], save_model="test_ckpt", save_interval=1, epochs=1
+    )
+    trainer.train()
+
+    assert len(os.listdir("test_ckpt/PPO1_CartPole-v0")) != 0
+
+
+def test_load_params():
+    """
+    test loading algorithm parameters
+    """
+    env = VectorEnv("CartPole-v0", 1)
+    algo = PPO1("mlp", env)
+    trainer = OnPolicyTrainer(
+        algo, env, epochs=0, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
+    )
+    trainer.train()
+
+    rmtree("logs")

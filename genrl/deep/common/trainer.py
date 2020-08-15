@@ -189,7 +189,7 @@ False (To be implemented))
     def load(self):
         path = self.load_model
         try:
-            self.agent.checkpoint = torch.load(path)
+            self.checkpoint = torch.load(path)
         except FileNotFoundError:
             raise Exception("Invalid File Name")
 
@@ -299,6 +299,7 @@ many steps)
             off_policy=off_policy,
             save_interval=save_interval,
             save_model=save_model,
+            load_model=load_model,
             run_num=run_num,
             render=render,
             max_ep_len=max_ep_len,
