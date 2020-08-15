@@ -16,6 +16,8 @@ def test_td3():
         q2_layers=[1, 1],
     )
 
-    trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
+    trainer = OffPolicyTrainer(
+        algo, env, log_mode=["csv"], logdir="./logs", epochs=5, max_ep_len=500
+    )
     trainer.train()
     shutil.rmtree("./logs")

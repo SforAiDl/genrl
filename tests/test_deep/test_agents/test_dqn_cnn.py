@@ -24,7 +24,7 @@ class TestDQNCNN:
         algo = DQN("cnn", env, replay_size=100)
         assert isinstance(algo.model, CnnValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -34,7 +34,7 @@ class TestDQNCNN:
         algo = DoubleDQN("cnn", env, replay_size=100)
         assert isinstance(algo.model, CnnValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -45,7 +45,7 @@ class TestDQNCNN:
         assert algo.dqn_type == "dueling"
         assert isinstance(algo.model, CnnDuelingValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -55,7 +55,7 @@ class TestDQNCNN:
         algo = PrioritizedReplayDQN("cnn", env, replay_size=100)
         assert isinstance(algo.model, CnnValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -67,7 +67,7 @@ class TestDQNCNN:
         assert algo.noisy
         assert isinstance(algo.model, CnnNoisyValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -79,7 +79,7 @@ class TestDQNCNN:
         assert algo.noisy
         assert isinstance(algo.model, CnnCategoricalValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")

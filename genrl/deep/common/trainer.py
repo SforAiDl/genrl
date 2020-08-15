@@ -189,7 +189,7 @@ False (To be implemented))
     def load(self):
         path = self.load_model
         try:
-            self.agent.checkpoint = torch.load(path)
+            self.checkpoint = torch.load(path)
         except FileNotFoundError:
             raise Exception("Invalid File Name")
 
@@ -277,7 +277,7 @@ many steps)
         render: bool = False,
         max_ep_len: int = 1000,
         distributed: bool = False,
-        steps_per_epoch: int = 4000,
+        steps_per_epoch: int = 500,
         epochs: int = 10,
         device: Union[torch.device, str] = "cpu",
         log_interval: int = 10,
@@ -299,6 +299,7 @@ many steps)
             off_policy=off_policy,
             save_interval=save_interval,
             save_model=save_model,
+            load_model=load_model,
             run_num=run_num,
             render=render,
             max_ep_len=max_ep_len,
@@ -330,7 +331,7 @@ many steps)
             np.zeros(self.env.n_envs),
             np.zeros(self.env.n_envs),
         )
-        total_steps = self.steps_per_epoch * self.epochs * self.env.n_envs
+        total_steps = self.max_ep_len * self.epochs * self.env.n_envs
 
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
@@ -370,7 +371,6 @@ many steps)
                     self.agent.noise.reset()
 
                 if sum(episode) % self.log_interval == 0:
-                    # print(self.rewards)
                     self.logger.write(
                         {
                             "timestep": timestep,

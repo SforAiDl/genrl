@@ -90,7 +90,6 @@ class A2C(OnPolicyAgent):
             rollout_size=rollout_size,
             **kwargs
         )
-
         self.noise = noise
         self.noise_std = noise_std
         self.value_coeff = kwargs.get("value_coeff", 0.5)

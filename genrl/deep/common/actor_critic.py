@@ -36,7 +36,6 @@ class MlpActorCritic(BaseActorCritic):
         value_layers: Tuple = (32, 32),
         val_type: str = "V",
         discrete: bool = True,
-        *args,
         **kwargs
     ):
         super(MlpActorCritic, self).__init__()
@@ -94,8 +93,6 @@ else False)
         :type deterministic: boolean
         :returns: action
         """
-        state = torch.as_tensor(state).float()
-
         state = self.feature(state)
         state = state.view(state.size(0), -1)
 
@@ -103,27 +100,26 @@ else False)
         action_probs = nn.Softmax(dim=-1)(action_probs)
 
         if deterministic:
-            action = (torch.argmax(action_probs, dim=-1), None)
+            action = torch.argmax(action_probs, dim=-1)
+            distribution = None
         else:
             distribution = Categorical(probs=action_probs)
-            action = (distribution.sample(), distribution)
+            action = distribution.sample()
 
-        return action
+        return action, distribution
 
-    def get_value(self, state: torch.Tensor) -> torch.Tensor:
+    def get_value(self, inp: torch.Tensor) -> torch.Tensor:
         """
         Get value from the Critic based on input
 
-        :param state: Input to the Critic
-        :type state: Tensor
+        :param inp: Input to the Critic
+        :type inp: Tensor
         :returns: value
         """
-        state = torch.as_tensor(state).float()
+        inp = self.feature(inp)
+        inp = inp.view(inp.size(0), -1)
 
-        state = self.feature(state)
-        state = state.view(state.size(0), -1)
-
-        value = self.critic(state).squeeze(-1)
+        value = self.critic(inp).squeeze(-1)
         return value
 
 

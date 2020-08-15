@@ -11,6 +11,8 @@ def test_ddpg():
         "mlp", env, noise=NormalActionNoise, policy_layers=[1, 1], value_layers=[1, 1]
     )
 
-    trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
+    trainer = OffPolicyTrainer(
+        algo, env, log_mode=["csv"], logdir="./logs", epochs=4, max_ep_len=200
+    )
     trainer.train()
     shutil.rmtree("./logs")

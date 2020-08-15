@@ -9,6 +9,8 @@ def test_sac():
     env = VectorEnv("Pendulum-v0", 2)
     algo = SAC("mlp", env, policy_layers=[1, 1], q1_layers=[1, 1], q2_layers=[1, 1])
 
-    trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
+    trainer = OffPolicyTrainer(
+        algo, env, log_mode=["csv"], logdir="./logs", epochs=5, max_ep_len=500
+    )
     trainer.train()
     shutil.rmtree("./logs")
