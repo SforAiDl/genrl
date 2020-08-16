@@ -1,6 +1,8 @@
-### Training an EpsilonGreedy agent on a Bernoulli Multi Armed Bandit
+# Tutorial on Bandits
 
-Multi armed bandits is one of the most basic problems in RL. Think of it like this, you have 'n' levers in front of you and each of these levers will give you a different reward. For the purposes of formalising the problem the reward is written down in terms of a reward function i.e., the probability of getting a reward when a lever is pulled. 
+## Training an EpsilonGreedy agent on a Bernoulli Multi Armed Bandit
+
+Multi armed bandits is one of the most basic problems in RL. Think of it like this, you have 'n' levers in front of you and each of these levers will give you a different reward. For the purposes of formalising the problem the reward is written down in terms of a reward function i.e., the probability of getting a reward when a lever is pulled.
 
 Suppose you try out one of the levers and get a positive reward. What do you do next? Should you just keep pulling that lever every time or think what if there might be a better reward to pulling one of the other levers? This is the exploration - exploitation dilemma.
 
@@ -8,7 +10,7 @@ _Exploitation_ - Utilise the information you have gathered till now, to make the
 
 _Exploration_ - You explore the untried levers in an attempt to maybe discover another one which has a higher payout than the one you currently have some knowledge about. This is exploring all your options without worrying about the short-term rewards, in hope of finding a lever with a bigger reward, in the long run.
 
-You have to use an algorithm which correctly trades off exploration and exploitation as we do not want a 'greedy' algorithm which only exploits and does not explore at all, because there are very high chances that it will converge to a sub-optimal policy. We do not want an algorithm that keeps exploring either as this would lead to sub-optimal rewards inspite of knowing the best action to be taken. In this case, the optimal policy will be to always pull the lever with the highest reward, but at the beginning we do not know the probability distribution of the rewards. 
+You have to use an algorithm which correctly trades off exploration and exploitation as we do not want a 'greedy' algorithm which only exploits and does not explore at all, because there are very high chances that it will converge to a sub-optimal policy. We do not want an algorithm that keeps exploring either as this would lead to sub-optimal rewards inspite of knowing the best action to be taken. In this case, the optimal policy will be to always pull the lever with the highest reward, but at the beginning we do not know the probability distribution of the rewards.
 
 So, we want a policy which explores actively at the beginning, building up an estimate for the reward values(defined as _quality_) of all the actions, and then exploiting that from that time onwards.
 
@@ -22,7 +24,7 @@ $q(a)$: True value of action 'a'.
 
 We want our estimate $Q_t(a)$ to be as close to the true value $q(a)$ as possible, so we can make the correct decision.
 
-Let the action with the maximum quality be $a^*$: 
+Let the action with the maximum quality be $a^*$:s
 
 $$q^* = q(a^*)$$
 

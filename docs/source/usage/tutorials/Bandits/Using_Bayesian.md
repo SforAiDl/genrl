@@ -1,4 +1,6 @@
-### Using Bayesian Method on a Bernoulli Multi-Armed Bandit
+# Using Bayesian
+
+## Using Bayesian Method on a Bernoulli Multi-Armed Bandit
 
 For an introduction to Multi Armed Bandits, refer to [Tutorial On Bandits](https://genrl.readthedocs.io/en/latest/usage/tutorials/Tutorial_on_bandits.html).
 
