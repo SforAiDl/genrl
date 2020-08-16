@@ -1,3 +1,6 @@
+import os
+from shutil import rmtree
+
 from genrl import DDPG, PPO1
 from genrl.deep.common.trainer import OffPolicyTrainer, OnPolicyTrainer
 from genrl.environments import VectorEnv
@@ -16,8 +19,36 @@ def test_off_policy_trainer():
     env = VectorEnv("Pendulum-v0", 2)
     algo = DDPG("mlp", env, replay_size=100)
     trainer = OffPolicyTrainer(
-        algo, env, ["stdout"], epochs=1, evaluate_episodes=2, steps_per_epoch=300
+        algo, env, ["stdout"], epochs=1, evaluate_episodes=2, max_ep_len=300
     )
     assert trainer.off_policy
     trainer.train()
     trainer.evaluate()
+
+
+def test_save_params():
+    """
+    test saving algorithm state dict
+    """
+    env = VectorEnv("CartPole-v0", 1)
+    algo = PPO1("mlp", env)
+    trainer = OnPolicyTrainer(
+        algo, env, ["stdout"], save_model="test_ckpt", save_interval=1, epochs=1
+    )
+    trainer.train()
+
+    assert len(os.listdir("test_ckpt/PPO1_CartPole-v0")) != 0
+
+
+def test_load_params():
+    """
+    test loading algorithm parameters
+    """
+    env = VectorEnv("CartPole-v0", 1)
+    algo = PPO1("mlp", env)
+    trainer = OnPolicyTrainer(
+        algo, env, epochs=0, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
+    )
+    trainer.train()
+
+    rmtree("logs")
