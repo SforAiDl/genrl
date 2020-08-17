@@ -26,11 +26,12 @@ class TD3(OffPolicyAgentAC):
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
-        lr_policyolicy (float): Learning rate for the policy/actor
+        lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer
         buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
         polyak (float): Target model update parameter (1 for hard update)
+        policy_frequency (int): Frequency of policy updates in comparison to critic updates
         noise (:obj:`ActionNoise`): Action Noise function added to aid in exploration
         noise_std (float): Standard deviation of the action noise distribution
         seed (int): Seed for randomness
