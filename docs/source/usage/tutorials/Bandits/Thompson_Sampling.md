@@ -1,4 +1,4 @@
-# Using Thompson Sampling
+# Thompson Sampling
 
 ## Using Thompson Sampling on a Bernoulli Multi-Armed Bandit
 

@@ -1,4 +1,4 @@
-# Using Gradients
+# Gradients
 
 ## Using Gradient Method on a Bernoulli Multi-Armed Bandit
 

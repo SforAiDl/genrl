@@ -1,4 +1,4 @@
-# Using Bayesian
+# Bayesian
 
 ## Using Bayesian Method on a Bernoulli Multi-Armed Bandit
 

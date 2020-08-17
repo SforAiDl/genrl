@@ -1,4 +1,4 @@
-# Using UCB
+# UCB
 
 ## Training a UCB algorithm on a Bernoulli Multi-Armed Bandit
 
