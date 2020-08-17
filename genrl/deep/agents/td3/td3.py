@@ -1,10 +1,8 @@
 from copy import deepcopy
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple
 
-import gym
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 from genrl.deep.agents import OffPolicyAgentAC
