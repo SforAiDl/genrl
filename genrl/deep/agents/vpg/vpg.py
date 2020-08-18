@@ -6,14 +6,10 @@ import torch
 import torch.optim as opt
 
 from genrl.deep.agents.base import OnPolicyAgent
-from genrl.deep.common import (
-    BasePolicy,
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-)
-from genrl.environments import VecEnv
+from genrl.deep.common.base import BasePolicy
+from genrl.deep.common.rollout_storage import RolloutBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
+from genrl.environments.vec_env import VecEnv
 
 
 class VPG(OnPolicyAgent):

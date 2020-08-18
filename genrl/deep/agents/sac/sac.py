@@ -9,12 +9,12 @@ import torch.nn.functional as F
 import torch.optim as opt
 from torch.distributions import Normal
 
-from genrl.deep.agents.base import OffPolicyAgent
+from genrl.deep.agents.base import OffPolicyAgentAC
 from genrl.deep.common.base import BaseActorCritic
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
-class SAC(OffPolicyAgent):
+class SAC(OffPolicyAgentAC):
     """Soft Actor Critic algorithm (SAC)
 
     Paper: https://arxiv.org/abs/1812.05905

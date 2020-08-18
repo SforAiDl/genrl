@@ -1,18 +1,16 @@
 from copy import deepcopy
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple
 
-import gym
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
-from genrl.deep.agents import OffPolicyAgent
+from genrl.deep.agents import OffPolicyAgentAC
 from genrl.deep.common.noise import ActionNoise
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
-class TD3(OffPolicyAgent):
+class TD3(OffPolicyAgentAC):
     """Twin Delayed DDPG Algorithm
 
     Paper: https://arxiv.org/abs/1509.02971
@@ -26,11 +24,12 @@ class TD3(OffPolicyAgent):
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
-        lr_policyolicy (float): Learning rate for the policy/actor
+        lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer
         buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
         polyak (float): Target model update parameter (1 for hard update)
+        policy_frequency (int): Frequency of policy updates in comparison to critic updates
         noise (:obj:`ActionNoise`): Action Noise function added to aid in exploration
         noise_std (float): Standard deviation of the action noise distribution
         seed (int): Seed for randomness
@@ -49,7 +48,6 @@ class TD3(OffPolicyAgent):
         **kwargs,
     ):
         super(TD3, self).__init__(*args, **kwargs)
-        self.polyak = polyak
         self.policy_frequency = policy_frequency
         self.noise = noise
         self.noise_std = noise_std
@@ -58,7 +56,11 @@ class TD3(OffPolicyAgent):
         if self.create_model:
             self._create_model()
 
-    def _create_model(self, **kwargs) -> None:
+    def _create_model(self) -> None:
+        """Initializes class objects
+
+        Initializes actor-critic architecture, replay buffer and optimizers
+        """
         input_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
         if discrete:
             raise Exception(
@@ -66,7 +68,7 @@ class TD3(OffPolicyAgent):
             )
 
         if isinstance(self.network, str):
-            # Below, the "12" corresponds to the Single Actor, Multi Critic network architecture
+            # Below, the "12" corresponds to the Single Actor, Double Critic network architecture
             self.ac = get_model("ac", self.network + "12")(
                 input_dim,
                 action_dim,
@@ -92,32 +94,6 @@ class TD3(OffPolicyAgent):
         self.optimizer_value = torch.optim.Adam(self.critic_params, lr=self.lr_value)
         self.optimizer_policy = torch.optim.Adam(
             self.ac.actor.parameters(), lr=self.lr_policy
-        )
-
-    def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
-        """Select action given state
-
-        Deterministic Action Selection with Noise
-
-        Args:
-            state (:obj:`np.ndarray`): Current state of the environment
-            deterministic (bool): Should the policy be deterministic or stochastic
-
-        Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
-        """
-        state = torch.as_tensor(state).float()
-        action, _ = self.ac.get_action(state, deterministic=deterministic)
-        action = action.detach().cpu().numpy()
-
-        # add noise to output from policy network
-        if self.noise is not None:
-            action += self.noise()
-
-        return np.clip(
-            action, self.env.action_space.low[0], self.env.action_space.high[0]
         )
 
     def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
@@ -172,17 +148,6 @@ class TD3(OffPolicyAgent):
         )
         return loss
 
-    def update_target_model(self) -> None:
-        """Function to update the target Q model
-
-        Updates the target model with the training model's weights when called
-        """
-        for param, param_target in zip(
-            self.ac.parameters(), self.ac_target.parameters()
-        ):
-            param_target.data.mul_(self.polyak)
-            param_target.data.add_((1 - self.polyak) * param.data)
-
     def update_params(self, update_interval: int) -> None:
         """Update parameters of the model
 
@@ -215,25 +180,17 @@ class TD3(OffPolicyAgent):
         hyperparams = {
             "network": self.network,
             "gamma": self.gamma,
+            "batch_size": self.batch_size,
+            "replay_size": self.replay_size,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
             "polyak": self.polyak,
             "policy_frequency": self.policy_frequency,
             "noise_std": self.noise_std,
-            "q1_weights": self.ac.critic[0].state_dict(),
-            "q2_weights": self.ac.critic[1].state_dict(),
-            "actor_weights": self.ac.actor.state_dict(),
+            "weights": self.ac.state_dict(),
         }
 
         return hyperparams
-
-    def load_weights(self, weights) -> None:
-        """
-        Load weights for the agent from pretrained model
-        """
-        self.ac.actor.load_state_dict(weights["actor_weights"])
-        self.ac.critic[0].load_state_dict(weights["q1_weights"])
-        self.ac.critic[1].load_state_dict(weights["q2_weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
         """
