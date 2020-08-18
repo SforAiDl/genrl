@@ -2,7 +2,7 @@ import os
 from shutil import rmtree
 
 from genrl import DDPG, PPO1
-from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
+from genrl.deep.common.trainer import OffPolicyTrainer, OnPolicyTrainer
 from genrl.environments import VectorEnv
 
 
