@@ -82,7 +82,6 @@ def main():
     offpolicy = True
     trainerclass = OffPolicyTrainer
     if args.algo in ["ppo", "vpg", "a2c"]:
-        offpolicy = False
         trainerclass = OnPolicyTrainer
         agent = algo(
             args.arch, env, rollout_size=args.rollout_size
