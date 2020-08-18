@@ -36,7 +36,7 @@ class SAC:
     :param start_update: Number of steps before first parameter update
     :param update_interval: Number of step between updates
     :param policy_layers: Neural network layer dimensions for the policy
-    :param critic_layers: Neural network layer dimensions for the critics
+    :param value_layers: Neural network layer dimensions for the critics
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
@@ -56,7 +56,7 @@ class SAC:
     :type start_update: int
     :type update_interval: int
     :type policy_layers: tuple
-    :type critic_layers: tuple
+    :type value_layers: tuple
     :type seed: int
     :type render: bool
     :type device: string
@@ -81,7 +81,7 @@ class SAC:
         start_update: int = 256,
         update_interval: int = 1,
         policy_layers: Tuple = (256, 256),
-        critic_layers: Tuple = (256, 256),
+        value_layers: Tuple = (256, 256),
         seed: Optional[int] = None,
         render: bool = False,
         device: Union[torch.device, str] = "cpu",
@@ -104,7 +104,7 @@ class SAC:
         self.start_update = start_update
         self.update_interval = update_interval
         self.policy_layers = policy_layers
-        self.critic_layers = critic_layers
+        self.value_layers = value_layers
         self.seed = seed
         self.render = render
 
@@ -135,7 +135,7 @@ class SAC:
 
             self.q1 = (
                 get_model("v", self.network)(
-                    state_dim, action_dim, "Qsa", self.critic_layers
+                    state_dim, action_dim, "Qsa", self.value_layers
                 )
                 .to(self.device)
                 .float()
@@ -143,7 +143,7 @@ class SAC:
 
             self.q2 = (
                 get_model("v", self.network)(
-                    state_dim, action_dim, "Qsa", self.critic_layers
+                    state_dim, action_dim, "Qsa", self.value_layers
                 )
                 .to(self.device)
                 .float()
