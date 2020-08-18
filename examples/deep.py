@@ -79,7 +79,6 @@ def main():
 
     logger = get_logger(args.log)
 
-    offpolicy = True
     trainerclass = OffPolicyTrainer
     if args.algo in ["ppo", "vpg", "a2c"]:
         trainerclass = OnPolicyTrainer
