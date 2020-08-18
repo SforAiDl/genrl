@@ -12,8 +12,7 @@ def test_td3():
         env,
         noise=OrnsteinUhlenbeckActionNoise,
         policy_layers=[1, 1],
-        q1_layers=[1, 1],
-        q2_layers=[1, 1],
+        critic_layers=[1, 1],
     )
 
     trainer = OffPolicyTrainer(
