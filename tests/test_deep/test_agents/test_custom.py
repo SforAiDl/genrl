@@ -30,20 +30,18 @@ class custom_actorcritic(MlpActorCritic):
 
 
 class custom_multiactorcritic(MlpActorCritic):
-    def __init__(
-        self, state_dim, action_dim, policy_layers, q1_layers, q2_layers, **kwargs
-    ):
+    def __init__(self, state_dim, action_dim, policy_layers, critic_layers, **kwargs):
         super(custom_multiactorcritic, self).__init__(
             state_dim,
             action_dim,
             policy_layers,
-            q1_layers,
+            critic_layers,
             val_type="Qsa",
             discrete=False,
         )
         self.state_dim = state_dim
         self.action_dim = action_dim
-        self.qf2 = MlpValue(state_dim, action_dim, val_type="Qsa", hidden=q2_layers)
+        self.qf2 = MlpValue(state_dim, action_dim, val_type="Qsa", hidden=critic_layers)
         self.qf1 = self.critic
 
 
@@ -80,7 +78,7 @@ def test_td3_custom():
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
     multiactorcritic = custom_multiactorcritic(
-        state_dim, action_dim, policy_layers=(1, 1), q1_layers=(1, 1), q2_layers=(1, 1)
+        state_dim, action_dim, policy_layers=(1, 1), critic_layers=(1, 1)
     )
 
     algo = TD3(multiactorcritic, env, noise=OrnsteinUhlenbeckActionNoise)
