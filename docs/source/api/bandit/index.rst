@@ -1,5 +1,5 @@
 Bandit
-=======
+======
 
 .. toctree::
    :maxdepth: 2

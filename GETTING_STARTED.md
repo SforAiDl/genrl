@@ -14,11 +14,8 @@ import CovertypeDataBandit
 import genrl.bandit
 import import
 import NeuralLinearPosteriorAgent
-from genrl import PPO1, SAC, VPG
 from genrl.classical import QLearning
 from genrl.classical.common import Trainer
-from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
-from genrl.environments import VectorEnv
 
 env = gym.make("FrozenLake-v0")
 agent = QLearning(env)
