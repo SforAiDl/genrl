@@ -2,8 +2,10 @@ import random
 from collections import deque
 from typing import NamedTuple, Tuple
 
+import reverb
 import numpy as np
 import torch
+import tensorflow as tf
 
 
 class ReplayBufferSamples(NamedTuple):
@@ -25,22 +27,31 @@ class PrioritizedReplayBufferSamples(NamedTuple):
 
 
 class ReplayBuffer:
-    def __init__(self, size, env):
+    def __init__(self, size, obs_shape, action_shape, n_envs=1):
         self.buffer_size = size
-        self.n_envs = env.n_envs
+        self.n_envs = n_envs
 
         self.observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32
+            (self.buffer_size, self.n_envs,) + obs_shape, dtype=np.float32
         )
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs,) + env.action_shape, dtype=np.float32
+            (self.buffer_size, self.n_envs,) + action_shape, dtype=np.float32
         )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.next_observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32
+            (self.buffer_size, self.n_envs,) + obs_shape, dtype=np.float32
         )
         self.pos = 0
+        self._table = reverb.Table(
+            name="uniform_experience_replay_buffer",
+            sampler=reverb.selectors.Uniform(),
+            remover=reverb.selectors.Fifo(),
+            max_size=1000,
+            rate_limiter=reverb.rate_limiters.MinSize(2),
+        )
+        self._server = reverb.Server(tables=[self._table], port=None)
+        self._client = reverb.Client(f"localhost:{self._server.port}")
 
     def push(self, inp):
         if self.pos >= self.buffer_size:
@@ -238,3 +249,77 @@ specific indices)
     @property
     def pos(self):
         return len(self.buffer)
+
+
+class ReverbReplayBuffer:
+    def __init__(
+        self,
+        size,
+        batch_size,
+        obs_shape,
+        action_shape,
+        action_dtype="discrete",
+        reward_shape=(1,),
+        done_shape=(1,),
+        n_envs=1,
+    ):
+        self.size = size
+        self.obs_shape = (n_envs, *obs_shape)
+        self.action_shape = (n_envs, *action_shape)
+        self.reward_shape = (n_envs, *reward_shape)
+        self.done_shape = (n_envs, *done_shape)
+        self.n_envs = n_envs
+        self.action_dtype = np.int64 if action_dtype == "discrete" else np.float32
+
+        self._pos = 0
+        self._table = reverb.Table(
+            name="replay_buffer",
+            sampler=reverb.selectors.Uniform(),
+            remover=reverb.selectors.Fifo(),
+            max_size=size,
+            rate_limiter=reverb.rate_limiters.MinSize(2),
+        )
+        self._server = reverb.Server(tables=[self._table], port=None)
+        self._server_address = f"localhost:{self._server.port}"
+        self._client = reverb.Client(self._server_address)
+        self._dataset = reverb.ReplayDataset(
+            server_address=self._server_address,
+            table="replay_buffer",
+            max_in_flight_samples_per_worker=2 * batch_size,
+            dtypes=(np.float32, self.action_dtype, np.float32, np.float32, np.bool),
+            shapes=(
+                tf.TensorShape([n_envs, *obs_shape]),
+                tf.TensorShape([n_envs, *action_shape]),
+                tf.TensorShape([n_envs, *reward_shape]),
+                tf.TensorShape([n_envs, *obs_shape]),
+                tf.TensorShape([n_envs, *done_shape]),
+            ),
+        )
+        self._iterator = self._dataset.batch(batch_size).as_numpy_iterator()
+
+    def push(self, inp):
+        i = []
+        i.append(np.array(inp[0], dtype=np.float32).reshape(self.obs_shape))
+        i.append(np.array(inp[1], dtype=self.action_dtype).reshape(self.action_shape))
+        i.append(np.array(inp[2], dtype=np.float32).reshape(self.reward_shape))
+        i.append(np.array(inp[3], dtype=np.float32).reshape(self.obs_shape))
+        i.append(np.array(inp[4], dtype=np.bool).reshape(self.done_shape))
+
+        self._client.insert(i, priorities={"replay_buffer": 1.0})
+        if self._pos < self.size:
+            self._pos += 1
+
+    def extend(self, inp):
+        for sample in inp:
+            self.push(sample)
+
+    def sample(self):
+        sample = next(self._iterator)
+        obs, a, r, next_obs, d = [torch.from_numpy(t) for t in sample.data]
+        return obs, a, r, next_obs, d
+
+    def __len__(self):
+        return self._pos
+
+    def __del__(self):
+        self._server.stop()
