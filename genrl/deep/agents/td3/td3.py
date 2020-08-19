@@ -22,8 +22,8 @@ class TD3(OffPolicyAgentAC):
         create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
-        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
-            of the Q-value function
+        policy_layers: (tuple or list) Number of neurons in hidden layers of the policy network
+        value_layers: (tuple or list) Number of neurons in hidden layers of the value networks
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer
