@@ -47,8 +47,8 @@ class TestAtari:
         Tests working of Atari Wrappers and the AtariEnv function
         """
         env = VectorEnv("Pong-v0", env_type="atari")
-        algo = DQN("cnn", env)
+        algo = DQN("cnn", env, replay_size=100)
 
-        trainer = OffPolicyTrainer(algo, env, epochs=1, steps_per_epoch=200)
+        trainer = OffPolicyTrainer(algo, env, epochs=5, max_ep_len=200)
         trainer.train()
         shutil.rmtree("./logs")

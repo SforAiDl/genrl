@@ -8,14 +8,10 @@ import torch.nn as nn
 import torch.optim as opt
 from torch.distributions import Normal
 
-from genrl.deep.common import (
-    ReplayBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-    set_seeds,
-)
-from genrl.environments import VecEnv
+from genrl.deep.common.base import BaseActorCritic
+from genrl.deep.common.buffers import ReplayBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean, set_seeds
+from genrl.environments.vec_env import VecEnv
 
 
 class SAC:
@@ -24,7 +20,7 @@ class SAC:
 
     Paper: https://arxiv.org/abs/1812.05905
 
-    :param network_type: The deep neural network layer types ['mlp', 'cnn']
+    :param network: The deep neural network layer types ['mlp', 'cnn'] or a CustomClass
     :param env: The environment to learn from
     :param gamma: discount factor
     :param replay_size: Replay memory size
@@ -43,7 +39,7 @@ class SAC:
     :param seed: seed for torch and gym
     :param render: if environment is to be rendered
     :param device: device to use for tensor operations; ['cpu','cuda']
-    :type network_type: string
+    :type network: string
     :type env: Gym environment
     :type gamma: float
     :type replay_size: int
@@ -66,7 +62,7 @@ class SAC:
 
     def __init__(
         self,
-        network_type: str,
+        network: Union[str, BaseActorCritic],
         env: Union[gym.Env, VecEnv],
         create_model: bool = True,
         gamma: float = 0.99,
@@ -88,7 +84,7 @@ class SAC:
         device: Union[torch.device, str] = "cpu",
     ):
 
-        self.network_type = network_type
+        self.network = network
         self.env = env
         self.create_model = create_model
         self.gamma = gamma
@@ -130,27 +126,36 @@ class SAC:
         Initialize the model
         Initializes optimizer and replay buffers as well.
         """
-        state_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        if isinstance(self.network, str):
+            state_dim, action_dim, discrete, _ = get_env_properties(self.env)
 
-        self.q1 = (
-            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
-            .to(self.device)
-            .float()
-        )
-
-        self.q2 = (
-            get_model("v", self.network_type)(state_dim, action_dim, "Qsa", self.layers)
-            .to(self.device)
-            .float()
-        )
-
-        self.policy = (
-            get_model("p", self.network_type)(
-                state_dim, action_dim, self.layers, discrete, False, sac=True
+            self.q1 = (
+                get_model("v", self.network)(state_dim, action_dim, "Qsa", self.layers)
+                .to(self.device)
+                .float()
             )
-            .to(self.device)
-            .float()
-        )
+
+            self.q2 = (
+                get_model("v", self.network)(state_dim, action_dim, "Qsa", self.layers)
+                .to(self.device)
+                .float()
+            )
+
+            self.policy = (
+                get_model("p", self.network)(
+                    state_dim, action_dim, self.layers, discrete, False, sac=True
+                )
+                .to(self.device)
+                .float()
+            )
+        else:
+            self.model = self.network
+            assert "q1" and "q2" in dir(
+                self.model
+            ), "network must contain q1 and q2 attributes"
+            self.q1 = self.model.q1.to(self.device).float()
+            self.q2 = self.model.q2.to(self.device).float()
+            self.policy = self.model.policy.to(self.device).float()
 
         self.q1_targ = deepcopy(self.q1).to(self.device).float()
         self.q2_targ = deepcopy(self.q2).to(self.device).float()
@@ -405,7 +410,7 @@ class SAC:
 
     def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
-            "network_type": self.network_type,
+            "network": self.network,
             "gamma": self.gamma,
             "lr": self.lr,
             "replay_size": self.replay_size,

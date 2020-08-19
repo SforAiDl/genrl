@@ -12,7 +12,7 @@ class PrioritizedReplayDQN(DQN):
     Paper: https://arxiv.org/abs/1511.05952
 
     Attributes:
-        network_type (str): The network type of the Q-value function.
+        network (str): The network type of the Q-value function.
             Supported types: ["cnn", "mlp"]
         env (Environment): The environment that the agent is supposed to act on
         batch_size (int): Mini batch size for loading experiences
