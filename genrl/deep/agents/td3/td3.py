@@ -96,58 +96,6 @@ class TD3(OffPolicyAgentAC):
             self.ac.actor.parameters(), lr=self.lr_policy
         )
 
-    def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
-        """Get Q values corresponding to specific states and actions
-
-        Args:
-            states (:obj:`torch.Tensor`): States for which Q-values need to be found
-            actions (:obj:`torch.Tensor`): Actions taken at respective states
-
-        Returns:
-            q_values (:obj:`torch.Tensor`): Q values for the given states and actions
-        """
-        q_values = self.ac.get_value(torch.cat([states, actions], dim=-1), mode="both")
-        return q_values
-
-    def get_target_q_values(
-        self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
-    ) -> torch.Tensor:
-        """Get target Q values for the TD3
-
-        Args:
-            next_states (:obj:`torch.Tensor`): Next states for which target Q-values
-                need to be found
-            rewards (:obj:`list`): Rewards at each timestep for each environment
-            dones (:obj:`list`): Game over status for each environment
-
-        Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
-        """
-        next_target_actions = self.ac_target.get_action(next_states, True)[0]
-        next_q_target_values = self.ac_target.get_value(
-            torch.cat([next_states, next_target_actions], dim=-1), mode="min"
-        )
-        target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
-        return target_q_values
-
-    def get_q_loss(self, batch: NamedTuple) -> torch.Tensor:
-        """TD3 Function to calculate the loss of the critic
-
-        Args:
-            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
-
-        Returns:
-            loss (:obj:`torch.Tensor`): Calculated loss of the Q-function
-        """
-        q_values = self.get_q_values(batch.states, batch.actions)
-        target_q_values = self.get_target_q_values(
-            batch.next_states, batch.rewards, batch.dones
-        )
-        loss = F.mse_loss(q_values[0], target_q_values) + F.mse_loss(
-            q_values[1], target_q_values
-        )
-        return loss
-
     def update_params(self, update_interval: int) -> None:
         """Update parameters of the model
 
@@ -177,6 +125,11 @@ class TD3(OffPolicyAgentAC):
                 self.update_target_model()
 
     def get_hyperparams(self) -> Dict[str, Any]:
+        """Get relevant hyperparameters to save
+
+        Returns:
+            hyperparams (:obj:`dict`): Hyperparameters to be saved
+        """
         hyperparams = {
             "network": self.network,
             "gamma": self.gamma,
@@ -193,9 +146,10 @@ class TD3(OffPolicyAgentAC):
         return hyperparams
 
     def get_logging_params(self) -> Dict[str, Any]:
-        """
-        :returns: Logging parameters for monitoring training
-        :rtype: dict
+        """Gets relevant parameters for logging
+
+        Returns:
+            logs (:obj:`dict`): Logging parameters for monitoring training
         """
         logs = {
             "policy_loss": safe_mean(self.logs["policy_loss"]),
@@ -206,8 +160,7 @@ class TD3(OffPolicyAgentAC):
         return logs
 
     def empty_logs(self):
-        """
-        Empties logs
+        """Empties logs
         """
         self.logs = {}
         self.logs["policy_loss"] = []

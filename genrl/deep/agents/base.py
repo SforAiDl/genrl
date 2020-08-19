@@ -1,6 +1,6 @@
 import collections
 from abc import ABC
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Tuple, Union
 
 import numpy as np
 import torch
@@ -332,6 +332,75 @@ class OffPolicyAgentAC(OffPolicyAgent):
         ):
             param_target.data.mul_(self.polyak)
             param_target.data.add_((1 - self.polyak) * param.data)
+
+    def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        """Get Q values corresponding to specific states and actions
+
+        Args:
+            states (:obj:`torch.Tensor`): States for which Q-values need to be found
+            actions (:obj:`torch.Tensor`): Actions taken at respective states
+
+        Returns:
+            q_values (:obj:`torch.Tensor`): Q values for the given states and actions
+        """
+        if isinstance(self.ac.critic, list):
+            q_values = self.ac.get_value(
+                torch.cat([states, actions], dim=-1), mode="both"
+            )
+        else:
+            q_values = self.ac.get_value(torch.cat([states, actions], dim=-1))
+        return q_values
+
+    def get_target_q_values(
+        self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
+    ) -> torch.Tensor:
+        """Get target Q values for the TD3
+
+        Args:
+            next_states (:obj:`torch.Tensor`): Next states for which target Q-values
+                need to be found
+            rewards (:obj:`list`): Rewards at each timestep for each environment
+            dones (:obj:`list`): Game over status for each environment
+
+        Returns:
+            target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
+        """
+        next_target_actions = self.ac_target.get_action(next_states, True)[0]
+
+        if isinstance(self.ac_target.critic, list):
+            next_q_target_values = self.ac_target.get_value(
+                torch.cat([next_states, next_target_actions], dim=-1), mode="min"
+            )
+        else:
+            next_q_target_values = self.ac_target.get_value(
+                torch.cat([next_states, next_target_actions], dim=-1)
+            )
+
+        target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
+        return target_q_values
+
+    def get_q_loss(self, batch: NamedTuple) -> torch.Tensor:
+        """Function to calculate the loss of the critic
+
+        Args:
+            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
+
+        Returns:
+            loss (:obj:`torch.Tensor`): Calculated loss of the Q-function
+        """
+        q_values = self.get_q_values(batch.states, batch.actions)
+        target_q_values = self.get_target_q_values(
+            batch.next_states, batch.rewards, batch.dones
+        )
+
+        if isinstance(q_values, list):
+            loss = F.mse_loss(q_values[0], target_q_values) + F.mse_loss(
+                q_values[1], target_q_values
+            )
+        else:
+            loss = F.mse_loss(q_values, target_q_values)
+
+        return loss
 
     def get_p_loss(self, states: torch.Tensor) -> torch.Tensor:
         """Function to get the Policy loss

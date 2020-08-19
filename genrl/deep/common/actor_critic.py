@@ -1,9 +1,10 @@
 from typing import List, Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
 from gym import spaces
-from torch.distributions import Categorical
+from torch.distributions import Categorical, Normal
 
 from genrl.deep.common.base import BaseActorCritic
 from genrl.deep.common.policies import MlpPolicy
@@ -73,21 +74,35 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
             for _ in range(num_critics)
         ]
 
-    def forward(self, state: torch.Tensor, mode="first") -> List[torch.Tensor]:
-        """
-        Defines the computation at each step of the way
-        """
+        self.action_scale = kwargs["action_scale"] if "action_scale" in kwargs else 1
+        self.action_bias = kwargs["action_bias"] if "action_bias" in kwargs else 0
+
+    def get_action(self, state: torch.Tensor, deterministic: bool = False):
         state = torch.as_tensor(state).float()
 
-        if mode == "both":
-            phi_states = [self.critic[i](state) for i in range(self.num_critics)]
-        elif mode == "min":
-            phi_states = [self.critic[i](state) for i in range(self.num_critics)]
-            phi_states = torch.min(*phi_states)
-        elif mode == "first":
-            phi_states = self.critic[0](state)
+        if self.actor.sac:
+            mean, log_std = self.actor(state)
+            std = log_std.exp()
+            distribution = Normal(mean, std)
 
-        return phi_states
+            action_probs = distribution.rsample()
+            log_probs = distribution.log_prob(action_probs)
+            action_probs = torch.tanh(action_probs)
+
+            action = action_probs * self.action_scale + self.action_bias
+
+            # enforcing action bound (appendix of SAC paper)
+            log_probs -= torch.log(
+                self.action_scale * (1 - action_probs.pow(2)) + np.finfo(np.float32).eps
+            )
+            log_probs = log_probs.sum(1, keepdim=True)
+            mean = torch.tanh(mean) * self.action_scale + self.action_bias
+
+            action = (action.float(), log_probs, mean)
+        else:
+            action = self.actor.get_action(state, deterministic=deterministic)
+
+        return action
 
     def get_value(self, state: torch.Tensor, mode="first") -> torch.Tensor:
         """Get Values from the Critic

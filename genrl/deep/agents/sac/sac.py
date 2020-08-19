@@ -18,6 +18,27 @@ class SAC(OffPolicyAgentAC):
     """Soft Actor Critic algorithm (SAC)
 
     Paper: https://arxiv.org/abs/1812.05905
+
+    Attributes:
+        network (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
+        batch_size (int): Mini batch size for loading experiences
+        gamma (float): The discount factor for rewards
+        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+            of the Q-value function
+        lr_policy (float): Learning rate for the policy/actor
+        lr_value (float): Learning rate for the critic
+        replay_size (int): Capacity of the Replay Buffer
+        buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
+        alpha (str): Entropy factor
+        polyak (float): Target model update parameter (1 for hard update)
+        entropy_tuning (bool): True if entropy tuning should be done, False otherwise
+        seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
+        device (str): Hardware being used for training. Options:
+            ["cuda" -> GPU, "cpu" -> CPU]
     """
 
     def __init__(
@@ -39,6 +60,21 @@ class SAC(OffPolicyAgentAC):
             self._create_model()
 
     def _create_model(self, **kwargs) -> None:
+        """Initializes class objects
+
+        Initializes actor-critic architecture, replay buffer and optimizers
+        """
+        if self.env.action_space is None:
+            self.action_scale = torch.FloatTensor(1.0)
+            self.action_bias = torch.FloatTensor(0.0)
+        else:
+            self.action_scale = torch.FloatTensor(
+                (self.env.action_space.high - self.env.action_space.low) / 2.0
+            )
+            self.action_bias = torch.FloatTensor(
+                (self.env.action_space.high + self.env.action_space.low) / 2.0
+            )
+
         if isinstance(self.network, str):
             input_dim, action_dim, discrete, _ = get_env_properties(
                 self.env, self.network
@@ -52,7 +88,9 @@ class SAC(OffPolicyAgentAC):
                 discrete=False,
                 num_critics=2,
                 sac=True,
-            ).float()
+                action_scale=self.action_scale,
+                action_bias=self.action_bias,
+            )
         else:
             self.model = self.network
 
@@ -74,42 +112,22 @@ class SAC(OffPolicyAgentAC):
 
         self.replay_buffer = self.buffer_class(self.replay_size)
 
-        # set action scales
-        if self.env.action_space is None:
-            self.action_scale = torch.FloatTensor(1.0)
-            self.action_bias = torch.FloatTensor(0.0)
-        else:
-            self.action_scale = torch.FloatTensor(
-                (self.env.action_space.high - self.env.action_space.low) / 2.0
-            )
-            self.action_bias = torch.FloatTensor(
-                (self.env.action_space.high + self.env.action_space.low) / 2.0
-            )
-
-    def sample_action(
+    def select_action(
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
-        mean, log_std = self.ac.actor.forward(state)
-        std = log_std.exp()
+        """Select action given state
 
-        # reparameterization trick
-        distribution = Normal(mean, std)
-        xi = distribution.rsample()
-        yi = torch.tanh(xi)
-        action = yi * self.action_scale + self.action_bias
-        log_pi = distribution.log_prob(xi)
+        Action Selection
 
-        # enforcing action bound (appendix of paper)
-        log_pi -= torch.log(
-            self.action_scale * (1 - yi.pow(2)) + np.finfo(np.float32).eps
-        )
-        log_pi = log_pi.sum(1, keepdim=True)
-        mean = torch.tanh(mean) * self.action_scale + self.action_bias
-        return action.float(), log_pi, mean
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+            deterministic (bool): Should the policy be deterministic or stochastic
 
-    def select_action(self, state, deterministic=False):
-        state = torch.FloatTensor(state).to(self.device)
-        action, _, _ = self.sample_action(state, deterministic)
+        Returns:
+            action (:obj:`np.ndarray`): Action taken by the agent
+        """
+        state = torch.FloatTensor(state)
+        action, _, _ = self.ac.get_action(state, deterministic)
         return action.detach().cpu().numpy()
 
     def update_target_model(self) -> None:
@@ -122,19 +140,6 @@ class SAC(OffPolicyAgentAC):
         ):
             param_target.data.mul_(self.polyak)
             param_target.data.add_((1 - self.polyak) * param.data)
-
-    def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
-        """Get Q values corresponding to specific states and actions
-
-        Args:
-            states (:obj:`torch.Tensor`): States for which Q-values need to be found
-            actions (:obj:`torch.Tensor`): Actions taken at respective states
-
-        Returns:
-            q_values (:obj:`torch.Tensor`): Q values for the given states and actions
-        """
-        q_values = self.ac.get_value(torch.cat([states, actions], dim=-1), mode="both")
-        return q_values
 
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
@@ -150,30 +155,12 @@ class SAC(OffPolicyAgentAC):
         Returns:
             target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
         """
-        next_target_actions, next_log_pi, _ = self.sample_action(next_states)
+        next_target_actions, next_log_probs, _ = self.ac.get_action(next_states)
         next_q_target_values = self.ac_target.get_value(
             torch.cat([next_states, next_target_actions], dim=-1), mode="min"
-        ) - self.alpha * next_log_pi.squeeze(-1)
+        ) - self.alpha * next_log_probs.squeeze(-1)
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
         return target_q_values
-
-    def get_q_loss(self, batch: NamedTuple) -> torch.Tensor:
-        """TD3 Function to calculate the loss of the critic
-
-        Args:
-            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
-
-        Returns:
-            loss (:obj:`torch.Tensor`): Calculated loss of the Q-function
-        """
-        q_values = self.get_q_values(batch.states, batch.actions)
-        target_q_values = self.get_target_q_values(
-            batch.next_states, batch.rewards, batch.dones
-        )
-        loss = F.mse_loss(q_values[0], target_q_values) + F.mse_loss(
-            q_values[1], target_q_values
-        )
-        return loss
 
     def get_p_loss(self, states: torch.Tensor) -> torch.Tensor:
         """Function to get the Policy loss
@@ -184,39 +171,45 @@ class SAC(OffPolicyAgentAC):
         Returns:
             loss (:obj:`torch.Tensor`): Calculated policy loss
         """
-        pi, log_pi, _ = self.sample_action(states)
-        critic_pi = self.ac.get_value(
-            torch.cat([states, pi.float()], dim=-1).float(), mode="min"
+        next_best_actions, log_probs, _ = self.ac.get_action(states)
+        q_values = self.ac.get_value(
+            torch.cat([states, next_best_actions], dim=-1).float(), mode="min"
         )
-        policy_loss = ((self.alpha * log_pi) - critic_pi).mean()
+        policy_loss = ((self.alpha * log_probs) - q_values).mean()
 
-        return policy_loss, log_pi
+        return policy_loss, log_probs
 
-    def get_alpha_loss(self, log_pi):
-        # Entropy loss
+    def get_alpha_loss(self, log_probs):
+        """Calculate Entropy Loss
+
+        Args:
+            log_probs (float): Log probs
+        """
         if self.entropy_tuning:
             alpha_loss = -torch.mean(
-                self.log_alpha * (log_pi + self.target_entropy).detach()
+                self.log_alpha * (log_probs + self.target_entropy).detach()
             )
         else:
             alpha_loss = torch.FloatTensor(0.0)
-            self.alpha = self.log_alpha.exp()
         return alpha_loss
 
-    def update_params(self, update_interval: int) -> (Tuple[float]):
+    def update_params(self, update_interval: int) -> None:
+        """Update parameters of the model
+
+        Args:
+            update_interval (int): Interval between successive updates of the target model
+        """
         for timestep in range(update_interval):
             batch = self.sample_from_buffer()
 
             value_loss = self.get_q_loss(batch)
             self.logs["value_loss"].append(value_loss.item())
 
-            policy_loss, log_pi = self.get_p_loss(batch.states)
+            policy_loss, log_probs = self.get_p_loss(batch.states)
             self.logs["policy_loss"].append(policy_loss.item())
 
-            alpha_loss = self.get_alpha_loss(log_pi)
+            alpha_loss = self.get_alpha_loss(log_probs)
             self.logs["alpha_loss"].append(alpha_loss.item())
-
-            policy_loss += alpha_loss
 
             self.optimizer_value.zero_grad()
             value_loss.backward()
@@ -226,13 +219,18 @@ class SAC(OffPolicyAgentAC):
             policy_loss.backward()
             self.optimizer_policy.step()
 
+            self.optimizer_alpha.zero_grad()
+            alpha_loss.backward()
+            self.optimizer_alpha.step()
+
             self.update_target_model()
 
-        # self.logs["value_loss"].append(value_loss.item())
-        # self.logs["policy_loss"].append(policy_loss.item())
-        # self.logs["alpha_loss"].append(alpha_loss.item())
-
     def get_hyperparams(self) -> Dict[str, Any]:
+        """Get relevant hyperparameters to save
+
+        Returns:
+            hyperparams (:obj:`dict`): Hyperparameters to be saved
+        """
         hyperparams = {
             "network": self.network,
             "gamma": self.gamma,
@@ -244,32 +242,24 @@ class SAC(OffPolicyAgentAC):
             "polyak": self.polyak,
             "weights": self.ac.state_dict(),
         }
-
         return hyperparams
 
-    def load_weights(self, weights) -> None:
-        """
-        Load weights for the agent from pretrained model
-        """
-        self.ac.load_state_dict(weights["weights"])
-
     def get_logging_params(self) -> Dict[str, Any]:
-        """
-        :returns: Logging parameters for monitoring training
-        :rtype: dict
+        """Gets relevant parameters for logging
+
+        Returns:
+            logs (:obj:`dict`): Logging parameters for monitoring training
         """
         logs = {
             "policy_loss": safe_mean(self.logs["policy_loss"]),
             "value_loss": safe_mean(self.logs["value_loss"]),
             "alpha_loss": safe_mean(self.logs["alpha_loss"]),
         }
-
         self.empty_logs()
         return logs
 
     def empty_logs(self):
-        """
-        Empties logs
+        """Empties logs
         """
         self.logs = {}
         self.logs["value_loss"] = []
