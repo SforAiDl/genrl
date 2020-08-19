@@ -72,7 +72,8 @@ class TD3(OffPolicyAgentAC):
             self.ac = get_model("ac", self.network + "12")(
                 input_dim,
                 action_dim,
-                hidden=self.layers,
+                policy_layers=self.policy_layers,
+                value_layers=self.value_layers,
                 val_type="Qsa",
                 discrete=False,
                 num_critics=2,
