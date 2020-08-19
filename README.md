@@ -75,3 +75,43 @@ trainer = Trainer(agent, env, mode="dyna", model="tabular", n_episodes=10000)
 episode_rewards = trainer.train()
 trainer.plot(episode_rewards)
 ```
+
+## Algorithms
+
+### Deep RL
+ - DQN (Deep Q Networks)
+    - DQN
+    - Double DQN
+    - Dueling DQN
+    - Noisy DQN
+    - Categorical DQN
+ - VPG (Vanilla Policy Gradients)
+ - A2C (Advantage Actor-Critic)
+ - PPO (Proximal Policy Optimization)
+ - DDPG (Deep Deterministic Policy Gradients)
+ - TD3 (Twin Delayed DDPG)
+ - SAC (Soft Actor Critic)
+
+### Classical RL
+ - SARSA
+ - Q Learning
+
+### Bandit RL
+ - Multi Armed Bandits
+    - Eps Greedy
+    - UCB
+    - Thompson Sampling
+    - Bayesian Bandits
+    - Softmax Explorer
+  - Contextual Bandits
+    - Eps Greedy
+    - UCB
+    - Thompson Sampling
+    - Bayesian Bandits
+    - Softmax Explorer
+ - Deep Contextual Bandits
+    - Variation Inference
+    - Noise sampling for neural network parameters
+    - Epsilon greedy with a neural network
+    - Bayesian Regression on for posterior inference
+    - Bootstraped Ensemble
