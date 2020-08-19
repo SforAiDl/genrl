@@ -1,5 +1,7 @@
 from gym.envs.registration import register
 
+from genrl.environments.multiagent.environment import MultiAgentEnv
+
 # Multiagent envs
 # ----------------------------------------
 

@@ -10,7 +10,6 @@ import sys
 import numpy as np
 import six
 from gym import error
-from gym.utils import reraise
 
 if "Apple" in sys.version:
     if "DYLD_FALLBACK_LIBRARY_PATH" in os.environ:

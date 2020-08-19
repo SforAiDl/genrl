@@ -2,8 +2,9 @@ import gym
 import numpy as np
 from gym import spaces
 from gym.envs.registration import EnvSpec
-from multiagent import rendering
-from multiagent.multi_discrete import MultiDiscrete
+
+from genrl.environments.multiagent import rendering
+from genrl.environments.multiagent.multi_discrete import MultiDiscrete
 
 
 # environment for all agents in the multiagent world

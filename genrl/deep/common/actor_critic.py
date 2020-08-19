@@ -7,7 +7,7 @@ from torch.distributions import Categorical
 
 from genrl.deep.common.base import BaseActorCritic
 from genrl.deep.common.policies import MlpPolicy
-from genrl.deep.common.utils import cnn
+from genrl.deep.common.utils import cnn, init_weights, mlp
 from genrl.deep.common.values import MlpValue
 
 
@@ -137,3 +137,19 @@ def get_actor_critic_from_name(name_: str):
     if name_ in actor_critic_registry:
         return actor_critic_registry[name_]
     raise NotImplementedError
+
+
+class MlpCentralizedActorCritic(BaseActorCritic):
+    def __init__(
+        self, state_dim: int, action_dim: int, shared_layers: Tuple = (512, 256)
+    ):
+        super(CentralizedActorCritic, self).__init__()
+
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+
+        self.shared = mlp([self.state_dim] + list(shared_layers))
+        self.actor = nn.Linear(shared_layers[-1], self.action_dim)
+        self.critic = nn.Linear(shared_layers[-1], 1)
+
+        init_weights(self.parameters())
