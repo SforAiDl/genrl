@@ -8,7 +8,11 @@ from genrl.environments import VectorEnv
 def test_td3():
     env = VectorEnv("Pendulum-v0", 2)
     algo = TD3(
-        "mlp", env, noise=OrnsteinUhlenbeckActionNoise, layers=[1, 1], replay_size=100
+        "mlp",
+        env,
+        noise=OrnsteinUhlenbeckActionNoise,
+        policy_layers=[1, 1],
+        value_layers=[1, 1],
     )
 
     trainer = OffPolicyTrainer(
