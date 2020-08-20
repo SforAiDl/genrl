@@ -41,7 +41,6 @@ class TD3(OffPolicyAgentAC):
     def __init__(
         self,
         *args,
-        polyak: float = 0.995,
         policy_frequency: int = 2,
         noise: ActionNoise = None,
         noise_std: float = 0.1,

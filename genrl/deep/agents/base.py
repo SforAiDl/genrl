@@ -41,7 +41,7 @@ class BaseAgent(ABC):
         network: Union[str, BaseActorCritic],
         env: Any,
         create_model: bool = True,
-        batch_size: int = 64,
+        batch_size: int = 128,
         gamma: float = 0.99,
         layers: Tuple = (64, 64),
         lr_policy: float = 0.0001,
@@ -184,7 +184,7 @@ class OffPolicyAgent(BaseAgent):
     """
 
     def __init__(
-        self, *args, replay_size: int = 1000, buffer_type: str = "push", **kwargs
+        self, *args, replay_size: int = 5000, buffer_type: str = "push", **kwargs
     ):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size

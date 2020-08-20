@@ -66,7 +66,7 @@ False (To be implemented))
         run_num: int = None,
         load_model: str = None,
         render: bool = False,
-        max_ep_len: int = 1000,
+        max_ep_len: int = 2000,
         distributed: bool = False,
         steps_per_epoch: int = 4000,
         epochs: int = 10,
