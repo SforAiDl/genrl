@@ -28,7 +28,8 @@ class A2C(OnPolicyAgent):
     :param num_episodes: Number of episodes
     :param timesteps_per_actorbatch: Number of timesteps per epoch
     :param max_ep_len: Maximum timesteps in an episode
-    :param layers: Number of neurons in hidden layers
+    :param policy_layers: Number of neurons in hidden layers in the policy network
+    :param value_layers: Number of neurons in hidden layers in the value network
     :param noise: Noise function to use
     :param noise_std: Standard deviation for action noise
     :param seed: Seed for reproducing results
@@ -46,7 +47,8 @@ class A2C(OnPolicyAgent):
     :type num_episodes: int
     :type timesteps_per_actorbatch: int
     :type max_ep_len: int
-    :type layers: tuple or list
+    :type policy_layers: tuple or list
+    :type value_layers: tuple or list
     :type noise: function
     :type noise_std: float
     :type seed: int
@@ -65,7 +67,8 @@ class A2C(OnPolicyAgent):
         gamma: float = 0.99,
         lr_policy: float = 0.01,
         lr_value: float = 0.1,
-        layers: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
         rollout_size: int = 2048,
         noise: Any = None,
         noise_std: float = 0.1,
@@ -75,7 +78,8 @@ class A2C(OnPolicyAgent):
             network,
             env,
             batch_size=batch_size,
-            layers=layers,
+            policy_layers=policy_layers,
+            value_layers=value_layers,
             gamma=gamma,
             lr_policy=lr_policy,
             lr_value=lr_value,
@@ -102,7 +106,13 @@ class A2C(OnPolicyAgent):
                 self.env, self.network
             )
             self.ac = get_model("ac", self.network)(
-                input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
+                input_dim,
+                action_dim,
+                self.policy_layers,
+                self.value_layers,
+                "V",
+                discrete,
+                action_lim=action_lim,
             ).to(self.device)
 
         else:

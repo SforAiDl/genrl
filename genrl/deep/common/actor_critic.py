@@ -32,15 +32,16 @@ class MlpActorCritic(BaseActorCritic):
         self,
         state_dim: spaces.Space,
         action_dim: spaces.Space,
-        hidden: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
         val_type: str = "V",
         discrete: bool = True,
         **kwargs
     ):
         super(MlpActorCritic, self).__init__()
 
-        self.actor = MlpPolicy(state_dim, action_dim, hidden, discrete, **kwargs)
-        self.critic = MlpValue(state_dim, action_dim, val_type, hidden, **kwargs)
+        self.actor = MlpPolicy(state_dim, action_dim, policy_layers, discrete, **kwargs)
+        self.critic = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
 
 
 class CNNActorCritic(BaseActorCritic):
@@ -64,7 +65,8 @@ class CNNActorCritic(BaseActorCritic):
         self,
         framestack: int,
         action_dim: spaces.Space,
-        fc_layers: Tuple = (256,),
+        policy_layers: Tuple = (256,),
+        value_layers: Tuple = (256,),
         val_type: str = "V",
         discrete: bool = True,
         *args,
@@ -73,8 +75,10 @@ class CNNActorCritic(BaseActorCritic):
         super(CNNActorCritic, self).__init__()
 
         self.feature, output_size = cnn((framestack, 16, 32))
-        self.actor = MlpPolicy(output_size, action_dim, fc_layers, discrete, **kwargs)
-        self.critic = MlpValue(output_size, action_dim, val_type, fc_layers)
+        self.actor = MlpPolicy(
+            output_size, action_dim, policy_layers, discrete, **kwargs
+        )
+        self.critic = MlpValue(output_size, action_dim, val_type, value_layers)
 
     def get_action(
         self, state: torch.Tensor, deterministic: bool = False

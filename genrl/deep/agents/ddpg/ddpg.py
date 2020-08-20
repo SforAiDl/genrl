@@ -71,7 +71,12 @@ class DDPG(OffPolicyAgent):
 
         if isinstance(self.network, str):
             self.ac = get_model("ac", self.network)(
-                input_dim, action_dim, self.layers, "Qsa", discrete=discrete
+                input_dim,
+                action_dim,
+                self.policy_layers,
+                self.value_layers,
+                "Qsa",
+                False,
             ).to(self.device)
         else:
             self.ac = self.network
