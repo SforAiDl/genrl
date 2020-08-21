@@ -2,11 +2,7 @@ import sys
 sys.path.append("/home/aditya/Desktop/genrl/genrl") #add path
 import numpy as np
 
-# Comment out the all lines in genrl/__init__.py
-
 from genrl.marl.maa2c.a2c_agent import A2CAgent
-# from genrl.deep.common.trainer import OnPolicyTrainer
-# from genrl.deep.common.logger import TensorboardLogger
 from simple_spread_test import make_env
 from utils import TensorboardLogger
 
