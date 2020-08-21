@@ -41,7 +41,7 @@ class BaseAgent(ABC):
         network: Union[str, BaseActorCritic],
         env: Any,
         create_model: bool = True,
-        batch_size: int = 128,
+        batch_size: int = 64,
         gamma: float = 0.99,
         policy_layers: Tuple = (64, 64),
         value_layers: Tuple = (64, 64),
@@ -268,14 +268,7 @@ class OffPolicyAgent(BaseAgent):
         target_q_values = self.get_target_q_values(
             batch.next_states, batch.rewards, batch.dones
         )
-
-        if isinstance(q_values, list):
-            loss = F.mse_loss(q_values[0], target_q_values) + F.mse_loss(
-                q_values[1], target_q_values
-            )
-        else:
-            loss = F.mse_loss(q_values, target_q_values)
-
+        loss = F.mse_loss(q_values, target_q_values)
         return loss
 
 
@@ -304,6 +297,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
     def __init__(self, *args, polyak=0.995, **kwargs):
         super(OffPolicyAgentAC, self).__init__(*args, **kwargs)
         self.polyak = polyak
+        self.doublecritic = False
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = True
@@ -352,7 +346,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             q_values (:obj:`torch.Tensor`): Q values for the given states and actions
         """
-        if isinstance(self.ac.critic, list):
+        if self.doublecritic:
             q_values = self.ac.get_value(
                 torch.cat([states, actions], dim=-1), mode="both"
             )
@@ -377,7 +371,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         """
         next_target_actions = self.ac_target.get_action(next_states, True)[0]
 
-        if isinstance(self.ac_target.critic, list):
+        if self.doublecritic:
             next_q_target_values = self.ac_target.get_value(
                 torch.cat([next_states, next_target_actions], dim=-1), mode="min"
             )
@@ -389,6 +383,27 @@ class OffPolicyAgentAC(OffPolicyAgent):
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
 
         return target_q_values
+
+    def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
+        """Actor Critic Function to calculate the loss of the Q-function or critic
+
+        Args:
+            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
+
+        Returns:
+            loss (:obj:`torch.Tensor`): Calculated loss of the Q-function
+        """
+        q_values = self.get_q_values(batch.states, batch.actions)
+        target_q_values = self.get_target_q_values(
+            batch.next_states, batch.rewards, batch.dones
+        )
+        if self.doublecritic:
+            loss = F.mse_loss(q_values[0], target_q_values) + F.mse_loss(
+                q_values[1], target_q_values
+            )
+        else:
+            loss = F.mse_loss(q_values, target_q_values)
+        return loss
 
     def get_p_loss(self, states: torch.Tensor) -> torch.Tensor:
         """Function to get the Policy loss

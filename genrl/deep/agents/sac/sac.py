@@ -55,6 +55,8 @@ class SAC(OffPolicyAgentAC):
         self.polyak = polyak
         self.entropy_tuning = entropy_tuning
 
+        self.doublecritic = True
+
         self.empty_logs()
         if self.create_model:
             self._create_model()
@@ -83,10 +85,10 @@ class SAC(OffPolicyAgentAC):
             self.ac = get_model("ac", self.network + "12")(
                 input_dim,
                 action_dim,
-                hidden=self.layers,
+                policy_layers=self.policy_layers,
+                value_layers=self.value_layers,
                 val_type="Qsa",
                 discrete=False,
-                num_critics=2,
                 sac=True,
                 action_scale=self.action_scale,
                 action_bias=self.action_bias,
@@ -96,8 +98,8 @@ class SAC(OffPolicyAgentAC):
 
         self.ac_target = deepcopy(self.ac)
 
-        self.critic_params = list(self.ac.critic[0].parameters()) + list(
-            self.ac.critic[1].parameters()
+        self.critic_params = list(self.ac.critic1.parameters()) + list(
+            self.ac.critic2.parameters()
         )
 
         self.optimizer_value = opt.Adam(self.critic_params, self.lr_value)
@@ -144,7 +146,7 @@ class SAC(OffPolicyAgentAC):
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        """Get target Q values for the TD3
+        """Get target Q values for the SAC
 
         Args:
             next_states (:obj:`torch.Tensor`): Next states for which target Q-values
@@ -153,7 +155,7 @@ class SAC(OffPolicyAgentAC):
             dones (:obj:`list`): Game over status for each environment
 
         Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
+            target_q_values (:obj:`torch.Tensor`): Target Q values for the SAC
         """
         next_target_actions, next_log_probs, _ = self.ac.get_action(next_states)
         next_q_target_values = self.ac_target.get_value(
@@ -173,10 +175,9 @@ class SAC(OffPolicyAgentAC):
         """
         next_best_actions, log_probs, _ = self.ac.get_action(states)
         q_values = self.ac.get_value(
-            torch.cat([states, next_best_actions], dim=-1).float(), mode="min"
+            torch.cat([states, next_best_actions], dim=-1), mode="min"
         )
         policy_loss = ((self.alpha * log_probs) - q_values).mean()
-
         return policy_loss, log_probs
 
     def get_alpha_loss(self, log_probs):

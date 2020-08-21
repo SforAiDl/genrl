@@ -1,3 +1,4 @@
+import collections
 from copy import deepcopy
 from typing import Any, Dict, List, NamedTuple
 
@@ -43,13 +44,15 @@ class TD3(OffPolicyAgentAC):
         *args,
         policy_frequency: int = 2,
         noise: ActionNoise = None,
-        noise_std: float = 0.1,
+        noise_std: float = 0.2,
         **kwargs,
     ):
         super(TD3, self).__init__(*args, **kwargs)
         self.policy_frequency = policy_frequency
         self.noise = noise
         self.noise_std = noise_std
+
+        self.doublecritic = True
 
         self.empty_logs()
         if self.create_model:
@@ -75,7 +78,6 @@ class TD3(OffPolicyAgentAC):
                 value_layers=self.value_layers,
                 val_type="Qsa",
                 discrete=False,
-                num_critics=2,
             )
         else:
             self.ac = self.network
@@ -88,8 +90,8 @@ class TD3(OffPolicyAgentAC):
         self.ac_target = deepcopy(self.ac)
 
         self.replay_buffer = self.buffer_class(self.replay_size)
-        self.critic_params = list(self.ac.critic[0].parameters()) + list(
-            self.ac.critic[1].parameters()
+        self.critic_params = list(self.ac.critic1.parameters()) + list(
+            self.ac.critic2.parameters()
         )
         self.optimizer_value = torch.optim.Adam(self.critic_params, lr=self.lr_value)
         self.optimizer_policy = torch.optim.Adam(
