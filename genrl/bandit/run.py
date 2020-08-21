@@ -4,7 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import genrl
-from genrl.bandit.trainer import BanditTrainer
+from genrl.bandit.trainer import DCBTrainer
 
 ALGOS = {
     "bootstrap": genrl.bandit.agents.cb_agents.BootstrapNeuralAgent,
@@ -31,7 +31,7 @@ def run(args, agent, bandit, plot=True):
     logdir = Path(args.logdir).joinpath(
         f"{agent.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    trainer = BanditTrainer(
+    trainer = DCBTrainer(
         agent, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
 
@@ -130,7 +130,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{bootstrap.__class__.__name__}-on-{bandit.__class__.__name__}-{start_time():%d%m%y%H%M%S}"
     )
-    bootstrap_trainer = BanditTrainer(
+    bootstrap_trainer = DCBTrainer(
         bootstrap, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["bootstrap"] = bootstrap_trainer.train(
@@ -149,7 +149,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{fixed.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    fixed_trainer = BanditTrainer(
+    fixed_trainer = DCBTrainer(
         fixed, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["fixed"] = fixed_trainer.train(
@@ -168,7 +168,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{linpos.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    linpos_trainer = BanditTrainer(
+    linpos_trainer = DCBTrainer(
         linpos, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["linpos"] = linpos_trainer.train(
@@ -183,7 +183,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{neural_linpos.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    neural_linpos_trainer = BanditTrainer(
+    neural_linpos_trainer = DCBTrainer(
         neural_linpos, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["neural-linpos"] = neural_linpos_trainer.train(
@@ -202,7 +202,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{neural_noise.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    neural_noise_trainer = BanditTrainer(
+    neural_noise_trainer = DCBTrainer(
         neural_noise, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["neural-noise"] = neural_noise_trainer.train(
@@ -221,7 +221,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{variational.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    variational_trainer = BanditTrainer(
+    variational_trainer = DCBTrainer(
         variational, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["variational"] = variational_trainer.train(
