@@ -2,8 +2,15 @@ from typing import List
 
 import gym
 
-from ..environments import AtariPreprocessing, FrameStack, GymWrapper, NoopReset
-from ..environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
+from genrl.environments import (
+    AtariPreprocessing,
+    FireReset,
+    FrameStack,
+    GymWrapper,
+    NoopReset,
+)
+from genrl.environments.time_limit import AtariTimeLimit, TimeLimit
+from genrl.environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
 def VectorEnv(
@@ -45,13 +52,19 @@ def GymEnv(env_id: str) -> gym.Env:
     :returns: Gym Environment
     :rtype: object
     """
-    gym_env = gym.make(env_id)
-    env = GymWrapper(gym_env)
-    return env
+    env = gym.make(env_id)
+    return GymWrapper(TimeLimit(env))
 
 
 def AtariEnv(
-    env_id: str, wrapper_list: List = [AtariPreprocessing, NoopReset, FrameStack]
+    env_id: str,
+    wrapper_list: List = [
+        AtariPreprocessing,
+        NoopReset,
+        FireReset,
+        AtariTimeLimit,
+        FrameStack,
+    ],
 ) -> gym.Env:
     """
     Function to apply wrappers for all Atari envs by Trainer class

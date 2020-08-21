@@ -2,10 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
-from torch.autograd import Variable
 
-class CentralizedActorCritic(nn.Module): 
 
+class CentralizedActorCritic(nn.Module):
     def __init__(self, obs_dim, action_dim):
         super(CentralizedActorCritic, self).__init__()
 
@@ -30,16 +29,16 @@ class CentralizedActorCritic(nn.Module):
         qval = self.value(x_s)
         policy = self.policy(x_s)
 
-        return policy,qval
+        return policy, qval
 
-    def get_action(self,state,device,one_hot=False):
+    def get_action(self, state, device, one_hot=False):
         state = torch.FloatTensor(state).to(device)
-        logits,_ = self.forward(state)
+        logits, _ = self.forward(state)
         if one_hot:
             logits = self.onehot_from_logits(logits)
             return logits
 
-        dist = F.softmax(logits,dim=0)
+        dist = F.softmax(logits, dim=0)
         probs = Categorical(dist)
         index = probs.sample().cpu().detach().item()
         return index
@@ -50,10 +49,13 @@ class CentralizedActorCritic(nn.Module):
         if eps == 0.0:
             return argmax_acs
         # get random actions in one-hot form
-        rand_acs = Variable(torch.eye(logits.shape[1])[[np.random.choice(
-            range(logits.shape[1]), size=logits.shape[0])]], requires_grad=False)
+        rand_acs = torch.eye(logits.shape[1])[
+            [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
+        ]
         # chooses between best and random actions using epsilon greedy
-        return torch.stack([argmax_acs[i] if r > eps else rand_acs[i] for i, r in
-                            enumerate(torch.rand(logits.shape[0]))])
-
-
+        return torch.stack(
+            [
+                argmax_acs[i] if r > eps else rand_acs[i]
+                for i, r in enumerate(torch.rand(logits.shape[0]))
+            ]
+        )

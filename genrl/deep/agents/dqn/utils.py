@@ -1,340 +1,187 @@
-import math
-from typing import List, Tuple
+import collections
+from typing import List
 
+import numpy as np
 import torch
-import torch.nn as nn
-from torch.autograd import Variable
 
-from genrl.deep.common.utils import cnn, mlp
+from genrl.deep.agents.dqn.base import DQN
 
 
-def noisy_mlp(fc_layers: List[int], noisy_layers: List[int]):
+def ddqn_q_target(
+    agent: DQN, next_states: torch.Tensor, rewards: torch.Tensor, dones: torch.Tensor,
+) -> torch.Tensor:
+    """Double Q-learning target
+
+    Can be used to replace the `get_target_values` method of the Base DQN
+    class in any DQN algorithm
+
+    Args:
+        agent (:obj:`DQN`): The agent
+        next_states (:obj:`torch.Tensor`): Next states being encountered by the agent
+        rewards (:obj:`torch.Tensor`): Rewards received by the agent
+        dones (:obj:`torch.Tensor`): Game over status of each environment
+
+    Returns:
+        target_q_values (:obj:`torch.Tensor`): Target Q values using Double Q-learning
     """
-    Generate Noisy MLP model given sizes of each fully connected and noisy layers
+    next_q_values = agent.model(next_states)
+    next_best_actions = next_q_values.max(1)[1].unsqueeze(1)
 
-    :param fc_layers: list of fc layers
-    :param noisy_layers: list of noisy layers
-    :type fc_layers: list
-    :type noisy_layers: list
-    :returns: Noisy model
-    :rtype: Pytorch model
+    rewards, dones = rewards.unsqueeze(-1), dones.unsqueeze(-1)
+
+    next_q_target_values = agent.target_model(next_states)
+    max_next_q_target_values = next_q_target_values.gather(1, next_best_actions)
+    target_q_values = rewards + agent.gamma * torch.mul(
+        max_next_q_target_values, (1 - dones)
+    )
+    return target_q_values
+
+
+def prioritized_q_loss(agent: DQN, batch: collections.namedtuple):
+    """Function to calculate the loss of the Q-function
+
+    Returns:
+        agent (:obj:`DQN`): The agent
+        loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
     """
-    model = []
-    for layer in range(len(fc_layers) - 1):
-        model += [nn.Linear(fc_layers[layer], fc_layers[layer + 1]), nn.ReLU()]
-    for layer in range(len(noisy_layers) - 1):
-        model += [NoisyLinear(noisy_layers[layer], noisy_layers[layer + 1])]
-        if layer < len(noisy_layers) - 2:
-            model += [nn.ReLU()]
-    return nn.Sequential(*model)
+    batch = agent.sample_from_buffer(beta=agent.beta)
+
+    q_values = agent.get_q_values(batch.states, batch.actions)
+    target_q_values = agent.get_target_q_values(
+        batch.next_states, batch.rewards, batch.dones
+    )
+
+    # Weighted MSE Loss
+    loss = batch.weights * (q_values - target_q_values.detach()) ** 2
+    # Priorities are taken as the td-errors + some small value to avoid 0s
+    priorities = loss + 1e-5
+    loss = loss.mean()
+    agent.replay_buffer.update_priorities(
+        batch.indices, priorities.detach().cpu().numpy()
+    )
+    agent.logs["value_loss"].append(loss.item())
+    return loss
 
 
-class DuelingDQNValueMlp(nn.Module):
+def categorical_greedy_action(agent: DQN, state: torch.Tensor) -> np.ndarray:
+    """Greedy action selection for Categorical DQN
+
+    Args:
+        agent (:obj:`DQN`): The agent
+        state (:obj:`np.ndarray`): Current state of the environment
+
+    Returns:
+        action (:obj:`np.ndarray`): Action taken by the agent
     """
-    Class for Dueling DQN's MLP Value function
+    q_values = agent.model(state).detach().numpy()
+    # We need to scale and discretise the Q-value distribution obtained above
+    q_values = q_values * np.linspace(agent.v_min, agent.v_max, agent.num_atoms)
+    # Then we find the action with the highest Q-values for all discrete regions
+    action = np.argmax(q_values.sum(2), axis=-1)
+    return action
 
-    :param state_dim: Observation space
-    :param action_dim: Action space
-    :param hidden: Number of hidden Nodes
-    :type state_dim: int, float, ...
-    :type action_dim: int, float, ...
-    :type hidden: tuple
+
+def categorical_q_values(agent: DQN, states: torch.Tensor, actions: torch.Tensor):
+    """Get Q values given state for a Categorical DQN
+
+    Args:
+        agent (:obj:`DQN`): The agent
+        states (:obj:`torch.Tensor`): States being replayed
+        actions (:obj:`torch.Tensor`): Actions being replayed
+
+    Returns:
+        q_values (:obj:`torch.Tensor`): Q values for the given states and actions
     """
+    q_values = agent.model(states)
 
-    def __init__(self, state_dim: int, action_dim: int, hidden: Tuple = (128, 128)):
-        super(DuelingDQNValueMlp, self).__init__()
+    # Size of q_values should be [..., action_dim, 51] here
+    actions = actions.unsqueeze(1).expand(-1, 1, agent.num_atoms)
+    q_values = q_values.gather(1, actions)
 
-        self.feature = nn.Sequential(nn.Linear(state_dim, hidden[0]), nn.ReLU())
+    # But after this the shape of q_values would be [..., 1, 51] where as
+    # it needs to be the same as the target_q_values: [..., 51]
+    q_values = q_values.squeeze(1)  # Hence the squeeze
 
-        self.advantage = nn.Sequential(
-            nn.Linear(hidden[0], hidden[1]), nn.ReLU(), nn.Linear(hidden[1], action_dim)
-        )
+    # Clamp Q-values to get positive and stable Q-values
+    q_values = q_values.clamp(0.01, 0.99)
 
-        self.value = nn.Sequential(
-            nn.Linear(hidden[0], hidden[1]), nn.ReLU(), nn.Linear(hidden[1], 1)
-        )
-
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
-        features = self.feature(state)
-        advantage = self.advantage(features)
-        value = self.value(features)
-        return value + advantage - advantage.mean()
+    return q_values
 
 
-class DuelingDQNValueCNN(nn.Module):
+def categorical_q_target(
+    agent: DQN, next_states: np.ndarray, rewards: List[float], dones: List[bool],
+):
+    """Projected Distribution of Q-values
+
+    Helper function for Categorical/Distributional DQN
+
+    Args:
+        agent (:obj:`DQN`): The agent
+        next_states (:obj:`torch.Tensor`): Next states being encountered by the agent
+        rewards (:obj:`torch.Tensor`): Rewards received by the agent
+        dones (:obj:`torch.Tensor`): Game over status of each environment
+
+    Returns:
+        target_q_values (object): Projected Q-value Distribution or Target Q Values
     """
-    Class for Dueling DQN's CNN Value function
+    batch_size = next_states.size(0)
 
-    :param action_dim: Action space
-    :param framestack: Number of frames you're considering in your history
-    :param fc_layers: no of units in fc layers
-    :type action_dim: int, float, ...
-    :type framestack: int
+    delta_z = float(agent.v_max - agent.v_min) / (agent.num_atoms - 1)
+    support = torch.linspace(agent.v_min, agent.v_max, agent.num_atoms)
 
-    :type fc_layers: tuple
+    next_q_values = agent.target_model(next_states).data.cpu() * support
+    next_action = torch.argmax(next_q_values.sum(2), axis=1)
+    next_action = next_action[:, np.newaxis, np.newaxis].expand(
+        next_q_values.size(0), 1, next_q_values.size(2)
+    )
+    next_q_values = next_q_values.gather(1, next_action).squeeze(1)
+
+    rewards = rewards.unsqueeze(-1).expand_as(next_q_values)
+    dones = dones.unsqueeze(-1).expand_as(next_q_values)
+    support = support.unsqueeze(0).expand_as(next_q_values)
+
+    target_q_values = rewards + (1 - dones) * 0.99 * support
+    target_q_values = target_q_values.clamp(min=agent.v_min, max=agent.v_max)
+    norm_target_q_values = (target_q_values - agent.v_min) / delta_z
+    lower = norm_target_q_values.floor()
+    upper = norm_target_q_values.ceil()
+
+    offset = (
+        torch.linspace(0, (batch_size - 1) * agent.num_atoms, batch_size)
+        .long()
+        .unsqueeze(1)
+        .expand(-1, agent.num_atoms)
+    )
+
+    target_q_values = torch.zeros(next_q_values.size())
+    target_q_values.view(-1).index_add_(
+        0,
+        (lower.long() + offset).view(-1),
+        (next_q_values * (upper - norm_target_q_values)).view(-1),
+    )
+    target_q_values.view(-1).index_add_(
+        0,
+        (upper.long() + offset).view(-1),
+        (next_q_values * (norm_target_q_values - lower)).view(-1),
+    )
+    return target_q_values
+
+
+def categorical_q_loss(agent: DQN, batch: collections.namedtuple):
+    """Categorical DQN loss function to calculate the loss of the Q-function
+
+    Args:
+        agent (:obj:`DQN`): The agent
+        batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
+
+    Returns:
+        loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
     """
+    target_q_values = agent.get_target_q_values(
+        batch.next_states, batch.rewards, batch.dones
+    )
+    q_values = agent.get_q_values(batch.states, batch.actions)
 
-    def __init__(self, action_dim: int, framestack: int = 4, fc_layers: Tuple = (256,)):
-        super(DuelingDQNValueCNN, self).__init__()
-
-        self.action_dim = action_dim
-
-        self.conv, output_size = cnn((framestack, 16, 32))
-
-        self.advantage = mlp([output_size] + list(fc_layers) + [action_dim])
-        self.value = mlp([output_size] + list(fc_layers) + [1])
-
-    def forward(self, inp: torch.Tensor) -> torch.Tensor:
-        inp = self.conv(inp)
-        inp = inp.view(inp.size(0), -1)
-        advantage = self.advantage(inp)
-        value = self.value(inp)
-        return value + advantage - advantage.mean()
-
-
-class NoisyLinear(nn.Module):
-    """
-    Noisy Layer definition for NoisyDQN
-
-    :param in_features: input features for the network
-    :param out_features: output features for the network
-    :param std_init: Used for initializing weights
-    :type in_features: int
-    :type out_features: int
-    :type std_init: float
-    """
-
-    def __init__(self, in_features: int, out_features: int, std_init: float = 0.4):
-        super(NoisyLinear, self).__init__()
-
-        self.in_features = in_features
-        self.out_features = out_features
-        self.std_init = std_init
-
-        self.weight_mu = nn.Parameter(torch.FloatTensor(out_features, in_features))
-        self.weight_sigma = nn.Parameter(torch.FloatTensor(out_features, in_features))
-        self.register_buffer(
-            "weight_epsilon", torch.FloatTensor(out_features, in_features)
-        )
-
-        self.bias_mu = nn.Parameter(torch.FloatTensor(out_features))
-        self.bias_sigma = nn.Parameter(torch.FloatTensor(out_features))
-        self.register_buffer("bias_epsilon", torch.FloatTensor(out_features))
-
-        self.reset_parameters()
-        self.reset_noise()
-
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
-        if self.training:
-            weight = self.weight_mu + self.weight_sigma.mul(
-                Variable(self.weight_epsilon)
-            )
-            bias = self.bias_mu + self.bias_sigma.mul(Variable(self.bias_epsilon))
-        else:
-            weight = self.weight_mu
-            bias = self.bias_mu
-        return nn.functional.linear(state, weight, bias)
-
-    def reset_parameters(self) -> None:
-        """
-        Reset the parameters
-        """
-        mu_range = 1 / math.sqrt(self.weight_mu.size(1))
-
-        self.weight_mu.data.uniform_(-mu_range, mu_range)
-        self.weight_sigma.data.fill_(
-            self.std_init / math.sqrt(self.weight_sigma.size(1))
-        )
-
-        self.bias_mu.data.uniform_(-mu_range, mu_range)
-        self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.bias_sigma.size(0)))
-
-    def reset_noise(self) -> None:
-        """
-        Reset Noisy layers weights
-        """
-        epsilon_in = self._scale_noise(self.in_features)
-        epsilon_out = self._scale_noise(self.out_features)
-
-        self.weight_epsilon.copy_(epsilon_out.ger(epsilon_in))
-        self.bias_epsilon.copy_(self._scale_noise(self.out_features))
-
-    def _scale_noise(self, size: int) -> torch.Tensor:
-        inp = torch.randn(size)
-        inp = inp.sign().mul(inp.abs().sqrt())
-        return inp
-
-
-class NoisyDQNValue(nn.Module):
-    """
-    Class for Dueling DQN's MLP Value function
-
-    :param state_dim: Observation space
-    :param action_dim: Action space
-    :param fc_layers: no of units in fc layers
-    :param noisy_layers: no of units in noisy layers
-    :type state_dim: int, float, ...
-    :type action_dim: int, float, ...
-    :type fc_layers: tuple
-    :type noisy_layers: tuple
-    """
-
-    def __init__(
-        self,
-        state_dim: int,
-        action_dim: int,
-        fc_layers: Tuple = (128,),
-        noisy_layers: Tuple = (128, 128),
-    ):
-        super(NoisyDQNValue, self).__init__()
-
-        self.model = noisy_mlp(
-            [state_dim] + list(fc_layers), list(noisy_layers) + [action_dim]
-        )
-
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
-        return self.model(state)
-
-    def reset_noise(self) -> None:
-        for layer in self.model:
-            if isinstance(layer, NoisyLinear):
-                layer.reset_noise()
-
-
-class NoisyDQNValueCNN(nn.Module):
-    """
-    Class for Dueling DQN's CNN Value function
-
-    :param action_dim: Action space
-    :param framestack: Number of frames you're considering in your history
-    :param fc_layers: no of units in fc layers
-    :param noisy_layers: no of units in noisy layers
-    :type action_dim: int, float, ...
-    :type framestack: int
-    :type fc_layers: tuple
-    :type noisy_layers: tuple
-    """
-
-    def __init__(
-        self,
-        action_dim: int,
-        framestack: int = 4,
-        fc_layers: Tuple = (128,),
-        noisy_layers: Tuple = (128, 128),
-    ):
-        super(NoisyDQNValueCNN, self).__init__()
-
-        self.conv, output_size = cnn((framestack, 16, 32))
-
-        self.model = noisy_mlp(
-            [output_size] + list(fc_layers), list(noisy_layers) + [action_dim]
-        )
-
-    def forward(self, inp: torch.Tensor) -> torch.Tensor:
-        inp = self.conv(inp)
-        inp = inp.view(inp.size(0), -1)
-        inp = self.model(inp)
-        return inp
-
-    def reset_noise(self) -> None:
-        for layer in self.model:
-            if isinstance(layer, NoisyLinear):
-                layer.reset_noise()
-
-
-class CategoricalDQNValue(nn.Module):
-    """
-    Class for Categorical DQN's MLP Value function
-
-    :param state_dim: Observation space
-    :param action_dim: Action space
-    :param num_atoms: Number of atoms in the Categorical network
-    :param fc_layers: no of units in fc layers
-    :param noisy_layers: no of units in noisy layers
-    :type state_dim: int, float, ...
-    :type action_dim: int, float, ...
-    :type num_atoms: int
-    :type fc_layers: tuple
-    :type noisy_layers: tuple
-    """
-
-    def __init__(
-        self,
-        state_dim: int,
-        action_dim: int,
-        num_atoms: int,
-        fc_layers: Tuple = (128, 128),
-        noisy_layers: Tuple = (128, 512),
-    ):
-        super(CategoricalDQNValue, self).__init__()
-
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-        self.num_atoms = num_atoms
-
-        self.model = noisy_mlp(
-            [state_dim] + list(fc_layers),
-            list(noisy_layers) + [self.action_dim * self.num_atoms],
-        )
-
-    def forward(self, state: torch.Tensor) -> torch.Tensor:
-        features = self.model(state)
-        dist = nn.functional.softmax(features.view(-1, self.num_atoms)).view(
-            -1, self.action_dim, self.num_atoms
-        )
-        return dist
-
-    def reset_noise(self) -> None:
-        for layer in self.model:
-            if isinstance(layer, NoisyLinear):
-                layer.reset_noise()
-
-
-class CategoricalDQNValueCNN(nn.Module):
-    """
-    Class for Categorical DQN's MLP Value function
-
-    :param action_dim: Action space
-    :param num_atoms: Number of atoms in the Categorical network
-    :param framestack: Number of frames you're considering in your history
-    :param fc_layers: no of units in fc layers
-    :param noisy_layers: no of units in noisy layers
-    :type action_dim: int, float, ...
-    :type num_atoms: int
-    :type framestack: int
-    :type fc_layers: tuple
-    :type noisy_layers: tuple
-    """
-
-    def __init__(
-        self,
-        action_dim: int,
-        num_atoms: int,
-        framestack: int = 4,
-        fc_layers: Tuple = (128, 128),
-        noisy_layers: Tuple = (128, 512),
-    ):
-        super(CategoricalDQNValueCNN, self).__init__()
-
-        self.action_dim = action_dim
-        self.num_atoms = num_atoms
-
-        self.conv, output_size = cnn((framestack, 16, 32))
-        self.model = noisy_mlp(
-            [output_size] + list(fc_layers),
-            list(noisy_layers) + [self.action_dim * self.num_atoms],
-        )
-
-    def forward(self, inp: torch.Tensor) -> torch.Tensor:
-        inp = self.conv(inp)
-        inp = inp.view(inp.size(0), -1)
-        inp = self.model(inp)
-        inp = nn.functional.softmax(inp.view(-1, self.num_atoms)).view(
-            -1, self.action_dim, self.num_atoms
-        )
-        return inp
-
-    def reset_noise(self) -> None:
-        for layer in self.model:
-            if isinstance(layer, NoisyLinear):
-                layer.reset_noise()
+    # For the loss, we take the difference
+    loss = -(target_q_values * q_values.log()).sum(1).mean()
+    return loss
