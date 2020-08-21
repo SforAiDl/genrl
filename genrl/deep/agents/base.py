@@ -43,8 +43,9 @@ class BaseAgent(ABC):
         create_model: bool = True,
         batch_size: int = 128,
         gamma: float = 0.99,
-        layers: Tuple = (64, 64),
-        lr_policy: float = 0.0001,
+        policy_layers: Tuple = (64, 64),
+        value_layers: Tuple = (64, 64),
+        lr_policy: float = 0.001,
         lr_value: float = 0.001,
         **kwargs
     ):
@@ -53,7 +54,8 @@ class BaseAgent(ABC):
         self.create_model = create_model
         self.batch_size = batch_size
         self.gamma = gamma
-        self.layers = layers
+        self.policy_layers = policy_layers
+        self.value_layers = value_layers
         self.lr_policy = lr_policy
         self.lr_value = lr_value
 

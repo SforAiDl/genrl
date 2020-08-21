@@ -2,7 +2,8 @@ Tutorials
 ============
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
     
+    Bandits/index
     Using Custom Policies
     Using A2C
