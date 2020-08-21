@@ -1,10 +1,9 @@
 import collections
 from copy import deepcopy
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, Dict
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from genrl.deep.agents import OffPolicyAgentAC
 from genrl.deep.common.noise import ActionNoise
@@ -117,15 +116,9 @@ class TD3(OffPolicyAgentAC):
             if timestep % self.policy_frequency == 0:
                 policy_loss = self.get_p_loss(batch.states)
 
-                for param in self.critic_params:
-                    param.requires_grad = False
-
                 self.optimizer_policy.zero_grad()
                 policy_loss.backward()
                 self.optimizer_policy.step()
-
-                for param in self.critic_params:
-                    param.requires_grad = True
 
                 self.logs["policy_loss"].append(policy_loss.item())
                 self.logs["value_loss"].append(value_loss.item())

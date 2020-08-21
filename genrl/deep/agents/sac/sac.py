@@ -1,16 +1,11 @@
 from copy import deepcopy
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List
 
-import gym
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as opt
-from torch.distributions import Normal
 
 from genrl.deep.agents.base import OffPolicyAgentAC
-from genrl.deep.common.base import BaseActorCritic
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
