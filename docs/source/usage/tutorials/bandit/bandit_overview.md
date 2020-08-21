@@ -1,4 +1,4 @@
-# Tutorial on Bandits
+# Overview
 
 ## Training an EpsilonGreedy agent on a Bernoulli Multi Armed Bandit
 
