@@ -5,6 +5,7 @@ import numpy as np
 from genrl.marl.maa2c.a2c_agent import A2CAgent
 from simple_spread_test import make_env
 from utils import TensorboardLogger
+from genrl.deep.common.logger import TensorboardLogger
 
 
 def train(env, max_episodes, timesteps_per_eps, logdir):

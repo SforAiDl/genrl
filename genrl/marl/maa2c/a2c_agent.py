@@ -7,23 +7,27 @@ import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as opt
+import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
+from .a2c import CentralizedActorCritic
+# import os
+# import sys
+# sys.path.append("/home/aditya/Desktop/genrl/genrl") #add path
 
-from genrl.deep.agents.base import OnPolicyAgent
-from genrl.deep.common import (
-    BaseActorCritic,
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-)
-from genrl.environments.vec_env import VecEnv
+# from genrl.deep.agents.base import OnPolicyAgent
+# from genrl.deep.common import (
+#     BaseActorCritic,
+#     RolloutBuffer,
+#     get_env_properties,
+#     get_model,
+#     safe_mean,
+# )
+# from genrl.environments.vec_env import VecEnv
 
 
 class A2CAgent:
-    def __init__(self, env, lr=2e-4, gamma=0.99, load_model=None, entropy_weight=0.008):
+    def __init__(self, env, lr=2e-4, gamma=0.99, load_model=None, entropy_weight=0.008, timesteps_per_episode = 300):
         self.env = env
         self.lr = lr
         self.gamma = gamma
@@ -40,7 +44,7 @@ class A2CAgent:
         self.optimizer = None
 
         self.episode_reward = 0
-        self.steps_per_episode = None
+        self.steps_per_episode = timesteps_per_episode
         self.final_step = 0
 
         self.values = None
@@ -156,7 +160,7 @@ class A2CAgent:
         )
 
         advantage = value_targets - curr_Q
-        self.policy_loss = -probs.log_prob(self.actions) * advantage.detach()
+        self.policy_loss = -probs.log_prob(self.actions).unsqueeze(dim=-1) * advantage.detach()
         self.policy_loss = self.policy_loss.mean()
 
         self.total_loss = self.policy_loss + self.value_loss - self.w * self.entropy
