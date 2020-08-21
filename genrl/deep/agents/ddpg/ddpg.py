@@ -76,7 +76,6 @@ class DDPG(OffPolicyAgentAC):
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
-        self.replay_buffer = self.buffer_class(self.replay_size)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 

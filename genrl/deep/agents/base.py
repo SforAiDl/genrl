@@ -190,12 +190,11 @@ class OffPolicyAgent(BaseAgent):
     ):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size
-        self.buffer_type = buffer_type
 
         if buffer_type == "push":
-            self.buffer_class = PushReplayBuffer
+            self.replay_buffer = PushReplayBuffer(self.replay_size)
         elif buffer_type == "prioritized":
-            self.buffer_class = PrioritizedBuffer
+            self.replay_buffer = PrioritizedBuffer(self.replay_size)
         else:
             raise NotImplementedError
 
@@ -238,7 +237,6 @@ class OffPolicyAgent(BaseAgent):
         """
         # Samples from the buffer
         if beta is not None:
-            print(beta)
             batch = self.replay_buffer.sample(self.batch_size, beta=beta)
         else:
             batch = self.replay_buffer.sample(self.batch_size)
@@ -246,13 +244,15 @@ class OffPolicyAgent(BaseAgent):
         states, actions, rewards, next_states, dones = self._reshape_batch(batch)
 
         # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if self.buffer_type == "push":
+        if isinstance(self.replay_buffer, PushReplayBuffer):
             batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
-        elif self.buffer_type == "prioritized":
+        elif isinstance(self.replay_buffer, PrioritizedBuffer):
             indices, weights = batch[5], batch[6]
             batch = PrioritizedReplayBufferSamples(
                 *[states, actions, rewards, next_states, dones, indices, weights]
             )
+        else:
+            raise NotImplementedError
         return batch
 
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
@@ -352,7 +352,6 @@ class OffPolicyAgentAC(OffPolicyAgent):
             )
         else:
             q_values = self.ac.get_value(torch.cat([states, actions], dim=-1))
-
         return q_values
 
     def get_target_q_values(

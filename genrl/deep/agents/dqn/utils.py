@@ -44,8 +44,6 @@ def prioritized_q_loss(agent: DQN, batch: collections.namedtuple):
         agent (:obj:`DQN`): The agent
         loss (:obj:`torch.Tensor`): Calculateed loss of the Q-function
     """
-    batch = agent.sample_from_buffer(beta=agent.beta)
-
     q_values = agent.get_q_values(batch.states, batch.actions)
     target_q_values = agent.get_target_q_values(
         batch.next_states, batch.rewards, batch.dones

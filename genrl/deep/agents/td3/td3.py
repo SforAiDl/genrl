@@ -88,7 +88,6 @@ class TD3(OffPolicyAgentAC):
 
         self.ac_target = deepcopy(self.ac)
 
-        self.replay_buffer = self.buffer_class(self.replay_size)
         self.critic_params = list(self.ac.critic1.parameters()) + list(
             self.ac.critic2.parameters()
         )

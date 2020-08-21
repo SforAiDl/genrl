@@ -107,8 +107,6 @@ class SAC(OffPolicyAgentAC):
             self.log_alpha = torch.zeros(1, requires_grad=True)
             self.optimizer_alpha = opt.Adam([self.log_alpha], lr=self.lr_policy)
 
-        self.replay_buffer = self.buffer_class(self.replay_size)
-
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
     ) -> np.ndarray:
