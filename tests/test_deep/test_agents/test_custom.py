@@ -29,22 +29,6 @@ class custom_actorcritic(MlpActorCritic):
         self.action_dim = action_dim
 
 
-class custom_multiactorcritic(MlpActorCritic):
-    def __init__(self, state_dim, action_dim, policy_layers, critic_layers, **kwargs):
-        super(custom_multiactorcritic, self).__init__(
-            state_dim,
-            action_dim,
-            policy_layers,
-            critic_layers,
-            val_type="Qsa",
-            discrete=False,
-        )
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-        self.qf2 = MlpValue(state_dim, action_dim, val_type="Qsa", hidden=critic_layers)
-        self.qf1 = self.critic
-
-
 def test_custom_vpg():
     env = VectorEnv("CartPole-v0", 1)
     state_dim = env.observation_space.shape[0]
@@ -69,20 +53,5 @@ def test_ppo1_custom():
     algo = PPO1(actorcritic, env)
 
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")
-
-
-def test_td3_custom():
-    env = VectorEnv("Pendulum-v0", 2)
-    state_dim = env.observation_space.shape[0]
-    action_dim = env.action_space.shape[0]
-    multiactorcritic = custom_multiactorcritic(
-        state_dim, action_dim, policy_layers=(1, 1), critic_layers=(1, 1)
-    )
-
-    algo = TD3(multiactorcritic, env, noise=OrnsteinUhlenbeckActionNoise)
-
-    trainer = OffPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")

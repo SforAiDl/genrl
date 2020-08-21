@@ -8,6 +8,12 @@ Train a Tabular Dyna-Q model from scratch on the `FrozenLake-v0` gym environment
 
 ```python
 import gym
+
+import BanditTrainer
+import CovertypeDataBandit
+import genrl.bandit
+import import
+import NeuralLinearPosteriorAgent
 from genrl.classical import QLearning
 from genrl.classical.common import Trainer
 
@@ -23,7 +29,6 @@ trainer.plot(episode_rewards)
 Use a Neural Netowrk based linear posterior inference method to train on the Covertype dataset.
 
 ```python
-import genrl.bandit import CovertypeDataBandit, NeuralLinearPosteriorAgent, BanditTrainer
 
 bandit = CovertypeDataBandit()
 agent = NeuralLinearPosteriorAgent(bandit)
@@ -48,9 +53,6 @@ python -m genrl.bandit.main -a variational -b neural-linpos -t 100
 Train Vanilla Policy Gradient on Vectorized CartPole-v1
 
 ```python
-from genrl import PPO1, SAC, VPG
-from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
-from genrl.environments import VectorEnv
 
 # Specify some hyperparameters
 n_envs = 10
