@@ -134,11 +134,11 @@ class DQN(OffPolicyAgent):
         Most of the DQN experiences need to be reshaped before sending to the
         Neural Networks
         """
-        states = batch[0].reshape(-1, *self.env.obs_shape)
-        actions = batch[1].reshape(-1, *self.env.action_shape).long()
-        rewards = torch.FloatTensor(batch[2]).reshape(-1)
-        next_states = batch[3].reshape(-1, *self.env.obs_shape)
-        dones = torch.FloatTensor(batch[4]).reshape(-1)
+        states = batch[0]
+        actions = batch[1].unsqueeze(-1).long()
+        rewards = batch[2]
+        next_states = batch[3]
+        dones = batch[4]
 
         return states, actions, rewards, next_states, dones
 
@@ -152,7 +152,8 @@ class DQN(OffPolicyAgent):
         Returns:
             q_values (:obj:`torch.Tensor`): Q values for the given states and actions
         """
-        q_values = self.model(states).gather(1, actions)
+        q_values = self.model(states)
+        q_values = q_values.gather(2, actions)
         return q_values
 
     def get_target_q_values(
@@ -172,7 +173,7 @@ class DQN(OffPolicyAgent):
         # Next Q-values according to target model
         next_q_target_values = self.target_model(next_states)
         # Maximum of next q_target values
-        max_next_q_target_values = next_q_target_values.max(1)[0]
+        max_next_q_target_values = next_q_target_values.max(2)[0]
         target_q_values = rewards + self.gamma * torch.mul(  # Expected Target Q values
             max_next_q_target_values, (1 - dones)
         )
