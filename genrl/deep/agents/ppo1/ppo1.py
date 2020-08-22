@@ -88,11 +88,17 @@ class PPO1(OnPolicyAgent):
         self.activation = kwargs.get("activation", "relu")
 
         self.empty_logs()
+
+
         if self.create_model:
             self._create_model()
 
     def _create_model(self):
         # Instantiate networks and optimizers
+        # create a model by default if user does not specify the model
+        # Actor Critic Model
+        # Policy Optimizer - Adam
+        # Value Optimizer  - Adam   
         if isinstance(self.network, str):
             input_dim, action_dim, discrete, action_lim = get_env_properties(
                 self.env, self.network
@@ -181,7 +187,7 @@ class PPO1(OnPolicyAgent):
             torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.optimizer_value.step()
 
-    def get_hyperparams(self) -> Dict[str, Any]:
+    def get_hyperparameters(self) -> Dict[str, Any]:
         hyperparams = {
             "network": self.network,
             "batch_size": self.batch_size,
