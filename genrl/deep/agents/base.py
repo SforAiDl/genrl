@@ -102,7 +102,7 @@ class BaseAgent(ABC):
         """
         raise NotImplementedError
 
-    def get_hyperparameters(self) -> Dict[str, Any]:
+    def get_hyperparams(self) -> Dict[str, Any]:
         """Get relevant hyperparameters to save
 
         Returns:
