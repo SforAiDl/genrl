@@ -5,12 +5,12 @@ import numpy as np
 import torch
 import torch.optim as opt
 
-from genrl.deep.agents import OffPolicyAgent
+from genrl.deep.agents.base import OffPolicyAgentAC
 from genrl.deep.common.noise import ActionNoise
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 
 
-class DDPG(OffPolicyAgent):
+class DDPG(OffPolicyAgentAC):
     """Deep Deterministic Policy Gradient Algorithm
 
     Paper: https://arxiv.org/abs/1509.02971
@@ -38,15 +38,9 @@ class DDPG(OffPolicyAgent):
     """
 
     def __init__(
-        self,
-        *args,
-        polyak: float = 0.995,
-        noise: ActionNoise = None,
-        noise_std: float = 0.1,
-        **kwargs,
+        self, *args, noise: ActionNoise = None, noise_std: float = 0.2, **kwargs
     ):
         super(DDPG, self).__init__(*args, **kwargs)
-        self.polyak = polyak
         self.noise = noise
         self.noise_std = noise_std
 
@@ -59,7 +53,7 @@ class DDPG(OffPolicyAgent):
 
         This will create the Actor-Critic net for the agent and initialise the action noise
         """
-        input_dim, action_dim, discrete, _ = get_env_properties(self.env)
+        input_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
         if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
@@ -87,43 +81,6 @@ class DDPG(OffPolicyAgent):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-    def update_target_model(self) -> None:
-        """Function to update the target Q model
-
-        Updates the target model with the training model's weights when called
-        """
-        for param, param_target in zip(
-            self.ac.parameters(), self.ac_target.parameters()
-        ):
-            param_target.data.mul_(self.polyak)
-            param_target.data.add_((1 - self.polyak) * param.data)
-
-    def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
-        """Select action given state
-
-        Deterministic Action Selection with Noise
-
-        Args:
-            state (:obj:`np.ndarray`): Current state of the environment
-            deterministic (bool): Should the policy be deterministic or stochastic
-
-        Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
-        """
-        state = torch.as_tensor(state).float()
-        action, _ = self.ac.get_action(state, deterministic)
-        action = action.detach().cpu().numpy()
-
-        # add noise to output from policy network
-        if self.noise is not None:
-            action += self.noise()
-
-        return np.clip(
-            action, self.env.action_space.low[0], self.env.action_space.high[0]
-        )
-
     def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
         """Get Q values corresponding to specific states and actions
 
@@ -140,7 +97,7 @@ class DDPG(OffPolicyAgent):
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        """Get target Q values for the DQN
+        """Get target Q values for the DDPG
 
         Args:
             next_states (:obj:`torch.Tensor`): Next states for which target Q-values
@@ -149,7 +106,7 @@ class DDPG(OffPolicyAgent):
             dones (:obj:`list`): Game over status for each environment
 
         Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the DQN
+            target_q_values (:obj:`torch.Tensor`): Target Q values for the DDPG
         """
         next_target_actions = self.ac_target.get_action(next_states, True)[0]
         next_q_target_values = self.ac_target.get_value(
@@ -215,14 +172,6 @@ class DDPG(OffPolicyAgent):
             "weights": self.ac.state_dict(),
         }
         return hyperparams
-
-    def load_weights(self, weights) -> None:
-        """Load weights for the agent from pretrained model
-
-        Args:
-            weights (:obj:`dict`): Dictionary of different neural net weights
-        """
-        self.ac.load_state_dict(weights["weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
