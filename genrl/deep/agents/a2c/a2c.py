@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict
 
 import gym
 import numpy as np
@@ -7,10 +7,7 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from genrl.deep.agents.base import OnPolicyAgent
-from genrl.deep.common.actor_critic import BaseActorCritic
-from genrl.deep.common.rollout_storage import RolloutBuffer
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
-from genrl.environments.vec_env import VecEnv
 
 
 class A2C(OnPolicyAgent):

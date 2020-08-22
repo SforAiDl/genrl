@@ -1,6 +1,6 @@
 import collections
 from abc import ABC
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import torch
@@ -39,7 +39,7 @@ class BaseAgent(ABC):
 
     def __init__(
         self,
-        network: Union[str, BaseActorCritic],
+        network: Any,
         env: Any,
         create_model: bool = True,
         batch_size: int = 64,
@@ -95,11 +95,8 @@ class BaseAgent(ABC):
         """
         raise NotImplementedError
 
-    def update_params(self, update_interval: int) -> None:
+    def update_params(self) -> None:
         """Update parameters of the model
-
-        Args:
-            update_interval (int): Interval between successive updates of the target model
         """
         raise NotImplementedError
 

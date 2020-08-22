@@ -1,21 +1,10 @@
-import collections
-from abc import ABC
-from typing import Any, Dict, List, Tuple, Union
+from typing import List
 
 import numpy as np
 import torch
-from torch.nn import functional as F
 
 from genrl.deep.agents.base import BaseAgent
-from genrl.deep.common.actor_critic import BaseActorCritic
-from genrl.deep.common.buffers import (
-    PrioritizedBuffer,
-    PrioritizedReplayBufferSamples,
-    PushReplayBuffer,
-    ReplayBufferSamples,
-)
 from genrl.deep.common.rollout_storage import RolloutBuffer
-from genrl.deep.common.utils import set_seeds
 
 
 class OnPolicyAgent(BaseAgent):
