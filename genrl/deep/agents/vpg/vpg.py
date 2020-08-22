@@ -75,11 +75,10 @@ class VPG(OnPolicyAgent):
         """
         Initialize the actor and critic networks
         """
+        input_dim, action_dim, discrete, action_lim = get_env_properties(
+            self.env, self.network
+        )
         if isinstance(self.network, str):
-            input_dim, action_dim, discrete, action_lim = get_env_properties(
-                self.env, self.network
-            )
-
             # Instantiate networks and optimizers
             self.actor = get_model("p", self.network)(
                 input_dim,
@@ -93,8 +92,6 @@ class VPG(OnPolicyAgent):
             self.actor = self.network.to(self.device)
 
         self.optimizer_policy = opt.Adam(self.actor.parameters(), lr=self.lr_policy)
-
-        self.rollout = RolloutBuffer(self.rollout_size, self.env,)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
@@ -131,7 +128,7 @@ class VPG(OnPolicyAgent):
         """
         self.rollout.compute_returns_and_advantage(values.detach().cpu().numpy(), dones)
 
-    def update_policy(self) -> None:
+    def update_params(self) -> None:
         for rollout in self.rollout.get(self.batch_size):
             actions = rollout.actions
 
@@ -151,6 +148,11 @@ class VPG(OnPolicyAgent):
             self.optimizer_policy.step()
 
     def get_hyperparams(self) -> Dict[str, Any]:
+        """Get relevant hyperparameters to save
+
+        Returns:
+            hyperparams (:obj:`dict`): Hyperparameters to be saved
+        """
         hyperparams = {
             "network": self.network,
             "batch_size": self.batch_size,
@@ -163,17 +165,19 @@ class VPG(OnPolicyAgent):
         return hyperparams
 
     def load_weights(self, weights) -> None:
-        """
-        Load weights for the agent from pretrained model
+        """Load weights for the agent from pretrained model
+
+        Args:
+            weights (:obj:`dict`): Dictionary of different neural net weights
         """
         self.ac.load_state_dict(weights["weights"])
 
     def get_logging_params(self) -> Dict[str, Any]:
-        """
-        :returns: Logging parameters for monitoring training
-        :rtype: dict
-        """
+        """Gets relevant parameters for logging
 
+        Returns:
+            logs (:obj:`dict`): Logging parameters for monitoring training
+        """
         logs = {
             "loss": safe_mean(self.logs["loss"]),
             "mean_reward": safe_mean(self.rewards),
@@ -183,8 +187,7 @@ class VPG(OnPolicyAgent):
         return logs
 
     def empty_logs(self):
-        """
-        Empties logs
+        """Empties logs
         """
         self.logs = {}
         self.logs["loss"] = []
