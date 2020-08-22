@@ -7,13 +7,9 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from genrl.deep.agents.base import OnPolicyAgent
-from genrl.deep.common import (
-    BaseActorCritic,
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-)
+from genrl.deep.common.actor_critic import BaseActorCritic
+from genrl.deep.common.rollout_storage import RolloutBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
 from genrl.environments.vec_env import VecEnv
 
 
@@ -32,7 +28,8 @@ class A2C(OnPolicyAgent):
     :param num_episodes: Number of episodes
     :param timesteps_per_actorbatch: Number of timesteps per epoch
     :param max_ep_len: Maximum timesteps in an episode
-    :param layers: Number of neurons in hidden layers
+    :param policy_layers: Number of neurons in hidden layers in the policy network
+    :param value_layers: Number of neurons in hidden layers in the value network
     :param noise: Noise function to use
     :param noise_std: Standard deviation for action noise
     :param seed: Seed for reproducing results
@@ -50,7 +47,8 @@ class A2C(OnPolicyAgent):
     :type num_episodes: int
     :type timesteps_per_actorbatch: int
     :type max_ep_len: int
-    :type layers: tuple or list
+    :type policy_layers: tuple or list
+    :type value_layers: tuple or list
     :type noise: function
     :type noise_std: float
     :type seed: int
@@ -69,7 +67,8 @@ class A2C(OnPolicyAgent):
         gamma: float = 0.99,
         lr_policy: float = 0.01,
         lr_value: float = 0.1,
-        layers: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
         rollout_size: int = 2048,
         noise: Any = None,
         noise_std: float = 0.1,
@@ -79,18 +78,20 @@ class A2C(OnPolicyAgent):
             network,
             env,
             batch_size=batch_size,
-            layers=layers,
+            policy_layers=policy_layers,
+            value_layers=value_layers,
             gamma=gamma,
             lr_policy=lr_policy,
             lr_value=lr_value,
             rollout_size=rollout_size,
             **kwargs
         )
-
         self.noise = noise
         self.noise_std = noise_std
         self.value_coeff = kwargs.get("value_coeff", 0.5)
         self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
+
+        self.buffer_class = kwargs.get("buffer_class", RolloutBuffer)
 
         self.empty_logs()
         if self.create_model:
@@ -100,17 +101,21 @@ class A2C(OnPolicyAgent):
         """
         Creates actor critic model and initialises optimizers
         """
+        input_dim, action_dim, discrete, action_lim = get_env_properties(
+            self.env, self.network
+        )
         if isinstance(self.network, str):
-            input_dim, action_dim, discrete, action_lim = get_env_properties(
-                self.env, self.network
-            )
             self.ac = get_model("ac", self.network)(
-                input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
+                input_dim,
+                action_dim,
+                self.policy_layers,
+                self.value_layers,
+                "V",
+                discrete,
+                action_lim=action_lim,
             ).to(self.device)
-
         else:
             self.ac = self.network.to(self.device)
-            action_dim = self.network.action_dim
 
         if self.noise is not None:
             self.noise = self.noise(
@@ -120,7 +125,7 @@ class A2C(OnPolicyAgent):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-        self.rollout = RolloutBuffer(self.rollout_size, self.env)
+        self.rollout = self.buffer_class(self.rollout_size, self.env)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False
@@ -198,8 +203,8 @@ calculate losses)
             "network": self.network,
             "batch_size": self.batch_size,
             "gamma": self.gamma,
-            "lr_actor": self.lr_actor,
-            "lr_critic": self.lr_critic,
+            "lr_policy": self.lr_policy,
+            "lr_value": self.lr_value,
             "rollout_size": self.rollout_size,
             "policy_weights": self.ac.actor.state_dict(),
             "value_weights": self.ac.critic.state_dict(),

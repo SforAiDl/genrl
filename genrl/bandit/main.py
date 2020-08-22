@@ -80,6 +80,9 @@ if __name__ == "__main__":
         default=None,
         type=int,
     )
+    parser.add_argument(
+        "--download", help="Download data for bandit", action="store_true",
+    )
 
     args = parser.parse_args()
 

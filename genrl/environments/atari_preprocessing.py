@@ -38,7 +38,9 @@ grayscale
         self.frameskip = frameskip
         self.grayscale = grayscale
         self.screen_size = screen_size
-        self.ale = self.env.unwrapped.ale
+        self.ale = (
+            self.env.unwrapped.ale if hasattr(self.env.unwrapped, "ale") else None
+        )
 
         if isinstance(frameskip, int):
             self.frameskip = (frameskip, frameskip + 1)
