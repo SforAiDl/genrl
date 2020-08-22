@@ -188,7 +188,7 @@ class PPO1(OnPolicyAgent):
             torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), 0.5)
             self.optimizer_value.step()
 
-    def get_hyperparameters(self) -> Dict[str, Any]:
+    def get_hyperparams(self) -> Dict[str, Any]:
         hyperparams = {
             "network": self.network,
             "batch_size": self.batch_size,

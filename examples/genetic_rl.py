@@ -2,13 +2,13 @@ import argparse
 from typing import Tuple
 import gc
 
-from genrl import PPO1
+from genrl import PPO1, A2C
 from genrl.deep.common import OnPolicyTrainer
 from genrl.environments import VectorEnv
 from gym import spaces
 
 from genrl.deep.common.actor_critic import MlpActorCritic
-from genrl.deep.common import get_env_properties
+from genrl.deep.common.utils import get_env_properties
 
 import random
 from copy import deepcopy
@@ -43,7 +43,7 @@ def get_params_agent(params_selected, agent):
 
     '''
     new_agent = deepcopy(agent)
-    agent_hyperparameters = new_agent.get_hyperparameters().keys()
+    agent_hyperparameters = new_agent.get_hyperparams().keys()
 
     for key in params_selected:
         if key in agent_hyperparameters:
@@ -58,7 +58,7 @@ def set_params_agent(agent, parameter, parameter_value):
     Set the agent.parameter to parameter_value
 
     '''
-    agent_hyperparameters = agent.get_hyperparameters().keys()
+    agent_hyperparameters = agent.get_hyperparams().keys()
 
     if parameter in agent_hyperparameters:
         exec('agent.' + parameter + '=' + str(parameter_value))
@@ -71,7 +71,7 @@ def create_random_agent(parameter_choices, agent):
 
     rnd_agent = deepcopy(agent)
 
-    agent_hyperparameters = agent.get_hyperparameters().keys()
+    agent_hyperparameters = agent.get_hyperparams().keys()
 
     for key in parameter_choices:
         # value for the parameter mentioned by 'key'
@@ -151,8 +151,8 @@ class GeneticOptimizer():
 
         '''
 
-        mother_params = mother.get_hyperparameters()
-        father_params = father.get_hyperparameters()
+        mother_params = mother.get_hyperparams()
+        father_params = father.get_hyperparams()
 
         children = []
 
@@ -290,6 +290,8 @@ def train_population(agents,
 
         trainer.train()
 
+        del trainer
+
 
 
 
@@ -341,20 +343,21 @@ def main(args):
         input_dim,
         action_dim,
         (1, 1),  # layers
+        (1, 1),
         "V",  # type of value function
         discrete,
         action_lim=action_lim,
         activation='relu'
     )
 
-    generic_agent = PPO1(
+    generic_agent = A2C(
         network,
         env,
         rollout_size=args.rollout_size)
 
     agent_parameter_choices = {
         'gamma': [12, 121],
-        'clip_param': [0.2, 0.3],
+        # 'clip_param': [0.2, 0.3],
         # 'lr_policy': [0.001, 0.002],
         # 'lr_value': [0.001, 0.002]
     }

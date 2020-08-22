@@ -117,12 +117,12 @@ class A2C(OnPolicyAgent):
 
         else:
             self.ac = self.network.to(self.device)
-            action_dim = self.network.action_dim
+            # action_dim = self.network.action_dim
 
-        if self.noise is not None:
-            self.noise = self.noise(
-                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
-            )
+        # if self.noise is not None:
+        #     self.noise = self.noise(
+        #         np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+        #     )
 
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
@@ -205,8 +205,8 @@ calculate losses)
             "network": self.network,
             "batch_size": self.batch_size,
             "gamma": self.gamma,
-            "lr_actor": self.lr_actor,
-            "lr_critic": self.lr_critic,
+            "lr_policy": self.lr_policy,
+            "lr_value": self.lr_value,
             "rollout_size": self.rollout_size,
             "policy_weights": self.ac.actor.state_dict(),
             "value_weights": self.ac.critic.state_dict(),
