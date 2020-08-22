@@ -219,9 +219,10 @@ class MlpCategoricalValue(MlpNoisyValue):
         super(MlpCategoricalValue, self).__init__(*args, **kwargs)
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:
+        batch_size, n_envs, _ = state.shape
         features = self.model(state)
         return F.softmax(features.view(-1, self.num_atoms), dim=0).view(
-            -1, self.action_dim, self.num_atoms
+            batch_size, n_envs, self.action_dim, self.num_atoms
         )
 
 
