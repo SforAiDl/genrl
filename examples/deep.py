@@ -23,12 +23,12 @@ def main(args):
     trainer = None
 
     if args.algo in ["ppo", "vpg", "a2c"]:
-        offpolicy = False
-        trainerclass = OnPolicyTrainer
+        #we can have my own mlp here
+        #also all parameters not passed
         agent = algo(
             args.arch, env, rollout_size=args.rollout_size
         )  # , batch_size=args.batch_size)
-        trainer = trainerclass(
+        trainer = OnPolicyTrainer(
             agent,
             env,
             logger,
@@ -52,7 +52,7 @@ def main(args):
         )
 
     trainer.train()
-    trainer.evaluate(render = True)
+    trainer.evaluate()
     env.render()
 
 
@@ -84,6 +84,9 @@ if __name__ == "__main__":
     offpolicyargs = parser.add_argument_group("Off Policy Args")
     offpolicyargs.add_argument("-ws", "--warmup-steps", help="Warmup steps", default=10000, type=int)
     offpolicyargs.add_argument("--replay-size", help="Replay Buffer Size", default=1000, type=int)
+
+    onpolicyargs = parser.add_argument_group("On Policy Args")
+    onpolicyargs.add_argument("--rollout-size", help="Rollout Buffer Size", default=2048, type=int)
 
     args = parser.parse_args()
 
