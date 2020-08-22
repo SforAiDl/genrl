@@ -1,4 +1,4 @@
-# Overview
+# Multi Armed Bandit Overview Overview
 
 ## Training an EpsilonGreedy agent on a Bernoulli Multi Armed Bandit
 
@@ -53,11 +53,8 @@ import numpy as np
 
 from genrl.bandit import BernoulliMAB, EpsGreedyMABAgent, MABTrainer
 
-bandits = 10
-arms = 5
-
 reward_probs = np.random.random(size=(bandits, arms))
-bandit = BernoulliMAB(bandits, arms, reward_probs, context_type="int")
+bandit = BernoulliMAB(arms=5, reward_probs=reward_probs, context_type="int")
 agent = EpsGreedyMABAgent(bandit, eps=0.05)
 
 trainer = MABTrainer(agent, bandit)
