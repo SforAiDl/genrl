@@ -119,10 +119,16 @@ class VecEnv(ABC):
 
     @property
     def obs_shape(self):
-        if isinstance(self.observation_space, gym.spaces.Discrete):
+        if isinstance(self.env.observation_space, List):
+            obs_space = self.env.observation_space[0]
+        else:
+            obs_space = self.env.observation_space
+
+        if isinstance(obs_space, gym.spaces.Discrete):
             obs_shape = (1,)
-        elif isinstance(self.observation_space, gym.spaces.Box):
-            obs_shape = self.observation_space.shape
+        elif isinstance(obs_space, gym.spaces.Box):
+            obs_shape = obs_space.shape
+
         return obs_shape
 
     @property
