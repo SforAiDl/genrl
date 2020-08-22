@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from genrl.deep.common.noise import NoisyLinear
-from genrl.environments import VecEnv
+from genrl.environments.vec_env import VecEnv
 
 
 def get_model(type_: str, name_: str) -> Union:
@@ -32,10 +32,6 @@ Eg. "mlp" or "cnn")
         from genrl.deep.common.policies import get_policy_from_name
 
         return get_policy_from_name(name_)
-    elif type_ == "dv":
-        from genrl.deep.agents.dqn.values import get_dqn_value_from_name
-
-        return get_dqn_value_from_name(name_)
     raise ValueError
 
 

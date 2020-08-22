@@ -1,6 +1,6 @@
 <p align="center">
     <br>
-    <img src="https://github.com/SforAiDl/genrl/blob/master/assets/images/genrl.png" width="200"/>
+    <img src="https://github.com/SforAiDl/genrl/blob/master/docs/source/assets/images/genrl.png" width="200"/>
     <br>
 <p>
     
@@ -13,6 +13,12 @@
 [![Documentation Status](https://readthedocs.org/projects/genrl/badge/?version=latest)](https://genrl.readthedocs.io/en/latest/?badge=latest)
 [![Maintainability](https://api.codeclimate.com/v1/badges/c3f6e7d31c078528e0e1/maintainability)](https://codeclimate.com/github/SforAiDl/genrl/maintainability)
 ![Lint, Test, Code Coverage](https://github.com/SforAiDl/genrl/workflows/Lint,%20Test,%20Code%20Coverage/badge.svg)
+
+---
+
+[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/0)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/0)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/1)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/1)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/2)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/2)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/3)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/3)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/4)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/4)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/5)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/5)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/6)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/6)[![](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/images/7)](https://sourcerer.io/fame/Sharad24/Sharad24/genrl/links/7)
+
+---
 
 **GenRL is a PyTorch reinforcement learning library centered around reproducible and generalizable algorithm implementations.** 
 
@@ -69,3 +75,43 @@ trainer = Trainer(agent, env, mode="dyna", model="tabular", n_episodes=10000)
 episode_rewards = trainer.train()
 trainer.plot(episode_rewards)
 ```
+
+## Algorithms
+
+### Deep RL
+ - DQN (Deep Q Networks)
+    - DQN
+    - Double DQN
+    - Dueling DQN
+    - Noisy DQN
+    - Categorical DQN
+ - VPG (Vanilla Policy Gradients)
+ - A2C (Advantage Actor-Critic)
+ - PPO (Proximal Policy Optimization)
+ - DDPG (Deep Deterministic Policy Gradients)
+ - TD3 (Twin Delayed DDPG)
+ - SAC (Soft Actor Critic)
+
+### Classical RL
+ - SARSA
+ - Q Learning
+
+### Bandit RL
+ - Multi Armed Bandits
+    - Eps Greedy
+    - UCB
+    - Thompson Sampling
+    - Bayesian Bandits
+    - Softmax Explorer
+  - Contextual Bandits
+    - Eps Greedy
+    - UCB
+    - Thompson Sampling
+    - Bayesian Bandits
+    - Softmax Explorer
+ - Deep Contextual Bandits
+    - Variation Inference
+    - Noise sampling for neural network parameters
+    - Epsilon greedy with a neural network
+    - Bayesian Regression on for posterior inference
+    - Bootstraped Ensemble

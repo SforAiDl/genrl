@@ -24,4 +24,4 @@ from genrl.bandit.bandits import MushroomDataBandit  # noqa
 from genrl.bandit.bandits import StatlogDataBandit  # noqa
 from genrl.bandit.core import Bandit  # noqa
 from genrl.bandit.core import BanditAgent  # noqa
-from genrl.bandit.trainer import BanditTrainer  # noqa
+from genrl.bandit.trainer import BanditTrainer, DCBTrainer, MABTrainer  # noqa

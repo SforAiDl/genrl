@@ -6,7 +6,7 @@ import genrl
 
 bandit = genrl.bandit.CovertypeDataBandit()
 agent = genrl.bandit.NeuralLinearPosteriorAgent(bandit)
-trainer = genrl.bandit.BanditTrainer(
+trainer = genrl.bandit.DCBTrainer(
     agent, bandit, logdir="logs/", log_mode=["stdout", "tensorboard"]
 )
 results = trainer.train(timesteps=100)

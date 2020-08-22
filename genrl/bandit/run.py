@@ -4,7 +4,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 import genrl
-from genrl.bandit.trainer import BanditTrainer
+from genrl.bandit.trainer import DCBTrainer
 
 ALGOS = {
     "bootstrap": genrl.bandit.agents.cb_agents.BootstrapNeuralAgent,
@@ -31,7 +31,7 @@ def run(args, agent, bandit, plot=True):
     logdir = Path(args.logdir).joinpath(
         f"{agent.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    trainer = BanditTrainer(
+    trainer = DCBTrainer(
         agent, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
 
@@ -92,7 +92,7 @@ def plot_multi_runs(args, multi_results, title):
 
 def run_multi_algos(args):
     bandit_class = BANDITS[args.bandit.lower()]
-    bandit = bandit_class()
+    bandit = bandit_class(download=args.download)
     multi_results = {}
     for name, algo in ALGOS.items():
         agent = algo(bandit)
@@ -104,7 +104,7 @@ def run_multi_bandits(args):
     algo = ALGOS[args.algo.lower()]
     multi_results = {}
     for name, bandit_class in BANDITS.items():
-        bandit = bandit_class()
+        bandit = bandit_class(download=args.download)
         agent = algo(bandit)
         multi_results[name] = run(args, agent, bandit)
     plot_multi_runs(args, multi_results, title=f"{algo.__name__}-Performance")
@@ -113,7 +113,7 @@ def run_multi_bandits(args):
 def run_single_algos_on_bandit(args):
     algo = ALGOS[args.algo.lower()]
     bandit_class = BANDITS[args.bandit.lower()]
-    bandit = bandit_class()
+    bandit = bandit_class(download=args.download)
     agent = algo(bandit)
     run(args, agent, bandit)
 
@@ -124,13 +124,13 @@ def run_experiment(args):
     results = {}
 
     bandit_class = BANDITS[args.bandit.lower()]
-    bandit = bandit_class()
+    bandit = bandit_class(download=args.download)
 
     bootstrap = genrl.BootstrapNeuralAgent(bandit=bandit)
     logdir = Path(args.logdir).joinpath(
         f"{bootstrap.__class__.__name__}-on-{bandit.__class__.__name__}-{start_time():%d%m%y%H%M%S}"
     )
-    bootstrap_trainer = BanditTrainer(
+    bootstrap_trainer = DCBTrainer(
         bootstrap, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["bootstrap"] = bootstrap_trainer.train(
@@ -149,7 +149,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{fixed.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    fixed_trainer = BanditTrainer(
+    fixed_trainer = DCBTrainer(
         fixed, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["fixed"] = fixed_trainer.train(
@@ -168,7 +168,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{linpos.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    linpos_trainer = BanditTrainer(
+    linpos_trainer = DCBTrainer(
         linpos, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["linpos"] = linpos_trainer.train(
@@ -183,7 +183,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{neural_linpos.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    neural_linpos_trainer = BanditTrainer(
+    neural_linpos_trainer = DCBTrainer(
         neural_linpos, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["neural-linpos"] = neural_linpos_trainer.train(
@@ -202,7 +202,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{neural_noise.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    neural_noise_trainer = BanditTrainer(
+    neural_noise_trainer = DCBTrainer(
         neural_noise, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["neural-noise"] = neural_noise_trainer.train(
@@ -221,7 +221,7 @@ def run_experiment(args):
     logdir = Path(args.logdir).joinpath(
         f"{variational.__class__.__name__}-on-{bandit.__class__.__name__}-{datetime.now():%d%m%y%H%M%S}"
     )
-    variational_trainer = BanditTrainer(
+    variational_trainer = DCBTrainer(
         variational, bandit, logdir=logdir, log_mode=["stdout", "tensorboard"]
     )
     results["variational"] = variational_trainer.train(
