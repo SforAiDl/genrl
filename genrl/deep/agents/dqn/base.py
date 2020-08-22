@@ -103,8 +103,8 @@ class DQN(OffPolicyAgent):
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
-        q_values = self.model(state).detach().numpy()
-        action = np.argmax(q_values, axis=-1)
+        q_values = self.model(state.unsqueeze(0)).detach().numpy()
+        action = np.argmax(q_values, axis=-1).squeeze(0)
         return action
 
     def select_action(

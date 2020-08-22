@@ -103,9 +103,9 @@ class CnnValue(MlpValue):
         self.model = mlp([self.output_size, *self.fc_layers, self.action_dim])
 
     def _cnn_forward(self, state):
-        state = self.conv(state)
-        state = state.view(state.size(0), -1)
-        return state
+        batch_size, n_envs, frame, H, B = state.shape
+        state = self.conv(state.view(-1, frame, H, B))
+        return state.view(batch_size, n_envs, -1)
 
     def forward(self, state: np.ndarray) -> np.ndarray:
         value = self._cnn_forward(state)
