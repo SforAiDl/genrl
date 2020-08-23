@@ -1,6 +1,6 @@
 import argparse
 
-from genrl import A2C, PPO1
+from genrl import A2C
 from genrl.deep.common import OnPolicyTrainer
 from genrl.deep.common.actor_critic import MlpActorCritic
 from genrl.deep.common.utils import get_env_properties

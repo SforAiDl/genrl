@@ -152,7 +152,6 @@ class Trainer:
         ep_rew = 0
         ep_rews = []
         state = self.env.reset()
-        mean_ep_reward = None
 
         while True:
             action = self.agent.get_action(state, False)

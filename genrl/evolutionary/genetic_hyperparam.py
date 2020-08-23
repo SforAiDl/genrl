@@ -1,6 +1,6 @@
 import gc
 import random
-from typing import Dict, Tuple
+from typing import Dict
 
 from genrl.evolutionary.utils import (
     create_random_agent,
@@ -173,7 +173,7 @@ class GeneticHyperparamTuner:
 
             if parents_length == 1:
                 male = parents[0]
-                babies = babies = self.breed(male, male)
+                babies = self.breed(male, male)
 
                 for baby in babies:
                     if len(children) < children_length:
