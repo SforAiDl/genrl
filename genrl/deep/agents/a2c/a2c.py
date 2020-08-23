@@ -27,11 +27,12 @@ class A2C(OnPolicyAgent):
             of the Q-value function
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
-        replay_size (int): Capacity of the Replay Buffer
-        buffer_type (str): Choose the type of Buffer: ["push", "prioritized"]
-        polyak (float): Target model update parameter (1 for hard update)
+        rollout_size (int): Capacity of the Replay Buffer
+        buffer_type (str): Choose the type of Buffer: ["rollout"]
         noise (:obj:`ActionNoise`): Action Noise function added to aid in exploration
         noise_std (float): Standard deviation of the action noise distribution
+        value_coeff (float): Ratio of magnitude of value updates to policy updates
+        entropy_coeff (float): Ratio of magnitude of entropy updates to policy updates
         seed (int): Seed for randomness
         render (bool): Should the env be rendered during training?
         device (str): Hardware being used for training. Options:

@@ -30,7 +30,7 @@ class OnPolicyAgent(BaseAgent):
     """
 
     def __init__(
-        self, *args, rollout_size: int = 2048, buffer_type: str = "rollout", **kwargs
+        self, *args, rollout_size: int = 1024, buffer_type: str = "rollout", **kwargs
     ):
         super(OnPolicyAgent, self).__init__(*args, **kwargs)
         self.rollout_size = rollout_size

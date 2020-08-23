@@ -36,7 +36,7 @@ class BaseAgent(ABC):
         gamma: float = 0.99,
         policy_layers: Tuple = (64, 64),
         value_layers: Tuple = (64, 64),
-        lr_policy: float = 0.001,
+        lr_policy: float = 0.0001,
         lr_value: float = 0.001,
         **kwargs
     ):

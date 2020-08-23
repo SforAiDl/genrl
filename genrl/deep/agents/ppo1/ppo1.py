@@ -19,73 +19,39 @@ class PPO1(OnPolicyAgent):
 
     Paper: https://arxiv.org/abs/1707.06347
 
-    :param network: The deep neural network layer types ['mlp']
-    :param env: The environment to learn from
-    :param timesteps_per_actorbatch: timesteps per actor per update
-    :param gamma: discount factor
-    :param clip_param: clipping parameter epsilon
-    :param actor_batchsize: trajectories per optimizer epoch
-    :param epochs: the optimizer's number of epochs
-    :param lr_policy: policy network learning rate
-    :param lr_value: value network learning rate
-    :param policy_copy_interval: number of optimizer before copying
-        params from new policy to old policy
-    :param seed: seed for torch and gym
-    :param device: device to use for tensor operations; 'cpu' for cpu
-        and 'cuda' for gpu
-    :param load_model: model loading path
-    :type network: str or BaseActorCritic
-    :type env: Gym environment
-    :type timesteps_per_actorbatch: int
-    :type gamma: float
-    :type clip_param: float
-    :type actor_batchsize: int
-    :type epochs: int
-    :type lr_policy: float
-    :type lr_value: float
-    :type policy_copy_interval: int
-    :type seed: int
-    :type device: string
-    :type load_model: string
-    :type rollout_size: int
+    Attributes:
+        network (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
+        batch_size (int): Mini batch size for loading experiences
+        gamma (float): The discount factor for rewards
+        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+            of the Q-value function
+        lr_policy (float): Learning rate for the policy/actor
+        lr_value (float): Learning rate for the Q-value function
+        rollout_size (int): Capacity of the Rollout Buffer
+        buffer_type (str): Choose the type of Buffer: ["rollout"]
+        clip_param (float): Epsilon for clipping policy loss
+        value_coeff (float): Ratio of magnitude of value updates to policy updates
+        entropy_coeff (float): Ratio of magnitude of entropy updates to policy updates
+        seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
+        device (str): Hardware being used for training. Options:
+            ["cuda" -> GPU, "cpu" -> CPU]
     """
 
     def __init__(
         self,
-        network: Union[str, BaseActorCritic],
-        env: Union[gym.Env, VecEnv],
-        batch_size: int = 256,
-        gamma: float = 0.99,
+        *args,
         clip_param: float = 0.2,
-        epochs: int = 1000,
-        lr_policy: float = 0.001,
-        lr_value: float = 0.001,
-        policy_layers: Tuple = (64, 64),
-        value_layers: Tuple = (64, 64),
-        rollout_size: int = 2048,
+        value_coeff: float = 0.5,
+        entropy_coeff: float = 0.01,
         **kwargs
     ):
-
-        super(PPO1, self).__init__(
-            network,
-            env,
-            batch_size=batch_size,
-            policy_layers=policy_layers,
-            value_layers=value_layers,
-            gamma=gamma,
-            lr_policy=lr_policy,
-            lr_value=lr_value,
-            epochs=epochs,
-            rollout_size=rollout_size,
-            **kwargs
-        )
-
+        super(PPO1, self).__init__(*args, **kwargs)
         self.clip_param = clip_param
-        self.entropy_coeff = kwargs.get("entropy_coeff", 0.01)
-        self.value_coeff = kwargs.get("value_coeff", 0.5)
-        self.activation = kwargs.get("activation", "relu")
-
-        self.buffer_class = kwargs.get("buffer_class", RolloutBuffer)
+        self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
         self.empty_logs()
         if self.create_model:
@@ -104,10 +70,10 @@ class PPO1(OnPolicyAgent):
             self.ac = get_model("ac", self.network)(
                 state_dim,
                 action_dim,
-                self.policy_layers,
-                self.value_layers,
-                "V",
-                discrete,
+                policy_layers=self.policy_layers,
+                value_layers=self.value_layers,
+                val_typ="V",
+                discrete=discrete,
                 action_lim=action_lim,
                 activation=self.activation,
             ).to(self.device)
@@ -201,7 +167,9 @@ class PPO1(OnPolicyAgent):
 
             values = values.flatten()
 
-            value_loss = nn.functional.mse_loss(rollout.returns, values.cpu())
+            value_loss = self.value_coeff * nn.functional.mse_loss(
+                rollout.returns, values.cpu()
+            )
             self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = -torch.mean(entropy)  # Change this to entropy
