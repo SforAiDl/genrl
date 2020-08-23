@@ -107,21 +107,3 @@ class MABAgent(BanditAgent):
         :type reward: int or float
         """
         raise NotImplementedError
-
-    def learn(self, n_timesteps: int = 1000) -> None:
-        """
-        Learn to solve the environment over given number of timesteps
-
-        Selects action, takes a step in the bandit and then updates
-        the parameters according to the reward received. If policy
-        requires an initial run, it takes each action once before starting
-
-        :param n_timesteps: number of steps to learn for
-        :type: int
-        """
-        context = self._bandit.reset()
-        for _ in range(n_timesteps):
-            action = self.select_action(context)
-            context, reward = self._bandit.step(action)
-            self.action_hist.append(action)
-            self.update_params(context, action, reward)

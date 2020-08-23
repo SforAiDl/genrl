@@ -24,7 +24,7 @@ class TestDQN:
         algo = DQN("mlp", env, replay_size=100)
         assert isinstance(algo.model, MlpValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -34,7 +34,7 @@ class TestDQN:
         algo = DoubleDQN("mlp", env, replay_size=100)
         assert isinstance(algo.model, MlpValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -45,7 +45,7 @@ class TestDQN:
         assert algo.dqn_type == "dueling"
         assert isinstance(algo.model, MlpDuelingValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -56,7 +56,7 @@ class TestDQN:
         assert isinstance(algo.model, MlpValue)
         assert algo.alpha
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -68,7 +68,7 @@ class TestDQN:
         assert algo.noisy
         assert isinstance(algo.model, MlpNoisyValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -80,7 +80,7 @@ class TestDQN:
         assert algo.noisy
         assert isinstance(algo.model, MlpCategoricalValue)
         trainer = OffPolicyTrainer(
-            algo, env, log_mode=["csv"], logdir="./logs", steps_per_epoch=200, epochs=4
+            algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
         trainer.train()
         shutil.rmtree("./logs")

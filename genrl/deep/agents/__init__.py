@@ -1,5 +1,10 @@
 from genrl.deep.agents.a2c import A2C  # noqa
-from genrl.deep.agents.base import BaseAgent, OffPolicyAgent, OnPolicyAgent  # noqa
+from genrl.deep.agents.base import (  # noqa
+    BaseAgent,
+    OffPolicyAgent,
+    OffPolicyAgentAC,
+    OnPolicyAgent,
+)
 from genrl.deep.agents.ddpg import DDPG  # noqa
 from genrl.deep.agents.dqn import (  # noqa
     DQN,

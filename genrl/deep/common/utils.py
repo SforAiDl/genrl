@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from genrl.deep.common.noise import NoisyLinear
-from genrl.environments import VecEnv
+from genrl.environments.vec_env import VecEnv
 
 
 def get_model(type_: str, name_: str) -> Union:

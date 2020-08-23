@@ -6,14 +6,10 @@ import torch
 import torch.optim as opt
 
 from genrl.deep.agents.base import OnPolicyAgent
-from genrl.deep.common import (
-    BasePolicy,
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-)
-from genrl.environments import VecEnv
+from genrl.deep.common.base import BasePolicy
+from genrl.deep.common.rollout_storage import RolloutBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
+from genrl.environments.vec_env import VecEnv
 
 
 class VPG(OnPolicyAgent):
@@ -54,7 +50,7 @@ class VPG(OnPolicyAgent):
         batch_size: int = 256,
         gamma: float = 0.99,
         lr_policy: float = 0.01,
-        layers: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
         rollout_size: int = 2048,
         **kwargs
     ):
@@ -63,7 +59,7 @@ class VPG(OnPolicyAgent):
             network,
             env,
             batch_size=batch_size,
-            layers=layers,
+            policy_layers=policy_layers,
             gamma=gamma,
             lr_policy=lr_policy,
             lr_value=None,
@@ -86,7 +82,12 @@ class VPG(OnPolicyAgent):
 
             # Instantiate networks and optimizers
             self.actor = get_model("p", self.network)(
-                input_dim, action_dim, self.layers, "V", discrete, action_lim=action_lim
+                input_dim,
+                action_dim,
+                self.policy_layers,
+                "V",
+                discrete,
+                action_lim=action_lim,
             ).to(self.device)
         else:
             self.actor = self.network.to(self.device)

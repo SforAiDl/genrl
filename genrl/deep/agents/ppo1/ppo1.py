@@ -7,14 +7,10 @@ import torch.nn as nn
 import torch.optim as opt
 
 from genrl.deep.agents.base import OnPolicyAgent
-from genrl.deep.common import (
-    BaseActorCritic,
-    RolloutBuffer,
-    get_env_properties,
-    get_model,
-    safe_mean,
-)
-from genrl.environments import VecEnv
+from genrl.deep.common.base import BaseActorCritic
+from genrl.deep.common.rollout_storage import RolloutBuffer
+from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
+from genrl.environments.vec_env import VecEnv
 
 
 class PPO1(OnPolicyAgent):
@@ -64,7 +60,8 @@ class PPO1(OnPolicyAgent):
         epochs: int = 1000,
         lr_policy: float = 0.001,
         lr_value: float = 0.001,
-        layers: Tuple = (64, 64),
+        policy_layers: Tuple = (64, 64),
+        value_layers: Tuple = (64, 64),
         rollout_size: int = 2048,
         **kwargs
     ):
@@ -73,7 +70,8 @@ class PPO1(OnPolicyAgent):
             network,
             env,
             batch_size=batch_size,
-            layers=layers,
+            policy_layers=policy_layers,
+            value_layers=value_layers,
             gamma=gamma,
             lr_policy=lr_policy,
             lr_value=lr_value,
@@ -103,7 +101,8 @@ class PPO1(OnPolicyAgent):
             self.ac = get_model("ac", self.network)(
                 input_dim,
                 action_dim,
-                self.layers,
+                self.policy_layers,
+                self.value_layers,
                 "V",
                 discrete,
                 action_lim=action_lim,
