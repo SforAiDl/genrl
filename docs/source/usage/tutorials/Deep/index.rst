@@ -4,4 +4,5 @@ Deep RL
 .. toctree::
     :maxdepth: 1
 
+    Background
     VPG
