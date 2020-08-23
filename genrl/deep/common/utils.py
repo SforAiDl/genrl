@@ -60,6 +60,11 @@ activation layers)
     return nn.Sequential(*layers)
 
 
+def init_weights(layers: List, init_type="xavier") -> None:
+    for layer in layers:
+        nn.init.xavier_uniform_(layer.weight)
+
+
 def cnn(
     channels: Tuple = (4, 16, 32),
     kernel_sizes: Tuple = (8, 4),

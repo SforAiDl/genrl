@@ -504,6 +504,7 @@ class OnPolicyTrainer(Trainer):
             self.agent.rollout.reset()
 
             state = self.env.reset()
+            
             values, done = self.agent.collect_rollouts(state)
 
             self.agent.get_traj_loss(values, done)
