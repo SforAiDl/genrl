@@ -101,10 +101,10 @@ class A2C(OnPolicyAgent):
         """
         Creates actor critic model and initialises optimizers
         """
+        input_dim, action_dim, discrete, action_lim = get_env_properties(
+            self.env, self.network
+        )
         if isinstance(self.network, str):
-            input_dim, action_dim, discrete, action_lim = get_env_properties(
-                self.env, self.network
-            )
             self.ac = get_model("ac", self.network)(
                 input_dim,
                 action_dim,
@@ -114,15 +114,17 @@ class A2C(OnPolicyAgent):
                 discrete,
                 action_lim=action_lim,
             ).to(self.device)
-
         else:
             self.ac = self.network.to(self.device)
+
             # action_dim = self.network.action_dim
 
-        # if self.noise is not None:
-        #     self.noise = self.noise(
-        #         np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
-        #     )
+
+
+        if self.noise is not None:
+             self.noise = self.noise(
+                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+             )
 
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
