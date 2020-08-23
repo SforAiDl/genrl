@@ -35,10 +35,8 @@ release = "0.1"
 # ones.
 extensions = [
     "sphinxcontrib.napoleon",
-    # "sphinx_rtd_theme",
+    "sphinx_rtd_theme",
     "recommonmark",
-    # 'sphinx.ext.imgmath',
-    # 'sphinx.ext.viewcode',
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
 ]
