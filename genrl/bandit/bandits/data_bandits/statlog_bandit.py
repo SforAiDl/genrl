@@ -20,8 +20,8 @@ class StatlogDataBandit(DataBasedBandit):
     The dataset gives the recorded value of 9 different sensors during a space shuttle flight
     as well which state (out of 7 possible) the radiator was at each timestep.
 
-    At each timestep the agent will get a  $\mathbf{x} \in \mathbb{R}^9$ context vector
-    and must select one of 7 actions. The agent will get a reward $r = 1$ only if it selects
+    At each timestep the agent will get a 9-dimensional real valued context vector
+    and must select one of 7 actions. The agent will get a reward of 1 only if it selects
     the true state of the radiator at that timestep as given in the dataset.
 
     Context dimension: 9
