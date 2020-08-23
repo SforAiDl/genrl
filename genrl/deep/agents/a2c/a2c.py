@@ -149,7 +149,9 @@ class A2C(OnPolicyAgent):
             if isinstance(self.env.action_space, gym.spaces.Discrete):
                 actions = actions.long().flatten()
 
-            values, log_prob = self.get_value_log_probs(rollout.observations, actions)
+            values, log_prob, entropy = self.evaluate_actions(
+                rollout.observations, actions
+            )
 
             policy_loss = rollout.advantages * log_prob
             policy_loss = -torch.mean(policy_loss)

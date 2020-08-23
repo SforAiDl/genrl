@@ -508,7 +508,7 @@ class OnPolicyTrainer(Trainer):
 
             self.agent.get_traj_loss(values, done)
 
-            self.agent.update_policy()
+            self.agent.update_params()
 
             if epoch % self.log_interval == 0:
                 self.logger.write(

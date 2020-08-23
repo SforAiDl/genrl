@@ -38,7 +38,9 @@ class OnPolicyAgent(BaseAgent):
         gae_lambda = kwargs["gae_lambda"] if "gae_lambda" in kwargs else 1.0
 
         if buffer_type == "rollout":
-            self.rollout = RolloutBuffer(self.rollout_size, self.env, gae_lambda)
+            self.rollout = RolloutBuffer(
+                self.rollout_size, self.env, gae_lambda=gae_lambda
+            )
         else:
             raise NotImplementedError
 
