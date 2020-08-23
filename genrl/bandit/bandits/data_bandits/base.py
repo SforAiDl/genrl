@@ -16,7 +16,7 @@ class DataBasedBandit(Bandit):
         device (torch.device): Device to use for tensor operations.
     """
 
-    def __init__(self, device: str = "cpu"):
+    def __init__(self, device: str = "cpu", **kwargs):
 
         if "cuda" in device and torch.cuda.is_available():
             self.device = torch.device(device)

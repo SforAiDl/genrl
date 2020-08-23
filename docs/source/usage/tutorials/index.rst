@@ -4,7 +4,7 @@ Tutorials
 .. toctree::
     :maxdepth: 2
     
-    Bandits/index
+    bandit/index
     Using Custom Policies
     Using A2C
     using_vpg
