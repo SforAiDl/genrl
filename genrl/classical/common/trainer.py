@@ -127,6 +127,9 @@ class Trainer:
                     self.evaluate()
 
                 if ep == self.n_episodes:
+                    print("Evaluating at the episode number: {}".format(ep))
+                    final_reward = self.evaluate()
+                    self.agent.mean_reward = final_reward
                     break
 
                 ep += 1
@@ -138,7 +141,7 @@ class Trainer:
 
         return ep_rews
 
-    def evaluate(self, eval_ep: int = 100) -> None:
+    def evaluate(self, eval_ep: int = 100) -> float:
         """
         Evaluate function.
 
@@ -149,6 +152,7 @@ class Trainer:
         ep_rew = 0
         ep_rews = []
         state = self.env.reset()
+        mean_ep_reward = None
 
         while True:
             action = self.agent.get_action(state, False)
@@ -159,13 +163,16 @@ class Trainer:
             if done:
                 ep_rews.append(ep_rew)
                 ep += 1
+                mean_ep_rew = np.mean(ep_rews)
                 if ep == 100:
                     print(
                         "Evaluating on {} episodes, Mean Reward: {} and Std Deviation for the reward: {}".format(
-                            eval_ep, np.mean(ep_rews), np.std(ep_rews)
+                            eval_ep, mean_ep_rew, np.std(ep_rews)
                         )
                     )
                     break
+
+        return mean_ep_rew
 
     def plot(self, results: List[float], window_size: int = 100) -> None:
         """

@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Any, Dict
 
 import gym
 import numpy as np
@@ -23,6 +23,8 @@ class QLearning:
         self.epsilon = epsilon
         self.gamma = gamma
         self.lr = lr
+
+        self.mean_reward = None
 
         self.Q = np.zeros((self.env.observation_space.n, self.env.action_space.n))
 
@@ -53,3 +55,13 @@ class QLearning:
         self.Q[state, action] += self.lr * (
             reward + self.gamma * np.max(self.Q[next_state, :]) - self.Q[state, action]
         )
+
+    def get_hyperparams(self) -> Dict[str, Any]:
+        hyperparams = {
+            "epsilon": self.epsilon,
+            "gamma": self.gamma,
+            "lr": self.lr
+        }
+
+        return hyperparams
+
