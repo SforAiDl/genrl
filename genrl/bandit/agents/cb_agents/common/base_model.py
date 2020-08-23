@@ -38,7 +38,7 @@ class Model(nn.Module, ABC):
         self.layers = nn.ModuleList([])
         for i in range(len(t_hidden_dims) - 1):
             self.layers.append(layer(t_hidden_dims[i], t_hidden_dims[i + 1]))
-        self.init_lr = kwargs.get("init_lr")
+        self.init_lr = kwargs.get("init_lr", 3e-4)
         self.optimizer = torch.optim.Adam(self.layers.parameters(), lr=self.init_lr)
         self.lr_decay = kwargs.get("lr_decay", None)
         self.lr_scheduler = (
