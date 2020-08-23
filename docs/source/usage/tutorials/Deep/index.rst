@@ -1,5 +1,5 @@
-Deep RL
-============
+Deep RL Tutorials
+=================
 
 .. toctree::
     :maxdepth: 1
