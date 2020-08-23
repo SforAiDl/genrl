@@ -6,7 +6,7 @@ Vanilla Policy Gradient
 Background
 ==========
 
-The goal of Reinforcement Learning Algorithms is to maximize reward. This is usually achieved by having a policy :math:`\pi_{\theta}` perform optimal behavior. Let's denote this optimal policy by :math:`\pi_{\theta}^{*}`. For easy, we define the Reinforcement Learning problem as a Markov Decision Process. 
+The goal of Reinforcement Learning Algorithms is to maximize reward. This is usually achieved by having a policy :math:`\pi_{\theta}` perform optimal behavior. Let's denote this optimal policy by :math:`\pi_{\theta}^{*}`. For ease, we define the Reinforcement Learning problem as a Markov Decision Process. 
 
 Markov Decision Process
 =======================
@@ -26,7 +26,7 @@ The objective is to choose/learn a policy that will maximize a cumulative functi
 
 .. math::
 
-    E\left[{\sum_{t=0}^{\infty}{\gamma r_{t}}}\right]
+    E\left[{\sum_{t=0}^{\infty}{\gamma^{t} r_{t}}}\right]
 
 
 where we choose the action :math:`a_{t} = \pi_{\theta}(s_{t})`. 
@@ -53,7 +53,7 @@ At each update timestep, we get value and log probabilities:
    :lines: 123-126
    :lineno-start: 123
 
-Now, that we have the log probabilities we calculate the gradient of :math:`J(\pi_{\theta})` is:
+Now, that we have the log probabilities we calculate the gradient of :math:`J(\pi_{\theta})` as:
 
 .. math:: 
     
@@ -86,13 +86,13 @@ Training through the API
 
     import gym
 
-    from genrl import VPG, QLearning
-    from genrl.deep.common import OffPolicyTrainer
+    from genrl import VPG
+    from genrl.deep.common import OnPolicyTrainer
     from genrl.environments import VectorEnv
 
     env = VectorEnv("CartPole-v0")
-    agent = SAC('mlp', env)
-    trainer = OffPolicyTrainer(agent, env, log_mode=['stdout', 'tensorboard'])
+    agent = VPG('mlp', env)
+    trainer = OnPolicyTrainer(agent, env, log_mode=['stdout'])
     trainer.train()
 
 .. code-block:: bash
