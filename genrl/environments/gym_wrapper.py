@@ -39,16 +39,10 @@ serially or parallelly
 
     @property
     def obs_shape(self):
-        if isinstance(self.env.observation_space, List):
-            obs_space = self.env.observation_space[0]
-        else:
-            obs_space = self.env.observation_space
-
-        if isinstance(obs_space, gym.spaces.Discrete):
+        if isinstance(self.env.observation_space, gym.spaces.Discrete):
             obs_shape = (1,)
-        elif isinstance(obs_space, gym.spaces.Box):
-            obs_shape = obs_space.shape
-
+        elif isinstance(self.env.observation_space, gym.spaces.Box):
+            obs_shape = self.env.observation_space.shape
         return obs_shape
 
     @property
