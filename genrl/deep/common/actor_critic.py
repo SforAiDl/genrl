@@ -62,7 +62,8 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         self,
         state_dim: Space,
         action_dim: Space,
-        hidden: Tuple = (32, 32),
+        policy_layers: Tuple = (256,),
+        value_layers: Tuple = (256,),
         val_type: str = "V",
         discrete: bool = True,
         num_critics: int = 2,
@@ -126,14 +127,9 @@ class CNNActorCritic(BaseActorCritic):
     def __init__(
         self,
         framestack: int,
-<<<<<<< HEAD
         action_dim: Space,
-        fc_layers: Tuple = (256,),
-=======
-        action_dim: spaces.Space,
         policy_layers: Tuple = (256,),
         value_layers: Tuple = (256,),
->>>>>>> upstream/master
         val_type: str = "V",
         discrete: bool = True,
         *args,
