@@ -2,22 +2,7 @@
 Vanilla Policy Gradient
 =======================
 
-
-Background
-==========
-
-The goal of Reinforcement Learning Algorithms is to maximize reward. This is usually achieved by having a policy :math:`\pi_{\theta}` perform optimal behavior. Let's denote this optimal policy by :math:`\pi_{\theta}^{*}`. For ease, we define the Reinforcement Learning problem as a Markov Decision Process. 
-
-Markov Decision Process
-=======================
-
-An Markov Decision Process (MDP) is defined by :math:`(S, A, r, P_{a})` 
-where,
- - :math:`S` is a set of States.
- - :math:`A` is a set of Actions.
- - :math:`r : S \rightarrow \mathbb{R}` is a reward function.
- - :math:`P_{a}(s, s')` is the transition probability that action :math:`a` in state :math:`s` leads to state :math:`s'`.
-
+For background on Deep RL, its core definitions and problem formulations refer to :ref:`Deep RL Background`
 
 Objective
 =========
@@ -31,8 +16,21 @@ The objective is to choose/learn a policy that will maximize a cumulative functi
 
 where we choose the action :math:`a_{t} = \pi_{\theta}(s_{t})`. 
 
+Algorithm Details
+=================
+
+Collect Experience
+------------------
+
+To make our agent learn, we first need to collect some experience in an online fashion. For this we make use of the ``collect_rollouts`` method. This method is defined in the ``OnPolicyAgent`` Base Class. 
+
+.. literalinclude:: ../../../../../genrl/deep/agents/base.py
+   :lines: 141-163
+   :lineno-start: 141
+
+For updation, we would need to compute advantages from this experience. So, we store our experience in a Rollout Buffer. 
 Action Selection
-================
+----------------
 
 .. literalinclude:: ../../../../../genrl/deep/agents/vpg/vpg.py
    :lines: 99-115
@@ -43,7 +41,7 @@ Note: We sample a **stochastic action** from the distribution on the action spac
 For practical purposes we would assume that we are working with a finite horizon MDP.
 
 Update Equations
-================
+----------------
 
 Let :math:`\pi_{\theta}` denote a policy with parameters :math:`\theta`, and :math:`J(\pi_{\theta})` denote the expected finite-horizon undiscounted return of the policy. 
 

@@ -2,22 +2,7 @@
 Advantage Actor Critic
 ======================
 
-
-Background
-==========
-
-The goal of Reinforcement Learning Algorithms is to maximize reward. This is usually achieved by having a policy :math:`\pi_{\theta}` perform optimal behavior. Let's denote this optimal policy by :math:`\pi_{\theta}^{*}`. For ease, we define the Reinforcement Learning problem as a Markov Decision Process. 
-
-Markov Decision Process
-=======================
-
-An Markov Decision Process (MDP) is defined by :math:`(S, A, r, P_{a})` 
-where,
- - :math:`S` is a set of States.
- - :math:`A` is a set of Actions.
- - :math:`r : S \rightarrow \mathbb{R}` is a reward function.
- - :math:`P_{a}(s, s')` is the transition probability that action :math:`a` in state :math:`s` leads to state :math:`s'`.
-
+For background on Deep RL, its core definitions and problem formulations refer to :ref:`Deep RL Background<Background>`
 
 Objective
 =========
@@ -28,14 +13,14 @@ The objective is to maximize the discounted cumulative reward function:
 
     E\left[{\sum_{t=0}^{\infty}{\gamma^{t} r_{t}}}\right]
 
-This comprises of two parts:
+This comprises of two parts in the Adantage Actor Critic Algorithm:
 
 1. To choose/learn a policy that will increase the probability of landing an action that has higher expected return than the value of just the state and decrease the probability of landing an action that has lower expected return than the value of the state. The Advantage is computed as:
 
 .. math::
     A(s,a) = Q(s,a) - V(s)
 
-2. To learn a State Action Value Function (in the name of **Critic**) that estimates the future cumulative rewards given the current state. This function helps the policy in evaluation potential state, action pairs
+2. To learn a State Action Value Function (in the name of **Critic**) that estimates the future cumulative rewards given the current state and action. This function helps the policy in evaluation potential state, action pairs.
 
 
 where we choose the action :math:`a_{t} = \pi_{\theta}(s_{t})`. 
@@ -57,7 +42,7 @@ Note: We sample a **stochastic action** from the distribution on the action spac
 For practical purposes we would assume that we are working with a finite horizon MDP.
 
 Collect Experience
-==================
+------------------
 
 To make our agent learn, we first need to collect some experience in an online fashion. For this we make use of the ``collect_rollouts`` method. This method is defined in the ``OnPolicyAgent`` Base Class. 
 
