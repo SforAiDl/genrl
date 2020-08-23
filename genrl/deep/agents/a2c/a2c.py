@@ -62,12 +62,12 @@ class A2C(OnPolicyAgent):
 
         This will create the Actor-Critic net for the agent and initialise the action noise
         """
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
+        state_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network
         )
         if isinstance(self.network, str):
             self.ac = get_model("ac", self.network)(
-                input_dim,
+                state_dim,
                 action_dim,
                 policy_layers=self.policy_layers,
                 value_layers=self.value_layers,

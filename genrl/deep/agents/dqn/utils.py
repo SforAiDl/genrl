@@ -24,13 +24,13 @@ def ddqn_q_target(
     Returns:
         target_q_values (:obj:`torch.Tensor`): Target Q values using Double Q-learning
     """
-    next_q_values = agent.model(next_states)
-    next_best_actions = next_q_values.max(1)[1].unsqueeze(1)
+    next_q_value_dist = agent.model(next_states)
+    next_best_actions = torch.argmax(next_q_value_dist, dim=-1).unsqueeze(-1)
 
     rewards, dones = rewards.unsqueeze(-1), dones.unsqueeze(-1)
 
-    next_q_target_values = agent.target_model(next_states)
-    max_next_q_target_values = next_q_target_values.gather(1, next_best_actions)
+    next_q_target_value_dist = agent.target_model(next_states)
+    max_next_q_target_values = next_q_target_value_dist.gather(2, next_best_actions)
     target_q_values = rewards + agent.gamma * torch.mul(
         max_next_q_target_values, (1 - dones)
     )

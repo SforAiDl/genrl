@@ -75,13 +75,13 @@ class VPG(OnPolicyAgent):
         """
         Initialize the actor and critic networks
         """
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
+        state_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network
         )
         if isinstance(self.network, str):
             # Instantiate networks and optimizers
             self.actor = get_model("p", self.network)(
-                input_dim,
+                state_dim,
                 action_dim,
                 self.policy_layers,
                 "V",

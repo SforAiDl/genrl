@@ -62,7 +62,7 @@ class TD3(OffPolicyAgentAC):
 
         Initializes actor-critic architecture, replay buffer and optimizers
         """
-        input_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
         if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
@@ -71,7 +71,7 @@ class TD3(OffPolicyAgentAC):
         if isinstance(self.network, str):
             # Below, the "12" corresponds to the Single Actor, Double Critic network architecture
             self.ac = get_model("ac", self.network + "12")(
-                input_dim,
+                state_dim,
                 action_dim,
                 policy_layers=self.policy_layers,
                 value_layers=self.value_layers,

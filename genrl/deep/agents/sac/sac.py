@@ -73,12 +73,12 @@ class SAC(OffPolicyAgentAC):
             )
 
         if isinstance(self.network, str):
-            input_dim, action_dim, discrete, _ = get_env_properties(
+            state_dim, action_dim, discrete, _ = get_env_properties(
                 self.env, self.network
             )
 
             self.ac = get_model("ac", self.network + "12")(
-                input_dim,
+                state_dim,
                 action_dim,
                 policy_layers=self.policy_layers,
                 value_layers=self.value_layers,

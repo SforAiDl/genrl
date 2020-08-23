@@ -21,12 +21,7 @@ class BasePolicy(nn.Module):
     """
 
     def __init__(
-        self,
-        state_dim: spaces.Space,
-        action_dim: spaces.Space,
-        hidden: Tuple,
-        discrete: bool,
-        **kwargs
+        self, state_dim: int, action_dim: int, hidden: Tuple, discrete: bool, **kwargs
     ):
         super(BasePolicy, self).__init__()
 
@@ -101,9 +96,11 @@ class BaseValue(nn.Module):
     Basic implementation of a general Value function
     """
 
-    def __init__(self):
+    def __init__(self, state_dim: int, action_dim: int):
         super(BaseValue, self).__init__()
 
+        self.state_dim = state_dim
+        self.action_dim = action_dim
         self.model = None
 
     def forward(self, state: torch.Tensor) -> torch.Tensor:

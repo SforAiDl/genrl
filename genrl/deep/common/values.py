@@ -60,22 +60,20 @@ class MlpValue(BaseValue):
 
     def __init__(
         self,
-        input_dim: int,
+        state_dim: int,
         action_dim: int = None,
         val_type: str = "V",
         fc_layers: Tuple = (32, 32),
         **kwargs,
     ):
-        super(MlpValue, self).__init__()
-        self.input_dim = input_dim
-        self.action_dim = action_dim
+        super(MlpValue, self).__init__(state_dim, action_dim)
         self.val_type = val_type
         self.fc_layers = fc_layers
 
         self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
         self.model = _get_val_model(
-            mlp, val_type, input_dim, fc_layers, action_dim, self.activation
+            mlp, val_type, state_dim, fc_layers, action_dim, self.activation
         )
 
 
@@ -98,7 +96,7 @@ class CnnValue(MlpValue):
         super(CnnValue, self).__init__(*args, **kwargs)
 
         self.conv, self.output_size = cnn(
-            (self.input_dim, 16, 32), activation=self.activation
+            (self.state_dim, 16, 32), activation=self.activation
         )
         self.model = mlp([self.output_size, *self.fc_layers, self.action_dim])
 
@@ -123,7 +121,7 @@ class MlpDuelingValue(MlpValue):
 
     def __init__(self, *args, **kwargs):
         super(MlpDuelingValue, self).__init__(*args, **kwargs)
-        self.feature = mlp([self.input_dim, *self.fc_layers[:-1]])
+        self.feature = mlp([self.state_dim, *self.fc_layers[:-1]])
         self.advantage = mlp([self.fc_layers[-1], self.action_dim])
         self.value = mlp([self.fc_layers[-1], 1])
 
@@ -163,7 +161,7 @@ class MlpNoisyValue(MlpValue):
         self.num_atoms = kwargs["num_atoms"] if "num_atoms" in kwargs else 1
 
         self.model = noisy_mlp(
-            [self.input_dim, *self.fc_layers],
+            [self.state_dim, *self.fc_layers],
             [*self.noisy_layers, self.action_dim * self.num_atoms],
             self.activation,
         )
@@ -181,7 +179,7 @@ class CnnNoisyValue(CnnValue, MlpNoisyValue):
     """Class for Noisy DQN's CNN Q-Value function
 
     Attributes:
-        input_dim (int): Number of previous frames to stack together
+        state_dim (int): Number of previous frames to stack together
         action_dim (int): Action space dimensions
         fc_layers (:obj:`tuple`): Fully connected layer dimensions
         noisy_layers (:obj:`tuple`): Noisy layer dimensions
@@ -244,8 +242,9 @@ class CnnCategoricalValue(CnnNoisyValue):
     def forward(self, state: torch.Tensor) -> torch.Tensor:
         features = self._cnn_forward(state)
         features = self.model(features)
+        batch_size, env, _ = features.shape
         return F.softmax(features.view(-1, self.num_atoms), dim=0).view(
-            -1, self.action_dim, self.num_atoms
+            batch_size, env, self.action_dim, self.num_atoms
         )
 
 

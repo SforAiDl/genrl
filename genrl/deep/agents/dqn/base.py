@@ -60,13 +60,13 @@ class DQN(OffPolicyAgent):
 
         This will create the Q-value function of the agent.
         """
-        input_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
         if not discrete:
             raise Exception("Only Discrete Environments are supported for DQN")
 
         if isinstance(self.network, str):
             self.model = get_model("v", self.network + self.dqn_type)(
-                input_dim, action_dim, "Qs", self.value_layers, **kwargs
+                state_dim, action_dim, "Qs", self.value_layers, **kwargs
             )
         else:
             self.model = self.network

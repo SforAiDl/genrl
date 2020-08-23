@@ -97,12 +97,12 @@ class PPO1(OnPolicyAgent):
         This will create the Actor-Critic net for the agent and initialise the action noise
         """
         # Instantiate networks and optimizers
-        input_dim, action_dim, discrete, action_lim = get_env_properties(
+        state_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network
         )
         if isinstance(self.network, str):
             self.ac = get_model("ac", self.network)(
-                input_dim,
+                state_dim,
                 action_dim,
                 self.policy_layers,
                 self.value_layers,
