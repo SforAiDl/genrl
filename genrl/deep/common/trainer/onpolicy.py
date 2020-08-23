@@ -1,5 +1,7 @@
+import numpy as np
+
+from genrl.deep.common.trainer.base import Trainer
 from genrl.deep.common.utils import safe_mean
-from genrl.deep.trainer.base import Trainer
 
 
 class OnPolicyTrainer(Trainer):
@@ -13,7 +15,7 @@ class OnPolicyTrainer(Trainer):
         log_mode (:obj:`list` of str): List of different kinds of logging. Supported: ["csv", "stdout", "tensorboard"]
         log_key (str): Key plotted on x_axis. Supported: ["timestep", "episode"]
         log_interval (int): Timesteps between successive logging of parameters onto the console
-        log_dir (str): Directory where log files should be saved.
+        logdir (str): Directory where log files should be saved.
         epochs (int): Total number of epochs to train for
         off_policy (bool): True if the agent is an off policy agent, False if it is on policy
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters

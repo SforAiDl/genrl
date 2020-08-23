@@ -3,8 +3,8 @@ from typing import Type, Union
 import numpy as np
 
 from genrl.deep.common.buffers import PrioritizedBuffer, ReplayBuffer
+from genrl.deep.common.trainer.base import Trainer
 from genrl.deep.common.utils import safe_mean
-from genrl.deep.trainer.base import Trainer
 
 
 class OffPolicyTrainer(Trainer):
@@ -23,7 +23,7 @@ class OffPolicyTrainer(Trainer):
         log_mode (:obj:`list` of str): List of different kinds of logging. Supported: ["csv", "stdout", "tensorboard"]
         log_key (str): Key plotted on x_axis. Supported: ["timestep", "episode"]
         log_interval (int): Timesteps between successive logging of parameters onto the console
-        log_dir (str): Directory where log files should be saved.
+        logdir (str): Directory where log files should be saved.
         epochs (int): Total number of epochs to train for
         off_policy (bool): True if the agent is an off policy agent, False if it is on policy
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
@@ -45,17 +45,15 @@ class OffPolicyTrainer(Trainer):
         update_interval: int = 50,
         **kwargs
     ):
-        super(OffPolicyTrainer, self).__init__(*args, **kwargs)
+        super(OffPolicyTrainer, self).__init__(*args, off_policy=True, **kwargs)
+
         self.max_ep_len = max_ep_len
         self.warmup_steps = warmup_steps
         self.update_interval = update_interval
         self.start_update = start_update
         self.network = self.agent.network
 
-        assert (
-            self.offpolicy
-        ), "Only off policy agents can be trained with the OffPolicyTrainer"
-        if self.off_policy and buffer is None:
+        if buffer is None:
             if self.agent.replay_buffer is None:
                 raise Exception("Off Policy Training requires a Replay Buffer")
             else:

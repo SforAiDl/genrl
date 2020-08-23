@@ -22,7 +22,7 @@ class Trainer(ABC):
         log_mode (:obj:`list` of str): List of different kinds of logging. Supported: ["csv", "stdout", "tensorboard"]
         log_key (str): Key plotted on x_axis. Supported: ["timestep", "episode"]
         log_interval (int): Timesteps between successive logging of parameters onto the console
-        log_dir (str): Directory where log files should be saved.
+        logdir (str): Directory where log files should be saved.
         epochs (int): Total number of epochs to train for
         off_policy (bool): True if the agent is an off policy agent, False if it is on policy
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
@@ -41,7 +41,7 @@ class Trainer(ABC):
         log_mode: List[str] = ["stdout"],
         log_key: str = "timestep",
         log_interval: int = 10,
-        log_dir: str = "logs",
+        logdir: str = "logs",
         epochs: int = 10,
         off_policy: bool = False,
         save_interval: int = 0,
@@ -57,7 +57,7 @@ class Trainer(ABC):
         self.log_mode = log_mode
         self.log_key = log_key
         self.log_interval = log_interval
-        self.log_dir = log_dir
+        self.logdir = logdir
         self.epochs = epochs
         self.off_policy = off_policy
         self.save_interval = save_interval
@@ -70,7 +70,7 @@ class Trainer(ABC):
         if seed is not None:
             set_seeds(seed, self.env)
 
-        self.logger = Logger(logdir=log_dir, formats=[*log_mode])
+        self.logger = Logger(logdir=logdir, formats=[*log_mode])
 
     def train(self) -> None:
         """Main training method
