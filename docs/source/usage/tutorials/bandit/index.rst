@@ -1,32 +1,37 @@
-Bandits
-============
+.. _bandit_tutorials:
+
+Bandit Tutorials
+================
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Overviews
+
+    bandit_overview
+    contextual_overview
 
 .. toctree::
     :maxdepth: 1
     :caption: Multi Armed Bandit Setting
 
-    bandit_overview
     ucb
     thompson_sampling
     bayesian
     gradients
 
-
 .. toctree::
     :maxdepth: 1
     :caption: Contextual Bandit Setting
 
-    contextual_overview
     linpos
     variational
     bootstrap
     noise
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Extending to custom implementations
+
     adding_data_bandit
     adding_dcb_agent
-
-
-
-
-
-
     

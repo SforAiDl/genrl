@@ -7,15 +7,15 @@ create a dataset based bandit which will work with the rest of
 ``genrl.bandit``
 
 For this tutorial, we will use the
-`Wine <http://archive.ics.uci.edu/ml/datasets/Wine>`__ dataset which is
-a sample datset often used for testing classifiers. It has 178 rows of
-14 features, the first of which gives the cultivar of the wine (the
-feature we need to classify into) (can be one of three) and the rest
-give the features of the wine itself. Formulated as a bandit problem we
-have a bandit with 3 arms and a 13-dimensional context. The agent will
-get a reward of 1 if it correctly selects the arm else 0.
+`Wine dataset <http://archive.ics.uci.edu/ml/datasets/Wine>`__ which is
+a simple datset often used for testing classifiers. It has 178 examples each
+with 14 features, the first of which gives the cultivar of the wine (the
+feature we need to classify each wine sample into) (this can be one of three) 
+and the rest give the properties of the wine itself. Formulated as a bandit 
+problem we have a bandit with 3 arms and a 13-dimensional context. The 
+agent will get a reward of 1 if it correctly selects the arm else 0.
 
-To start off with lets import necessary things, specify the data URL and
+To start off with lets import necessary modules, specify the data URL and
 make a class which inherits from
 ``genrl.bandit.bandits.data_bandits.base.DataBasedBandit``
 
@@ -27,10 +27,7 @@ make a class which inherits from
     import torch
 
     from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-    from genrl.bandit.bandits.data_bandits.utils import (
-        download_data,
-        fetch_data_without_header,
-    )
+    from genrl.bandit.bandits.data_bandits.utils import download_data
 
 
     URL = "http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data"
@@ -45,13 +42,14 @@ make a class which inherits from
         def _get_context(self) -> torch.Tensor:
 
 We will need to implement ``__init__``, ``reset``, ``_compute_reward``
-and ``_get_context`` to make the class functional. For dataset based
-bandits, we can generally load the data into memory during
+and ``_get_context`` to make the class functional. 
+
+For dataset based bandits, we can generally load the data into memory during
 initialisation. This can be in some tabular form (``numpy.array``,
-``torch.Tensor`` or ``pandas.DataFrame``). When reset, the bandit would
-set its index to 0 and reshuffle the rows of the table. For stepping,
-the bandit can compute rewards from the current row of the table and
-then increment the index to move to the next row.
+``torch.Tensor`` or ``pandas.DataFrame``) and maintaining an index. When reset, 
+the bandit would set its index to 0 and reshuffle the rows of the table.  
+For stepping, the bandit can compute rewards from the current row of the table 
+as given by the index and then increment the index to move to the next row.
 
 Lets start with ``__init__``. Here we need to download the data if
 specified and load it into memory. Many utility functions are available
@@ -69,14 +67,14 @@ here.
             super(WineDataBandit, self).__init__(**kwargs)
 
             path = kwargs.get("path", "./data/Wine/")
-            download = kwargs.("download", None)
+            download = kwargs.get("download", None)
             force_download = kwargs.get("force_download", None)
             url = kwargs.get("url", URL)
 
             if download:
                 path = download_data(path, url, force_download)
 
-            self._df = pd.read_csv(fpath, header=None)
+            self._df = pd.read_csv(path, header=None)
             self.n_actions = len(self._df[0].unique())
             self.context_dim = self._df.shape[1] - 1
             self.len = len(self._df)
@@ -117,7 +115,7 @@ current index.
 
         def _get_context(self) -> torch.Tensor:
             return torch.tensor(
-                self._df.iloc[self.idx, 0],
+                self._df.iloc[self.idx, 0].values,
                 device=self.device,
                 dtype=torch.float,
             )
@@ -126,4 +124,4 @@ Once you are done with the above, you can use the ``WineDataBandit``
 class like you would any other bandit from from
 ``genrl.bandit.bandits.data_bandits``. You can use it with any of the
 ``cb_agents`` as well as training on it with
-``genrl.bandit.DCBTrainer``.
+`genrl.bandit.DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.

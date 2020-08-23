@@ -1,7 +1,9 @@
 Variational Inference
 =====================
 
-In this methods, we try find a distribution
+For an introduction to the Contextual Bandit problem, refer to :ref:`cb_overview`.
+
+In this method, we try find a distribution
 :math:`P_{\theta}(r | \mathbf{x}, a)` by minimising the KL divergence
 with the true distribution. For the model we take a neueral network
 where each weight is modelled by independant gaussians, also known as
@@ -20,4 +22,8 @@ of 0.1 for al the weights -
     trainer = DCBTrainer(agent, bandit)
     trainer.train()
 
-Refer to the ``VariationalAgent`` docs for more information.
+Refer to the 
+`VariationalAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.variational>`__, 
+and 
+`DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__ 
+docs for more details.

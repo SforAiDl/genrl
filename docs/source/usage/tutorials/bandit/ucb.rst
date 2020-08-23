@@ -4,8 +4,7 @@ UCB
 Training a UCB algorithm on a Bernoulli Multi-Armed Bandit
 ----------------------------------------------------------
 
-For an introduction to Multi Armed Bandits, refer to `Tutorial On
-Bandits <https://genrl.readthedocs.io/en/latest/usage/tutorials/Tutorial_on_bandits.html>`__.
+For an introduction to Multi Armed Bandits, refer to :ref:`bandit_overview`
 
 The UCB algorithm follows a basic principle - 'Optimism in the face of
 uncertainty'. What this means is that we should always select the action
@@ -62,7 +61,7 @@ Code to train a UCB agent on a Bernoulli Multi-Armed Bandit:
     trainer.train(timesteps=10000)
 
 More details can be found in the docs for
-`BernoulliMAB <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
-`UCB <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.ucb>`__
+`BernoulliMAB <../../../api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
+`UCB <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.ucb>`__
 and
-`MABTrainer <https://genrl.readthedocs.io/en/latest/api/common/bandit.html#module-genrl.bandit.trainer>`__.
+`MABTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.

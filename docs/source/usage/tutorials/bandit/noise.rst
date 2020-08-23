@@ -1,6 +1,8 @@
 Parameter Noise Sampling
 ========================
 
+For an introduction to the Contextual Bandit problem, refer to :ref:`cb_overview`.
+
 One of the ways to improve exploration of our algorithms is to introduce
 noise into the weights of the neural network while selecting actions.
 This does not affect the gradients but will have a similar effect to
@@ -23,4 +25,8 @@ updating the noise distribution as 128 -
     trainer = DCBTrainer(agent, bandit)
     trainer.train()
 
-Refer to the ``NeuralNoiseSamplingAgent`` docs for more information.
+Refer to the 
+`NeuralNoiseSamplingAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_noise>`__, 
+and 
+`DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__ 
+docs for more details.

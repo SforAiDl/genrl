@@ -10,7 +10,7 @@ For the purpose of this tutorial we will consider a simple neural
 network based agent. Although this is a simplictic agent, implementation
 of any level of agent will need to have the following steps.
 
-To start off with lets import necessary things and make a class which
+To start off with lets import necessary modules and make a class which
 inherits from ``genrl.bandit.agents.cb_agents.base.DCBAgent``
 
 .. code:: python
@@ -115,10 +115,10 @@ model, this is where the updates to the parameters would happen.
             self.model.train_model(self.db, train_epochs, batch_size)
 
 Note that some of these functions have unused arguments. The signatures
-have been decided as such to ensure generality over all classes of
+have been decided so as such to ensure generality over all classes of
 algorithms.
 
 Once you are done with the above, you can use the ``NeuralAgent`` class
 like you would any other agent from ``genrl.bandit``. You can use it
 with any of the bandits as well as training it with
-``genrl.bandit.DCBTrainer``.
+`genrl.bandit.DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.

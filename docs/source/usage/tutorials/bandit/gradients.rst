@@ -4,8 +4,7 @@ Gradients
 Using Gradient Method on a Bernoulli Multi-Armed Bandit
 -------------------------------------------------------
 
-For an introduction to Multi Armed Bandits, refer to `Tutorial On
-Bandits <https://genrl.readthedocs.io/en/latest/usage/tutorials/Tutorial_on_bandits.html>`__.
+For an introduction to Multi Armed Bandits, refer to :ref:`bandit_overview`
 
 This method is different compared to others. In other methods, we
 explicity attempt to estimate the 'value' of taking an action (its
@@ -72,7 +71,7 @@ Code to use the Gradient method on a Bernoulli Multi-Armed Bandit:
     trainer.train(timesteps=10000)
 
 More details can be found in the docs for
-`BernoulliMAB <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
-`Gradient <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.gradient>`__
+`BernoulliMAB <../../../api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
+`BayesianUCBMABAgent <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.gradient>`__
 and
-`MABTrainer <https://genrl.readthedocs.io/en/latest/api/common/bandit.html#module-genrl.bandit.trainer>`__.
+`MABTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.

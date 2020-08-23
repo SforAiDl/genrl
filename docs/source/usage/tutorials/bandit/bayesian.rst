@@ -4,12 +4,11 @@ Bayesian
 Using Bayesian Method on a Bernoulli Multi-Armed Bandit
 -------------------------------------------------------
 
-For an introduction to Multi Armed Bandits, refer to `Tutorial On
-Bandits <https://genrl.readthedocs.io/en/latest/usage/tutorials/Tutorial_on_bandits.html>`__.
+For an introduction to Multi Armed Bandits, refer to :ref:`bandit_overview`
 
 This method is also based on the prinicple - 'Optimism in the face of
 uncertainty', like
-`UCB <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.ucb>`__.
+`UCB <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.ucb>`__.
 We initially *assume* an initial distribution(prior) over the quality of
 each of the arms. We can model this prior using a Beta distribution,
 parametrised by alpha(\ :math:`\alpha`) and beta(\ :math:`\beta`).
@@ -29,7 +28,7 @@ Theorem. What this does is that it gives a posterior distribution over
 the quality, according to the rewards we have seen so far.
 
 This is quite similar to `Thompson
-Sampling <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.thompson>`__.
+Sampling <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.thompson>`__.
 But what is different here is that we explicity try to calculate the
 uncertainty of a particular action by calculating the standard
 deviation(\ :math:`\sigma`) of its posterior. We add this std. dev to
@@ -67,7 +66,7 @@ Code to use Bayesian method on a Bernoulli Multi-Armed Bandit:
     trainer.train(timesteps=10000)
 
 More details can be found in the docs for
-`BernoulliMAB <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
-`BayesianUCBMABAgent <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.bayesian>`__
+`BernoulliMAB <../../../api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
+`BayesianUCBMABAgent <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.bayesian>`__
 and
-`MABTrainer <https://genrl.readthedocs.io/en/latest/api/common/bandit.html#module-genrl.bandit.trainer>`__.
+`MABTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.

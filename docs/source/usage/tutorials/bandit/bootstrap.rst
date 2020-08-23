@@ -1,7 +1,9 @@
 Bootstrap
 =========
 
-Here multiple different neural network based models are trained
+For an introduction to the Contextual Bandit problem, refer to :ref:`cb_overview`.
+
+In the bootstrap agent multiple different neural network based models are trained
 simultaneously. Different transition databases are maintained for each
 model and every time we observe a transition it is added to each dataset
 with some probability. At each timestep, the model used to select an
@@ -24,4 +26,8 @@ with a hidden layer of 128 neurons which also uses dropout for training
     trainer = DCBTrainer(agent, bandit)
     trainer.train()
 
-Refer to the ``BootstrapNeuralAgent`` docs for more information.
+Refer to the 
+`BootstrapNeuralAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.bootstrap_neural>`__ 
+and 
+`DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__ 
+docs for more details.

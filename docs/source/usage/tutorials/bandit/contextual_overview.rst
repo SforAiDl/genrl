@@ -1,13 +1,15 @@
+.. _cb_overview:
+
 Contextual Bandits Overview
 ===========================
 
 Problem Setting
 ---------------
 
-To get some background on the basic multi armed bandit problem, check
-out the overview on bandits first. The contextual bandit (CB) probelm
-varies from the basic case in that at each timestep, a context vector
-:math:`x \in \mathbb{R}^d` is presented to the agent. The agent must
+To get some background on the basic multi armed bandit problem, we recommend
+that you go through the :ref:`bandit_overview` first. The contextual bandit 
+(CB) problem varies from the basic case in that at each timestep, a context 
+vector :math:`x \in \mathbb{R}^d` is presented to the agent. The agent must
 then decide on an action :math:`a \in \mathcal{A}` to take based on that
 context. After the action is taken, the reward :math:`r \in \mathbb{R}`
 for only that action is revealed to the agent (a feature of all
@@ -17,7 +19,7 @@ reinforcement learning problems). The aim of the agent remains the same
 Here you still have the problem of exploration vs exploitation, but the
 agent also needs to find some relation between the context and reward.
 
-Simplistic Example
+A Simple Example
 ------------------
 
 Lets consider the simplest case of the CB problem. Instead of having
@@ -65,7 +67,7 @@ Data based Conextual Bandits
 ----------------------------
 
 Lets consider a more realistic class of CB problem. I real life, you the
-CB setting is usally used to model recommendation or classification
+CB setting is usually used to model recommendation or classification
 problems. Here, instead of getting an integer as the context, you will
 get a :math:`d`-dimensional feature vector
 :math:`\mathbf{x} \in \mathbb{R}^d`. This is also different from regular
@@ -81,20 +83,20 @@ the context.
 
 .. math::  P(r | a, \mathbf{x})
 
-THere are many ways to do this. For a detailed explanation and
+There are many ways to do this. For a detailed explanation and
 comparison of contextual bandit methods you can refer to
-`this <https://arxiv.org/pdf/1802.09127.pdf>`__ paper.
+`this paper <https://arxiv.org/pdf/1802.09127.pdf>`__.
 
 The following are the agents implemented in ``genrl``
 
--  Linear Posterior Inference
--  Neural Network based Linear
--  Variational
--  Neural Netowork based Espilon Greedy
--  Bootstrap ensemble
--  Parameter noise Sampling
+-  `Linear Posterior Inference <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.inpos>`__
+-  `Neural Network based Linear <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_linpos>`__
+-  `Variational <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.variational>`__
+-  `Neural Netowork based Espilon Greedy <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_greedy>`__
+-  `Bootstrap <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.bootstrap_neural>`__
+-  `Parameter noise Sampling <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_noise_sampling>`__
 
-You can find the tutorials for most of these in the sidebar.
+You can find the tutorials for most of these in :ref:`bandit_tutorials`.
 
 All the methods which use neural networks, provide an option to train
 and evaluate with dropout, have a decaying learning rate and a limit for
@@ -108,12 +110,12 @@ neccessary to tune these for individual use cases.
 
 The following bandits based on datasets are implemented in ``genrl``
 
--  Adult Census Income Dataset
--  US Census Dataset
--  Forest covertype Datset
--  MAGIC Gamma Telescope dataset
--  Mushroom Dataset
--  Statlog Space Shuttle Dataset
+-  `Adult Census Income Dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.adult_bandit>`__
+-  `US Census Dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.census_bandit>`__
+-  `Forest covertype Datset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.covertype_bandit>`__
+-  `MAGIC Gamma Telescope dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.magic_bandit>`__
+-  `Mushroom Dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.mushroom_bandit>`__
+-  `Statlog Space Shuttle Dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.statlog_bandit>`__
 
 For each bandit, while instatiating an object you can either specify a
 path to the data file or pass ``download=True`` as an argument to
@@ -125,13 +127,14 @@ Data based Bandit Example
 For this example, we'll model the
 `Statlog <https://archive.ics.uci.edu/ml/datasets/Statlog+(Shuttle)>`__
 dataset as a bandit problem. You can read more about the bandit in the
-Statlog docs. In brief we have the number of arms as :math:`k = 7` and
+`Statlog docs <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.statlog_bandit>`__.
+In brief we have the number of arms as :math:`k = 7` and
 dimension of context vector as :math:`d = 9`. The agent will get a
 reward :math:`r =1` if it selects the correct arm else :math:`r = 0`.
 
 .. code:: python
 
-    import genrl.bandit import StatlogDataBandit
+    from genrl.bandit import StatlogDataBandit
 
     bandit = StatlogDataBandit(download=True)
     context = bandit.reset()
@@ -160,3 +163,9 @@ of how to implemente your own training loop.
     trainer = DCBTrainer(agent, bandit)
     trainer.train(timesteps=5000, batch_size=32)
 
+
+Further material about bandits
+------------------------------
+1. `Deep Contextual Multi-armed Bandits <https://arxiv.org/pdf/1807.09809.pdf>`__, Collier and Llorens, 2018
+2. `Deep Bayesian Bandits Showdown <https://arxiv.org/pdf/1802.09127.pdf>`__, Riquelme∗ et al, 2018
+3. `A Contextual Bandit Bake-off <https://arxiv.org/pdf/1802.09127.pdf>`__, Bietti et al, 2020

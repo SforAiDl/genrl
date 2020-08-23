@@ -4,8 +4,7 @@ Thompson Sampling
 Using Thompson Sampling on a Bernoulli Multi-Armed Bandit
 ---------------------------------------------------------
 
-For an introduction to Multi Armed Bandits, refer to `Tutorial On
-Bandits <https://genrl.readthedocs.io/en/latest/usage/tutorials/Tutorial_on_bandits.html>`__.
+For an introduction to Multi Armed Bandits, refer to :ref:`bandit_overview`
 
 Thompson Sampling is one of the best methods for solving the Bernoulli
 multi-armed bandits problem. It is a 'sample-based probability matching'
@@ -73,7 +72,7 @@ Code to use Thompson Sampling on a Bernoulli Multi-Armed Bandit:
     trainer.train(timesteps=10000)
 
 More details can be found in the docs for
-`BernoulliMAB <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
-`ThompsonSamplingMABAgent <https://genrl.readthedocs.io/en/latest/api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.thompson>`__
+`BernoulliMAB <../../../api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
+`UCB <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.thompson>`__
 and
-`MABTrainer <https://genrl.readthedocs.io/en/latest/api/common/bandit.html#module-genrl.bandit.trainer>`__.
+`MABTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.

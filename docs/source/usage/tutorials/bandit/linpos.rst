@@ -1,7 +1,9 @@
 Linear Posterior Inference
 ==========================
 
-Here, we assume a linear relationship between context and reward
+For an introduction to the Contextual Bandit problem, refer to :ref:`cb_overview`.
+
+In this agent we assume a linear relationship between context and reward
 distribution of the form
 
 .. math:: Y = X^T \beta + \epsilon \ \ \text{where} \ \epsilon \sim \mathcal{N}(0, \sigma^2)
@@ -35,11 +37,15 @@ distribution over :math:`\beta` and :math:`\sigma`. More specificaly
 ``lambda_prior`` is used to parameterise a guassian distribution for
 :math:`\beta` while ``a0`` and ``b0`` are paramters of an inverse gamma
 distribution over :math:`\sigma^2`. These are updated over the course of
-exploring a bandit. More details can be found in Section 3 of this
-`paper <https://arxiv.org/pdf/1802.09127.pdf>`__.
+exploring a bandit. More details can be found in Section 3 of 
+`this paper <https://arxiv.org/pdf/1802.09127.pdf>`__.
 
 All hyperparameters can be tuned for individual use cases to improve
 training efficiency and achieve convergence faster.
 
-Refer to the ``LinearPosteriorAgent`` and ``NeuralLinearPosteriorAgent``
-docs for more information.
+Refer to the 
+`LinearPosteriorAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.linpos>`__, 
+`NeuralLinearPosteriorAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_linpos>`__ 
+and 
+`DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__ 
+docs for more details.
