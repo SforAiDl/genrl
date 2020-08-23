@@ -119,16 +119,10 @@ class VecEnv(ABC):
 
     @property
     def obs_shape(self):
-        if isinstance(self.env.observation_space, list):
-            obs_space = self.env.observation_space[0]
-        else:
-            obs_space = self.env.observation_space
-
-        if isinstance(obs_space, gym.spaces.Discrete):
+        if isinstance(self.observation_space, gym.spaces.Discrete):
             obs_shape = (1,)
-        elif isinstance(obs_space, gym.spaces.Box):
-            obs_shape = obs_space.shape
-
+        elif isinstance(self.observation_space, gym.spaces.Box):
+            obs_shape = self.observation_space.shape
         return obs_shape
 
     @property
@@ -147,11 +141,9 @@ class SerialVecEnv(VecEnv):
 
     def __init__(self, *args, **kwargs):
         super(SerialVecEnv, self).__init__(*args, **kwargs)
-
         self.states = np.zeros(
-            (self.n_envs, *self.obs_shape), dtype=np.asarray(self.observation_space).dtype,
+            (self.n_envs, *self.obs_shape), dtype=self.observation_space.dtype,
         )
-        
         self.rewards = np.zeros((self.n_envs))
         self.dones = np.zeros((self.n_envs))
         self.infos = [{} for _ in range(self.n_envs)]

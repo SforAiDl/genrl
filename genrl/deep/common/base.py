@@ -2,11 +2,7 @@ from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
-import gym
-if gym.__version__ == "0.10.5":
-    from gym import Space
-else:
-    from gym.spaces import Space
+from gym import spaces
 from torch.distributions import Categorical, Normal
 
 
@@ -26,8 +22,8 @@ class BasePolicy(nn.Module):
 
     def __init__(
         self,
-        state_dim: Space,
-        action_dim: Space,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
         hidden: Tuple,
         discrete: bool,
         **kwargs
