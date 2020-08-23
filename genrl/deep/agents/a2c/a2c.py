@@ -119,12 +119,10 @@ class A2C(OnPolicyAgent):
 
             # action_dim = self.network.action_dim
 
-
-
         if self.noise is not None:
-             self.noise = self.noise(
+            self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
-             )
+            )
 
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
