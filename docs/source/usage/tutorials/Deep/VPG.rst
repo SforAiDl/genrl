@@ -1,0 +1,120 @@
+=======================
+Vanilla Policy Gradient
+=======================
+
+
+Background
+==========
+
+The goal of Reinforcement Learning Algorithms is to maximize reward. This is usually achieved by having a policy :math:`\pi_{\theta}` perform optimal behavior. Let's denote this optimal policy by :math:`\pi_{\theta}^{*}`. For easy, we define the Reinforcement Learning problem as a Markov Decision Process. 
+
+Markov Decision Process
+=======================
+
+An Markov Decision Process (MDP) is defined by :math:`(S, A, r, P_{a})` 
+where,
+ - :math:`S` is a set of States.
+ - :math:`A` is a set of Actions.
+ - :math:`r : S \rightarrow \mathbb{R}` is a reward function.
+ - :math:`P_{a}(s, s')` is the transition probability that action :math:`a` in state :math:`s` leads to state :math:`s'`.
+
+
+Objective
+=========
+
+The objective is to choose/learn a policy that will maximize a cumulative function of rewards received at each step, typically the discounted reward over a potential infinite horizon. We formulate this cumulative function as 
+
+.. math::
+
+    E\left[{\sum_{t=0}^{\infty}{\gamma r_{t}}}\right]
+
+
+where we choose the action :math:`a_{t} = \pi_{\theta}(s_{t})`. 
+
+Action Selection
+================
+
+.. literalinclude:: ../../../../../genrl/deep/agents/vpg/vpg.py
+   :lines: 99-115
+   :lineno-start: 99
+
+Note: We sample a **stochastic action** from the distribution on the action space by providing ``False`` as an argument to ``select_action``.
+
+For practical purposes we would assume that we are working with a finite horizon MDP.
+
+Update Equations
+================
+
+Let :math:`\pi_{\theta}` denote a policy with parameters :math:`\theta`, and :math:`J(\pi_{\theta})` denote the expected finite-horizon undiscounted return of the policy. 
+
+At each update timestep, we get value and log probabilities:
+
+.. literalinclude:: ../../../../../genrl/deep/agents/vpg/vpg.py
+   :lines: 123-126
+   :lineno-start: 123
+
+Now, that we have the log probabilities we calculate the gradient of :math:`J(\pi_{\theta})` is:
+
+.. math:: 
+    
+    \nabla_{\theta} J(\pi_{\theta}) = E_{\tau \sim \pi_{\theta}}\left[{
+        \sum_{t=0}^{T} \nabla_{\theta} \log \pi_{\theta}(a_t|s_t)
+        }\right],
+
+where :math:`\tau` is the trajectory.
+
+.. literalinclude:: ../../../../../genrl/deep/agents/vpg/vpg.py
+   :lines: 134-145
+   :lineno-start: 134
+
+We then update the policy parameters via stochastic gradient ascent:
+
+.. math::
+
+    \theta_{k+1} = \theta_k + \alpha \nabla_{\theta} J(\pi_{\theta_k})
+
+.. literalinclude:: ../../../../../genrl/deep/agents/vpg/vpg.py
+   :lines: 148-151
+   :lineno-start: 148
+
+The key idea underlying vanilla policy gradients is to push up the probabilities of actions that lead to higher return, and push down the probabilities of actions that lead to lower return, until you arrive at the optimal policy.
+
+Training through the API
+========================
+
+.. code-block:: python
+
+    import gym
+
+    from genrl import VPG, QLearning
+    from genrl.deep.common import OffPolicyTrainer
+    from genrl.environments import VectorEnv
+
+    env = VectorEnv("CartPole-v0")
+    agent = SAC('mlp', env)
+    trainer = OffPolicyTrainer(agent, env, log_mode=['stdout', 'tensorboard'])
+    trainer.train()
+
+.. code-block:: bash
+
+    timestep         Episode          loss             mean_reward      
+    0                0                9.1853           22.3825          
+    20480            10               24.5517          80.3137          
+    40960            20               24.4992          117.7011         
+    61440            30               22.578           121.543          
+    81920            40               20.423           114.7339         
+    102400           50               21.7225          128.4013         
+    122880           60               21.0566          116.034          
+    143360           70               21.628           115.0562         
+    163840           80               23.1384          133.4202         
+    184320           90               23.2824          133.4202         
+    204800           100              26.3477          147.87           
+    225280           110              26.7198          139.7952         
+    245760           120              30.0402          184.5045         
+    266240           130              30.293           178.8646         
+    286720           140              29.4063          162.5397         
+    307200           150              30.9759          183.6771         
+    327680           160              30.6517          186.1818         
+    348160           170              31.7742          184.5045         
+    368640           180              30.4608          186.1818         
+    389120           190              30.2635          186.1818     
