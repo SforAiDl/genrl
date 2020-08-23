@@ -85,11 +85,6 @@ class BaseAgent(ABC):
         """
         raise NotImplementedError
 
-    def update_params(self, **kwargs) -> None:
-        """Update parameters of the model
-        """
-        raise NotImplementedError
-
     def get_hyperparams(self) -> Dict[str, Any]:
         """Get relevant hyperparameters to save
 

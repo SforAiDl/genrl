@@ -57,6 +57,11 @@ class OffPolicyAgent(BaseAgent):
         """
         pass
 
+    def update_params(self, update_interval: int) -> None:
+        """Update parameters of the model
+        """
+        raise NotImplementedError
+
     def update_target_model(self) -> None:
         """Function to update the target Q model
 

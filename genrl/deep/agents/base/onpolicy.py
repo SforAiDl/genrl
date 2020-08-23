@@ -44,6 +44,11 @@ class OnPolicyAgent(BaseAgent):
         else:
             raise NotImplementedError
 
+    def update_params(self) -> None:
+        """Update parameters of the model
+        """
+        raise NotImplementedError
+
     def collect_rewards(self, dones: List[bool], timestep: int):
         """Helper function to collect rewards
 

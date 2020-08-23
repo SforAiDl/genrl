@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict
 
 import gym
 import numpy as np
@@ -6,9 +6,7 @@ import torch
 import torch.optim as opt
 
 from genrl.deep.agents.base import OnPolicyAgent
-from genrl.deep.common.base import BasePolicy
 from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
-from genrl.environments.vec_env import VecEnv
 
 
 class VPG(OnPolicyAgent):
@@ -17,29 +15,22 @@ class VPG(OnPolicyAgent):
 
     Paper https://papers.nips.cc/paper/1713-policy-gradient-methods-for-reinforcement-learning-with-function-approximation.pdf
 
-    :param network: The deep neural network layer types ['mlp']
-    :param env: The environment to learn from
-    :param timesteps_per_actorbatch: timesteps per actor per update
-    :param gamma: discount factor
-    :param actor_batchsize: trajectories per optimizer epoch
-    :param epochs: the optimizer's number of epochs
-    :param lr_policy: policy network learning rate
-    :param seed: seed for torch and gym
-    :param device: device to use for tensor operations; \
-'cpu' for cpu and 'cuda' for gpu
-    :param load_model: model loading path
-    :param rollout_size: Rollout Buffer Size
-    :type network: str or BaseActorCritic
-    :type env: Gym environment(s)
-    :type timesteps_per_actorbatch: int
-    :type gamma: float
-    :type actor_batchsize: int
-    :type epochs: int
-    :type lr_policy: float
-    :type seed: int
-    :type device: str
-    :type load_model: string
-    :type rollout_size: int
+        network (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
+        batch_size (int): Mini batch size for loading experiences
+        gamma (float): The discount factor for rewards
+        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
+            of the Q-value function
+        lr_policy (float): Learning rate for the policy/actor
+        lr_value (float): Learning rate for the Q-value function
+        rollout_size (int): Capacity of the Rollout Buffer
+        buffer_type (str): Choose the type of Buffer: ["rollout"]
+        seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
+        device (str): Hardware being used for training. Options:
+            ["cuda" -> GPU, "cpu" -> CPU]
     """
 
     def __init__(self, *args, **kwargs):
