@@ -68,7 +68,7 @@ class OnPolicyAgent(BaseAgent):
             state (:obj:`torch.Tensor`): The starting state of the environment
 
         Returns:
-            values (:obj:`torch.Tensor`): Values of state-action pairs encountered during the rollout
+            values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
         for i in range(self.rollout_size):

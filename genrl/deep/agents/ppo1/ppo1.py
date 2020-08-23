@@ -130,6 +130,8 @@ class PPO1(OnPolicyAgent):
 
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
+            value (:obj:`torch.Tensor`): Value of given state
+            log_prob (:obj:`torch.Tensor`): Log probability of selected action
         """
         state = torch.as_tensor(state).float().to(self.device)
         # create distribution based on policy output
@@ -149,7 +151,7 @@ class PPO1(OnPolicyAgent):
             actions (:obj:`torch.Tensor`): Actions taken in response to respective states
 
         Returns:
-            values (:obj:`torch.Tensor`): Values of state-action pairs encountered during the rollout
+            values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             log_probs (:obj:`torch.Tensor`): Log of action probabilities given a state
         """
         states, actions = states.to(self.device), actions.to(self.device)
@@ -163,7 +165,7 @@ class PPO1(OnPolicyAgent):
         Computes the returns and advantages needed for calculating loss
 
         Args:
-            values (:obj:`torch.Tensor`): Values of state-action pairs encountered during the rollout
+            values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
         self.rollout.compute_returns_and_advantage(

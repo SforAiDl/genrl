@@ -2,7 +2,6 @@ from typing import Optional, Tuple
 
 import torch
 import torch.nn as nn
-from gym import spaces
 from torch.distributions import Categorical, Normal
 
 

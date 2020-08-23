@@ -1,19 +1,9 @@
-import collections
 from abc import ABC
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 import numpy as np
 import torch
-from torch.nn import functional as F
 
-from genrl.deep.common.actor_critic import BaseActorCritic
-from genrl.deep.common.buffers import (
-    PrioritizedBuffer,
-    PrioritizedReplayBufferSamples,
-    PushReplayBuffer,
-    ReplayBufferSamples,
-)
-from genrl.deep.common.rollout_storage import RolloutBuffer
 from genrl.deep.common.utils import set_seeds
 
 
@@ -95,12 +85,12 @@ class BaseAgent(ABC):
         """
         raise NotImplementedError
 
-    def update_params(self) -> None:
+    def update_params(self, **kwargs) -> None:
         """Update parameters of the model
         """
         raise NotImplementedError
 
-    def get_hyperparameters(self) -> Dict[str, Any]:
+    def get_hyperparams(self) -> Dict[str, Any]:
         """Get relevant hyperparameters to save
 
         Returns:
