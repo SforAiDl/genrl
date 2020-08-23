@@ -51,6 +51,8 @@ class PPO1(OnPolicyAgent):
     ):
         super(PPO1, self).__init__(*args, **kwargs)
         self.clip_param = clip_param
+        self.value_coeff = value_coeff
+        self.entropy_coeff = entropy_coeff
         self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
         self.empty_logs()
