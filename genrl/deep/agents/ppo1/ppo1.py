@@ -89,7 +89,6 @@ class PPO1(OnPolicyAgent):
 
         self.empty_logs()
 
-
         if self.create_model:
             self._create_model()
 
@@ -98,7 +97,7 @@ class PPO1(OnPolicyAgent):
         # create a model by default if user does not specify the model
         # Actor Critic Model
         # Policy Optimizer - Adam
-        # Value Optimizer  - Adam   
+        # Value Optimizer  - Adam
         if isinstance(self.network, str):
             input_dim, action_dim, discrete, action_lim = get_env_properties(
                 self.env, self.network

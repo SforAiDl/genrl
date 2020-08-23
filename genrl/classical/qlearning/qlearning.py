@@ -1,4 +1,4 @@
-from typing import Tuple, Any, Dict
+from typing import Any, Dict, Tuple
 
 import gym
 import numpy as np
@@ -57,11 +57,6 @@ class QLearning:
         )
 
     def get_hyperparams(self) -> Dict[str, Any]:
-        hyperparams = {
-            "epsilon": self.epsilon,
-            "gamma": self.gamma,
-            "lr": self.lr
-        }
+        hyperparams = {"epsilon": self.epsilon, "gamma": self.gamma, "lr": self.lr}
 
         return hyperparams
-
