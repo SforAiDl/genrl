@@ -18,6 +18,7 @@ def train(max_episodes, timesteps_per_eps, logdir):
         env_id="simple_spread", n_envs=1, parallel=False, env_type="multi"
         )
 
+
 	a2c_agent = A2CAgent(vec_env, 2e-4, 0.99, None, 0.008, timesteps_per_eps)
 
 	# for episode in range(1,max_episodes+1):
@@ -40,7 +41,7 @@ def train(max_episodes, timesteps_per_eps, logdir):
 
 	# tensorboard_logger.close()
 
-	on_policy_trainer = OnPolicyTrainer(agent=a2c_agent,env=[environment,vec_env], log_mode=["tensorboard"], log_key="Episode" , save_interval=100, save_model="checkpoints", steps_per_epoch=timesteps_per_eps, epochs=max_episodes,
+	on_policy_trainer = OnPolicyTrainer(agent=a2c_agent,env=vec_env, log_mode=["tensorboard"], log_key="Episode" , save_interval=100, save_model="checkpoints", steps_per_epoch=timesteps_per_eps, epochs=max_episodes,
 		log_interval=1, batch_size=1)
 
 	on_policy_trainer.train()

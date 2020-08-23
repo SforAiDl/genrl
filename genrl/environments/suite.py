@@ -13,8 +13,16 @@ from genrl.environments.time_limit import AtariTimeLimit, TimeLimit
 from genrl.environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
+from multiagent.environment import MultiAgentEnv
+# from multiagent.scenarios.simple_spread import Scenario
+import multiagent.scenarios as scenarios
+import torch 
+import numpy as np
+
+
+
 def VectorEnv(
-    env_id: str, n_envs: int = 2, parallel: int = False, env_type: str = "gym",
+    env_id: str, n_envs: int = 2, parallel: int = False, env_type: str = "gym"
 ) -> VecEnv:
     """
     Chooses the kind of Vector Environment that is required
@@ -23,7 +31,7 @@ def VectorEnv(
     :param n_envs: Number of environments
     :param parallel: True if we want environments to run parallely and (
 subprocesses, False if we want environments to run serially one after the other)
-    :param env_type: Type of environment. Currently, we support ["gym", "atari"]
+    :param env_type: Type of environment. Currently, we support ["gym", "atari", "multiagent"]
     :type env_id: string
     :type n_envs: int
     :type parallel: False
@@ -31,7 +39,12 @@ subprocesses, False if we want environments to run serially one after the other)
     :returns: Vector Environment
     :rtype: object
     """
-    wrapper = AtariEnv if env_type == "atari" else GymEnv
+    if env_type == "atari":
+        wrapper = AtariEnv
+    elif env_type == "multi":
+        wrapper = MultiagentEnv
+    else:
+        wrapper = GymEnv
 
     envs = [wrapper(env_id) for _ in range(n_envs)]
 
@@ -93,3 +106,19 @@ def AtariEnv(
             env = wrapper(env)
 
     return env
+
+
+def MultiagentEnv(env_id: str)-> gym.Env:
+    # load scenario from script
+    scenario = scenarios.load(env_id + ".py").Scenario()
+    benchmark = False
+    # scenario = Scenario()
+    # create world
+    world = scenario.make_world()
+    # create multiagent environment
+    if benchmark:
+        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, scenario.benchmark_data, scenario.isFinished)
+    else:
+        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, None, scenario.isFinished)
+
+    return GymWrapper(env)

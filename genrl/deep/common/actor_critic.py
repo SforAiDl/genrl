@@ -2,7 +2,11 @@ from typing import Tuple
 
 import torch
 import torch.nn as nn
-from gym import spaces
+import gym
+if gym.__version__ == "0.10.5":
+    from gym import Space
+else:
+    from gym.spaces import Space
 from torch.distributions import Categorical
 
 from genrl.deep.common.base import BaseActorCritic
@@ -30,8 +34,8 @@ class MlpActorCritic(BaseActorCritic):
 
     def __init__(
         self,
-        state_dim: spaces.Space,
-        action_dim: spaces.Space,
+        state_dim: Space,
+        action_dim: Space,
         hidden: Tuple = (32, 32),
         val_type: str = "V",
         discrete: bool = True,
@@ -64,7 +68,7 @@ class CNNActorCritic(BaseActorCritic):
     def __init__(
         self,
         framestack: int,
-        action_dim: spaces.Space,
+        action_dim: Space,
         fc_layers: Tuple = (256,),
         val_type: str = "V",
         discrete: bool = True,

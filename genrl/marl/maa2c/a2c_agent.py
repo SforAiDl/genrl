@@ -11,9 +11,11 @@ import torch.optim as optim
 from torch.autograd import Variable
 from torch.distributions import Categorical
 from .a2c import CentralizedActorCritic
-# import os
-# import sys
-# sys.path.append("/home/aditya/Desktop/genrl/genrl") #add path
+
+import sys
+sys.path.append("/home/aditya/Desktop/genrl/genrl") #add path
+from genrl.deep.common import PushReplayBuffer
+from genrl.environments.vec_env import VecEnv
 
 # from genrl.deep.agents.base import OnPolicyAgent
 # from genrl.deep.common import (
@@ -23,11 +25,10 @@ from .a2c import CentralizedActorCritic
 #     get_model,
 #     safe_mean,
 # )
-# from genrl.environments.vec_env import VecEnv
 
 
 class A2CAgent:
-    def __init__(self, env, lr=2e-4, gamma=0.99, load_model=None, entropy_weight=0.008, timesteps_per_episode = 300):
+    def __init__(self, env: Union[gym.Env, VecEnv], lr=2e-4, gamma=0.99, load_model=None, entropy_weight=0.008, timesteps_per_episode = 300):
         self.env = env
         self.lr = lr
         self.gamma = gamma
@@ -43,7 +44,7 @@ class A2CAgent:
         self.actorcritic = None
         self.optimizer = None
 
-        self.episode_reward = 0
+        self.epoch_reward = 0
         self.steps_per_episode = timesteps_per_episode
         self.final_step = 0
 
@@ -61,6 +62,8 @@ class A2CAgent:
         self.total_loss = None
 
         self.grad_norm = None
+
+        self.rollout = PushReplayBuffer(capacity=1000)
 
         self.setup_model(load_model)
 
@@ -84,8 +87,7 @@ class A2CAgent:
         return actions
 
     def collect_rollouts(self, states):
-        trajectory = []
-        self.episode_reward = 0
+        self.epoch_reward = 0
         self.final_step = 0
         current_states = states
 
@@ -93,35 +95,35 @@ class A2CAgent:
 
             actions = self.get_actions(current_states)
             next_states, rewards, dones, info = self.env.step(actions)
-            self.episode_reward += np.sum(rewards)
+            self.epoch_reward += np.sum(rewards)
 
             if all(dones) or step == self.steps_per_episode - 1:
 
                 dones = [1 for _ in range(self.num_agents)]
-                trajectory.append([states, next_states, actions, rewards, dones])
-                print("REWARD: {} \n".format(np.round(self.episode_reward, decimals=4)))
+                self.rollout.push((torch.FloatTensor(states), torch.LongTensor(actions), torch.FloatTensor(rewards), torch.FloatTensor(next_states), torch.LongTensor(dones)))
+                print("REWARD: {} \n".format(np.round(self.epoch_reward, decimals=4)))
                 print("*" * 100)
                 self.final_step = step
                 break
             else:
                 dones = [0 for _ in range(self.num_agents)]
-                trajectory.append([states, next_states, actions, rewards, dones])
+                self.rollout.push((torch.FloatTensor(states), torch.LongTensor(actions), torch.FloatTensor(rewards), torch.FloatTensor(next_states), torch.LongTensor(dones)))
                 current_states = next_states
                 self.final_step = step
 
-        self.states = torch.FloatTensor([sars[0] for sars in trajectory]).to(
+        self.states = torch.FloatTensor([sars[0] for sars in self.rollout]).to(
             self.device
         )
-        self.next_states = torch.FloatTensor([sars[1] for sars in trajectory]).to(
+        self.next_states = torch.FloatTensor([sars[1] for sars in self.rollout]).to(
             self.device
         )
-        self.actions = torch.LongTensor([sars[2] for sars in trajectory]).to(
+        self.actions = torch.LongTensor([sars[2] for sars in self.rollout]).to(
             self.device
         )
-        self.rewards = torch.FloatTensor([sars[3] for sars in trajectory]).to(
+        self.rewards = torch.FloatTensor([sars[3] for sars in self.rollout]).to(
             self.device
         )
-        self.dones = torch.LongTensor([sars[4] for sars in trajectory])
+        self.dones = torch.LongTensor([sars[4] for sars in self.rollout])
 
         self.logits, self.values = self.actorcritic.forward(self.states)
 
@@ -181,7 +183,7 @@ class A2CAgent:
             "Loss/Total Loss": self.total_loss,
             "Gradient Normalization/Grad Norm": self.grad_norm,
             "Reward Incurred/Length of the episode": self.final_step,
-            "Reward Incurred/Reward": self.episode_reward,
+            "Reward Incurred/Reward": self.epoch_reward,
         }
         return logging_params
 
