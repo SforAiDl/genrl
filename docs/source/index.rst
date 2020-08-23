@@ -24,6 +24,9 @@ Contents
    usage/getting_started
    usage/tutorials/index
 
+..       3. :mod:`genrl.classical.SARSA`: SARSA
+..       4. :mod:`genrl.classical.QLearning`: Q-Learning
+=======
 .. toctree::
    :maxdepth: 2
    :caption: API

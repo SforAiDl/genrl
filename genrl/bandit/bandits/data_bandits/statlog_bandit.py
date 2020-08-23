@@ -17,6 +17,16 @@ URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/shuttle
 class StatlogDataBandit(DataBasedBandit):
     """A contextual bandit based on the Statlog (Shuttle) dataset.
 
+    The dataset gives the recorded value of 9 different sensors during a space shuttle flight
+    as well which state (out of 7 possible) the radiator was at each timestep.
+
+    At each timestep the agent will get a 9-dimensional real valued context vector
+    and must select one of 7 actions. The agent will get a reward of 1 only if it selects
+    the true state of the radiator at that timestep as given in the dataset.
+
+    Context dimension: 9
+    Number of actions: 7
+
     Source:
         https://archive.ics.uci.edu/ml/datasets/Statlog+(Shuttle)
 
