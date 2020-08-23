@@ -6,3 +6,4 @@ Deep RL
 
     Background
     VPG
+    A2C
