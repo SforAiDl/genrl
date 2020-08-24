@@ -25,6 +25,7 @@ class OffPolicyTrainer(Trainer):
         log_interval (int): Timesteps between successive logging of parameters onto the console
         logdir (str): Directory where log files should be saved.
         epochs (int): Total number of epochs to train for
+        max_timesteps (int): Maximum limit of timesteps to train for
         off_policy (bool): True if the agent is an off policy agent, False if it is on policy
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
         save_model (str): Directory where the checkpoints of agent parameters should be saved
@@ -71,7 +72,6 @@ class OffPolicyTrainer(Trainer):
             np.zeros(self.env.n_envs),
             np.zeros(self.env.n_envs),
         )
-        total_steps = self.max_ep_len * self.epochs * self.env.n_envs
 
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
@@ -80,7 +80,7 @@ class OffPolicyTrainer(Trainer):
 
         self.rewards = []
 
-        for timestep in range(0, total_steps, self.env.n_envs):
+        for timestep in range(0, self.max_timesteps, self.env.n_envs):
             self.agent.update_params_before_select_action(timestep)
 
             if timestep < self.warmup_steps:
