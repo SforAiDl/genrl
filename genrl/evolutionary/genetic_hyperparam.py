@@ -8,9 +8,64 @@ from genrl.evolutionary.utils import (
     set_params_agent,
 )
 
+
 """
 Code is heavily inspired from https://github.com/harvitronix/neural-network-genetic-algorithm
 """
+
+
+def generate(
+    ga_optimizer,
+    train_population_func,
+    generations,
+    no_of_parents,
+    envirnment,
+    generic_agent,
+    args,
+):
+    """
+    Genetic Algorithm for RL
+
+    Args:
+        ga_optimizer(GeneticHyperparamTuner) : Obj of `GeneticHyperparamTuner` with fitness function implemented
+        trainer_population_func : Function that trains all the agents in the population
+        generations (int): No of generations
+        no_of_parents(int): No of agents in a generation
+        agent_parameter_choices(Dict): Parameter choices for the agent
+        envirnment: Gym Envirnment
+        generic_agent : RL Agent to be tuned
+
+
+    """
+
+    optimizer = ga_optimizer
+    agents = optimizer.initialize_population(no_of_parents, generic_agent)
+
+    # evolve the generation
+    for i in range(generations):
+
+        print(f"Doing generation {i}/{generations}")
+
+        # Train the agents
+        train_population_func(agents, envirnment, args)
+
+        # get average fitness of the generation
+        avg_reward = optimizer.grade(agents)
+
+        print(f"Generation avg reward:{avg_reward}")
+        print("-" * 50)
+
+        # Evolve the generation
+        if i != generations - 1:
+            agents = optimizer.evolve(agents)
+
+    # sort our final population
+    agents = sorted(agents, key=lambda x: optimizer.fitness(x), reverse=True)
+
+    # print rewards of top 5
+    for i in range(5):
+        print(f"Top {i+1} agent reward: {optimizer.fitness(agents[i])}")
+        print(f"Hyperparameters : {agents[i].get_hyperparams()}")
 
 
 class GeneticHyperparamTuner:
@@ -88,6 +143,10 @@ class GeneticHyperparamTuner:
 
             child_agent = get_params_agent(child_params, father)
 
+            # randomly mutate a child
+            if self.mutate_chance > random.random():
+                child_agent = self.mutate(child_agent)
+
             children.append(child_agent)
 
         return children
@@ -134,6 +193,8 @@ class GeneticHyperparamTuner:
             population(list): A list of agents
 
         """
+        if len(population) <= 2:
+            raise ValueError("More than 2 agents required")
 
         # Get scores for each network
         graded = [(self.fitness(agent), agent) for agent in population]
@@ -142,7 +203,7 @@ class GeneticHyperparamTuner:
         graded = [x[1] for x in sorted(graded, key=lambda x: x[0], reverse=True)]
 
         # get the number we want to kep for next gen
-        retain_length = int(len(graded) * self.retain)
+        retain_length = max(int(len(graded) * self.retain), 2)
 
         # parents we want to retain
         parents = graded[:retain_length]
@@ -169,7 +230,7 @@ class GeneticHyperparamTuner:
         children = []
 
         while len(children) < children_length:
-
+            # EDGE CASE
             if parents_length == 1:
                 male = parents[0]
                 babies = self.breed(male, male)
@@ -177,7 +238,8 @@ class GeneticHyperparamTuner:
                 for baby in babies:
                     if len(children) < children_length:
                         children.append(baby)
-
+                continue
+            # MAIN Algo
             male = random.randint(0, parents_length - 1)
             female = random.randint(0, parents_length - 1)
 

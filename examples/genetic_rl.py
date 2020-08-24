@@ -6,6 +6,7 @@ from genrl.deep.common.actor_critic import MlpActorCritic
 from genrl.deep.common.utils import get_env_properties
 from genrl.environments import VectorEnv
 from genrl.evolutionary import GeneticHyperparamTuner
+from genrl.evolutionary.genetic_hyperparam import generate
 
 # """
 # Okay so parameters to tune:-
@@ -71,51 +72,6 @@ def train_population(agents, envirnment, args):
         print("-" * 80)
 
 
-def generate(
-    generations, no_of_parents, agent_parameter_choices, envirnment, generic_agent, args
-):
-    """
-    Genetic Algorithm for RL
-
-    Args:
-        generations (int): No of generations
-        no_of_parents(int): No of agents in a generation
-        agent_parameter_choices(Dict): Parameter choices for the agent
-        envirnment: Gym Envirnment
-        generic_agent : RL Agent to be tuned
-
-
-    """
-
-    optimizer = GATuner(agent_parameter_choices)
-    agents = optimizer.initialize_population(no_of_parents, generic_agent)
-
-    # evolve the generation
-    for i in range(generations):
-
-        print(f"Doing generation {i}/{generations}")
-
-        # Train the agents
-        train_population(agents, envirnment, args)
-
-        # get average fitness of the generation
-        avg_reward = optimizer.grade(agents)
-
-        print(f"Generation avg reward:{avg_reward}")
-        print("-" * 50)
-
-        # Evolve the generation
-        if i != generations - 1:
-            agents = optimizer.evolve(agents)
-
-    # sort our final population
-    agents = sorted(agents, key=lambda x: optimizer.fitness(x), reverse=True)
-
-    # print rewards of top 5
-    for i in range(5):
-        print(f"Top {i+1} agent reward: {optimizer.fitness(agents[i])}")
-
-
 def main(args):
     env = VectorEnv(
         args.env, n_envs=args.n_envs, parallel=not args.serial, env_type=args.env_type
@@ -143,10 +99,13 @@ def main(args):
         # 'lr_value': [0.001, 0.002]
     }
 
+    optimizer = GATuner(agent_parameter_choices)
+
     generate(
+        optimizer,
+        train_population,
         args.generations,
         args.population,
-        agent_parameter_choices,
         env,
         generic_agent,
         args,

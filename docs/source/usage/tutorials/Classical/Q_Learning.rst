@@ -80,4 +80,3 @@ Great so far so good! Now moving towards the training process it is just calling
 
 
 That's it! You have successfully trained a Q-Learning agent. You can now go ahead and play with your own environments using GenRL! 
-
