@@ -72,6 +72,7 @@ class OffPolicyTrainer(Trainer):
             np.zeros(self.env.n_envs),
             np.zeros(self.env.n_envs),
         )
+        total_steps = self.max_ep_len * self.epochs * self.env.n_envs
 
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
@@ -80,7 +81,7 @@ class OffPolicyTrainer(Trainer):
 
         self.rewards = []
 
-        for timestep in range(0, self.max_timesteps, self.env.n_envs):
+        for timestep in range(0, total_steps, self.env.n_envs):
             self.agent.update_params_before_select_action(timestep)
 
             if timestep < self.warmup_steps:
@@ -135,6 +136,9 @@ class OffPolicyTrainer(Trainer):
                 and timestep % self.save_interval == 0
             ):
                 self.save(timestep)
+
+            if timestep >= self.max_timesteps:
+                break
 
         self.env.close()
         self.logger.close()
