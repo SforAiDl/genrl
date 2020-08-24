@@ -37,6 +37,7 @@ class NoisyDQN(DQN):
         self.noisy_layers = noisy_layers
         self.noisy = True
         self.dqn_type = "noisy"
+
         self.empty_logs()
         if self.create_model:
             self._create_model(noisy_layers=self.noisy_layers)

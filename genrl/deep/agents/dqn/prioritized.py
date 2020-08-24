@@ -38,12 +38,12 @@ class PrioritizedReplayDQN(DQN):
         super(PrioritizedReplayDQN, self).__init__(
             *args, buffer_type="prioritized", **kwargs
         )
-        self.alpha = alpha
-        self.beta = beta
+        self.replay_buffer.alpha = alpha
+        self.replay_buffer.beta = beta
 
         self.empty_logs()
         if self.create_model:
-            self._create_model(self.alpha)
+            self._create_model()
 
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
         """Normal Function to calculate the loss of the Q-function
