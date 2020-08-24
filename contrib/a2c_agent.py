@@ -1,14 +1,8 @@
-import gc
-from typing import Any, Dict, Tuple, Union
-
-import gym
 import numpy as np
 import torch
 import torch.autograd as autograd
-import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.autograd import Variable
 from torch.distributions import Categorical
 from .a2c import CentralizedActorCritic
 
@@ -17,18 +11,9 @@ sys.path.append("/home/aditya/Desktop/genrl/genrl") #add path
 from genrl.deep.common import PushReplayBuffer
 from genrl.environments.vec_env import VecEnv
 
-# from genrl.deep.agents.base import OnPolicyAgent
-# from genrl.deep.common import (
-#     BaseActorCritic,
-#     RolloutBuffer,
-#     get_env_properties,
-#     get_model,
-#     safe_mean,
-# )
-
 
 class A2CAgent:
-    def __init__(self, env: Union[gym.Env, VecEnv], lr=2e-4, gamma=0.99, load_model=None, entropy_weight=0.008, timesteps_per_episode = 300):
+    def __init__(self, env, lr=2e-4, gamma=0.99, load_model=None, entropy_weight=0.008, timesteps_per_episode = 300):
         self.env = env
         self.lr = lr
         self.gamma = gamma

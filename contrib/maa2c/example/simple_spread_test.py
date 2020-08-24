@@ -1,8 +1,5 @@
 from multiagent.environment import MultiAgentEnv
-# from multiagent.scenarios.simple_spread import Scenario
 import multiagent.scenarios as scenarios
-import torch 
-import numpy as np
 
 def make_env(scenario_name, benchmark=False):
     # load scenario from script

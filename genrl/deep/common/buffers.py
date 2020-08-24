@@ -141,12 +141,6 @@ class PushReplayBuffer:
         """
         return self.pos
 
-    def reset(self):
-        """
-        Reinitialize the buffers
-        """
-        self.memory = deque([], maxlen=self.capacity)
-
 
 class PrioritizedBuffer:
     """
