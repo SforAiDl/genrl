@@ -6,20 +6,15 @@ import numpy as np
 
 class SARSA:
     """
-    SARSA Algorithm
+    SARSA Algorithm.
 
     Paper- http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2539&rep=rep1&type=pdf
 
-    :param env: standard gym environment to train on
-    :param epsilon: (float) exploration coefficient
-    :param lmbda: (float) eligibility trace coefficient
-    :param gamma: (float) discount factor
-    :param lr: (float) learning rate
-    :type env: Gym environment
-    :type epsilon: float
-    :type lmbda: float
-    :type gamma: float
-    :type lr: float
+    Attributes:
+        env (gym.Env): Environment with which agent interacts.
+        epsilon (float, optional): exploration coefficient for epsilon-greedy exploration.
+        gamma (float, optional): discount factor.
+        lr (float, optional): learning rate for optimizer.
     """
 
     def __init__(
@@ -41,15 +36,14 @@ class SARSA:
         self.e = np.zeros((self.env.observation_space.n, self.env.action_space.n))
 
     def get_action(self, state: np.ndarray, explore: bool = True) -> np.ndarray:
-        """
-        Epsilon greedy selection of epsilon in the explore phase
+        """Epsilon greedy selection of epsilon in the explore phase.
 
-        :param s: Current state
-        :param explore: Whether you are exploring or exploiting
-        :type s: int, float, ...
-        :type explore: bool
-        :returns: Action based on the Q table
-        :rtype: int, float, ...
+        Args:
+            state (np.ndarray): Environment state.
+            explore (bool, optional): True if exploration is required. False if not.
+
+        Returns:
+            np.ndarray: action.
         """
         if explore:
             if np.random.uniform() > self.epsilon:
@@ -57,10 +51,11 @@ class SARSA:
         return np.argmax(self.Q[state, :])
 
     def update(self, transition: Tuple) -> None:
-        """
-        Update the Q table and e values
+        """Update the Q table and e values
 
-        :param transition: step taken in the envrionment
+        Args:
+            transition (Tuple): transition 4-tuple used to update Q-table.
+                In the form (state, action, reward, next_state)
         """
         state, action, reward, next_state = transition
 
