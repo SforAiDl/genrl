@@ -152,8 +152,9 @@ class PrioritizedBuffer:
     :type alpha: int
     """
 
-    def __init__(self, capacity: int, alpha: float = 0.6):
+    def __init__(self, capacity: int, alpha: float = 0.6, beta: float = 0.4):
         self.alpha = alpha
+        self.beta = beta
         self.capacity = capacity
         self.buffer = deque([], maxlen=capacity)
         self.priorities = deque([], maxlen=capacity)
@@ -172,7 +173,7 @@ class PrioritizedBuffer:
         self.priorities.append(max_priority)
 
     def sample(
-        self, batch_size: int, beta: float = 0.4
+        self, batch_size: int, beta: float = None
     ) -> (
         Tuple[
             torch.Tensor,
@@ -196,6 +197,9 @@ Importance Sampling (IS) weights)
         :returns: (Tuple containing `states`, `actions`, `next_states`,
 `rewards`, `dones`, `indices` and `weights`)
         """
+        if beta is None:
+            beta = self.beta
+
         total = len(self.buffer)
         priorities = np.asarray(self.priorities)
         probabilities = priorities ** self.alpha

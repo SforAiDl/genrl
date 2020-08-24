@@ -21,7 +21,7 @@ Contents
    :caption: User Guide
    
    usage/install
-   usage/getting_started
+   usage/about/about
    usage/tutorials/index
 
 ..       3. :mod:`genrl.classical.SARSA`: SARSA

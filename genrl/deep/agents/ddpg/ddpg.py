@@ -1,8 +1,7 @@
 from copy import deepcopy
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import numpy as np
-import torch
 import torch.optim as opt
 
 from genrl.deep.agents.base import OffPolicyAgentAC
@@ -53,7 +52,7 @@ class DDPG(OffPolicyAgentAC):
 
         This will create the Actor-Critic net for the agent and initialise the action noise
         """
-        input_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
         if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
@@ -65,7 +64,7 @@ class DDPG(OffPolicyAgentAC):
 
         if isinstance(self.network, str):
             self.ac = get_model("ac", self.network)(
-                input_dim,
+                state_dim,
                 action_dim,
                 self.policy_layers,
                 self.value_layers,
@@ -77,57 +76,8 @@ class DDPG(OffPolicyAgentAC):
 
         self.ac_target = deepcopy(self.ac).to(self.device)
 
-        self.replay_buffer = self.buffer_class(self.replay_size)
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
-
-    def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
-        """Get Q values corresponding to specific states and actions
-
-        Args:
-            states (:obj:`torch.Tensor`): States for which Q-values need to be found
-            actions (:obj:`torch.Tensor`): Actions taken at respective states
-
-        Returns:
-            q_values (:obj:`torch.Tensor`): Q values for the given states and actions
-        """
-        q_values = self.ac.critic.get_value(torch.cat([states, actions], dim=-1))
-        return q_values
-
-    def get_target_q_values(
-        self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
-    ) -> torch.Tensor:
-        """Get target Q values for the DDPG
-
-        Args:
-            next_states (:obj:`torch.Tensor`): Next states for which target Q-values
-                need to be found
-            rewards (:obj:`list`): Rewards at each timestep for each environment
-            dones (:obj:`list`): Game over status for each environment
-
-        Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the DDPG
-        """
-        next_target_actions = self.ac_target.get_action(next_states, True)[0]
-        next_q_target_values = self.ac_target.get_value(
-            torch.cat([next_states, next_target_actions], dim=-1)
-        )
-        target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
-        return target_q_values
-
-    def get_p_loss(self, states: np.ndarray) -> torch.Tensor:
-        """Get policy loss for DDPG
-
-        Args:
-            states (:obj:`np.ndarray`): State at which the loss needs to be found
-
-        Returns:
-            policy_loss (:obj:`torch.Tensor`): Policy loss at the state
-        """
-        next_best_actions = self.ac.get_action(states, True)[0]
-        q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
-        policy_loss = -torch.mean(q_values)
-        return policy_loss
 
     def update_params(self, update_interval: int) -> None:
         """Update parameters of the model
