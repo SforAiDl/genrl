@@ -46,8 +46,8 @@ Here we need to pass the states of every agent to the network to one at a time. 
 Note: We sample a **stochastic action** from the distribution on the action space and provide ``False`` as an argument to ``select_action`` as we want the action number not in the form of a one-hot encoding.
 
 .. literalinclude:: ../../../../../../contrib/maa2c/a2c_agent.py
-   :lines: 82-87
-   :lineno-start: 82
+   :lines: 62-67
+   :lineno-start: 62
 
 Here we need to pass the states of every agent to the network to 
 
@@ -61,8 +61,8 @@ Collect Experience
 To make our agent learn, we first need to collect some experience in an online fashion. For this we make use of the ``collect_rollouts`` method. It simply collects states, next-states, actions, rewards, dones and stores it in a list.
 
 .. literalinclude:: ../../../../../../contrib/maa2c/a2c_agent.py
-   :lines: 89-130
-   :lineno-start: 89
+   :lines: 69-110
+   :lineno-start: 69
 
 For updation, we would need to compute advantages, discounted rewards and losses from this experience. So, we store our experience in a Buffer (list in our case). 
 
@@ -74,8 +74,8 @@ Compute discounted Returns, Advantages and Losses
 Next we can compute the advantages and the actual discounted returns for each state. This is further used to calculate ``value_loss`` ``policy_loss`` ``entropy`` and ``total_loss``. This can be done very easily by simply calling ``get_traj_loss``. 
 
 .. literalinclude:: ../../../../../../contrib/maa2c/a2c_agent.py
-   :lines: 132-168
-   :lineno-start: 132
+   :lines: 112-148
+   :lineno-start: 112
 
 Update Equations
 ----------------
@@ -83,8 +83,8 @@ Update Equations
 The following losses are used to update the network parameters.
 
 .. literalinclude:: ../../../../../../contrib/maa2c/a2c_agent.py
-   :lines: 132-168
-   :lineno-start: 132
+   :lines: 112-148
+   :lineno-start: 112
 
 Plotting graphs
 ---------------
@@ -92,8 +92,8 @@ Plotting graphs
 We call ``get_logging_params`` method to plot tensorboard plots.
 
 .. literalinclude:: ../../../../../../contrib/maa2c/a2c_agent.py
-   :lines: 178-188
-   :lineno-start: 178
+   :lines: 158-168
+   :lineno-start: 158
 
 There is a separate script in order to go through the entire training process:
 
