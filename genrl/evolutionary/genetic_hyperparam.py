@@ -12,6 +12,7 @@ from genrl.evolutionary.utils import (
 Code is heavily inspired from https://github.com/harvitronix/neural-network-genetic-algorithm
 """
 
+
 def generate(
     ga_optimizer,
     train_population_func,
