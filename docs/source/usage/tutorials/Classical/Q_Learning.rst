@@ -14,12 +14,12 @@ In Q-Learning, we generally maintain a "Q-table" of *Q-values* by mapping them t
 
 A natural question is, What are these *Q-values* ? It is nothing but the "Quality" of an action taken from a particular state. The more the *Q-value* the more chances of getting a better reward. 
 
-Q-Table is often initialized with random values/with zeros and as the agent collects rewards via performing actions on the environment we update this Q-Table using the following formulation - 
+Q-Table is often initialized with random values/with zeros and as the agent collects rewards via performing actions on the environment we update this Q-Table at the :math:`i` th step using the following formulation -
 
 .. math:: 
-    Q(state, action) = (1- \alpha)Q(state, action) + \alpha * (reward + \gamma * max_{a} Q (next_state, all actions))
+    Q_{i}(s, a) = (1- \alpha)Q_{i-1}(s, a) + \alpha * (reward + \gamma * max_{a'} Q_{i-1}(s', a'))
 
-Here \alpha is the learning rate in ML terms and \gamma is the discount factor for the rewards.
+Here :math:`\alpha` is the learning rate in ML terms, :math:`\gamma` is the discount factor for the rewards and :math:`s'` is the state reached after taking action :math:`a` from state :math:`s`.
 
 FrozenLake-v0 environment 
 =========================
@@ -33,7 +33,9 @@ Description of the environment (from the documentation) -
 Winter is here. You and your friends were tossing around a frisbee at the park when you made a wild throw that left the frisbee out in the middle of the lake. The water is mostly frozen, but there are a few holes where the ice has melted. If you step into one of those holes, you'll fall into the freezing water. At this time, there's an international frisbee shortage, so it's absolutely imperative that you navigate across the lake and retrieve the disc. However, the ice is slippery, so you won't always move in the direction you intend.
 
 The surface is described using a grid like the following:
-.. math::
+
+.. code-block:: text
+
     SFFF       (S: starting point, safe)
     FHFH       (F: frozen surface, safe)
     FFFH       (H: hole, fall to your doom)
@@ -47,6 +49,7 @@ Code
 Let's import all the usefull stuff first. 
 
 .. code-block:: python
+
     import gym
     from genrl import QLearning                             # for the agent 
     from genrl.classical.common import Trainer              # for training the agent 
@@ -55,6 +58,7 @@ Let's import all the usefull stuff first.
 Now that we have imported all the necessary stuff let's go ahead and define the environment, the agent and an object for the Trainer class. 
 
 .. code-block:: python
+
     env = gym.make("FrozenLake-v0")                               
     agent = QLearning(env, gamma=0.6, lr=0.1, epsilon=0.1)
     trainer = Trainer(
@@ -69,7 +73,8 @@ Now that we have imported all the necessary stuff let's go ahead and define the 
 
 Great so far so good! Now moving towards the training process it is just calling the train method in the trainer class. 
 
-.. code-block:: python 
+.. code-block:: python
+
     trainer.train()
     trainer.evaluate()
 
