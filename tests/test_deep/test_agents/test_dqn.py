@@ -1,6 +1,6 @@
 import shutil
 
-from genrl.deep.agents import (
+from genrl.deep.agents.dqn import (
     DQN,
     CategoricalDQN,
     DoubleDQN,
@@ -9,6 +9,7 @@ from genrl.deep.agents import (
     PrioritizedReplayDQN,
 )
 from genrl.deep.common import OffPolicyTrainer
+from genrl.deep.common.buffers import PrioritizedBuffer
 from genrl.deep.common.values import (
     MlpCategoricalValue,
     MlpDuelingValue,
@@ -54,7 +55,7 @@ class TestDQN:
         env = VectorEnv("CartPole-v0")
         algo = PrioritizedReplayDQN("mlp", env, replay_size=100)
         assert isinstance(algo.model, MlpValue)
-        assert algo.alpha
+        assert isinstance(algo.replay_buffer, PrioritizedBuffer)
         trainer = OffPolicyTrainer(
             algo, env, log_mode=["csv"], logdir="./logs", max_ep_len=200, epochs=4
         )
