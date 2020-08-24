@@ -1,6 +1,3 @@
-import os
-from shutil import rmtree
-
 import gym
 import torch
 from torch import nn as nn
@@ -65,32 +62,6 @@ class TestUtils:
             isinstance(cnn_nn[i], nn.ReLU) for i in range(1, len(channels) + 1, 2)
         )
         assert output_size == 1764
-
-    def test_save_params(self):
-        """
-        test saving algorithm state dict
-        """
-        env = VectorEnv("CartPole-v0", 1)
-        algo = PPO1("mlp", env)
-        trainer = OnPolicyTrainer(
-            algo, env, ["stdout"], save_model="test_ckpt", save_interval=1, epochs=1
-        )
-        trainer.train()
-
-        assert len(os.listdir("test_ckpt/PPO1_CartPole-v0")) != 0
-
-    def test_load_params(self):
-        """
-        test loading algorithm parameters
-        """
-        env = VectorEnv("CartPole-v0", 1)
-        algo = PPO1("mlp", env)
-        trainer = OnPolicyTrainer(
-            algo, env, epochs=0, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
-        )
-        trainer.train()
-
-        rmtree("logs")
 
     def test_get_env_properties(self):
         """

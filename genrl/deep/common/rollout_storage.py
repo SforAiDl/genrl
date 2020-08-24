@@ -4,7 +4,7 @@ import gym
 import numpy as np
 import torch
 
-from genrl.environments import VecEnv
+from genrl.environments.vec_env import VecEnv
 
 
 class RolloutBufferSamples(NamedTuple):
