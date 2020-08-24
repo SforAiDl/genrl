@@ -1,9 +1,10 @@
 from typing import Tuple
 
+import numpy as np
 import torch
 import torch.nn as nn
 from gym import spaces
-from torch.distributions import Categorical
+from torch.distributions import Categorical, Normal
 
 from genrl.deep.common.base import BaseActorCritic
 from genrl.deep.common.policies import MlpPolicy
@@ -58,7 +59,8 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         self,
         state_dim: spaces.Space,
         action_dim: spaces.Space,
-        hidden: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
         val_type: str = "V",
         discrete: bool = True,
         num_critics: int = 2,
@@ -68,11 +70,44 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
 
         self.num_critics = num_critics
 
-        self.actor = MlpPolicy(state_dim, action_dim, hidden, discrete, **kwargs)
-        self.critic = [
-            MlpValue(state_dim, action_dim, val_type, hidden, **kwargs)
-            for _ in range(num_critics)
-        ]
+        self.actor = MlpPolicy(state_dim, action_dim, policy_layers, discrete, **kwargs)
+        self.critic1 = MlpValue(state_dim, action_dim, "Qsa", value_layers, **kwargs)
+        self.critic2 = MlpValue(state_dim, action_dim, "Qsa", value_layers, **kwargs)
+
+        self.action_scale = kwargs["action_scale"] if "action_scale" in kwargs else 1
+        self.action_bias = kwargs["action_bias"] if "action_bias" in kwargs else 0
+
+    def forward(self, x):
+        q1_values = self.critic1(x).squeeze(-1)
+        q2_values = self.critic2(x).squeeze(-1)
+        return (q1_values, q2_values)
+
+    def get_action(self, state: torch.Tensor, deterministic: bool = False):
+        state = torch.as_tensor(state).float()
+
+        if self.actor.sac:
+            mean, log_std = self.actor(state)
+            std = log_std.exp()
+            distribution = Normal(mean, std)
+
+            action_probs = distribution.rsample()
+            log_probs = distribution.log_prob(action_probs)
+            action_probs = torch.tanh(action_probs)
+
+            action = action_probs * self.action_scale + self.action_bias
+
+            # enforcing action bound (appendix of SAC paper)
+            log_probs -= torch.log(
+                self.action_scale * (1 - action_probs.pow(2)) + np.finfo(np.float32).eps
+            )
+            log_probs = log_probs.sum(1, keepdim=True)
+            mean = torch.tanh(mean) * self.action_scale + self.action_bias
+
+            action = (action.float(), log_probs, mean)
+        else:
+            action = self.actor.get_action(state, deterministic=deterministic)
+
+        return action
 
     def get_value(self, state: torch.Tensor, mode="first") -> torch.Tensor:
         """Get Values from the Critic
@@ -90,12 +125,12 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         state = torch.as_tensor(state).float()
 
         if mode == "both":
-            values = [self.critic[i].get_value(state) for i in range(self.num_critics)]
+            values = self.forward(state)
         elif mode == "min":
-            values = [self.critic[i].get_value(state) for i in range(self.num_critics)]
-            values = torch.min(values[0], values[1])
+            values = self.forward(state)
+            values = torch.min(*values).squeeze(-1)
         elif mode == "first":
-            values = self.critic[0].get_value(state)
+            values = self.critic1(state)
         else:
             raise KeyError("Mode doesn't exist")
 

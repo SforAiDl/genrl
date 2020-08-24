@@ -32,10 +32,6 @@ class MlpPolicy(BasePolicy):
         super(MlpPolicy, self).__init__(
             state_dim, action_dim, hidden, discrete, **kwargs
         )
-
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-
         self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
         self.model = mlp(
@@ -73,8 +69,6 @@ class CNNPolicy(BasePolicy):
         super(CNNPolicy, self).__init__(
             framestack, action_dim, hidden, discrete, **kwargs
         )
-        self.action_dim = action_dim
-
         channels = (framestack, 16, 32)
 
         self.conv, output_size = cnn(channels)
