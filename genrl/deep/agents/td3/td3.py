@@ -1,9 +1,8 @@
 from copy import deepcopy
-from typing import Any, Dict, List, NamedTuple
+from typing import Any, Dict
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 
 from genrl.deep.agents import OffPolicyAgentAC
 from genrl.deep.common.noise import ActionNoise
@@ -22,8 +21,8 @@ class TD3(OffPolicyAgentAC):
         create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
-        policy_layers: (tuple or list) Number of neurons in hidden layers of the policy network
-        value_layers: (tuple or list) Number of neurons in hidden layers of the value networks
+        policy_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the policy
+        value_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the critics
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer
@@ -41,16 +40,17 @@ class TD3(OffPolicyAgentAC):
     def __init__(
         self,
         *args,
-        polyak: float = 0.995,
         policy_frequency: int = 2,
         noise: ActionNoise = None,
-        noise_std: float = 0.1,
+        noise_std: float = 0.2,
         **kwargs,
     ):
         super(TD3, self).__init__(*args, **kwargs)
         self.policy_frequency = policy_frequency
         self.noise = noise
         self.noise_std = noise_std
+
+        self.doublecritic = True
 
         self.empty_logs()
         if self.create_model:
@@ -61,7 +61,7 @@ class TD3(OffPolicyAgentAC):
 
         Initializes actor-critic architecture, replay buffer and optimizers
         """
-        input_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
+        state_dim, action_dim, discrete, _ = get_env_properties(self.env, self.network)
         if discrete:
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
@@ -70,13 +70,12 @@ class TD3(OffPolicyAgentAC):
         if isinstance(self.network, str):
             # Below, the "12" corresponds to the Single Actor, Double Critic network architecture
             self.ac = get_model("ac", self.network + "12")(
-                input_dim,
+                state_dim,
                 action_dim,
                 policy_layers=self.policy_layers,
                 value_layers=self.value_layers,
                 val_type="Qsa",
                 discrete=False,
-                num_critics=2,
             )
         else:
             self.ac = self.network
@@ -88,66 +87,13 @@ class TD3(OffPolicyAgentAC):
 
         self.ac_target = deepcopy(self.ac)
 
-        self.replay_buffer = self.buffer_class(self.replay_size)
-        self.critic_params = list(self.ac.critic[0].parameters()) + list(
-            self.ac.critic[1].parameters()
+        self.critic_params = list(self.ac.critic1.parameters()) + list(
+            self.ac.critic2.parameters()
         )
         self.optimizer_value = torch.optim.Adam(self.critic_params, lr=self.lr_value)
         self.optimizer_policy = torch.optim.Adam(
             self.ac.actor.parameters(), lr=self.lr_policy
         )
-
-    def get_q_values(self, states: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
-        """Get Q values corresponding to specific states and actions
-
-        Args:
-            states (:obj:`torch.Tensor`): States for which Q-values need to be found
-            actions (:obj:`torch.Tensor`): Actions taken at respective states
-
-        Returns:
-            q_values (:obj:`torch.Tensor`): Q values for the given states and actions
-        """
-        q_values = self.ac.get_value(torch.cat([states, actions], dim=-1), mode="both")
-        return q_values
-
-    def get_target_q_values(
-        self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
-    ) -> torch.Tensor:
-        """Get target Q values for the TD3
-
-        Args:
-            next_states (:obj:`torch.Tensor`): Next states for which target Q-values
-                need to be found
-            rewards (:obj:`list`): Rewards at each timestep for each environment
-            dones (:obj:`list`): Game over status for each environment
-
-        Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
-        """
-        next_target_actions = self.ac_target.get_action(next_states, True)[0]
-        next_q_target_values = self.ac_target.get_value(
-            torch.cat([next_states, next_target_actions], dim=-1), mode="min"
-        )
-        target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
-        return target_q_values
-
-    def get_q_loss(self, batch: NamedTuple) -> torch.Tensor:
-        """TD3 Function to calculate the loss of the critic
-
-        Args:
-            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
-
-        Returns:
-            loss (:obj:`torch.Tensor`): Calculated loss of the Q-function
-        """
-        q_values = self.get_q_values(batch.states, batch.actions)
-        target_q_values = self.get_target_q_values(
-            batch.next_states, batch.rewards, batch.dones
-        )
-        loss = F.mse_loss(q_values[0], target_q_values) + F.mse_loss(
-            q_values[1], target_q_values
-        )
-        return loss
 
     def update_params(self, update_interval: int) -> None:
         """Update parameters of the model
@@ -178,6 +124,11 @@ class TD3(OffPolicyAgentAC):
                 self.update_target_model()
 
     def get_hyperparams(self) -> Dict[str, Any]:
+        """Get relevant hyperparameters to save
+
+        Returns:
+            hyperparams (:obj:`dict`): Hyperparameters to be saved
+        """
         hyperparams = {
             "network": self.network,
             "gamma": self.gamma,
@@ -194,9 +145,10 @@ class TD3(OffPolicyAgentAC):
         return hyperparams
 
     def get_logging_params(self) -> Dict[str, Any]:
-        """
-        :returns: Logging parameters for monitoring training
-        :rtype: dict
+        """Gets relevant parameters for logging
+
+        Returns:
+            logs (:obj:`dict`): Logging parameters for monitoring training
         """
         logs = {
             "policy_loss": safe_mean(self.logs["policy_loss"]),
@@ -207,8 +159,7 @@ class TD3(OffPolicyAgentAC):
         return logs
 
     def empty_logs(self):
-        """
-        Empties logs
+        """Empties logs
         """
         self.logs = {}
         self.logs["policy_loss"] = []

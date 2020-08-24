@@ -18,7 +18,7 @@ class DCBAgent(BanditAgent):
         device (torch.device): Device to use for tensor operations.
     """
 
-    def __init__(self, bandit: Bandit, device: str = "cpu"):
+    def __init__(self, bandit: Bandit, device: str = "cpu", **kwargs):
 
         super(DCBAgent, self).__init__()
 
@@ -31,6 +31,7 @@ class DCBAgent(BanditAgent):
         self.context_dim = self._bandit.context_dim
         self.n_actions = self._bandit.n_actions
         self._action_hist = []
+        self.init_pulls = kwargs.get("init_pulls", 3)
 
     def select_action(self, context: torch.Tensor) -> int:
         """Select an action based on given context
