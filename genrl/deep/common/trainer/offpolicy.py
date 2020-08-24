@@ -56,8 +56,9 @@ class OffPolicyTrainer(Trainer):
         if buffer is None:
             if self.agent.replay_buffer is None:
                 raise Exception("Off Policy Training requires a Replay Buffer")
-            else:
-                self.buffer = self.agent.replay_buffer
+        else:
+            self.agent.replay_buffer = buffer
+        self.buffer = self.agent.replay_buffer
 
     def train(self) -> None:
         """Main training method

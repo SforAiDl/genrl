@@ -1,7 +1,6 @@
 import numpy as np
 
 from genrl.deep.common.trainer.base import Trainer
-from genrl.deep.common.utils import safe_mean
 
 
 class OnPolicyTrainer(Trainer):
