@@ -1,6 +1,6 @@
 import os
 from abc import ABC
-from typing import Any, List, Optional, Type, Union
+from typing import Any, List, Optional, Union
 
 import gym
 import numpy as np
@@ -132,9 +132,9 @@ class Trainer(ABC):
         directory = self.save_model
         path = "{}/{}_{}".format(directory, algo_name, env_name)
 
-        if self.run_num is not None:
-            run_num = self.run_num
-        else:
+        run_num = self.run_num
+
+        if run_num is None:
             if not os.path.exists(path):
                 os.makedirs(path)
                 run_num = 0
