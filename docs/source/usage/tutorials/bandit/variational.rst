@@ -23,7 +23,7 @@ of 0.1 for al the weights -
     trainer.train()
 
 Refer to the 
-`VariationalAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.variational>`__, 
+`VariationalAgent <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.variational>`__, 
 and 
 `DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__ 
 docs for more details.

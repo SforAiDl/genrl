@@ -1,6 +1,6 @@
 import shutil
 
-from genrl.deep.common.logger import Logger
+from genrl.utils import Logger
 
 
 def test_loggers():

@@ -2,8 +2,8 @@ import shutil
 
 import pytest
 
-from genrl.deep.common import OffPolicyTrainer
 from genrl.environments import ClipAction, GymEnv, RescaleAction, VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 
 class TestWrappers:

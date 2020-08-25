@@ -4,26 +4,26 @@ Multi-Armed Bandits
 Submodules
 ----------
 
-genrl.bandit.bandits.multi\_armed\_bandits.base module
+genrl.agents.bandits.multiarmed.base module
 ------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.multi_armed_bandits.base
+.. automodule:: genrl.agents.bandits.multiarmed.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.multi\_armed\_bandits.bernoulli\_mab module
+genrl.agents.bandits.multiarmed.bernoulli\_mab module
 ----------------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab
+.. automodule:: genrl.agents.bandits.multiarmed.bernoulli_mab
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.multi\_armed\_bandits.gaussian\_mab module
+genrl.agents.bandits.multiarmed.gaussian\_mab module
 ---------------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.multi_armed_bandits.gaussian_mab
+.. automodule:: genrl.agents.bandits.multiarmed.gaussian_mab
    :members:
    :undoc-members:
    :show-inheritance:
@@ -32,7 +32,7 @@ genrl.bandit.bandits.multi\_armed\_bandits.gaussian\_mab module
 Module contents
 ---------------
 
-.. automodule:: genrl.bandit.bandits.multi_armed_bandits
+.. automodule:: genrl.agents.bandits.multiarmed
    :members:
    :undoc-members:
    :show-inheritance:

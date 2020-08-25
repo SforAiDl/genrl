@@ -4,50 +4,50 @@ Multi-Armed Bandit Agents
 Submodules
 ----------
 
-genrl.bandit.agents.mab\_agents.base module
+genrl.agents.bandits.multiarmed.base module
 -------------------------------------------
 
-.. automodule:: genrl.bandit.agents.mab_agents.base
+.. automodule:: genrl.agents.bandits.multiarmed.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.mab\_agents.bayesian module
+genrl.agents.bandits.multiarmed.bayesian module
 -----------------------------------------------
 
-.. automodule:: genrl.bandit.agents.mab_agents.bayesian
+.. automodule:: genrl.agents.bandits.multiarmed.bayesian
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.mab\_agents.epsgreedy module
+genrl.agents.bandits.multiarmed.epsgreedy module
 ------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.mab_agents.epsgreedy
+.. automodule:: genrl.agents.bandits.multiarmed.epsgreedy
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.mab\_agents.gradient module
+genrl.agents.bandits.multiarmed.gradient module
 -----------------------------------------------
 
-.. automodule:: genrl.bandit.agents.mab_agents.gradient
+.. automodule:: genrl.agents.bandits.multiarmed.gradient
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.mab\_agents.thompson module
+genrl.agents.bandits.multiarmed.thompson module
 -----------------------------------------------
 
-.. automodule:: genrl.bandit.agents.mab_agents.thompson
+.. automodule:: genrl.agents.bandits.multiarmed.thompson
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.mab\_agents.ucb module
+genrl.agents.bandits.multiarmed.ucb module
 ------------------------------------------
 
-.. automodule:: genrl.bandit.agents.mab_agents.ucb
+.. automodule:: genrl.agents.bandits.multiarmed.ucb
    :members:
    :undoc-members:
    :show-inheritance:
@@ -56,7 +56,7 @@ genrl.bandit.agents.mab\_agents.ucb module
 Module contents
 ---------------
 
-.. automodule:: genrl.bandit.agents.mab_agents
+.. automodule:: genrl.agents.bandits.multiarmed
    :members:
    :undoc-members:
    :show-inheritance:
