@@ -1,5 +1,4 @@
-Algorithms
-=========
+Agents
 
 .. toctree::
     :maxdepth: 1

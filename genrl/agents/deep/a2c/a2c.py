@@ -79,6 +79,8 @@ class A2C(OnPolicyAgent):
         else:
             self.ac = self.network.to(self.device)
 
+            # action_dim = self.network.action_dim
+
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)

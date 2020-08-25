@@ -183,8 +183,9 @@ class DCBTrainer(BanditTrainer):
         try:
             for t in range(1, timesteps + 1):
                 action = self.agent.select_action(context)
-                context, reward = self.bandit.step(action)
+                new_context, reward = self.bandit.step(action)
                 self.agent.update_db(context, action, reward)
+                context = new_context
 
                 if train_epochs_schedule is not None and t < train_epochs_decay_steps:
                     train_epochs = int(train_epochs_schedule[t])

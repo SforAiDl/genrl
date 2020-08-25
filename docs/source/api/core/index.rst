@@ -1,7 +1,7 @@
-Deep Common
-=========================
+Core
+====
 
-genrl.core.actor\_critic
+Actor\ Critic
 --------------------------------------
 
 .. automodule:: genrl.core.actor_critic
@@ -9,7 +9,7 @@ genrl.core.actor\_critic
    :undoc-members:
    :show-inheritance:
 
-genrl.core.base
+Base
 -----------------------------
 
 .. automodule:: genrl.core.base
@@ -17,7 +17,7 @@ genrl.core.base
    :undoc-members:
    :show-inheritance:
 
-genrl.core.buffers
+Buffers
 --------------------------------
 
 .. automodule:: genrl.core.buffers
@@ -25,15 +25,7 @@ genrl.core.buffers
    :undoc-members:
    :show-inheritance:
 
-genrl.utils.logger
--------------------------------
-
-.. automodule:: genrl.utils.logger
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-genrl.core.noise
+Noise
 ------------------------------
 
 .. automodule:: genrl.core.noise
@@ -41,7 +33,7 @@ genrl.core.noise
    :undoc-members:
    :show-inheritance:
 
-genrl.core.policies
+Policies
 ---------------------------------
 
 .. automodule:: genrl.core.policies
@@ -49,7 +41,7 @@ genrl.core.policies
    :undoc-members:
    :show-inheritance:
 
-genrl.core.rollout\_storage
+Rollout\ Storage
 -----------------------------------------
 
 .. automodule:: genrl.core.rollout_storage
@@ -57,23 +49,7 @@ genrl.core.rollout\_storage
    :undoc-members:
    :show-inheritance:
 
-genrl.trainers
---------------------------------
-
-.. automodule:: genrl.trainers
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-genrl.utils.utils
-------------------------------
-
-.. automodule:: genrl.utils.utils
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-genrl.core.values
+Values
 -------------------------------
 
 .. automodule:: genrl.core.values
