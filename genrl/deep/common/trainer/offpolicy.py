@@ -40,7 +40,7 @@ class OffPolicyTrainer(Trainer):
         self,
         *args,
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
-        max_ep_len: int = 1000,
+        max_ep_len: int = 500,
         warmup_steps: int = 1000,
         start_update: int = 1000,
         update_interval: int = 50,
