@@ -11,4 +11,12 @@ from genrl.utils.logger import CSVLogger  # noqa
 from genrl.utils.logger import HumanOutputFormat  # noqa
 from genrl.utils.logger import Logger  # noqa
 from genrl.utils.logger import TensorboardLogger  # noqa
-from genrl.utils.utils import cnn, get_env_properties, get_model, mlp, set_seeds  # noqa
+from genrl.utils.utils import (  # noqa
+    cnn,
+    get_env_properties,
+    get_model,
+    mlp,
+    noisy_mlp,
+    safe_mean,
+    set_seeds,
+)

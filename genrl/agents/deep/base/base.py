@@ -4,7 +4,7 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import torch
 
-from genrl.deep.common.utils import set_seeds
+from genrl.utils import set_seeds
 
 
 class BaseAgent(ABC):

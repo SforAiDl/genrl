@@ -3,8 +3,8 @@ from typing import List
 import numpy as np
 import torch
 
+from genrl.core import RolloutBuffer
 from genrl.deep.agents.base import BaseAgent
-from genrl.deep.common.rollout_storage import RolloutBuffer
 
 
 class OnPolicyAgent(BaseAgent):

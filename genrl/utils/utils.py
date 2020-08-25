@@ -6,8 +6,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from genrl.deep.common.base import BaseActorCritic, BasePolicy, BaseValue
-from genrl.deep.common.noise import NoisyLinear
+from genrl.core import BaseActorCritic, BasePolicy, BaseValue, NoisyLinear
 from genrl.environments.vec_env import VecEnv
 
 
@@ -22,15 +21,15 @@ Eg. "mlp" or "cnn")
     :returns: Required class. Eg. MlpActorCritic
     """
     if type_ == "ac":
-        from genrl.deep.common.actor_critic import get_actor_critic_from_name
+        from genrl.core import get_actor_critic_from_name
 
         return get_actor_critic_from_name(name_)
     elif type_ == "v":
-        from genrl.deep.common.values import get_value_from_name
+        from genrl.core import get_value_from_name
 
         return get_value_from_name(name_)
     elif type_ == "p":
-        from genrl.deep.common.policies import get_policy_from_name
+        from genrl.core import get_policy_from_name
 
         return get_policy_from_name(name_)
     raise ValueError

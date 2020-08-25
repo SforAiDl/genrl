@@ -2,7 +2,7 @@ from typing import Optional
 
 import torch
 
-from genrl.bandit.core import Bandit, BanditAgent
+from genrl.core import Bandit, BanditAgent
 
 
 class DCBAgent(BanditAgent):

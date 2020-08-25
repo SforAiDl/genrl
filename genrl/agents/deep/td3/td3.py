@@ -4,9 +4,9 @@ from typing import Any, Dict
 import numpy as np
 import torch
 
-from genrl.deep.agents import OffPolicyAgentAC
-from genrl.deep.common.noise import ActionNoise
-from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
+from genrl.agents import OffPolicyAgentAC
+from genrl.core import ActionNoise
+from genrl.utils import get_env_properties, get_model, safe_mean
 
 
 class TD3(OffPolicyAgentAC):

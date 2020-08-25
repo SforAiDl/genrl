@@ -6,8 +6,8 @@ import torch
 import torch.nn.functional as F
 import torch.optim as opt
 
-from genrl.deep.agents.base import OnPolicyAgent
-from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
+from genrl.agents import OnPolicyAgent
+from genrl.utils import get_env_properties, get_model, safe_mean
 
 
 class A2C(OnPolicyAgent):

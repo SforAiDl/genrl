@@ -5,8 +5,8 @@ import numpy as np
 import torch
 import torch.optim as opt
 
-from genrl.deep.agents.base import OffPolicyAgent
-from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
+from genrl.agents import OffPolicyAgent
+from genrl.utils import get_env_properties, get_model, safe_mean
 
 
 class DQN(OffPolicyAgent):
