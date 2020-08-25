@@ -1,7 +1,7 @@
 import numpy as np
-import optuna
 import torch
 
+import optuna
 from genrl import A2C, TD3, VPG
 from genrl.deep.agents import DoubleDQN
 from genrl.deep.common.noise import NormalActionNoise

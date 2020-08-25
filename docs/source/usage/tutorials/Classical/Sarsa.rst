@@ -24,7 +24,8 @@ Winter is here. You and your friends were tossing around a frisbee at the park w
 
 The surface is described using a grid like the following:
 
-.. math::
+.. code-block:: text
+
     SFFF       (S: starting point, safe)
     FHFH       (F: frozen surface, safe)
     FFFH       (H: hole, fall to your doom)
@@ -39,6 +40,7 @@ Code
 Let's import all the usefull stuff first. 
 
 .. code-block:: python
+
     import gym
     from genrl import SARSA                                 # for the agent 
     from genrl.classical.common import Trainer              # for training the agent 
@@ -46,6 +48,7 @@ Let's import all the usefull stuff first.
 Now that we have imported all the necessary stuff let's go ahead and define the environment, the agent and an object for the Trainer class. 
 
 .. code-block:: python
+
     env = gym.make("FrozenLake-v0")                               
     agent = SARSA(env, gamma=0.6, lr=0.1, epsilon=0.1)
     trainer = Trainer(
@@ -59,7 +62,8 @@ Now that we have imported all the necessary stuff let's go ahead and define the 
 
 Great so far so good! Now moving towards the training process it is just calling the train method in the trainer class. 
 
-.. code-block:: python 
+.. code-block:: python
+
     trainer.train()
     trainer.evaluate()
 

@@ -58,7 +58,7 @@ class OnPolicyTrainer(Trainer):
                     self.log_key,
                 )
 
-            if epoch * self.agent.rollout_size > self.max_timesteps:
+            if epoch * self.agent.rollout_size >= self.max_timesteps:
                 break
 
             if self.render:
