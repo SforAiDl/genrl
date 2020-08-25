@@ -6,7 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from genrl.core import BaseActorCritic, BasePolicy, BaseValue, NoisyLinear
+from genrl.core.base import BaseActorCritic, BasePolicy, BaseValue
+from genrl.core.noise import NoisyLinear
 from genrl.environments.vec_env import VecEnv
 
 

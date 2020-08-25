@@ -4,8 +4,8 @@ from typing import Tuple
 import pandas as pd
 import torch
 
-from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import (
+from genrl.utils.data_bandits.base import DataBasedBandit
+from genrl.utils.data_bandits.utils import (
     download_data,
     fetch_zipped_data_without_header,
 )

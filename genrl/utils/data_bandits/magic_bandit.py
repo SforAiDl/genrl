@@ -3,11 +3,8 @@ from typing import Tuple
 import pandas as pd
 import torch
 
-from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import (
-    download_data,
-    fetch_data_with_header,
-)
+from genrl.utils.data_bandits.base import DataBasedBandit
+from genrl.utils.data_bandits.utils import download_data, fetch_data_with_header
 
 URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/magic/magic04.data"
 

@@ -4,11 +4,8 @@ import numpy as np
 import pandas as pd
 import torch
 
-from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import (
-    download_data,
-    fetch_data_without_header,
-)
+from genrl.utils.data_bandits.base import DataBasedBandit
+from genrl.utils.data_bandits.utils import download_data, fetch_data_without_header
 
 URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
 
