@@ -74,7 +74,7 @@ trainer.evaluate(render=True)
 
 This will not only make the agent follow a deterministic policy and thus help you achieve the maximun reward possible reward attainable from the learnt policy but also allow you to see your agent perform by passing `render=True`
 
-For more information on the VPG implementation and the various hyperparameters available have a look at the official **GenRL** docs [here](https://genrl.readthedocs.io/en/latest/api/algorithms/genrl.deep.agents.vpg.html)
+For more information on the VPG implementation and the various hyperparameters available have a look at the official **GenRL** docs [here](https://genrl.readthedocs.io/en/latest/api/algorithms/genrl.agents.deep.vpg.html)
 
 Some more implementations
 
