@@ -20,7 +20,7 @@ This is a very minimal way to run a VPG agent on **GenRL**
 ### VPG agent on a Cartpole Environment
 
 ```python
-import gym #OpenAI Gym
+import gym  # OpenAI Gym
 
 from genrl import VPG
 from genrl.deep.common import OnPolicyTrainer
@@ -74,7 +74,7 @@ trainer.evaluate(render=True)
 
 This will not only make the agent follow a deterministic policy and thus help you achieve the maximun reward possible reward attainable from the learnt policy but also allow you to see your agent perform by passing `render=True`
 
-For more information on the VPG implementation and the various hyperparameters available have a look at the official **GenRL** docs [here](https://genrl.readthedocs.io/en/latest/api/algorithms/genrl.deep.agents.vpg.html)
+For more information on the VPG implementation and the various hyperparameters available have a look at the official **GenRL** docs [here](https://genrl.readthedocs.io/en/latest/api/algorithms/genrl.agents.deep.vpg.html)
 
 Some more implementations
 

@@ -17,7 +17,7 @@ agent will get a reward of 1 if it correctly selects the arm else 0.
 
 To start off with lets import necessary modules, specify the data URL and
 make a class which inherits from
-``genrl.bandit.bandits.data_bandits.base.DataBasedBandit``
+``genrl.utils.data_bandits.base.DataBasedBandit``
 
 .. code:: python
 
@@ -26,8 +26,8 @@ make a class which inherits from
     import pandas as pd
     import torch
 
-    from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-    from genrl.bandit.bandits.data_bandits.utils import download_data
+    from genrl.utils.data_bandits.base import DataBasedBandit
+    from genrl.utils.data_bandits.utils import download_data
 
 
     URL = "http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data"
@@ -53,7 +53,7 @@ as given by the index and then increment the index to move to the next row.
 
 Lets start with ``__init__``. Here we need to download the data if
 specified and load it into memory. Many utility functions are available
-in ``genrl.bandit.bandits.data_bandits.utils`` including
+in ``genrl.utils.data_bandits.utils`` including
 ``download_data`` to download data from a URL as well as functions to
 fetch data from memory.
 
@@ -122,6 +122,6 @@ current index.
 
 Once you are done with the above, you can use the ``WineDataBandit``
 class like you would any other bandit from from
-``genrl.bandit.bandits.data_bandits``. You can use it with any of the
+``genrl.utils.data_bandits``. You can use it with any of the
 ``cb_agents`` as well as training on it with
 `genrl.bandit.DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.

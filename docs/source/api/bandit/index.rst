@@ -5,8 +5,8 @@ Bandit
    :maxdepth: 2
    :caption: Bandits
 
-   genrl.bandit.bandits.data_bandits
-   genrl.bandit.bandits.multi_armed_bandits
+   genrl.utils.data_bandits
+   genrl.agents.bandits.multiarmed
 
 
 
@@ -14,5 +14,5 @@ Bandit
    :maxdepth: 2
    :caption: Bandit Agents
 
-   genrl.bandit.agents.cb_agents
-   genrl.bandit.agents.mab_agents
+   genrl.agents.bandits.contextual
+   genrl.agents.bandits.multiarmed

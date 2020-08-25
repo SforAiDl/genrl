@@ -26,7 +26,7 @@ updating the noise distribution as 128 -
     trainer.train()
 
 Refer to the 
-`NeuralNoiseSamplingAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_noise>`__, 
+`NeuralNoiseSamplingAgent <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.neural_noise>`__, 
 and 
 `DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__ 
 docs for more details.

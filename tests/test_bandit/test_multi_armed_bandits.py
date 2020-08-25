@@ -1,4 +1,4 @@
-from genrl.bandit import BernoulliMAB, GaussianMAB
+from genrl.agents import BernoulliMAB, GaussianMAB
 
 
 class TestMultiArmedBandit:
