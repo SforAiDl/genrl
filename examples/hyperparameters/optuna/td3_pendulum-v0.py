@@ -2,11 +2,10 @@ import numpy as np
 import optuna
 import torch
 
-from genrl import A2C, TD3, VPG
-from genrl.deep.agents import DoubleDQN
-from genrl.deep.common.noise import NormalActionNoise
-from genrl.deep.common.trainer import OffPolicyTrainer
+from genrl.agents import TD3
+from genrl.core.noise import NormalActionNoise
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 env = VectorEnv("Pendulum-v0")
 

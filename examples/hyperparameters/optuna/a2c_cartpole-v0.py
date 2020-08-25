@@ -2,10 +2,10 @@ import numpy as np
 import optuna
 import torch
 
-from genrl.deep.agents import A2C, PPO1, VPG
-from genrl.deep.common.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
-from genrl.deep.common.trainer import OnPolicyTrainer
+from genrl.agents import A2C, PPO1, VPG
+from genrl.core.noise import NormalActionNoise, OrnsteinUhlenbeckActionNoise
 from genrl.environments import VectorEnv
+from genrl.trainers import OnPolicyTrainer
 
 env = VectorEnv("CartPole-v0")
 
