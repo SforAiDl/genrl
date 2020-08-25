@@ -7,71 +7,71 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   genrl.bandit.agents.cb_agents.common
+   genrl.agents.bandits.contextual.common
 
 Submodules
 ----------
 
-genrl.bandit.agents.cb\_agents.base module
+genrl.agents.bandits.contextual.base module
 ------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.base
+.. automodule:: genrl.agents.bandits.contextual.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.cb\_agents.bootstrap\_neural module
+genrl.agents.bandits.contextual.bootstrap\_neural module
 -------------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.bootstrap_neural
+.. automodule:: genrl.agents.bandits.contextual.bootstrap_neural
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.cb\_agents.fixed module
+genrl.agents.bandits.contextual.fixed module
 -------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.fixed
+.. automodule:: genrl.agents.bandits.contextual.fixed
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.cb\_agents.linpos module
+genrl.agents.bandits.contextual.linpos module
 --------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.linpos
+.. automodule:: genrl.agents.bandits.contextual.linpos
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.cb\_agents.neural\_greedy module
+genrl.agents.bandits.contextual.neural\_greedy module
 ----------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.neural_greedy
+.. automodule:: genrl.agents.bandits.contextual.neural_greedy
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.cb\_agents.neural\_linpos module
+genrl.agents.bandits.contextual.neural\_linpos module
 ----------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.neural_linpos
+.. automodule:: genrl.agents.bandits.contextual.neural_linpos
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.cb\_agents.neural\_noise\_sampling module
+genrl.agents.bandits.contextual.neural\_noise\_sampling module
 -------------------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.neural_noise_sampling
+.. automodule:: genrl.agents.bandits.contextual.neural_noise_sampling
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.agents.cb\_agents.variational module
+genrl.agents.bandits.contextual.variational module
 -------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.variational
+.. automodule:: genrl.agents.bandits.contextual.variational
    :members:
    :undoc-members:
    :show-inheritance:
@@ -80,7 +80,7 @@ genrl.bandit.agents.cb\_agents.variational module
 Module contents
 ---------------
 
-.. automodule:: genrl.bandit.agents.cb_agents
+.. automodule:: genrl.agents.bandits.contextual
    :members:
    :undoc-members:
    :show-inheritance:
