@@ -37,6 +37,7 @@ extensions = [
     "sphinxcontrib.napoleon",
     "sphinx_rtd_theme",
     "recommonmark",
+    "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
 ]
 
@@ -84,3 +85,16 @@ def setup(app):
         True,
     )
     app.add_transform(AutoStructify)
+
+
+latex_elements = {
+    "preamble": r"""
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{amsmath}
+\usepackage{cancel}
+\newcommand{\E}{{\mathrm E}}
+\newcommand{\underE}[2]{\underset{\begin{subarray}{c}#1 \end{subarray}}{\E}\left[ #2 \right]}
+\newcommand{\Epi}[1]{\underset{\begin{subarray}{c}\tau \sim \pi \end{subarray}}{\E}\left[ #1 \right]}
+"""
+}

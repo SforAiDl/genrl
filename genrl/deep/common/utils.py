@@ -1,11 +1,12 @@
 import random
-from typing import List, Tuple, Union
+from typing import Any, List, Tuple, Union
 
 import gym
 import numpy as np
 import torch
 import torch.nn as nn
 
+from genrl.deep.common.base import BaseActorCritic, BasePolicy, BaseValue
 from genrl.deep.common.noise import NoisyLinear
 from genrl.environments.vec_env import VecEnv
 
@@ -128,7 +129,7 @@ def noisy_mlp(fc_layers: List[int], noisy_layers: List[int], activation="relu"):
 
 
 def get_env_properties(
-    env: Union[gym.Env, VecEnv], network: str = "mlp"
+    env: Union[gym.Env, VecEnv], network: Union[str, Any] = "mlp"
 ) -> (Tuple[int]):
     """
     Finds important properties of environment
@@ -142,9 +143,15 @@ discreteness of action space and action limit (highest action value)
     :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
     if network == "cnn":
-        input_dim = env.framestack
+        state_dim = env.framestack
     elif network == "mlp":
-        input_dim = env.observation_space.shape[0]
+        state_dim = env.observation_space.shape[0]
+    elif isinstance(network, (BasePolicy, BaseValue)):
+        state_dim = network.state_dim
+    elif isinstance(network, BaseActorCritic):
+        state_dim = network.actor.state_dim
+    else:
+        raise TypeError
 
     if isinstance(env.action_space, gym.spaces.Discrete):
         action_dim = env.action_space.n
@@ -157,7 +164,7 @@ discreteness of action space and action limit (highest action value)
     else:
         raise NotImplementedError
 
-    return input_dim, action_dim, discrete, action_lim
+    return state_dim, action_dim, discrete, action_lim
 
 
 def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
