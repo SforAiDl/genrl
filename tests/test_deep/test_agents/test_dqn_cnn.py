@@ -1,6 +1,6 @@
 import shutil
 
-from genrl.deep.agents import (
+from genrl.agents import (
     DQN,
     CategoricalDQN,
     DoubleDQN,
@@ -8,14 +8,9 @@ from genrl.deep.agents import (
     NoisyDQN,
     PrioritizedReplayDQN,
 )
-from genrl.deep.common import OffPolicyTrainer
-from genrl.deep.common.values import (
-    CnnCategoricalValue,
-    CnnDuelingValue,
-    CnnNoisyValue,
-    CnnValue,
-)
+from genrl.core import CnnCategoricalValue, CnnDuelingValue, CnnNoisyValue, CnnValue
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 
 class TestDQNCNN:

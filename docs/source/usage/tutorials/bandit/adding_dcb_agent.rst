@@ -11,7 +11,7 @@ network based agent. Although this is a simplictic agent, implementation
 of any level of agent will need to have the following steps.
 
 To start off with lets import necessary modules and make a class which
-inherits from ``genrl.bandit.agents.cb_agents.base.DCBAgent``
+inherits from ``genrl.agents.bandits.contextual.base.DCBAgent``
 
 .. code:: python
 
@@ -19,9 +19,9 @@ inherits from ``genrl.bandit.agents.cb_agents.base.DCBAgent``
 
     import torch
 
-    from genrl.bandit.agents.cb_agents.base import DCBAgent
-    from genrl.bandit.agents.cb_agents.common import NeuralBanditModel, TransitionDB
-    from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
+    from genrl.agents.bandits.contextual.base import DCBAgent
+    from genrl.agents.bandits.contextual.common import NeuralBanditModel, TransitionDB
+    from genrl.utils.data_bandits.base import DataBasedBandit
 
     class NeuralAgent(DCBAgent):
         """Deep contextual bandit agent based on a neural network."""

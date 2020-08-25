@@ -72,7 +72,7 @@ Code to use Thompson Sampling on a Bernoulli Multi-Armed Bandit:
     trainer.train(timesteps=10000)
 
 More details can be found in the docs for
-`BernoulliMAB <../../../api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
-`UCB <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.thompson>`__
+`BernoulliMAB <../../../api/bandit/genrl.core.bandit.html#genrl.core.bandit.bernoulli_mab.BernoulliMAB>`__,
+`UCB <../../../api/bandit/genrl.agents.bandits.multiarmed.html#module-genrl.agents.bandits.multiarmed.thompson>`__
 and
 `MABTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.

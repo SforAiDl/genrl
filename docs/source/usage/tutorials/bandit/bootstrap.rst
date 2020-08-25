@@ -27,7 +27,7 @@ with a hidden layer of 128 neurons which also uses dropout for training
     trainer.train()
 
 Refer to the 
-`BootstrapNeuralAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.bootstrap_neural>`__ 
+`BootstrapNeuralAgent <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.bootstrap_neural>`__ 
 and 
 `DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__ 
 docs for more details.
