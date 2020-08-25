@@ -1,13 +1,13 @@
-SAC
+TD3
 =====================
 
 Submodules
 ----------
 
-genrl.deep.agents.sac.sac module
+genrl.agents.deep.td3.td3 module
 --------------------------------
 
-.. automodule:: genrl.deep.agents.sac.sac
+.. automodule:: genrl.agents.deep.td3.td3
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.deep.agents.sac.sac module
 Module contents
 ---------------
 
-.. automodule:: genrl.deep.agents.sac
+.. automodule:: genrl.agents.deep.td3
    :members:
    :undoc-members:
    :show-inheritance:

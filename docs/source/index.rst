@@ -24,16 +24,12 @@ Contents
    usage/about/about
    usage/tutorials/index
 
-..       3. :mod:`genrl.classical.SARSA`: SARSA
-..       4. :mod:`genrl.classical.QLearning`: Q-Learning
-=======
 .. toctree::
    :maxdepth: 2
    :caption: API
 
-   api/algorithms/index
+   api/agents/index
    api/environments/index
-   api/bandit/index
-   api/common/deep
-   api/common/classical
-   api/common/bandit
+   api/core/index
+   api/utils/index
+   api/trainers/index

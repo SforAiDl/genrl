@@ -1,13 +1,13 @@
-PPO1
+DDPG
 ======================
 
 Submodules
 ----------
 
-genrl.deep.agents.ppo1.ppo1 module
+genrl.agents.deep.ddpg.ddpg module
 ----------------------------------
 
-.. automodule:: genrl.deep.agents.ppo1.ppo1
+.. automodule:: genrl.agents.deep.ddpg.ddpg
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.deep.agents.ppo1.ppo1 module
 Module contents
 ---------------
 
-.. automodule:: genrl.deep.agents.ppo1
+.. automodule:: genrl.agents.deep.ddpg
    :members:
    :undoc-members:
    :show-inheritance:

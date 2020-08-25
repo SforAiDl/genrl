@@ -1,7 +1,7 @@
 import torch
 
-from genrl.deep.agents.dqn.base import DQN
-from genrl.deep.agents.dqn.utils import ddqn_q_target
+from genrl.agents.deep.dqn.base import DQN
+from genrl.agents.deep.dqn.utils import ddqn_q_target
 
 
 class DoubleDQN(DQN):

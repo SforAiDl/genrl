@@ -2,8 +2,8 @@ import collections
 
 import torch
 
-from genrl.deep.agents.dqn.base import DQN
-from genrl.deep.agents.dqn.utils import prioritized_q_loss
+from genrl.agents.deep.dqn.base import DQN
+from genrl.agents.deep.dqn.utils import prioritized_q_loss
 
 
 class PrioritizedReplayDQN(DQN):

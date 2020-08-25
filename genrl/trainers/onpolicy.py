@@ -1,6 +1,6 @@
 import numpy as np
 
-from genrl.trainers.base import Trainer
+from genrl.trainers import Trainer
 
 
 class OnPolicyTrainer(Trainer):
@@ -16,6 +16,7 @@ class OnPolicyTrainer(Trainer):
         log_interval (int): Timesteps between successive logging of parameters onto the console
         logdir (str): Directory where log files should be saved.
         epochs (int): Total number of epochs to train for
+        max_timesteps (int): Maximum limit of timesteps to train for
         off_policy (bool): True if the agent is an off policy agent, False if it is on policy
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
         save_model (str): Directory where the checkpoints of agent parameters should be saved
@@ -56,6 +57,9 @@ class OnPolicyTrainer(Trainer):
                     },
                     self.log_key,
                 )
+
+            if epoch * self.agent.rollout_size >= self.max_timesteps:
+                break
 
             if self.render:
                 self.env.render()

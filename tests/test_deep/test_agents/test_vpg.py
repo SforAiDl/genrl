@@ -1,6 +1,6 @@
 import shutil
 
-from genrl import VPG
+from genrl.agents import VPG
 from genrl.environments import VectorEnv
 from genrl.trainers import OnPolicyTrainer
 

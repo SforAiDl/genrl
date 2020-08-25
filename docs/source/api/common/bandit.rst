@@ -22,7 +22,7 @@ genrl.bandit.trainer
 genrl.bandit.agents.cb\_agents.common.base\_model
 --------------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.common.base_model
+.. automodule:: genrl.agents.bandits.contextual.common.base_model
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +30,7 @@ genrl.bandit.agents.cb\_agents.common.base\_model
 genrl.bandit.agents.cb\_agents.common.bayesian
 -----------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.common.bayesian
+.. automodule:: genrl.agents.bandits.contextual.common.bayesian
    :members:
    :undoc-members:
    :show-inheritance:
@@ -38,7 +38,7 @@ genrl.bandit.agents.cb\_agents.common.bayesian
 genrl.bandit.agents.cb\_agents.common.neural
 ---------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.common.neural
+.. automodule:: genrl.agents.bandits.contextual.common.neural
    :members:
    :undoc-members:
    :show-inheritance:
@@ -46,7 +46,7 @@ genrl.bandit.agents.cb\_agents.common.neural
 genrl.bandit.agents.cb\_agents.common.transition
 -------------------------------------------------------
 
-.. automodule:: genrl.bandit.agents.cb_agents.common.transition
+.. automodule:: genrl.agents.bandits.contextual.common.transition
    :members:
    :undoc-members:
    :show-inheritance:

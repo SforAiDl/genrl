@@ -5,7 +5,7 @@ import numpy as np
 import torch
 import torch.optim as opt
 
-from genrl.deep.agents.base import OffPolicyAgent
+from genrl.agents import OffPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean
 
 

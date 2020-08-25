@@ -1,8 +1,8 @@
 import numpy as np
 from scipy import stats
 
-from genrl.bandit.agents.mab_agents.base import MABAgent
-from genrl.bandit.bandits.multi_armed_bandits import MultiArmedBandit
+from genrl.agents.bandits.multiarmed.base import MABAgent
+from genrl.core.bandit import MultiArmedBandit
 
 
 class BayesianUCBMABAgent(MABAgent):

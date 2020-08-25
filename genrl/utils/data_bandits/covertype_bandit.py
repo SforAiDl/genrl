@@ -1,25 +1,28 @@
+from pathlib import Path
 from typing import Tuple
 
 import pandas as pd
 import torch
 
-from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import (
+from genrl.utils.data_bandits.base import DataBasedBandit
+from genrl.utils.data_bandits.utils import (
     download_data,
-    fetch_data_without_header,
+    fetch_zipped_data_without_header,
 )
 
-URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
+URL = (
+    "https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz"
+)
 
 
-class AdultDataBandit(DataBasedBandit):
-    """A contextual bandit based on the Adult dataset.
+class CovertypeDataBandit(DataBasedBandit):
+    """A contextual bandit based on the Covertype dataset.
 
     Source:
-        http://archive.ics.uci.edu/ml/datasets/Adult
+        https://archive.ics.uci.edu/ml/datasets/covertype
 
     Args:
-        path (str, optional): Path to the data. Defaults to "./data/Adult/".
+        path (str, optional): Path to the data. Defaults to "./data/Covertype/".
         download (bool, optional): Whether to download the data. Defaults to False.
         force_download (bool, optional): Whether to force download even if file exists.
             Defaults to False.
@@ -39,28 +42,18 @@ class AdultDataBandit(DataBasedBandit):
     """
 
     def __init__(self, **kwargs):
-        super(AdultDataBandit, self).__init__(kwargs.get("device", "cpu"))
+        super(CovertypeDataBandit, self).__init__(kwargs.get("device", "cpu"))
 
-        path = kwargs.get("path", "./data/Adult/")
+        path = Path(kwargs.get("path", "./data/Covertype/"))
         download = kwargs.get("download", None)
         force_download = kwargs.get("force_download", None)
         url = kwargs.get("url", URL)
 
         if download:
-            fpath = download_data(path, url, force_download)
-            self._df = pd.read_csv(fpath, header=None, na_values=["?", " ?"]).dropna()
+            gz_fpath = download_data(path, url, force_download)
+            self._df = fetch_zipped_data_without_header(gz_fpath)
         else:
-            self._df = fetch_data_without_header(
-                path, "adult.data", na_values=["?", " ?"]
-            )
-
-        for col in self._df.columns[[1, 3, 5, 6, 7, 8, 9, 13, 14]]:
-            dummies = pd.get_dummies(self._df[col], prefix=col, drop_first=False)
-            self._df = pd.concat([self._df, dummies], axis=1)
-            self._df = self._df.drop(col, axis=1)
-
-        self._df[self._df.columns[-2]] += self._df[self._df.columns[-1]]
-        self._df.drop(self._df.columns[-1], axis=1)
+            self._df = fetch_covertype_data(path)
 
         self.n_actions = len(self._df.iloc[:, -1].unique())
         self.context_dim = self._df.shape[1] - 1
@@ -86,7 +79,7 @@ class AdultDataBandit(DataBasedBandit):
             Tuple[int, int]: Computed reward.
         """
         label = self._df.iloc[self.idx, self.context_dim]
-        r = int(label == action)
+        r = int(label == (action + 1))
         return r, 1
 
     def _get_context(self) -> torch.Tensor:
@@ -100,3 +93,13 @@ class AdultDataBandit(DataBasedBandit):
             device=self.device,
             dtype=torch.float,
         )
+
+
+def fetch_covertype_data(path):
+    path = Path(path)
+    if path.suffix == ".data":
+        return pd.read_csv(path, header=None, na_values=["?"]).dropna()
+    else:
+        if path.is_dir():
+            path = path.joinpath("covtype.data.gz")
+        return fetch_zipped_data_without_header(path)

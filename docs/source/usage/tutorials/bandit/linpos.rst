@@ -44,8 +44,8 @@ All hyperparameters can be tuned for individual use cases to improve
 training efficiency and achieve convergence faster.
 
 Refer to the 
-`LinearPosteriorAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.linpos>`__, 
-`NeuralLinearPosteriorAgent <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_linpos>`__ 
+`LinearPosteriorAgent <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.linpos>`__, 
+`NeuralLinearPosteriorAgent <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.neural_linpos>`__ 
 and 
 `DCBTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__ 
 docs for more details.

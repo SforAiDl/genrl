@@ -3,9 +3,9 @@ from typing import Optional
 import numpy as np
 import torch
 
-from genrl.bandit.agents.cb_agents.base import DCBAgent
-from genrl.bandit.agents.cb_agents.common import NeuralBanditModel, TransitionDB
-from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
+from genrl.agents.bandits.contextual.base import DCBAgent
+from genrl.agents.bandits.contextual.common import NeuralBanditModel, TransitionDB
+from genrl.utils.data_bandits.base import DataBasedBandit
 
 
 class BootstrapNeuralAgent(DCBAgent):

@@ -4,8 +4,8 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
-from genrl.deep.agents.dqn.base import DQN
-from genrl.deep.agents.dqn.utils import (
+from genrl.agents.deep.dqn.base import DQN
+from genrl.agents.deep.dqn.utils import (
     categorical_greedy_action,
     categorical_q_loss,
     categorical_q_target,

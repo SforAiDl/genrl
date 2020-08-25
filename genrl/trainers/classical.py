@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from genrl.utils.models import get_model_from_name
 
 
-class Trainer:
+class ClassicalTrainer:
     """
     Global trainer class for classical RL algorithms
 

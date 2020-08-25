@@ -4,8 +4,8 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from genrl.deep.common.base import BaseValue
-from genrl.deep.common.noise import NoisyLinear
+from genrl.core.base import BaseValue
+from genrl.core.noise import NoisyLinear
 from genrl.utils import cnn, mlp, noisy_mlp
 
 

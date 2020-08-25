@@ -1,30 +1,39 @@
+import subprocess
+from pathlib import Path
 from typing import Tuple
 
 import pandas as pd
 import torch
 
-from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
-from genrl.bandit.bandits.data_bandits.utils import (
-    download_data,
-    fetch_data_with_header,
-)
+from genrl.utils.data_bandits.base import DataBasedBandit
+from genrl.utils.data_bandits.utils import download_data, fetch_data_without_header
 
-URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/magic/magic04.data"
+URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/statlog/shuttle/shuttle.trn.Z"
 
 
-class MagicDataBandit(DataBasedBandit):
-    """A contextual bandit based on the MAGIC Gamma Telescope dataset.
+class StatlogDataBandit(DataBasedBandit):
+    """A contextual bandit based on the Statlog (Shuttle) dataset.
+
+    The dataset gives the recorded value of 9 different sensors during a space shuttle flight
+    as well which state (out of 7 possible) the radiator was at each timestep.
+
+    At each timestep the agent will get a 9-dimensional real valued context vector
+    and must select one of 7 actions. The agent will get a reward of 1 only if it selects
+    the true state of the radiator at that timestep as given in the dataset.
+
+    Context dimension: 9
+    Number of actions: 7
 
     Source:
-        https://archive.ics.uci.edu/ml/datasets/magic+gamma+telescope
+        https://archive.ics.uci.edu/ml/datasets/Statlog+(Shuttle)
 
     Args:
-        path (str, optional): Path to the data. Defaults to "./data/Magic/".
+        path (str, optional): Path to the data. Defaults to "./data/Statlog/".
         download (bool, optional): Whether to download the data. Defaults to False.
         force_download (bool, optional): Whether to force download even if file exists.
             Defaults to False.
         url (Union[str, None], optional): URL to download data from. Defaults to None
-            which implies use of source URL.
+            which implies use of source URL.w
         device (str): Device to use for tensor operations.
             "cpu" for cpu or "cuda" for cuda. Defaults to "cpu".
 
@@ -39,25 +48,22 @@ class MagicDataBandit(DataBasedBandit):
     """
 
     def __init__(self, **kwargs):
-        super(MagicDataBandit, self).__init__(kwargs.get("device", "cpu"))
+        super(StatlogDataBandit, self).__init__(kwargs.get("device", "cpu"))
 
-        path = kwargs.get("path", "./data/Magic/")
+        path = kwargs.get("path", "./data/Statlog/")
         download = kwargs.get("download", None)
         force_download = kwargs.get("force_download", None)
         url = kwargs.get("url", URL)
 
         if download:
-            fpath = download_data(path, url, force_download)
-            self.df = pd.read_csv(fpath, header=None)
+            z_fpath = download_data(path, url, force_download)
+            subprocess.run(["uncompress", "-f", z_fpath])
+            fpath = Path(z_fpath).parent.joinpath("shuttle.trn")
+            self.df = pd.read_csv(fpath, header=None, delimiter=" ")
         else:
-            self.df = fetch_data_with_header(path, "magic04.data")
+            self.df = fetch_data_without_header(path, "shuttle.trn", delimiter=" ")
 
-        col = self.df.columns[-1]
-        dummies = pd.get_dummies(self.df[col], prefix=col, drop_first=False)
-        self.df = pd.concat([self.df, dummies.iloc[:, -1]], axis=1)
-        self.df = self.df.drop(col, axis=1)
-
-        self.n_actions = 2
+        self.n_actions = len(self.df.iloc[:, -1].unique())
         self.context_dim = self.df.shape[1] - 1
         self.len = len(self.df)
 
@@ -81,7 +87,7 @@ class MagicDataBandit(DataBasedBandit):
             Tuple[int, int]: Computed reward.
         """
         label = self.df.iloc[self.idx, self.context_dim]
-        r = int(label == (action + 1))
+        r = int(label == action)
         return r, 1
 
     def _get_context(self) -> torch.Tensor:

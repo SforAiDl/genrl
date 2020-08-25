@@ -1,6 +1,6 @@
 import shutil
 
-from genrl import A2C
+from genrl.agents import A2C
 from genrl.environments import VectorEnv
 from genrl.trainers import OnPolicyTrainer
 

@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from genrl.deep.common.base import BasePolicy
+from genrl.core.base import BasePolicy
 from genrl.utils import cnn, mlp
 
 

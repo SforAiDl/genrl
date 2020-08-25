@@ -4,7 +4,7 @@ from typing import List
 import numpy as np
 import torch
 
-from genrl.deep.agents.dqn.base import DQN
+from genrl.agents.deep.dqn.base import DQN
 
 
 def ddqn_q_target(

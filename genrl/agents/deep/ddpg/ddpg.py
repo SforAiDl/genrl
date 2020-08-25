@@ -4,8 +4,8 @@ from typing import Any, Dict
 import numpy as np
 import torch.optim as opt
 
-from genrl.deep.agents.base import OffPolicyAgentAC
-from genrl.deep.common.noise import ActionNoise
+from genrl.agents import OffPolicyAgentAC
+from genrl.core import ActionNoise
 from genrl.utils import get_env_properties, get_model, safe_mean
 
 

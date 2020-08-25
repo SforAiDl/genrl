@@ -4,18 +4,18 @@ DQN
 Submodules
 ----------
 
-genrl.deep.agents.dqn.dqn module
+genrl.agents.deep.dqn.dqn module
 --------------------------------
 
-.. automodule:: genrl.deep.agents.dqn.dqn
+.. automodule:: genrl.agents.deep.dqn.dqn
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.agents.dqn.utils module
+genrl.agents.deep.dqn.utils module
 ----------------------------------
 
-.. automodule:: genrl.deep.agents.dqn.utils
+.. automodule:: genrl.agents.deep.dqn.utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -24,7 +24,7 @@ genrl.deep.agents.dqn.utils module
 Module contents
 ---------------
 
-.. automodule:: genrl.deep.agents.dqn
+.. automodule:: genrl.agents.deep.dqn
    :members:
    :undoc-members:
    :show-inheritance:

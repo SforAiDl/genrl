@@ -26,4 +26,4 @@ trainer = OnPolicyTrainer(agent, env, log_mode=['stdout', 'tensorboard'], log_ke
 trainer.train()
 ```
 
-More details can be found in the docs for [A2C](../../api/algorithms/genrl.deep.agents.a2c.html) and [OnPolicyTrainer](../../api/common/deep.html#genrl.trainers.OnPolicyTrainer).
+More details can be found in the docs for [A2C](../../api/algorithms/genrl.agents.deep.a2c.html) and [OnPolicyTrainer](../../api/common/deep.html#genrl.trainers.OnPolicyTrainer).

@@ -2,8 +2,8 @@ from typing import Type, Union
 
 import numpy as np
 
-from genrl.deep.common.buffers import PrioritizedBuffer, ReplayBuffer
-from genrl.trainers.base import Trainer
+from genrl.core import PrioritizedBuffer, ReplayBuffer
+from genrl.trainers import Trainer
 from genrl.utils import safe_mean
 
 
@@ -25,6 +25,7 @@ class OffPolicyTrainer(Trainer):
         log_interval (int): Timesteps between successive logging of parameters onto the console
         logdir (str): Directory where log files should be saved.
         epochs (int): Total number of epochs to train for
+        max_timesteps (int): Maximum limit of timesteps to train for
         off_policy (bool): True if the agent is an off policy agent, False if it is on policy
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
         save_model (str): Directory where the checkpoints of agent parameters should be saved
@@ -135,6 +136,9 @@ class OffPolicyTrainer(Trainer):
                 and timestep % self.save_interval == 0
             ):
                 self.save(timestep)
+
+            if timestep >= self.max_timesteps:
+                break
 
         self.env.close()
         self.logger.close()

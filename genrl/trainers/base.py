@@ -7,8 +7,7 @@ import numpy as np
 import torch
 
 from genrl.environments.vec_env import VecEnv
-from genrl.utils import set_seeds
-from genrl.utils.logger import Logger
+from genrl.utils import Logger, set_seeds
 
 
 class Trainer(ABC):
@@ -24,6 +23,7 @@ class Trainer(ABC):
         log_interval (int): Timesteps between successive logging of parameters onto the console
         logdir (str): Directory where log files should be saved.
         epochs (int): Total number of epochs to train for
+        max_timesteps (int): Maximum limit of timesteps to train for
         off_policy (bool): True if the agent is an off policy agent, False if it is on policy
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
         save_model (str): Directory where the checkpoints of agent parameters should be saved
@@ -43,6 +43,7 @@ class Trainer(ABC):
         log_interval: int = 10,
         logdir: str = "logs",
         epochs: int = 10,
+        max_timesteps: int = 1e6,
         off_policy: bool = False,
         save_interval: int = 0,
         save_model: str = "checkpoints",
@@ -59,6 +60,7 @@ class Trainer(ABC):
         self.log_interval = log_interval
         self.logdir = logdir
         self.epochs = epochs
+        self.max_timesteps = max_timesteps
         self.off_policy = off_policy
         self.save_interval = save_interval
         self.save_model = save_model

@@ -2,7 +2,7 @@ from typing import List, Tuple, Union
 
 import torch
 
-from genrl.bandit.core import Bandit
+from genrl.core.bandit import Bandit
 
 
 class DataBasedBandit(Bandit):
