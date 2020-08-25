@@ -4,10 +4,10 @@ import gym
 import numpy as np
 from matplotlib import pyplot as plt
 
-from genrl.classical.common.models import get_model_from_name
+from genrl.utils.models import get_model_from_name
 
 
-class Trainer:
+class ClassicalTrainer:
     """
     Global trainer class for classical RL algorithms
 
