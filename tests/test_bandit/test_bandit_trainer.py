@@ -1,4 +1,6 @@
-from genrl.bandit import CovertypeDataBandit, DCBTrainer, NeuralGreedyAgent
+from genrl.agents import NeuralGreedyAgent
+from genrl.trainers import DCBTrainer, MABTrainer
+from genrl.utils import CovertypeDataBandit
 
 from .utils import write_data
 

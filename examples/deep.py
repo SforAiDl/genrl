@@ -1,8 +1,8 @@
 import argparse
 
-from genrl import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
-from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
+from genrl.agents import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer, OnPolicyTrainer
 
 
 def main(args):

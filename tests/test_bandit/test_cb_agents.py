@@ -1,10 +1,8 @@
 import shutil
 
-from genrl.bandit import (
+from genrl.agents import (
     BernoulliMAB,
     BootstrapNeuralAgent,
-    CovertypeDataBandit,
-    DCBTrainer,
     FixedAgent,
     LinearPosteriorAgent,
     NeuralGreedyAgent,
@@ -12,6 +10,8 @@ from genrl.bandit import (
     NeuralNoiseSamplingAgent,
     VariationalAgent,
 )
+from genrl.trainers import DCBTrainer
+from genrl.utils import CovertypeDataBandit
 
 from .utils import write_data
 
