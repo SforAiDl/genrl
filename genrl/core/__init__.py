@@ -8,4 +8,13 @@ from genrl.core.noise import NormalActionNoise  # noqa
 from genrl.core.noise import OrnsteinUhlenbeckActionNoise  # noqa
 from genrl.core.policies import BasePolicy, CNNPolicy, MlpPolicy  # noqa
 from genrl.core.rollout_storage import RolloutBuffer  # noqa
-from genrl.core.values import CnnValue, MlpValue  # noqa
+from genrl.core.values import (  # noqa
+    CnnCategoricalValue,
+    CnnDuelingValue,
+    CnnNoisyValue,
+    CnnValue,
+    MlpCategoricalValue,
+    MlpDuelingValue,
+    MlpNoisyValue,
+    MlpValue,
+)

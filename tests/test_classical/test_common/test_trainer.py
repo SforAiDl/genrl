@@ -2,15 +2,15 @@ import gym
 import numpy as np
 import pytest
 
-from genrl import SARSA, QLearning
-from genrl.classical.common import Trainer
+from genrl.agents import SARSA, QLearning
+from genrl.trainer import ClassicalTrainer
 
 
 class TestTrainer:
     def test_trainer(self):
         env = gym.make("FrozenLake-v0")
         agent = QLearning(env)
-        trainer = Trainer(
+        trainer = ClassicalTrainer(
             agent,
             env,
             mode="dyna",
