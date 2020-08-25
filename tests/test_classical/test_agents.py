@@ -2,7 +2,7 @@ import gym
 import numpy as np
 import pytest
 
-from genrl import SARSA, QLearning
+from genrl.agents import SARSA, QLearning
 
 
 class TestAgents:
