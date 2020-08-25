@@ -56,42 +56,46 @@ genrl.agents.deep.dqn.dqn module
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.agents.dqn.categorical module
+genrl.agents.deep.dqn.categorical module
 ----------------------------------------
 
-.. automodule:: genrl.deep.agents.dqn.categorical
+.. automodule:: genrl.agents.deep.dqn.categorical
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.agents.dqn.double module
+genrl.agents.deep.dqn.double module
 -----------------------------------
 
-.. automodule:: genrl.deep.agents.dqn.double
+.. automodule:: genrl.agents.deep.dqn.double
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.agents.dqn.dueling module
+genrl.agents.deep.dqn.dueling module
 ------------------------------------
 
-.. automodule:: genrl.deep.agents.dqn.dueling
+.. automodule:: genrl.agents.deep.dqn.dueling
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.agents.dqn.noisy module
+genrl.agents.deep.dqn.noisy module
 ----------------------------------
 
-.. automodule:: genrl.deep.agents.dqn.noisy
+.. automodule:: genrl.agents.deep.dqn.noisy
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.agents.dqn.prioritized module
+genrl.agents.deep.dqn.prioritized module
 ----------------------------------------
 
-.. automodule:: genrl.deep.agents.dqn.prioritized
+.. automodule:: genrl.agents.deep.dqn.prioritized
+genrl.agents.deep.dqn.dqn module
+--------------------------------
+
+.. automodule:: genrl.agents.deep.dqn.dqn
    :members:
    :undoc-members:
    :show-inheritance:
