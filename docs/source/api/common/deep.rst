@@ -1,82 +1,82 @@
 Deep Common
 =========================
 
-genrl.deep.common.actor\_critic
+genrl.core.actor\_critic
 --------------------------------------
 
-.. automodule:: genrl.deep.common.actor_critic
+.. automodule:: genrl.core.actor_critic
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.base
+genrl.core.base
 -----------------------------
 
-.. automodule:: genrl.deep.common.base
+.. automodule:: genrl.core.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.buffers
+genrl.core.buffers
 --------------------------------
 
-.. automodule:: genrl.deep.common.buffers
+.. automodule:: genrl.core.buffers
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.logger
+genrl.utils.logger
 -------------------------------
 
-.. automodule:: genrl.deep.common.logger
+.. automodule:: genrl.utils.logger
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.noise
+genrl.core.noise
 ------------------------------
 
-.. automodule:: genrl.deep.common.noise
+.. automodule:: genrl.core.noise
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.policies
+genrl.core.policies
 ---------------------------------
 
-.. automodule:: genrl.deep.common.policies
+.. automodule:: genrl.core.policies
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.rollout\_storage
+genrl.core.rollout\_storage
 -----------------------------------------
 
-.. automodule:: genrl.deep.common.rollout_storage
+.. automodule:: genrl.core.rollout_storage
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.trainer
+genrl.trainers
 --------------------------------
 
-.. automodule:: genrl.deep.common.trainer
+.. automodule:: genrl.trainers
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.utils
+genrl.utils.utils
 ------------------------------
 
-.. automodule:: genrl.deep.common.utils
+.. automodule:: genrl.utils.utils
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.values
+genrl.core.values
 -------------------------------
 
-.. automodule:: genrl.deep.common.values
+.. automodule:: genrl.core.values
    :members:
    :undoc-members:
    :show-inheritance:

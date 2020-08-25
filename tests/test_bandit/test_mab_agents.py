@@ -1,13 +1,13 @@
-from genrl.bandit import (
+from genrl.agents import (
     BayesianUCBMABAgent,
     BernoulliMAB,
     EpsGreedyMABAgent,
     GaussianMAB,
     GradientMABAgent,
-    MABTrainer,
     ThompsonSamplingMABAgent,
     UCBMABAgent,
 )
+from genrl.trainers import MABTrainer
 
 
 class TestMABAgent:

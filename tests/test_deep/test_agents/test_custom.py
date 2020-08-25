@@ -1,16 +1,15 @@
 import shutil
 
-from genrl import PPO1, TD3, VPG
-from genrl.deep.common import (
+from genrl.agents import PPO1, TD3, VPG
+from genrl.core import (
     MlpActorCritic,
     MlpPolicy,
     MlpValue,
     NormalActionNoise,
-    OffPolicyTrainer,
-    OnPolicyTrainer,
     OrnsteinUhlenbeckActionNoise,
 )
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer, OnPolicyTrainer
 
 
 class custom_policy(MlpPolicy):

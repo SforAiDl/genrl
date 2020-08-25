@@ -1,8 +1,9 @@
 import shutil
 
-from genrl import TD3
-from genrl.deep.common import OffPolicyTrainer, OrnsteinUhlenbeckActionNoise
+from genrl.agents import TD3
+from genrl.core import OrnsteinUhlenbeckActionNoise
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 
 def test_td3():

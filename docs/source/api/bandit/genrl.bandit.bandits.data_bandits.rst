@@ -4,66 +4,66 @@ Data Based Contextual Bandits
 Submodules
 ----------
 
-genrl.bandit.bandits.data\_bandits.adult\_bandit module
+genrl.utils.data_bandits.adult\_bandit module
 -------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits.adult_bandit
+.. automodule:: genrl.utils.data_bandits.adult_bandit
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.data\_bandits.base module
+genrl.utils.data_bandits.base module
 ----------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits.base
+.. automodule:: genrl.utils.data_bandits.base
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.data\_bandits.census\_bandit module
+genrl.utils.data_bandits.census\_bandit module
 --------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits.census_bandit
+.. automodule:: genrl.utils.data_bandits.census_bandit
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.data\_bandits.covertype\_bandit module
+genrl.utils.data_bandits.covertype\_bandit module
 -----------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits.covertype_bandit
+.. automodule:: genrl.utils.data_bandits.covertype_bandit
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.data\_bandits.magic\_bandit module
+genrl.utils.data_bandits.magic\_bandit module
 -------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits.magic_bandit
+.. automodule:: genrl.utils.data_bandits.magic_bandit
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.data\_bandits.mushroom\_bandit module
+genrl.utils.data_bandits.mushroom\_bandit module
 ----------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits.mushroom_bandit
+.. automodule:: genrl.utils.data_bandits.mushroom_bandit
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.data\_bandits.statlog\_bandit module
+genrl.utils.data_bandits.statlog\_bandit module
 ---------------------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits.statlog_bandit
+.. automodule:: genrl.utils.data_bandits.statlog_bandit
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.bandit.bandits.data\_bandits.utils module
+genrl.utils.data_bandits.utils module
 -----------------------------------------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits.utils
+.. automodule:: genrl.utils.data_bandits.utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -72,7 +72,7 @@ genrl.bandit.bandits.data\_bandits.utils module
 Module contents
 ---------------
 
-.. automodule:: genrl.bandit.bandits.data_bandits
+.. automodule:: genrl.utils.data_bandits
    :members:
    :undoc-members:
    :show-inheritance:
