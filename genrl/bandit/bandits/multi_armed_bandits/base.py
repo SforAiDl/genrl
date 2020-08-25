@@ -115,7 +115,7 @@ class MultiArmedBandit(Bandit):
         self._reset_metrics()
         self._reset_bandit()
         if self.context_type == "tensor":
-            return self.curr_context
+            return self.curr_context.view(-1)
         elif self.context_type == "int":
             return self.curr_bandit.item()
 
