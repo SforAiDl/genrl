@@ -79,12 +79,8 @@ class Model(nn.Module, ABC):
 
         for _ in range(epochs):
             x, a, y = db.get_data(batch_size)
-            reward_vec = torch.zeros(
-                size=(y.shape[0], self.n_actions), dtype=torch.float
-            )
-            reward_vec[:, a] = y.view(-1)
             action_mask = F.one_hot(a, num_classes=self.n_actions)
-
+            reward_vec = y.view(-1).repeat(self.n_actions, 1).T * action_mask
             loss = self._compute_loss(db, x, action_mask, reward_vec, batch_size)
 
             self.optimizer.zero_grad()

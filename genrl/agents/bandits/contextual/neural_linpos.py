@@ -165,8 +165,8 @@ class NeuralLinearPosteriorAgent(DCBAgent):
             reward (int): Reward recieved
         """
         self.db.add(context, action, reward)
-        latent_context, _ = self.model(context)
-        self.latent_db.add(latent_context, action, reward)
+        results = self.model(context)
+        self.latent_db.add(results["x"].detach(), action, reward)
 
     def update_params(self, action: int, batch_size: int = 512, train_epochs: int = 20):
         """Update parameters of the agent.

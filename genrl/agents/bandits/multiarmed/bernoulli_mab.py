@@ -19,7 +19,7 @@ class BernoulliMAB(MultiArmedBandit):
 
     def __init__(
         self,
-        bandits: int = 10,
+        bandits: int = 1,
         arms: int = 5,
         reward_probs: np.ndarray = None,
         context_type: str = "tensor",
