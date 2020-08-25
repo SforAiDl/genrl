@@ -1,8 +1,8 @@
 import shutil
 
-from genrl import VPG
-from genrl.deep.common import OnPolicyTrainer
+from genrl.agents import VPG
 from genrl.environments import VectorEnv
+from genrl.trainers import OnPolicyTrainer
 
 
 def test_vpg():

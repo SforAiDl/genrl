@@ -1,8 +1,9 @@
 import shutil
 
-from genrl import DDPG
-from genrl.deep.common import NormalActionNoise, OffPolicyTrainer
+from genrl.agents import DDPG
+from genrl.core import NormalActionNoise
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 
 def test_ddpg():
