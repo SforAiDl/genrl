@@ -7,23 +7,23 @@ import genrl
 from genrl.bandit.trainer import DCBTrainer
 
 ALGOS = {
-    "bootstrap": genrl.bandit.agents.cb_agents.BootstrapNeuralAgent,
-    "fixed": genrl.bandit.agents.cb_agents.FixedAgent,
-    "linpos": genrl.bandit.agents.cb_agents.LinearPosteriorAgent,
-    "neural-greedy": genrl.bandit.agents.cb_agents.NeuralGreedyAgent,
-    "neural-linpos": genrl.bandit.agents.cb_agents.NeuralLinearPosteriorAgent,
-    "neural-noise": genrl.bandit.agents.cb_agents.NeuralNoiseSamplingAgent,
-    "variational": genrl.bandit.agents.cb_agents.VariationalAgent,
+    "bootstrap": genrl.agents.bandits.contextual.BootstrapNeuralAgent,
+    "fixed": genrl.agents.bandits.contextual.FixedAgent,
+    "linpos": genrl.agents.bandits.contextual.LinearPosteriorAgent,
+    "neural-greedy": genrl.agents.bandits.contextual.NeuralGreedyAgent,
+    "neural-linpos": genrl.agents.bandits.contextual.NeuralLinearPosteriorAgent,
+    "neural-noise": genrl.agents.bandits.contextual.NeuralNoiseSamplingAgent,
+    "variational": genrl.agents.bandits.contextual.VariationalAgent,
 }
 BANDITS = {
-    "adult": genrl.bandit.bandits.data_bandits.AdultDataBandit,
-    "census": genrl.bandit.bandits.data_bandits.CensusDataBandit,
-    "covertype": genrl.bandit.bandits.data_bandits.CovertypeDataBandit,
-    "magic": genrl.bandit.bandits.data_bandits.MagicDataBandit,
-    "mushroom": genrl.bandit.bandits.data_bandits.MushroomDataBandit,
-    "statlog": genrl.bandit.bandits.data_bandits.StatlogDataBandit,
-    "bernoulli": genrl.bandit.bandits.multi_armed_bandits.BernoulliMAB,
-    "gaussian": genrl.bandit.bandits.multi_armed_bandits.GaussianMAB,
+    "adult": genrl.utils.data_bandits.AdultDataBandit,
+    "census": genrl.utils.data_bandits.CensusDataBandit,
+    "covertype": genrl.utils.data_bandits.CovertypeDataBandit,
+    "magic": genrl.utils.data_bandits.MagicDataBandit,
+    "mushroom": genrl.utils.data_bandits.MushroomDataBandit,
+    "statlog": genrl.utils.data_bandits.StatlogDataBandit,
+    "bernoulli": genrl.core.bandit.BernoulliMAB,
+    "gaussian": genrl.core.bandit.GaussianMAB,
 }
 
 

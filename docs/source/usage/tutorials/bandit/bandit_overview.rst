@@ -70,15 +70,15 @@ and instead of exploring. Mathematically it can be written as:
 .. math:: L = E[\sum_{t=0}^T q^* - Q_t(a)]
 
 Some policies which are effective at exploring are: 1. `Epsilon
-Greedy <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.epsgreedy>`__
+Greedy <../../../api/bandit/genrl.agents.bandits.multiarmed.html#module-genrl.agents.bandits.multiarmed.epsgreedy>`__
 2. `Gradient
-Algorithm <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.gradient>`__
+Algorithm <../../../api/bandit/genrl.agents.bandits.multiarmed.html#module-genrl.agents.bandits.multiarmed.gradient>`__
 3. `UCB(Upper Confidence
-Bound) <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.ucb>`__
+Bound) <../../../api/bandit/genrl.agents.bandits.multiarmed.html#module-genrl.agents.bandits.multiarmed.ucb>`__
 4.
-`Bayesian <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.bayesian>`__
+`Bayesian <../../../api/bandit/genrl.agents.bandits.multiarmed.html#module-genrl.agents.bandits.multiarmed.bayesian>`__
 5. `Thompson
-Sampling <../../../bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.thompson>`__
+Sampling <../../../bandit/genrl.agents.bandits.multiarmed.html#module-genrl.agents.bandits.multiarmed.thompson>`__
 
 Epsilon Greedy is the most basic exploratory policy which follows a
 simple principle to balance exploration and exploitation. It 'exploits'
@@ -110,8 +110,8 @@ Code to train an Epsilon Greedy agent on a Bernoulli Multi-Armed Bandit:
     trainer.train(timesteps=10000)
 
 More details can be found in the docs for
-`BernoulliMAB <../../../api/bandit/genrl.bandit.bandits.multi_armed_bandits.html#genrl.bandit.bandits.multi_armed_bandits.bernoulli_mab.BernoulliMAB>`__,
-`EpsGreedyMABAgent <../../../api/bandit/genrl.bandit.agents.mab_agents.html#module-genrl.bandit.agents.mab_agents.epsgreedy>`__,
+`BernoulliMAB <../../../api/bandit/genrl.core.bandit.html#genrl.core.bandit.bernoulli_mab.BernoulliMAB>`__,
+`EpsGreedyMABAgent <../../../api/bandit/genrl.agents.bandits.multiarmed.html#module-genrl.agents.bandits.multiarmed.epsgreedy>`__,
 `MABTrainer <../../../api/common/bandit.html#module-genrl.bandit.trainer>`__.
 
 You can also refer to the book "Reinforcement Learning: An

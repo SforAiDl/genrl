@@ -2,8 +2,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
-from genrl.bandit.bandits.multi_armed_bandits import MultiArmedBandit
-from genrl.bandit.core import BanditAgent
+from genrl.core.bandit import BanditAgent, MultiArmedBandit
 
 
 class MABAgent(BanditAgent):

@@ -4,9 +4,9 @@ import numpy as np
 import torch
 from scipy.stats import invgamma
 
-from genrl.bandit.agents.cb_agents.base import DCBAgent
-from genrl.bandit.agents.cb_agents.common import TransitionDB
-from genrl.bandit.bandits.data_bandits.base import DataBasedBandit
+from genrl.agents.bandits.contextual.base import DCBAgent
+from genrl.agents.bandits.contextual.common import TransitionDB
+from genrl.utils.data_bandits.base import DataBasedBandit
 
 
 class LinearPosteriorAgent(DCBAgent):

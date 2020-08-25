@@ -1,4 +1,6 @@
-from genrl.bandit.agents.cb_agents.common.bayesian import BayesianLinear  # noqa
-from genrl.bandit.agents.cb_agents.common.bayesian import BayesianNNBanditModel  # noqa
-from genrl.bandit.agents.cb_agents.common.neural import NeuralBanditModel  # noqa
-from genrl.bandit.agents.cb_agents.common.transition import TransitionDB  # noqa
+from genrl.agents.bandits.contextual.common.bayesian import (  # noqa
+    BayesianLinear,
+    BayesianNNBanditModel,
+)
+from genrl.agents.bandits.contextual.common.neural import NeuralBanditModel  # noqa
+from genrl.agents.bandits.contextual.common.transition import TransitionDB  # noqa

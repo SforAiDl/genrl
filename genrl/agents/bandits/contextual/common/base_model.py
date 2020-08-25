@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from genrl.bandit.agents.cb_agents.common.transition import TransitionDB
+from genrl.agents.bandits.contextual.common.transition import TransitionDB
 
 
 class Model(nn.Module, ABC):

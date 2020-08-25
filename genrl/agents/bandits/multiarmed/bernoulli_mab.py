@@ -2,7 +2,7 @@ from typing import Tuple
 
 import numpy as np
 
-from genrl.bandit.bandits.multi_armed_bandits.base import MultiArmedBandit
+from genrl.core.bandit import MultiArmedBandit
 
 
 class BernoulliMAB(MultiArmedBandit):

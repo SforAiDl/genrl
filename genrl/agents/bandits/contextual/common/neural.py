@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from genrl.bandit.agents.cb_agents.common.base_model import Model
-from genrl.bandit.agents.cb_agents.common.transition import TransitionDB
+from genrl.agents.bandits.contextual.common.base_model import Model
+from genrl.agents.bandits.contextual.common.transition import TransitionDB
 
 
 class NeuralBanditModel(Model):
