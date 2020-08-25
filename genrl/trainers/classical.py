@@ -127,6 +127,9 @@ class ClassicalTrainer:
                     self.evaluate()
 
                 if ep == self.n_episodes:
+                    print("Evaluating at the episode number: {}".format(ep))
+                    final_reward = self.evaluate()
+                    self.agent.mean_reward = final_reward
                     break
 
                 ep += 1
@@ -138,7 +141,7 @@ class ClassicalTrainer:
 
         return ep_rews
 
-    def evaluate(self, eval_ep: int = 100) -> None:
+    def evaluate(self, eval_ep: int = 100) -> float:
         """
         Evaluate function.
 
@@ -149,6 +152,7 @@ class ClassicalTrainer:
         ep_rew = 0
         ep_rews = []
         state = self.env.reset()
+        mean_ep_reward = None
 
         while True:
             action = self.agent.get_action(state, False)
@@ -159,13 +163,16 @@ class ClassicalTrainer:
             if done:
                 ep_rews.append(ep_rew)
                 ep += 1
+                mean_ep_rew = np.mean(ep_rews)
                 if ep == 100:
                     print(
                         "Evaluating on {} episodes, Mean Reward: {} and Std Deviation for the reward: {}".format(
-                            eval_ep, np.mean(ep_rews), np.std(ep_rews)
+                            eval_ep, mean_ep_rew, np.std(ep_rews)
                         )
                     )
                     break
+
+        return mean_ep_rew
 
     def plot(self, results: List[float], window_size: int = 100) -> None:
         """
@@ -184,3 +191,23 @@ class ClassicalTrainer:
         plt.xlabel("Episode")
         plt.ylabel("Reward")
         plt.show()
+
+
+if __name__ == "__main__":
+    env = gym.make("FrozenLake-v0")
+    # agent = QLearning(env, epsilon=0.6, lr=0.1)
+    # trainer = Trainer(
+    #     agent,
+    #     env,
+    #     mode="dyna",
+    #     model="tabular",
+    #     seed=42,
+    #     n_episodes=1000,
+    #     start_steps=0,
+    #     evaluate_frequency=500,
+    # )
+    # ep_rs = trainer.train()
+    # print("-" * 82)
+    # print("Evaluating the learned model")
+    # trainer.evaluate()
+    # trainer.plot(ep_rs)

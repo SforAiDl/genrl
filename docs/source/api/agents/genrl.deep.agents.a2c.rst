@@ -1,5 +1,5 @@
 A2C
-=====================
+===
 
 Submodules
 ----------
@@ -7,7 +7,7 @@ Submodules
 genrl.agents.deep.a2c.a2c module
 --------------------------------
 
-.. automodule:: genrl.agents.deep.a2c.a2c
+.. automodule:: genrl.agents.deep.a2c.a2c.A2C
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.agents.deep.a2c.a2c module
 Module contents
 ---------------
 
-.. automodule:: genrl.agents.deep.a2c
+.. automodule:: genrl.agents.deep.a2c.a2c.A2C
    :members:
    :undoc-members:
    :show-inheritance:
