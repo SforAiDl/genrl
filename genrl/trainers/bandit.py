@@ -5,7 +5,7 @@ from typing import Any, List
 
 import numpy as np
 
-from genrl.deep.common.logger import Logger
+from genrl.utils.logger import Logger
 
 
 class BanditTrainer(ABC):

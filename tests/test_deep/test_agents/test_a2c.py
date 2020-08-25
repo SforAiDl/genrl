@@ -1,8 +1,8 @@
 import shutil
 
 from genrl import A2C
-from genrl.deep.common import OnPolicyTrainer
 from genrl.environments import VectorEnv
+from genrl.trainers import OnPolicyTrainer
 
 
 def test_a2c():

@@ -10,8 +10,8 @@ from genrl.deep.common import (
     MlpValue,
     OnPolicyTrainer,
 )
-from genrl.deep.common.utils import *
 from genrl.environments import VectorEnv
+from genrl.utils import *
 
 
 class TestUtils:

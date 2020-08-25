@@ -3,8 +3,8 @@ from typing import Type, Union
 import numpy as np
 
 from genrl.deep.common.buffers import PrioritizedBuffer, ReplayBuffer
-from genrl.deep.common.trainer.base import Trainer
-from genrl.deep.common.utils import safe_mean
+from genrl.trainers.base import Trainer
+from genrl.utils import safe_mean
 
 
 class OffPolicyTrainer(Trainer):

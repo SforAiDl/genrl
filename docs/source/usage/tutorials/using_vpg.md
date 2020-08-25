@@ -20,11 +20,11 @@ This is a very minimal way to run a VPG agent on **GenRL**
 ### VPG agent on a Cartpole Environment
 
 ```python
-import gym #OpenAI Gym
+import gym  # OpenAI Gym
 
 from genrl import VPG
-from genrl.deep.common import OnPolicyTrainer
 from genrl.environments import VectorEnv
+from genrl.trainers import OnPolicyTrainer
 
 env = VectorEnv("CartPole-v1")
 agent = VPG('mlp', env)

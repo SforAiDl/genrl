@@ -57,8 +57,8 @@ import gym
 
 from genrl import SAC, QLearning
 from genrl.classical.common import Trainer
-from genrl.deep.common import OffPolicyTrainer
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 env = VectorEnv("Pendulum-v0")
 agent = SAC('mlp', env)

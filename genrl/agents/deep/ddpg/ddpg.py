@@ -6,7 +6,7 @@ import torch.optim as opt
 
 from genrl.deep.agents.base import OffPolicyAgentAC
 from genrl.deep.common.noise import ActionNoise
-from genrl.deep.common.utils import get_env_properties, get_model, safe_mean
+from genrl.utils import get_env_properties, get_model, safe_mean
 
 
 class DDPG(OffPolicyAgentAC):

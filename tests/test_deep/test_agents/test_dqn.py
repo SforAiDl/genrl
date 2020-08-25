@@ -8,7 +8,6 @@ from genrl.deep.agents.dqn import (
     NoisyDQN,
     PrioritizedReplayDQN,
 )
-from genrl.deep.common import OffPolicyTrainer
 from genrl.deep.common.buffers import PrioritizedBuffer
 from genrl.deep.common.values import (
     MlpCategoricalValue,
@@ -17,6 +16,7 @@ from genrl.deep.common.values import (
     MlpValue,
 )
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 
 class TestDQN:

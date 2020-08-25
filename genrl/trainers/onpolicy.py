@@ -1,6 +1,6 @@
 import numpy as np
 
-from genrl.deep.common.trainer.base import Trainer
+from genrl.trainers.base import Trainer
 
 
 class OnPolicyTrainer(Trainer):

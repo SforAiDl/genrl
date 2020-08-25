@@ -25,10 +25,10 @@ genrl.deep.common.buffers
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.logger
+genrl.utils.logger
 -------------------------------
 
-.. automodule:: genrl.deep.common.logger
+.. automodule:: genrl.utils.logger
    :members:
    :undoc-members:
    :show-inheritance:
@@ -57,18 +57,18 @@ genrl.deep.common.rollout\_storage
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.trainer
+genrl.trainers
 --------------------------------
 
-.. automodule:: genrl.deep.common.trainer
+.. automodule:: genrl.trainers
    :members:
    :undoc-members:
    :show-inheritance:
 
-genrl.deep.common.utils
+genrl.utils
 ------------------------------
 
-.. automodule:: genrl.deep.common.utils
+.. automodule:: genrl.utils
    :members:
    :undoc-members:
    :show-inheritance:

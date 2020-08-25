@@ -1,8 +1,8 @@
 import shutil
 
 from genrl import SAC
-from genrl.deep.common import OffPolicyTrainer
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 
 def test_sac():

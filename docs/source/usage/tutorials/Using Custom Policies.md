@@ -13,8 +13,8 @@ import torch.nn as nn
 
 from genrl import VPG
 from genrl.deep.common.policies import MlpPolicy
-from genrl.deep.common.trainer import OnPolicyTrainer
 from genrl.environments import VectorEnv
+from genrl.trainers import OnPolicyTrainer
 
 ```
 

@@ -6,8 +6,8 @@
 import gym
 
 from genrl import A2C
-from genrl.deep.common import OnPolicyTrainer
 from genrl.environments import VectorEnv
+from genrl.trainers import OnPolicyTrainer
 
 env = VectorEnv("CartPole-v0")
 agent = A2C('mlp', env, gamma=0.9, lr_policy=0.01, lr_value=0.1, policy_layers=(32,32), value_layers=(32, 32),rollout_size=2048)
@@ -26,4 +26,4 @@ trainer = OnPolicyTrainer(agent, env, log_mode=['stdout', 'tensorboard'], log_ke
 trainer.train()
 ```
 
-More details can be found in the docs for [A2C](../../api/algorithms/genrl.deep.agents.a2c.html) and [OnPolicyTrainer](../../api/common/deep.html#genrl.deep.common.trainer.OnPolicyTrainer).
+More details can be found in the docs for [A2C](../../api/algorithms/genrl.deep.agents.a2c.html) and [OnPolicyTrainer](../../api/common/deep.html#genrl.trainers.OnPolicyTrainer).

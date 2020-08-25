@@ -6,9 +6,9 @@ import gym
 import numpy as np
 import torch
 
-from genrl.deep.common.logger import Logger
-from genrl.deep.common.utils import set_seeds
 from genrl.environments.vec_env import VecEnv
+from genrl.utils import set_seeds
+from genrl.utils.logger import Logger
 
 
 class Trainer(ABC):

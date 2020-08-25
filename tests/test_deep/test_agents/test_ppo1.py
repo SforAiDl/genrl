@@ -1,8 +1,8 @@
 import shutil
 
 from genrl import PPO1
-from genrl.deep.common import OnPolicyTrainer
 from genrl.environments import VectorEnv
+from genrl.trainers import OnPolicyTrainer
 
 
 def test_ppo1():

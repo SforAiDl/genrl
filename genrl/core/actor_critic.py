@@ -8,8 +8,8 @@ from torch.distributions import Categorical, Normal
 
 from genrl.deep.common.base import BaseActorCritic
 from genrl.deep.common.policies import MlpPolicy
-from genrl.deep.common.utils import cnn
 from genrl.deep.common.values import MlpValue
+from genrl.utils import cnn
 
 
 class MlpActorCritic(BaseActorCritic):
