@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
-from genrl.agents import BaseAgent
+from genrl.agents.deep.base import BaseAgent
 from genrl.core import (
     PrioritizedBuffer,
     PrioritizedReplayBufferSamples,

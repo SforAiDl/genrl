@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from genrl.deep.agents.dqn.base import DQN
+from genrl.agents.deep.dqn.base import DQN
 
 
 class NoisyDQN(DQN):

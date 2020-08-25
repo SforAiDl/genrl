@@ -4,10 +4,10 @@ DDPG
 Submodules
 ----------
 
-genrl.deep.agents.ddpg.ddpg module
+genrl.agents.deep.ddpg.ddpg module
 ----------------------------------
 
-.. automodule:: genrl.deep.agents.ddpg.ddpg
+.. automodule:: genrl.agents.deep.ddpg.ddpg
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.deep.agents.ddpg.ddpg module
 Module contents
 ---------------
 
-.. automodule:: genrl.deep.agents.ddpg
+.. automodule:: genrl.agents.deep.ddpg
    :members:
    :undoc-members:
    :show-inheritance:

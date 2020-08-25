@@ -4,10 +4,10 @@ SAC
 Submodules
 ----------
 
-genrl.deep.agents.sac.sac module
+genrl.agents.deep.sac.sac module
 --------------------------------
 
-.. automodule:: genrl.deep.agents.sac.sac
+.. automodule:: genrl.agents.deep.sac.sac
    :members:
    :undoc-members:
    :show-inheritance:
@@ -16,7 +16,7 @@ genrl.deep.agents.sac.sac module
 Module contents
 ---------------
 
-.. automodule:: genrl.deep.agents.sac
+.. automodule:: genrl.agents.deep.sac
    :members:
    :undoc-members:
    :show-inheritance:

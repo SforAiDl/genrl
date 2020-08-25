@@ -1,3 +1,3 @@
-from genrl.deep.agents.base.base import BaseAgent  # noqa
-from genrl.deep.agents.base.offpolicy import OffPolicyAgent, OffPolicyAgentAC  # noqa
-from genrl.deep.agents.base.onpolicy import OnPolicyAgent  # noqa
+from genrl.agents.deep.base.base import BaseAgent  # noqa
+from genrl.agents.deep.base.offpolicy import OffPolicyAgent, OffPolicyAgentAC  # noqa
+from genrl.agents.deep.base.onpolicy import OnPolicyAgent  # noqa

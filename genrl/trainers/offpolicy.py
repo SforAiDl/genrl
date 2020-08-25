@@ -2,7 +2,7 @@ from typing import Type, Union
 
 import numpy as np
 
-from genrl.cores import PrioritizedBuffer, ReplayBuffer
+from genrl.core import PrioritizedBuffer, ReplayBuffer
 from genrl.trainers import Trainer
 from genrl.utils import safe_mean
 
