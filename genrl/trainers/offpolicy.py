@@ -123,9 +123,9 @@ class OffPolicyTrainer(Trainer):
                 for i, di in enumerate(done):
                     if di:
                         self.rewards.append(self.env.episode_reward[i])
-                        self.env.episode_reward[i] = 0
                         episode_len[i] = 0
                         episode[i] += 1
+                        self.env.reset_single_env(i)
 
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.agent.update_params(self.update_interval)
@@ -137,7 +137,7 @@ class OffPolicyTrainer(Trainer):
             ):
                 self.save(timestep)
 
-            if timestep >= self.max_timesteps:
+            if self.max_timesteps is not None and timestep >= self.max_timesteps:
                 break
 
         self.env.close()

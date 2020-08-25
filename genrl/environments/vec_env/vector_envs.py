@@ -182,6 +182,15 @@ class SerialVecEnv(VecEnv):
 
         return np.copy(self.states)
 
+    def reset_single_env(self, index: int) -> np.ndarray:
+        """
+        Resets single environment
+        """
+        self.states[index] = self.envs[index].reset()
+        self.episode_reward[index] = 0
+
+        return np.copy(self.states)
+
     def close(self):
         """
         Closes all envs
@@ -274,7 +283,6 @@ class SubProcessVecEnv(VecEnv):
         """
         for parent_conn in self.parent_conns:
             parent_conn.send(("reset", None))
-
         self.episode_reward = np.zeros((self.n_envs))
 
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]

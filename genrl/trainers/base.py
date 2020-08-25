@@ -43,7 +43,7 @@ class Trainer(ABC):
         log_interval: int = 10,
         logdir: str = "logs",
         epochs: int = 50,
-        max_timesteps: int = 1.5e4,
+        max_timesteps: int = None,
         off_policy: bool = False,
         save_interval: int = 0,
         save_model: str = "checkpoints",
