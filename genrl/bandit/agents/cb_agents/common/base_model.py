@@ -82,6 +82,7 @@ class Model(nn.Module, ABC):
             reward_vec = torch.zeros(
                 size=(y.shape[0], self.n_actions), dtype=torch.float
             )
+            import pdb; pdb.set_trace();
             reward_vec[:, a] = y.view(-1)
             action_mask = F.one_hot(a, num_classes=self.n_actions)
 
