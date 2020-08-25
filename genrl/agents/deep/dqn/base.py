@@ -41,7 +41,7 @@ class DQN(OffPolicyAgent):
         *args,
         max_epsilon: float = 1.0,
         min_epsilon: float = 0.01,
-        epsilon_decay: int = 1000,
+        epsilon_decay: int = 500,
         **kwargs
     ):
         super(DQN, self).__init__(*args, **kwargs)
