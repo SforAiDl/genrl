@@ -53,6 +53,7 @@ class PPO1(OnPolicyAgent):
         self.activation = kwargs["activation"] if "activation" in kwargs else "relu"
 
         self.empty_logs()
+
         if self.create_model:
             self._create_model()
 
