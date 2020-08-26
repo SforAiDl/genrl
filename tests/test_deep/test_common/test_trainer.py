@@ -1,19 +1,62 @@
-from genrl import PPO1, TD3
-from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
+import os
+from shutil import rmtree
+
+from genrl.agents import DDPG, PPO1
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer, OnPolicyTrainer
 
 
 def test_on_policy_trainer():
     env = VectorEnv("CartPole-v1", 2)
-    algo = PPO1("mlp", env)
-    trainer = OnPolicyTrainer(algo, env, ["stdout"], epochs=1)
+    algo = PPO1("mlp", env, rollout_size=128)
+    trainer = OnPolicyTrainer(
+        algo, env, ["stdout"], epochs=2, evaluate_episodes=2, max_timesteps=300
+    )
     assert not trainer.off_policy
     trainer.train()
+    trainer.evaluate()
 
 
 def test_off_policy_trainer():
     env = VectorEnv("Pendulum-v0", 2)
-    algo = TD3("mlp", env)
-    trainer = OffPolicyTrainer(algo, env, ["stdout"], epochs=1)
+    algo = DDPG("mlp", env, replay_size=100)
+    trainer = OffPolicyTrainer(
+        algo,
+        env,
+        ["stdout"],
+        epochs=2,
+        evaluate_episodes=2,
+        max_ep_len=300,
+        max_timesteps=300,
+    )
     assert trainer.off_policy
     trainer.train()
+    trainer.evaluate()
+
+
+def test_save_params():
+    """
+    test saving algorithm state dict
+    """
+    env = VectorEnv("CartPole-v0", 1)
+    algo = PPO1("mlp", env)
+    trainer = OnPolicyTrainer(
+        algo, env, ["stdout"], save_model="test_ckpt", save_interval=1, epochs=1
+    )
+    trainer.train()
+
+    assert len(os.listdir("test_ckpt/PPO1_CartPole-v0")) != 0
+
+
+def test_load_params():
+    """
+    test loading algorithm parameters
+    """
+    env = VectorEnv("CartPole-v0", 1)
+    algo = PPO1("mlp", env)
+    trainer = OnPolicyTrainer(
+        algo, env, epochs=0, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
+    )
+    trainer.train()
+
+    rmtree("logs")

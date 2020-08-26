@@ -1,11 +1,73 @@
 import argparse
 
-from genrl import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
-from genrl.deep.common import OffPolicyTrainer, OnPolicyTrainer
+from genrl.agents import A2C, DDPG, DQN, PPO1, SAC, TD3, VPG
 from genrl.environments import VectorEnv
+from genrl.trainers import OffPolicyTrainer, OnPolicyTrainer
 
 
-def main():
+def main(args):
+    ALGOS = {
+        "sac": SAC,
+        "a2c": A2C,
+        "ppo": PPO1,
+        "ddpg": DDPG,
+        "td3": TD3,
+        "vpg": VPG,
+        "dqn": DQN,
+    }
+
+    algo = ALGOS[args.algo.lower()]
+    env = VectorEnv(
+        args.env, n_envs=args.n_envs, parallel=not args.serial, env_type=args.env_type
+    )
+
+    logger = get_logger(args.log)
+    trainer = None
+
+    if args.algo in ["ppo", "vpg", "a2c"]:
+        agent = algo(
+            args.arch, env, rollout_size=args.rollout_size
+        )  # , batch_size=args.batch_size)
+        trainer = OnPolicyTrainer(
+            agent,
+            env,
+            logger,
+            epochs=args.epochs,
+            render=args.render,
+            log_interval=args.log_interval,
+        )
+
+    else:
+        agent = algo(
+            args.arch, env, replay_size=args.replay_size, batch_size=args.batch_size
+        )
+        trainer = OffPolicyTrainer(
+            agent,
+            env,
+            logger,
+            epochs=args.epochs,
+            render=args.render,
+            warmup_steps=args.warmup_steps,
+            log_interval=args.log_interval,
+        )
+
+    trainer.train()
+    trainer.evaluate()
+    env.render()
+
+
+def get_logger(log):
+    if "," not in log:
+        return [log]
+    else:
+        log = log.split(",")
+        if "" in log or " " in log:
+            log = [i for i in log if i != ""]
+            log = [i for i in log if i != " "]
+        return log
+
+
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train Deep RL algorithms")
     parser.add_argument(
         "-a", "--algo", help="Which Algo to train", default="ppo", type=str
@@ -55,68 +117,11 @@ def main():
         "--replay-size", help="Replay Buffer Size", default=1000, type=int
     )
 
-    args = parser.parse_args()
-
-    ALGOS = {
-        "sac": SAC,
-        "a2c": A2C,
-        "ppo": PPO1,
-        "ddpg": DDPG,
-        "td3": TD3,
-        "vpg": VPG,
-        "dqn": DQN,
-    }
-
-    algo = ALGOS[args.algo.lower()]
-    env = VectorEnv(
-        args.env, n_envs=args.n_envs, parallel=not args.serial, env_type=args.env_type
+    onpolicyargs = parser.add_argument_group("On Policy Args")
+    onpolicyargs.add_argument(
+        "--rollout-size", help="Rollout Buffer Size", default=2048, type=int
     )
 
-    logger = get_logger(args.log)
+    args = parser.parse_args()
 
-    offpolicy = True
-    trainerclass = OffPolicyTrainer
-    if args.algo in ["ppo", "vpg", "a2c"]:
-        offpolicy = False
-        trainerclass = OnPolicyTrainer
-        agent = algo(args.arch, env)  # , batch_size=args.batch_size)
-        trainer = trainerclass(
-            agent,
-            env,
-            logger,
-            epochs=args.epochs,
-            render=args.render,
-            log_interval=args.log_interval,
-        )
-
-    else:
-        agent = algo(
-            args.arch, env, replay_size=args.replay_size, batch_size=args.batch_size
-        )
-        trainer = trainerclass(
-            agent,
-            env,
-            logger,
-            epochs=args.epochs,
-            render=args.render,
-            warmup_steps=args.warmup_steps,
-            log_interval=args.log_interval,
-        )
-
-    trainer.train()
-    trainer.evaluate()
-
-
-def get_logger(log):
-    if "," not in log:
-        return [log]
-    else:
-        log = log.split(",")
-        if "" in log or " " in log:
-            log = [i for i in log if i != ""]
-            log = [i for i in log if i != " "]
-        return log
-
-
-if __name__ == "__main__":
-    main()
+    main(args)

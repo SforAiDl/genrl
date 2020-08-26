@@ -12,7 +12,7 @@ class TestVecEnvs:
         """
         env = VectorEnv("CartPole-v1", 2, parallel=True)
         env.seed(0)
-        ob, ac = env.get_spaces()
+        observation_space, action_space = env.get_spaces()
 
         env.reset()
         env.step(env.sample())
@@ -24,7 +24,7 @@ class TestVecEnvs:
         """
         env = VectorEnv("CartPole-v1", 2, parallel=False)
         env.seed(0)
-        ob, ac = env.observation_spaces, env.action_spaces
+        observation_space, action_space = env.get_spaces()
 
         env.reset()
         env.step(env.sample())
@@ -60,9 +60,9 @@ class TestVecEnvs:
 
         info = infos[0]["episode"]
 
-        assert info["r"]
-        assert info["l"]
-        assert info["t"]
+        assert info["Episode Rewards"]
+        assert info["Episode Length"]
+        assert info["Time taken"]
 
     def test_rms(self):
         """

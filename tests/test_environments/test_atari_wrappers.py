@@ -2,9 +2,9 @@ import shutil
 
 import gym
 
-from genrl import DQN
-from genrl.deep.common import OffPolicyTrainer
+from genrl.agents import DQN
 from genrl.environments import AtariEnv, AtariPreprocessing, FrameStack, VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 
 class TestAtari:
@@ -47,8 +47,8 @@ class TestAtari:
         Tests working of Atari Wrappers and the AtariEnv function
         """
         env = VectorEnv("Pong-v0", env_type="atari")
-        algo = DQN("cnn", env, noisy_dqn=True, prioritized_replay=True)
+        algo = DQN("cnn", env, replay_size=100)
 
-        trainer = OffPolicyTrainer(algo, env, epochs=1, steps_per_epoch=200)
+        trainer = OffPolicyTrainer(algo, env, epochs=5, max_ep_len=200)
         trainer.train()
         shutil.rmtree("./logs")

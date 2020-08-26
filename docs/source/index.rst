@@ -6,15 +6,31 @@
 Welcome to GenRL's documentation!
 =================================
 
+Features 
+========
+* Unified Trainer and Logging class: code reusability and high-level UI
+* Ready-made algorithm implementations: ready-made implementations of popular RL algorithms.
+* Extensive Benchmarking
+* Environment implementations
+* Heavy Encapsulation useful for new algorithms
+
+Contents
+========
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User Guide
+   
+   usage/install
+   usage/about/about
+   usage/tutorials/index
 
+.. toctree::
+   :maxdepth: 2
+   :caption: API
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   api/agents/index
+   api/environments/index
+   api/core/index
+   api/utils/index
+   api/trainers/index
+   api/common/index
