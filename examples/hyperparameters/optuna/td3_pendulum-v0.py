@@ -2,10 +2,9 @@ import numpy as np
 import optuna
 import torch
 
-from genrl.agents import TD3
-from genrl.core.noise import NormalActionNoise
-from genrl.environments import VectorEnv
-from genrl.trainers import OffPolicyTrainer
+from genrl.agents.td3.td3 import TD3
+from genrl.environments.suite import VectorEnv
+from genrl.trainers.offpolicy import OffPolicyTrainer
 
 env = VectorEnv("Pendulum-v0")
 
@@ -56,7 +55,6 @@ def objective(trial):
 
         if episode == trainer.evaluate_episodes:
             eval_reward = float(np.mean(episode_rewards))
-            eval_std_reward = float(np.std(episode_rewards))
 
             trial.report(eval_reward, int(episode))
             break
