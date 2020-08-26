@@ -22,5 +22,5 @@ jobs:
           username: "${{ secrets.DOCKER_USERNAME }}"
           password: "${{ secrets.DOCKER_PASSWORD }}"
           image_name: "genrl/${{matrix.config.image_name}}"
-          dockerfile: "${{matrix.config.dockerfile}}"
+          dockerfile: "docker/${{matrix.config.dockerfile}}"
           push_image_and_stages: true
