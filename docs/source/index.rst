@@ -36,3 +36,4 @@ Contents
    api/core/index
    api/utils/index
    api/trainers/index
+   api/common/index
