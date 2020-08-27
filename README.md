@@ -115,3 +115,9 @@ trainer.plot(episode_rewards)
     - Epsilon greedy with a neural network
     - Bayesian Regression on for posterior inference
     - Bootstraped Ensemble
+    
+
+#### Similar Libraries:
+- [Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3): Stable Baselines aims to provide _baselines_ for Deep RL Algorithms. Parts of our code (e.g. Rollout Storage) are inspired from Stable Baselines. 
+- [pytorch-a2c-ppo-acktr](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail)
+- [Ray](https://github.com/ray-project/ray)
