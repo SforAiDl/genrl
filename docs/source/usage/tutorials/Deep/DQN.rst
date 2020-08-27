@@ -151,6 +151,7 @@ For some extensions of the DQN (like DoubleDQN) we have provided the methods in 
     class DuelingDQN(DQN):
         def __init__(self, *args, **kwargs):
             super(DuelingDQN, self).__init__(*args, **kwargs)
+            self.dqn_type = "dueling"  # You can choose "noisy" for NoisyDQN and "categorical" for CategoricalDQN
             self._create_model()
 
         def get_target_q_values(self, *args):
