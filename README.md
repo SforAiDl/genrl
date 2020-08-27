@@ -4,7 +4,7 @@
     <br>
 <p>
     
-[![pypi](https://img.shields.io/badge/pypi%20package-v0.0.1-blue)](https://pypi.org/project/genrl/)
+[![pypi](https://img.shields.io/badge/pypi%20package-v0.0.2-blue)](https://pypi.org/project/genrl/)
 [![GitHub license](https://img.shields.io/github/license/SforAiDl/genrl)](https://github.com/SforAiDl/genrl/blob/master/LICENSE)
 [![Build Status](https://travis-ci.com/SforAiDl/genrl.svg?branch=master)](https://travis-ci.com/SforAiDl/genrl)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/SforAiDl/genrl.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SforAiDl/genrl/alerts/)
@@ -20,11 +20,12 @@
 
 ---
 
-**GenRL is a PyTorch reinforcement learning library centered around reproducible and generalizable algorithm implementations.** 
+**GenRL is a PyTorch reinforcement learning library centered around reproducible, generalizable algorithm implementations and improving accessibility in Reinforcement Learning** 
 
 Reinforcement learning research is moving faster than ever before. In order to keep up with the growing trend and ensure that RL research remains reproducible, GenRL aims to aid faster paper reproduction and benchmarking by providing the following main features:
 
 - **PyTorch-first**: Modular, Extensible and Idiomatic Python
+- **Tutorials and Example**: 20+ Tutorials from basic RL to SOTA Deep RL algorithm (with explanations)!
 - **Unified Trainer and Logging class**: code reusability and high-level UI
 - **Ready-made algorithm implementations**: ready-made implementations of popular RL algorithms.
 - **Faster Benchmarking**: automated hyperparameter tuning, environment implementations etc.
@@ -76,6 +77,22 @@ episode_rewards = trainer.train()
 trainer.plot(episode_rewards)
 ```
 
+## Tutorials
+- [Multi Armed Bandits](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/bandit_overview.html)
+    - [Upper Confidence Bound](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/ucb.html)
+    - [Thompson Sampling](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/thompson_sampling.html)
+    - [Bayesian](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/bayesian.html)
+    - [Softmax Action Selection](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/gradients.html)
+- [Contextual Bandits](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/contextual_overview.html)
+    - [Linear Posterior Inference](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/linpos.html)
+    - [Variational Inference](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/variational.html)
+    - [https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/bootstrap.html](Bootstrap)
+    - [Parameter Noise Sampling](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/noise.html)
+- [Deep Reinforcement Learning Background](https://genrl.readthedocs.io/en/latest/usage/tutorials/Deep/Background.html)
+    - [Vanilla Policy Gradients](https://genrl.readthedocs.io/en/latest/usage/tutorials/Deep/VPG.html)
+    - [Advantage Actor Critic](https://genrl.readthedocs.io/en/latest/usage/tutorials/Deep/A2C.html)
+    - [Proximal Policy Optimization](https://genrl.readthedocs.io/en/latest/usage/tutorials/Deep/PPO.html)
+    
 ## Algorithms
 
 ### Deep RL
