@@ -97,8 +97,8 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
 
     def __call__(self) -> float:
         """
-        (Return action noise randomly sampled from noise distribution
-according to the Ornstein Uhlenbeck process)
+                (Return action noise randomly sampled from noise distribution
+        according to the Ornstein Uhlenbeck process)
         """
         noise = (
             self.noise_prev
@@ -160,8 +160,7 @@ class NoisyLinear(nn.Module):
         return nn.functional.linear(state, weight, bias)
 
     def reset_parameters(self) -> None:
-        """Reset parameters of layer
-        """
+        """Reset parameters of layer"""
         mu_range = 1 / np.sqrt(self.weight_mu.size(1))
 
         self.weight_mu.data.uniform_(-mu_range, mu_range)
@@ -171,8 +170,7 @@ class NoisyLinear(nn.Module):
         self.bias_sigma.data.fill_(self.std_init / np.sqrt(self.bias_sigma.size(0)))
 
     def reset_noise(self) -> None:
-        """Reset noise components of layer
-        """
+        """Reset noise components of layer"""
         epsilon_in = self._scale_noise(self.in_features)
         epsilon_out = self._scale_noise(self.out_features)
 

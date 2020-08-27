@@ -32,8 +32,7 @@ class BayesianLinear(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self) -> None:
-        """Resets weight and bias parameters of the layer.
-        """
+        """Resets weight and bias parameters of the layer."""
         self.w_mu.data.normal_(0, 0.1)
         self.w_sigma.data.normal_(0, 0.1)
         self.b_mu.data.normal_(0, 0.1) if self.bias else None
