@@ -111,7 +111,7 @@ If you are not familiar with creating a Pull Request, here are some guides:
 
 ## Writing documentation
 
-Ignite uses [Google style](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
+GenRL uses [Google style](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 for formatting docstrings. Length of line inside docstrings block must be limited to 120 characters.
 
 This file is referenced from [Pytorch's Ignite](https://github.com/pytorch/ignite/blob/master/CONTRIBUTING.md)
