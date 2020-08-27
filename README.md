@@ -115,3 +115,12 @@ trainer.plot(episode_rewards)
     - Epsilon greedy with a neural network
     - Bayesian Regression on for posterior inference
     - Bootstraped Ensemble
+    
+
+#### Credits and Similar Libraries:
+- [Gym](https://gym.openai.com/) - Environments 
+- [Ray](https://github.com/ray-project/ray)
+- [OpenAI Baselines[(https://github.com/openai/baselines) - Logger
+[Stable Baselines 3](https://github.com/DLR-RM/stable-baselines3): Stable Baselines aims to provide _baselines_ for Deep RL Algorithms. Part of our code (e.g. Rollout Storage) is inspired from Stable Baselines. 
+- [pytorch-a2c-ppo-acktr](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail)
+- [Deep Contextual Bandits](https://github.com/tensorflow/models/tree/archive/research/deep_contextual_bandits)

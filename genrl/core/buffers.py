@@ -30,15 +30,30 @@ class ReplayBuffer:
         self.n_envs = env.n_envs
 
         self.observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32
+            (
+                self.buffer_size,
+                self.n_envs,
+            )
+            + env.obs_shape,
+            dtype=np.float32,
         )
         self.actions = np.zeros(
-            (self.buffer_size, self.n_envs,) + env.action_shape, dtype=np.float32
+            (
+                self.buffer_size,
+                self.n_envs,
+            )
+            + env.action_shape,
+            dtype=np.float32,
         )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.next_observations = np.zeros(
-            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32
+            (
+                self.buffer_size,
+                self.n_envs,
+            )
+            + env.obs_shape,
+            dtype=np.float32,
         )
         self.pos = 0
 
@@ -119,12 +134,12 @@ class PushReplayBuffer:
         self, batch_size: int
     ) -> (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
         """
-        Returns randomly sampled experiences from replay memory
+                Returns randomly sampled experiences from replay memory
 
-        :param batch_size: Number of samples per batch
-        :type batch_size: int
-        :returns: (Tuple composing of `state`, `action`, `reward`,
-`next_state` and `done`)
+                :param batch_size: Number of samples per batch
+                :type batch_size: int
+                :returns: (Tuple composing of `state`, `action`, `reward`,
+        `next_state` and `done`)
         """
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
@@ -161,12 +176,12 @@ class PrioritizedBuffer:
 
     def push(self, inp: Tuple) -> None:
         """
-        Adds new experience to buffer
+                Adds new experience to buffer
 
-        :param inp: (Tuple containing `state`, `action`, `reward`,
-`next_state` and `done`)
-        :type inp: tuple
-        :returns: None
+                :param inp: (Tuple containing `state`, `action`, `reward`,
+        `next_state` and `done`)
+                :type inp: tuple
+                :returns: None
         """
         max_priority = max(self.priorities) if self.priorities else 1.0
         self.buffer.append(inp)
@@ -186,16 +201,16 @@ class PrioritizedBuffer:
         ]
     ):
         """
-        (Returns randomly sampled memories from replay memory along with their
-respective indices and weights)
+                (Returns randomly sampled memories from replay memory along with their
+        respective indices and weights)
 
-        :param batch_size: Number of samples per batch
-        :param beta: (Bias exponent used to correct
-Importance Sampling (IS) weights)
-        :type batch_size: int
-        :type beta: float
-        :returns: (Tuple containing `states`, `actions`, `next_states`,
-`rewards`, `dones`, `indices` and `weights`)
+                :param batch_size: Number of samples per batch
+                :param beta: (Bias exponent used to correct
+        Importance Sampling (IS) weights)
+                :type batch_size: int
+                :type beta: float
+                :returns: (Tuple containing `states`, `actions`, `next_states`,
+        `rewards`, `dones`, `indices` and `weights`)
         """
         if beta is None:
             beta = self.beta
@@ -215,18 +230,26 @@ Importance Sampling (IS) weights)
 
         return [
             torch.as_tensor(v, dtype=torch.float32)
-            for v in [states, actions, rewards, next_states, dones, indices, weights,]
+            for v in [
+                states,
+                actions,
+                rewards,
+                next_states,
+                dones,
+                indices,
+                weights,
+            ]
         ]
 
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:
         """
-        Updates list of priorities with new order of priorities
+                Updates list of priorities with new order of priorities
 
-        :param batch_indices: List of indices of batch
-        :param batch_priorities: (List of priorities of the batch at the
-specific indices)
-        :type batch_indices: list or tuple
-        :type batch_priorities: list or tuple
+                :param batch_indices: List of indices of batch
+                :param batch_priorities: (List of priorities of the batch at the
+        specific indices)
+                :type batch_indices: list or tuple
+                :type batch_priorities: list or tuple
         """
         for idx, priority in zip(batch_indices, batch_priorities):
             self.priorities[int(idx)] = priority.mean()

@@ -250,8 +250,7 @@ class DQN(OffPolicyAgent):
         return logs
 
     def empty_logs(self) -> None:
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["value_loss"] = []
         self.logs["epsilon"] = []
