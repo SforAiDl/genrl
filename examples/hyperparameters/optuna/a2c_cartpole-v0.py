@@ -26,7 +26,11 @@ def tune_A2C(trial):
         entropy_coeff=entropy_coeff,
     )
     trainer = OnPolicyTrainer(
-        agent, env, log_interval=10, epochs=100, evaluate_episodes=10,
+        agent,
+        env,
+        log_interval=10,
+        epochs=100,
+        evaluate_episodes=10,
     )
     trainer.train()
 
