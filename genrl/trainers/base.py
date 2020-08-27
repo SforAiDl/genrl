@@ -114,7 +114,7 @@ class Trainer(ABC):
                         episode_reward[i] = 0
             if episode == self.evaluate_episodes:
                 print(
-                    "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                    "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
                         self.evaluate_episodes,
                         np.mean(episode_rewards),
                         np.std(episode_rewards),
