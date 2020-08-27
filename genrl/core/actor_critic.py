@@ -139,19 +139,19 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
 
 class CNNActorCritic(BaseActorCritic):
     """
-    CNN Actor Critic
+        CNN Actor Critic
 
-    :param framestack: Number of previous frames to stack together
-    :param action_dim: Action dimensions of the environment
-    :param fc_layers: Sizes of hidden layers
-    :param val_type: Specifies type of value function: (
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
-    :param discrete: True if action space is discrete, else False
-    :param framestack: Number of previous frames to stack together
-    :type action_dim: int
-    :type fc_layers: tuple or list
-    :type val_type: str
-    :type discrete: bool
+        :param framestack: Number of previous frames to stack together
+        :param action_dim: Action dimensions of the environment
+        :param fc_layers: Sizes of hidden layers
+        :param val_type: Specifies type of value function: (
+    "V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
+        :param discrete: True if action space is discrete, else False
+        :param framestack: Number of previous frames to stack together
+        :type action_dim: int
+        :type fc_layers: tuple or list
+        :type val_type: str
+        :type discrete: bool
     """
 
     def __init__(
@@ -177,14 +177,14 @@ class CNNActorCritic(BaseActorCritic):
         self, state: torch.Tensor, deterministic: bool = False
     ) -> torch.Tensor:
         """
-        Get action from the Actor based on input
+                Get action from the Actor based on input
 
-        :param state: The state being passed as input to the Actor
-        :param deterministic: (True if the action space is deterministic,
-else False)
-        :type state: Tensor
-        :type deterministic: boolean
-        :returns: action
+                :param state: The state being passed as input to the Actor
+                :param deterministic: (True if the action space is deterministic,
+        else False)
+                :type state: Tensor
+                :type deterministic: boolean
+                :returns: action
         """
         state = self.feature(state)
         state = state.view(state.size(0), -1)

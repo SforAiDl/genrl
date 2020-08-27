@@ -31,8 +31,7 @@ class OnPolicyTrainer(Trainer):
         super(OnPolicyTrainer, self).__init__(*args, **kwargs)
 
     def train(self) -> None:
-        """Main training method
-        """
+        """Main training method"""
         if self.load_model is not None:
             self.load()
 

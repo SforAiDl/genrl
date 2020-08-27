@@ -13,13 +13,13 @@ from genrl.environments.vec_env import VecEnv
 
 def get_model(type_: str, name_: str) -> Union:
     """
-    Utility to get the class of required function
+        Utility to get the class of required function
 
-    :param type_: "ac" for Actor Critic, "v" for Value, "p" for Policy
-    :param name_: Name of the specific structure of model. (
-Eg. "mlp" or "cnn")
-    :type type_: string
-    :returns: Required class. Eg. MlpActorCritic
+        :param type_: "ac" for Actor Critic, "v" for Value, "p" for Policy
+        :param name_: Name of the specific structure of model. (
+    Eg. "mlp" or "cnn")
+        :type type_: string
+        :returns: Required class. Eg. MlpActorCritic
     """
     if type_ == "ac":
         from genrl.core import get_actor_critic_from_name
@@ -37,17 +37,19 @@ Eg. "mlp" or "cnn")
 
 
 def mlp(
-    sizes: Tuple, activation: str = "relu", sac: bool = False,
+    sizes: Tuple,
+    activation: str = "relu",
+    sac: bool = False,
 ):
     """
-    Generates an MLP model given sizes of each layer
+        Generates an MLP model given sizes of each layer
 
-    :param sizes: Sizes of hidden layers
-    :param sac: True if Soft Actor Critic is being used, else False
-    :type sizes: tuple or list
-    :type sac: bool
-    :returns: (Neural Network with fully-connected linear layers and
-activation layers)
+        :param sizes: Sizes of hidden layers
+        :param sac: True if Soft Actor Critic is being used, else False
+        :type sizes: tuple or list
+        :type sac: bool
+        :returns: (Neural Network with fully-connected linear layers and
+    activation layers)
     """
     layers = []
     limit = len(sizes) if sac is False else len(sizes) - 1
@@ -68,19 +70,19 @@ def cnn(
     **kwargs,
 ) -> (Tuple):
     """
-    (Generates a CNN model given input dimensions, channels, kernel_sizes and
-strides)
+        (Generates a CNN model given input dimensions, channels, kernel_sizes and
+    strides)
 
-    :param channels: Input output channels before and after each convolution
-    :param kernel_sizes: Kernel sizes for each convolution
-    :param strides: Strides for each convolution
-    :param in_size: Input dimensions (assuming square input)
-    :type channels: tuple
-    :type kernel_sizes: tuple
-    :type strides: tuple
-    :type in_size: int
-    :returns: (Convolutional Neural Network with convolutional layers and
-activation layers)
+        :param channels: Input output channels before and after each convolution
+        :param kernel_sizes: Kernel sizes for each convolution
+        :param strides: Strides for each convolution
+        :param in_size: Input dimensions (assuming square input)
+        :type channels: tuple
+        :type kernel_sizes: tuple
+        :type strides: tuple
+        :type in_size: int
+        :returns: (Convolutional Neural Network with convolutional layers and
+    activation layers)
     """
 
     cnn_layers = []
@@ -132,15 +134,15 @@ def get_env_properties(
     env: Union[gym.Env, VecEnv], network: Union[str, Any] = "mlp"
 ) -> (Tuple[int]):
     """
-    Finds important properties of environment
+        Finds important properties of environment
 
-    :param env: Environment that the agent is interacting with
-    :type env: Gym Environment
-    :param network: Type of network architecture, eg. "mlp", "cnn"
-    :type network: str
-    :returns: (State space dimensions, Action space dimensions,
-discreteness of action space and action limit (highest action value)
-    :rtype: int, float, ...; int, float, ...; bool; int, float, ...
+        :param env: Environment that the agent is interacting with
+        :type env: Gym Environment
+        :param network: Type of network architecture, eg. "mlp", "cnn"
+        :type network: str
+        :returns: (State space dimensions, Action space dimensions,
+    discreteness of action space and action limit (highest action value)
+        :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
     if network == "cnn":
         state_dim = env.framestack
