@@ -57,9 +57,8 @@ To train a Soft Actor-Critic model from scratch on the `Pendulum-v0` gym environ
 ```python
 import gym
 
-from genrl.agents.deep.sac.sac import SAC
-from genrl.trainers.base import Trainer
-from genrl.trainers.offpolicy import OffPolicyTrainer
+from genrl.agents import SAC
+from genrl.trainers import OffPolicyTrainer
 from genrl.environments import VectorEnv
 
 env = VectorEnv("Pendulum-v0")
@@ -72,8 +71,8 @@ To train a Tabular Dyna-Q model from scratch on the `FrozenLake-v0` gym environm
 ```python
 import gym
 
-from genrl.agents.classical.qlearning.qlearning import QLearning
-from genrl.trainers.classical import ClassicalTrainer
+from genrl.agents import QLearning
+from genrl.trainers import ClassicalTrainer
 
 env = gym.make("FrozenLake-v0")
 agent = QLearning(env)
