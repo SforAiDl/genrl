@@ -32,7 +32,7 @@ Reinforcement learning research is moving faster than ever before. In order to k
 
 By integrating these features into GenRL, we aim to eventually support **any new algorithm implementation in less than 100 lines**.
 
-**If you're interested in contributing, feel free to go through the issues and open PRs for code, docs, tests etc. In case of any questions, please check out the [Contributing Guidelines](Contributing.md)**
+**If you're interested in contributing, feel free to go through the issues and open PRs for code, docs, tests etc. In case of any questions, please check out the [Contributing Guidelines](CONTRIBUTING.md)**
 
 
 ## Installation
