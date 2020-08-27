@@ -62,8 +62,7 @@ class OffPolicyTrainer(Trainer):
         self.buffer = self.agent.replay_buffer
 
     def train(self) -> None:
-        """Main training method
-        """
+        """Main training method"""
         if self.load_model is not None:
             self.load()
 

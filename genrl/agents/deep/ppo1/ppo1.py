@@ -231,8 +231,7 @@ class PPO1(OnPolicyAgent):
         return logs
 
     def empty_logs(self):
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []

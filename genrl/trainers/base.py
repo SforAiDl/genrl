@@ -155,8 +155,7 @@ class Trainer(ABC):
         )
 
     def load(self):
-        """Function to load saved parameters of a given agent
-        """
+        """Function to load saved parameters of a given agent"""
         path = self.load_model
         try:
             self.checkpoint = torch.load(path)
@@ -177,6 +176,5 @@ class Trainer(ABC):
 
     @property
     def n_envs(self) -> int:
-        """Number of environments
-        """
+        """Number of environments"""
         return self.env.n_envs
