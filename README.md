@@ -117,7 +117,7 @@ trainer.plot(episode_rewards)
     - Bootstraped Ensemble
     
 
-#### Similar Libraries:
+#### Credits and Similar Libraries:
 - [Gym](https://gym.openai.com/) - Environments 
 - [Ray](https://github.com/ray-project/ray)
 - [OpenAI Baselines[(https://github.com/openai/baselines) - Logger
