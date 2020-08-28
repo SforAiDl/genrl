@@ -56,8 +56,7 @@ class DataBasedBandit(Bandit):
         return self._cum_reward
 
     def _reset(self):
-        """Resets tracking metrics.
-        """
+        """Resets tracking metrics."""
         self.idx = 0
         self._cum_regret = 0
         self._cum_reward = 0
