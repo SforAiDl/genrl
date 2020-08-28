@@ -234,9 +234,8 @@ class SAC(OffPolicyAgentAC):
             "entropy_tuning": self.entropy_tuning,
             "alpha": self.alpha,
             "polyak": self.polyak,
-            "weights": self.ac.state_dict(),
         }
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging

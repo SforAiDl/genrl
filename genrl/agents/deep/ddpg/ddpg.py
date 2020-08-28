@@ -119,9 +119,8 @@ class DDPG(OffPolicyAgentAC):
             "noise_std": self.noise_std,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
-            "weights": self.ac.state_dict(),
         }
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging

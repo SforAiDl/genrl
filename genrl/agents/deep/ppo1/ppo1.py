@@ -201,10 +201,9 @@ class PPO1(OnPolicyAgent):
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
             "rollout_size": self.rollout_size,
-            "weights": self.ac.state_dict(),
         }
 
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
     def load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model

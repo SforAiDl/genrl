@@ -139,10 +139,9 @@ class TD3(OffPolicyAgentAC):
             "polyak": self.polyak,
             "policy_frequency": self.policy_frequency,
             "noise_std": self.noise_std,
-            "weights": self.ac.state_dict(),
         }
 
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging

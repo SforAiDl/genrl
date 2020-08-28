@@ -5,6 +5,7 @@ from typing import Any, List, Optional, Union
 import gym
 import numpy as np
 import torch
+import toml
 
 from genrl.environments.vec_env import VecEnv
 from genrl.utils import Logger, set_seeds
@@ -149,10 +150,13 @@ class Trainer(ABC):
                 run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
             self.run_num = run_num
 
-        torch.save(
-            self.agent.get_hyperparams(),
-            "{}/{}-log-{}.pt".format(path, run_num, timestep),
-        )
+        filename_hyperparams = "{}/{}-log-{}.toml".format(path, run_num, timestep)
+        filename_weights = "{}/{}-log-{}.pt".format(path, run_num, timestep)
+        hyperparameters, weights = self.agent.get_hyperparams()
+        with open(filename_hyperparams, mode="w") as f:
+            toml.dump(hyperparameters, f)
+
+        torch.save(weights, filename_weights)
 
     def load(self):
         """Function to load saved parameters of a given agent

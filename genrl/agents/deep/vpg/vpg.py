@@ -152,10 +152,9 @@ class VPG(OnPolicyAgent):
             "gamma": self.gamma,
             "lr_policy": self.lr_policy,
             "rollout_size": self.rollout_size,
-            "weights": self.ac.state_dict(),
         }
 
-        return hyperparams
+        return hyperparams, self.actor.state_dict()
 
     def load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model

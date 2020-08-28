@@ -226,7 +226,7 @@ class DQN(OffPolicyAgent):
             "weights": self.model.state_dict(),
             "timestep": self.timestep,
         }
-        return hyperparams
+        return hyperparams, self.model.state_dict()
 
     def load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
