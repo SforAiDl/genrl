@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 
 from genrl.core.base import BasePolicy
-from genrl.utils import cnn, mlp
+from genrl.utils.utils import cnn, mlp
 
 
 class MlpPolicy(BasePolicy):

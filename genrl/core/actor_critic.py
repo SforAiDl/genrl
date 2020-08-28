@@ -9,7 +9,7 @@ from torch.distributions import Categorical, Normal
 from genrl.core.base import BaseActorCritic
 from genrl.core.policies import MlpPolicy
 from genrl.core.values import MlpValue
-from genrl.utils import cnn
+from genrl.utils.utils import cnn
 
 
 class MlpActorCritic(BaseActorCritic):
