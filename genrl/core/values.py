@@ -6,7 +6,7 @@ from torch.nn import functional as F
 
 from genrl.core.base import BaseValue
 from genrl.core.noise import NoisyLinear
-from genrl.utils import cnn, mlp, noisy_mlp
+from genrl.utils.utils import cnn, mlp, noisy_mlp
 
 
 def _get_val_model(
