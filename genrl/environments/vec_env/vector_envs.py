@@ -183,6 +183,15 @@ class SerialVecEnv(VecEnv):
 
         return np.copy(self.states)
 
+    def reset_single_env(self, i: int) -> np.ndarray:
+        """
+        Resets single environment
+        """
+        self.states[i] = self.envs[i].reset()
+        self.episode_reward[i] = 0
+
+        return np.copy(self.states)
+
     def close(self):
         """
         Closes all envs

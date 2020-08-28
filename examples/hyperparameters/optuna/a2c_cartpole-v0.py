@@ -58,7 +58,7 @@ def tune_A2C(trial):
                     episode_reward[i] = 0
         if episode == trainer.evaluate_episodes:
             print(
-                "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
                     trainer.evaluate_episodes,
                     np.mean(episode_rewards),
                     np.std(episode_rewards),
