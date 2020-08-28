@@ -142,7 +142,8 @@ class SerialVecEnv(VecEnv):
     def __init__(self, *args, **kwargs):
         super(SerialVecEnv, self).__init__(*args, **kwargs)
         self.states = np.zeros(
-            (self.n_envs, *self.obs_shape), dtype=self.observation_space.dtype,
+            (self.n_envs, *self.obs_shape),
+            dtype=self.observation_space.dtype,
         )
         self.rewards = np.zeros((self.n_envs))
         self.dones = np.zeros((self.n_envs))
@@ -182,6 +183,15 @@ class SerialVecEnv(VecEnv):
 
         return np.copy(self.states)
 
+    def reset_single_env(self, i: int) -> np.ndarray:
+        """
+        Resets single environment
+        """
+        self.states[i] = self.envs[i].reset()
+        self.episode_reward[i] = 0
+
+        return np.copy(self.states)
+
     def close(self):
         """
         Closes all envs
@@ -200,11 +210,11 @@ class SerialVecEnv(VecEnv):
 
     def render(self, mode="human"):
         """
-        Renders all envs in a tiles format similar to baselines
+                Renders all envs in a tiles format similar to baselines
 
-        :param mode: (Can either be 'human' or 'rgb_array'. Displays tiled
-images in 'human' and returns tiled images in 'rgb_array')
-        :type mode: string
+                :param mode: (Can either be 'human' or 'rgb_array'. Displays tiled
+        images in 'human' and returns tiled images in 'rgb_array')
+                :type mode: string
         """
         self.env.render()
 

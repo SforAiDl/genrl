@@ -108,7 +108,7 @@ class A2C(OnPolicyAgent):
         state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on actor output
-        action, dist = self.ac.get_action(state, deterministic=False)
+        action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
         return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
@@ -222,8 +222,7 @@ class A2C(OnPolicyAgent):
         return logs
 
     def empty_logs(self):
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []

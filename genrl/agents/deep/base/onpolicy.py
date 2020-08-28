@@ -45,8 +45,7 @@ class OnPolicyAgent(BaseAgent):
             raise NotImplementedError
 
     def update_params(self) -> None:
-        """Update parameters of the model
-        """
+        """Update parameters of the model"""
         raise NotImplementedError
 
     def collect_rewards(self, dones: List[bool], timestep: int):
@@ -61,7 +60,7 @@ class OnPolicyAgent(BaseAgent):
         for i, done in enumerate(dones):
             if done or timestep == self.rollout_size - 1:
                 self.rewards.append(self.env.episode_reward[i])
-                self.env.episode_reward[i] = 0
+                self.env.reset_single_env(i)
 
     def collect_rollouts(self, state: torch.Tensor):
         """Function to collect rollouts

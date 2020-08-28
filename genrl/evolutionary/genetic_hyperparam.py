@@ -61,14 +61,14 @@ class GeneticHyperparamTuner:
 
     def breed(self, mother, father):
         """
-            Make children as part of their parents
+        Make children as part of their parents
 
-            Args:
-                mother: agent
-                father: agent
+        Args:
+            mother: agent
+            father: agent
 
-            Return:
-                List of 2 children (agents)
+        Return:
+            List of 2 children (agents)
 
         """
 

@@ -166,7 +166,7 @@ class ClassicalTrainer:
                 mean_ep_rew = np.mean(ep_rews)
                 if ep == 100:
                     print(
-                        "Evaluating on {} episodes, Mean Reward: {} and Std Deviation for the reward: {}".format(
+                        "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
                             eval_ep, mean_ep_rew, np.std(ep_rews)
                         )
                     )

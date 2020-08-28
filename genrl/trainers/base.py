@@ -42,8 +42,8 @@ class Trainer(ABC):
         log_key: str = "timestep",
         log_interval: int = 10,
         logdir: str = "logs",
-        epochs: int = 10,
-        max_timesteps: int = 1e6,
+        epochs: int = 50,
+        max_timesteps: int = None,
         off_policy: bool = False,
         save_interval: int = 0,
         save_model: str = "checkpoints",
@@ -114,7 +114,7 @@ class Trainer(ABC):
                         episode_reward[i] = 0
             if episode == self.evaluate_episodes:
                 print(
-                    "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                    "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
                         self.evaluate_episodes,
                         np.mean(episode_rewards),
                         np.std(episode_rewards),
@@ -155,8 +155,7 @@ class Trainer(ABC):
         )
 
     def load(self):
-        """Function to load saved parameters of a given agent
-        """
+        """Function to load saved parameters of a given agent"""
         path = self.load_model
         try:
             self.checkpoint = torch.load(path)
@@ -177,6 +176,5 @@ class Trainer(ABC):
 
     @property
     def n_envs(self) -> int:
-        """Number of environments
-        """
+        """Number of environments"""
         return self.env.n_envs

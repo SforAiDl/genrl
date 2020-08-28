@@ -31,8 +31,7 @@ class OnPolicyTrainer(Trainer):
         super(OnPolicyTrainer, self).__init__(*args, **kwargs)
 
     def train(self) -> None:
-        """Main training method
-        """
+        """Main training method"""
         if self.load_model is not None:
             self.load()
 
@@ -58,7 +57,10 @@ class OnPolicyTrainer(Trainer):
                     self.log_key,
                 )
 
-            if epoch * self.agent.rollout_size >= self.max_timesteps:
+            if (
+                self.max_timesteps is not None
+                and epoch * self.agent.rollout_size >= self.max_timesteps
+            ):
                 break
 
             if self.render:

@@ -1,8 +1,6 @@
 VPG
 ===
 
-Submodules
-----------
 
 genrl.agents.deep.vpg.vpg module
 --------------------------------
@@ -12,11 +10,3 @@ genrl.agents.deep.vpg.vpg module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: genrl.agents.deep.vpg
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -18,20 +18,20 @@ def _get_val_model(
     activation: str = "relu",
 ):
     """
-    Returns Neural Network given specifications
+        Returns Neural Network given specifications
 
-    :param arch: Specifies type of architecture "mlp" for MLP layers
-    :param val_type: Specifies type of value function: (
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
-    :param state_dim: State dimensions of environment
-    :param action_dim: Action dimensions of environment
-    :param hidden: Sizes of hidden layers
-    :type arch: string
-    :type val_type: string
-    :type state_dim: string
-    :type action_dim: int
-    :type hidden: tuple or list
-    :returns: Neural Network model to be used for the Value function
+        :param arch: Specifies type of architecture "mlp" for MLP layers
+        :param val_type: Specifies type of value function: (
+    "V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
+        :param state_dim: State dimensions of environment
+        :param action_dim: Action dimensions of environment
+        :param hidden: Sizes of hidden layers
+        :type arch: string
+        :type val_type: string
+        :type state_dim: string
+        :type action_dim: int
+        :type hidden: tuple or list
+        :returns: Neural Network model to be used for the Value function
     """
     if val_type == "V":
         return arch([state_dim, *fc_layers, 1], activation=activation)
@@ -45,17 +45,17 @@ def _get_val_model(
 
 class MlpValue(BaseValue):
     """
-    MLP Value Function class
+        MLP Value Function class
 
-    :param state_dim: State dimensions of environment
-    :param action_dim: Action dimensions of environment
-    :param val_type: Specifies type of value function: (
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
-    :param hidden: Sizes of hidden layers
-    :type state_dim: int
-    :type action_dim: int
-    :type val_type: string
-    :type hidden: tuple or list
+        :param state_dim: State dimensions of environment
+        :param action_dim: Action dimensions of environment
+        :param val_type: Specifies type of value function: (
+    "V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
+        :param hidden: Sizes of hidden layers
+        :type state_dim: int
+        :type action_dim: int
+        :type val_type: string
+        :type hidden: tuple or list
     """
 
     def __init__(
@@ -79,17 +79,17 @@ class MlpValue(BaseValue):
 
 class CnnValue(MlpValue):
     """
-    CNN Value Function class
+        CNN Value Function class
 
-    :param framestack: Number of previous frames to stack together
-    :param action_dim: Action dimension of environment
-    :param val_type: Specifies type of value function: (
-"V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
-    :param fc_layers: Sizes of hidden layers
-    :type framestack: int
-    :type action_dim: int
-    :type val_type: string
-    :type fc_layers: tuple or list
+        :param framestack: Number of previous frames to stack together
+        :param action_dim: Action dimension of environment
+        :param val_type: Specifies type of value function: (
+    "V" for V(s), "Qs" for Q(s), "Qsa" for Q(s,a))
+        :param fc_layers: Sizes of hidden layers
+        :type framestack: int
+        :type action_dim: int
+        :type val_type: string
+        :type fc_layers: tuple or list
     """
 
     def __init__(self, *args, **kwargs):
