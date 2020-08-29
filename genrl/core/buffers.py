@@ -30,30 +30,15 @@ class ReplayBuffer:
         self.n_envs = env.n_envs
 
         self.observations = np.zeros(
-            (
-                self.buffer_size,
-                self.n_envs,
-            )
-            + env.obs_shape,
-            dtype=np.float32,
+            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32,
         )
         self.actions = np.zeros(
-            (
-                self.buffer_size,
-                self.n_envs,
-            )
-            + env.action_shape,
-            dtype=np.float32,
+            (self.buffer_size, self.n_envs,) + env.action_shape, dtype=np.float32,
         )
         self.rewards = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.dones = np.zeros((self.buffer_size, self.n_envs), dtype=np.float32)
         self.next_observations = np.zeros(
-            (
-                self.buffer_size,
-                self.n_envs,
-            )
-            + env.obs_shape,
-            dtype=np.float32,
+            (self.buffer_size, self.n_envs,) + env.obs_shape, dtype=np.float32,
         )
         self.pos = 0
 
@@ -230,15 +215,7 @@ class PrioritizedBuffer:
 
         return [
             torch.as_tensor(v, dtype=torch.float32)
-            for v in [
-                states,
-                actions,
-                rewards,
-                next_states,
-                dones,
-                indices,
-                weights,
-            ]
+            for v in [states, actions, rewards, next_states, dones, indices, weights,]
         ]
 
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:

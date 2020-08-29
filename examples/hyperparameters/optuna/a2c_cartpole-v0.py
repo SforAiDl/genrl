@@ -1,7 +1,7 @@
 import numpy as np
-import optuna
 import torch
 
+import optuna
 from genrl.agents.a2c.a2c import A2C
 from genrl.environments.suite import VectorEnv
 from genrl.trainers.onpolicy import OnPolicyTrainer
@@ -26,11 +26,7 @@ def tune_A2C(trial):
         entropy_coeff=entropy_coeff,
     )
     trainer = OnPolicyTrainer(
-        agent,
-        env,
-        log_interval=10,
-        epochs=100,
-        evaluate_episodes=10,
+        agent, env, log_interval=10, epochs=100, evaluate_episodes=10,
     )
     trainer.train()
 

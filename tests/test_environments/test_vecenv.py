@@ -35,12 +35,7 @@ class TestVecEnvs:
         Tests working of the VecNormalize wrapper
         """
         env = VectorEnv("CartPole-v1", 2)
-        env = VecNormalize(
-            env,
-            norm_obs=True,
-            norm_reward=True,
-            clip_reward=1.0,
-        )
+        env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=1.0,)
         env.reset()
         _, rewards, _, _ = env.step(env.sample())
         env.close()
