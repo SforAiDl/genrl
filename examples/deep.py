@@ -53,7 +53,6 @@ def main(args):
 
     trainer.train()
     trainer.evaluate()
-    env.render()
 
 
 def get_logger(log):

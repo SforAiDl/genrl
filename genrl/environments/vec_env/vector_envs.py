@@ -142,8 +142,7 @@ class SerialVecEnv(VecEnv):
     def __init__(self, *args, **kwargs):
         super(SerialVecEnv, self).__init__(*args, **kwargs)
         self.states = np.zeros(
-            (self.n_envs, *self.obs_shape),
-            dtype=self.observation_space.dtype,
+            (self.n_envs, *self.obs_shape), dtype=self.observation_space.dtype,
         )
         self.rewards = np.zeros((self.n_envs))
         self.dones = np.zeros((self.n_envs))
@@ -170,7 +169,7 @@ class SerialVecEnv(VecEnv):
             np.copy(self.states),
             self.rewards.copy(),
             self.dones.copy(),
-            copy.deepcopy(self.infos),
+            self.infos,
         )
 
     def reset(self) -> np.ndarray:
