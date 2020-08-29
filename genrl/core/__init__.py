@@ -6,6 +6,7 @@ from genrl.core.buffers import PrioritizedReplayBufferSamples  # noqa
 from genrl.core.buffers import PushReplayBuffer  # noqa
 from genrl.core.buffers import ReplayBuffer  # noqa
 from genrl.core.buffers import ReplayBufferSamples  # noqa
+from genrl.core.buffers import ReverbReplayBuffer  # noqa
 from genrl.core.noise import ActionNoise  # noqa
 from genrl.core.noise import NoisyLinear  # noqa
 from genrl.core.noise import NormalActionNoise  # noqa

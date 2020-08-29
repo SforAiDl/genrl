@@ -2,8 +2,8 @@ import random
 from collections import deque
 from typing import NamedTuple, Tuple
 
-import reverb
 import numpy as np
+import reverb
 import torch
 import tensorflow as tf
 
@@ -27,9 +27,9 @@ class PrioritizedReplayBufferSamples(NamedTuple):
 
 
 class ReplayBuffer:
-    def __init__(self, size, obs_shape, action_shape, n_envs=1):
+    def __init__(self, size, env):
         self.buffer_size = size
-        self.n_envs = n_envs
+        self.n_envs = env.n_envs
 
         self.observations = np.zeros(
             (
@@ -58,15 +58,6 @@ class ReplayBuffer:
             dtype=np.float32,
         )
         self.pos = 0
-        self._table = reverb.Table(
-            name="uniform_experience_replay_buffer",
-            sampler=reverb.selectors.Uniform(),
-            remover=reverb.selectors.Fifo(),
-            max_size=1000,
-            rate_limiter=reverb.rate_limiters.MinSize(2),
-        )
-        self._server = reverb.Server(tables=[self._table], port=None)
-        self._client = reverb.Client(f"localhost:{self._server.port}")
 
     def push(self, inp):
         if self.pos >= self.buffer_size:
@@ -122,7 +113,6 @@ class ReplayBuffer:
 class PushReplayBuffer:
     """
     Implements the basic Experience Replay Mechanism
-
     :param capacity: Size of the replay buffer
     :type capacity: int
     """
@@ -134,7 +124,6 @@ class PushReplayBuffer:
     def push(self, inp: Tuple) -> None:
         """
         Adds new experience to buffer
-
         :param inp: Tuple containing state, action, reward, next_state and done
         :type inp: tuple
         :returns: None
@@ -146,7 +135,6 @@ class PushReplayBuffer:
     ) -> (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
         """
                 Returns randomly sampled experiences from replay memory
-
                 :param batch_size: Number of samples per batch
                 :type batch_size: int
                 :returns: (Tuple composing of `state`, `action`, `reward`,
@@ -162,7 +150,6 @@ class PushReplayBuffer:
     def __len__(self) -> int:
         """
         Gives number of experiences in buffer currently
-
         :returns: Length of replay memory
         """
         return self.pos
@@ -171,7 +158,6 @@ class PushReplayBuffer:
 class PrioritizedBuffer:
     """
     Implements the Prioritized Experience Replay Mechanism
-
     :param capacity: Size of the replay buffer
     :param alpha: Level of prioritization
     :type capacity: int
@@ -188,7 +174,6 @@ class PrioritizedBuffer:
     def push(self, inp: Tuple) -> None:
         """
                 Adds new experience to buffer
-
                 :param inp: (Tuple containing `state`, `action`, `reward`,
         `next_state` and `done`)
                 :type inp: tuple
@@ -214,7 +199,6 @@ class PrioritizedBuffer:
         """
                 (Returns randomly sampled memories from replay memory along with their
         respective indices and weights)
-
                 :param batch_size: Number of samples per batch
                 :param beta: (Bias exponent used to correct
         Importance Sampling (IS) weights)
@@ -255,7 +239,6 @@ class PrioritizedBuffer:
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:
         """
                 Updates list of priorities with new order of priorities
-
                 :param batch_indices: List of indices of batch
                 :param batch_priorities: (List of priorities of the batch at the
         specific indices)
@@ -268,7 +251,6 @@ class PrioritizedBuffer:
     def __len__(self) -> int:
         """
         Gives number of experiences in buffer currently
-
         :returns: Length of replay memory
         """
         return len(self.buffer)
@@ -285,7 +267,7 @@ class ReverbReplayBuffer:
         batch_size,
         obs_shape,
         action_shape,
-        action_dtype="discrete",
+        discrete=True,
         reward_shape=(1,),
         done_shape=(1,),
         n_envs=1,
@@ -296,7 +278,7 @@ class ReverbReplayBuffer:
         self.reward_shape = (n_envs, *reward_shape)
         self.done_shape = (n_envs, *done_shape)
         self.n_envs = n_envs
-        self.action_dtype = np.int64 if action_dtype == "discrete" else np.float32
+        self.action_dtype = np.int64 if discrete else np.float32
 
         self._pos = 0
         self._table = reverb.Table(
@@ -340,10 +322,10 @@ class ReverbReplayBuffer:
         for sample in inp:
             self.push(sample)
 
-    def sample(self):
+    def sample(self, *args, **kwargs):
         sample = next(self._iterator)
-        obs, a, r, next_obs, d = [torch.from_numpy(t) for t in sample.data]
-        return obs, a, r, next_obs, d
+        obs, a, r, next_obs, d = [torch.from_numpy(t).float() for t in sample.data]
+        return obs, a, r.reshape(-1, self.n_envs), next_obs, d.reshape(-1, self.n_envs)
 
     def __len__(self):
         return self._pos

@@ -11,7 +11,9 @@ from genrl.core import (
     PrioritizedReplayBufferSamples,
     PushReplayBuffer,
     ReplayBufferSamples,
+    ReverbReplayBuffer,
 )
+from genrl.utils import get_env_properties
 
 
 class OffPolicyAgent(BaseAgent):
@@ -37,7 +39,7 @@ class OffPolicyAgent(BaseAgent):
     """
 
     def __init__(
-        self, *args, replay_size: int = 5000, buffer_type: str = "push", **kwargs
+        self, *args, replay_size: int = 5000, buffer_type: str = "reverb", **kwargs
     ):
         super(OffPolicyAgent, self).__init__(*args, **kwargs)
         self.replay_size = replay_size
@@ -46,6 +48,16 @@ class OffPolicyAgent(BaseAgent):
             self.replay_buffer = PushReplayBuffer(self.replay_size)
         elif buffer_type == "prioritized":
             self.replay_buffer = PrioritizedBuffer(self.replay_size)
+        elif buffer_type == "reverb":
+            obs_shape, _, discrete, _ = get_env_properties(self.env)
+            self.replay_buffer = ReverbReplayBuffer(
+                size=self.replay_size,
+                batch_size=self.batch_size,
+                obs_shape=(obs_shape,),
+                action_shape=self.env.action_space.shape,
+                discrete=discrete,
+                n_envs=self.env.n_envs,
+            )
         else:
             raise NotImplementedError
 
@@ -90,6 +102,7 @@ class OffPolicyAgent(BaseAgent):
         Returns:
             batch (:obj:`list`): Replay experiences sampled from the buffer
         """
+
         # Samples from the buffer
         if beta is not None:
             batch = self.replay_buffer.sample(self.batch_size, beta=beta)
@@ -99,7 +112,10 @@ class OffPolicyAgent(BaseAgent):
         states, actions, rewards, next_states, dones = self._reshape_batch(batch)
 
         # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if isinstance(self.replay_buffer, PushReplayBuffer):
+
+        if isinstance(self.replay_buffer, PushReplayBuffer) or isinstance(
+            self.replay_buffer, ReverbReplayBuffer
+        ):
             batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
         elif isinstance(self.replay_buffer, PrioritizedBuffer):
             indices, weights = batch[5], batch[6]
