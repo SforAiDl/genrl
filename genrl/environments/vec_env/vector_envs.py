@@ -1,4 +1,3 @@
-import copy
 import multiprocessing as mp
 from abc import ABC, abstractmethod
 from typing import Any, Iterator, List, Tuple
