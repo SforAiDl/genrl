@@ -1,4 +1,4 @@
-from genrl.bandit import (
+from genrl.utils import (
     AdultDataBandit,
     CensusDataBandit,
     CovertypeDataBandit,

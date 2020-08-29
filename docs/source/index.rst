@@ -21,16 +21,16 @@ Contents
    :caption: User Guide
    
    usage/install
-   usage/getting_started
+   usage/about/about
    usage/tutorials/index
 
 .. toctree::
    :maxdepth: 2
    :caption: API
 
-   api/algorithms/index
+   api/agents/index
    api/environments/index
-   api/bandit/index
-   api/common/deep
-   api/common/classical
-   api/common/bandit
+   api/core/index
+   api/utils/index
+   api/trainers/index
+   api/common/index

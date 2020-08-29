@@ -2,9 +2,9 @@ import shutil
 
 import gym
 
-from genrl import DQN
-from genrl.deep.common import OffPolicyTrainer
+from genrl.agents import DQN
 from genrl.environments import AtariEnv, AtariPreprocessing, FrameStack, VectorEnv
+from genrl.trainers import OffPolicyTrainer
 
 
 class TestAtari:

@@ -7,14 +7,14 @@ The following code tutorial runs through the steps to use a custom policy depend
 
 Import the required libraries (eg. torch, torch.nn) and from GenRL, the algorithm (eg VPG), the trainer (eg. OnPolicyTrainer), the policy to be modified (eg. MlpPolicy)
 ```python
-# Define your custom Policy
+# The necessary imports
 import torch
 import torch.nn as nn
 
 from genrl import VPG
-from genrl.deep.common.policies import MlpPolicy
-from genrl.deep.common.trainer import OnPolicyTrainer
+from genrl.core.policies import MlpPolicy
 from genrl.environments import VectorEnv
+from genrl.trainers import OnPolicyTrainer
 
 ```
 
@@ -38,6 +38,7 @@ and the `get_action` method selects an action from the given action probabilitie
 Say you want to parametrize your policy by a Neural Network containing LSTM layers followed my MLP layers. This can be done as follows:
 
 ```python
+# Define a custom LSTM policy from the BasePolicy class
 class custom_policy(BasePolicy):
     def __init__(self, state_dim, action_dim, hidden,
                  discrete=True, layer_size=512, layers=1, **kwargs):
