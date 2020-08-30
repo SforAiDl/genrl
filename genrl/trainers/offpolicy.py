@@ -84,7 +84,7 @@ class OffPolicyTrainer(Trainer):
             self.agent.update_params_before_select_action(timestep)
 
             if timestep < self.warmup_steps:
-                action = np.array(self.env.sample())
+                action = self.env.sample()
             else:
                 action = self.agent.select_action(state)
 
@@ -101,7 +101,7 @@ class OffPolicyTrainer(Trainer):
             ]
 
             self.buffer.push((state, action, reward, next_state, done))
-            state = next_state.copy()
+            state = next_state.detach().clone()
 
             if np.any(done) or np.any(episode_len == self.max_ep_len):
                 if "noise" in self.agent.__dict__ and self.agent.noise is not None:

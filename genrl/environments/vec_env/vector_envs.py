@@ -5,6 +5,7 @@ from typing import Any, Iterator, List, Tuple
 
 import gym
 import numpy as np
+import torch
 
 
 def worker(parent_conn: mp.Pipe, child_conn: mp.Pipe, env: gym.Env):
@@ -59,7 +60,7 @@ class VecEnv(ABC):
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
 
-        self.episode_reward = np.zeros((self.n_envs))
+        self.episode_reward = torch.zeros(self.n_envs)
 
     def __getattr__(self, name: str) -> Any:
         env = super(VecEnv, self).__getattribute__("env")
@@ -75,7 +76,7 @@ class VecEnv(ABC):
         """
         Return samples of actions from each environment
         """
-        return [env.action_space.sample() for env in self.envs]
+        return torch.as_tensor([env.action_space.sample() for env in self.envs])
 
     def __getitem__(self, index: int) -> gym.Env:
         """
@@ -119,18 +120,12 @@ class VecEnv(ABC):
 
     @property
     def obs_shape(self):
-        if isinstance(self.observation_space, gym.spaces.Discrete):
-            obs_shape = (1,)
-        elif isinstance(self.observation_space, gym.spaces.Box):
-            obs_shape = self.observation_space.shape
+        obs_shape = self.observation_space.shape
         return obs_shape
 
     @property
     def action_shape(self):
-        if isinstance(self.action_space, gym.spaces.Box):
-            action_shape = self.action_space.shape
-        elif isinstance(self.action_space, gym.spaces.Discrete):
-            action_shape = (1,)
+        action_shape = self.action_space.shape
         return action_shape
 
 
@@ -141,15 +136,12 @@ class SerialVecEnv(VecEnv):
 
     def __init__(self, *args, **kwargs):
         super(SerialVecEnv, self).__init__(*args, **kwargs)
-        self.states = np.zeros(
-            (self.n_envs, *self.obs_shape),
-            dtype=self.observation_space.dtype,
-        )
-        self.rewards = np.zeros((self.n_envs))
-        self.dones = np.zeros((self.n_envs))
+        self.states = torch.zeros(self.n_envs, *self.obs_shape,)
+        self.rewards = torch.zeros(self.n_envs)
+        self.dones = torch.zeros(self.n_envs)
         self.infos = [{} for _ in range(self.n_envs)]
 
-    def step(self, actions: np.ndarray) -> Tuple:
+    def step(self, actions: torch.Tensor) -> Tuple:
         """
         Steps through all envs serially
 
@@ -167,30 +159,30 @@ class SerialVecEnv(VecEnv):
             self.infos[i] = info
 
         return (
-            np.copy(self.states),
-            self.rewards.copy(),
-            self.dones.copy(),
+            self.states.detach().clone(),
+            self.rewards.detach().clone(),
+            self.dones.detach().clone(),
             copy.deepcopy(self.infos),
         )
 
-    def reset(self) -> np.ndarray:
+    def reset(self) -> torch.Tensor:
         """
         Resets all envs
         """
         for i, env in enumerate(self.envs):
             self.states[i] = env.reset()
-        self.episode_reward = np.zeros((self.n_envs))
+        self.episode_reward = torch.zeros(self.n_envs)
 
-        return np.copy(self.states)
+        return self.states.detach().clone()
 
-    def reset_single_env(self, i: int) -> np.ndarray:
+    def reset_single_env(self, i: int) -> torch.Tensor:
         """
         Resets single environment
         """
         self.states[i] = self.envs[i].reset()
         self.episode_reward[i] = 0
 
-        return np.copy(self.states)
+        return self.states.detach().clone()
 
     def close(self):
         """
@@ -217,24 +209,6 @@ class SerialVecEnv(VecEnv):
                 :type mode: string
         """
         self.env.render()
-
-        # images = np.asarray(self.images())
-        # batch, height, width, channel = images.shape
-        # newwidth, newheight = int(np.ceil(np.sqrt(width))), int(np.ceil(np.sqrt(height)))
-        # images = np.array(
-        #     list(images) + [images[0] * 0 for _ in range(batch, newheight * newwidth)])
-        # out_image = images.reshape(newheight, newwidth, height, width, channel)
-        # out_image = out_image.transpose(0, 2, 1, 3, 4)
-        # out_image = out_image.reshape(newheight * height, newwidth * width, channel)
-        # if mode == "human":
-        #     import cv2  # noqa
-
-        #     cv2.imshow("vecenv", out_image[:, :, ::-1])
-        #     cv2.waitKey(1)
-        # elif mode == "rgb_array":
-        #     return out_image
-        # else:
-        #     raise NotImplementedError
 
 
 class SubProcessVecEnv(VecEnv):
@@ -276,7 +250,7 @@ class SubProcessVecEnv(VecEnv):
 
         return [parent_conn.recv() for parent_conn in self.parent_conns]
 
-    def reset(self) -> np.ndarray:
+    def reset(self) -> torch.Tensor:
         """
         Resets environments
 
@@ -285,12 +259,12 @@ class SubProcessVecEnv(VecEnv):
         for parent_conn in self.parent_conns:
             parent_conn.send(("reset", None))
 
-        self.episode_reward = np.zeros((self.n_envs))
+        self.episode_reward = torch.zeros(self.n_envs)
 
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
-        return np.asarray(obs)
+        return torch.Tensor(obs)
 
-    def step(self, actions: np.ndarray) -> Tuple:
+    def step(self, actions: torch.Tensor) -> Tuple:
         """
         Steps through environments serially
 
@@ -307,8 +281,8 @@ class SubProcessVecEnv(VecEnv):
         self.waiting = False
 
         observations, rewards, dones, infos = zip(*result)
-        self.episode_reward += np.asarray(rewards)
-        return (np.asarray(v) for v in [observations, rewards, dones, infos])
+        self.episode_reward += torch.Tensor(rewards)
+        return (torch.Tensor(v) for v in [observations, rewards, dones, infos])
 
     def close(self):
         """
