@@ -49,14 +49,14 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flake8==3.7.7 pytest black==19.10b0 isort==4.3.20 codecov pytest-cov
+          pip install flake8==3.8.3 pytest black==20.8b1 isort==5.4.2 codecov pytest-cov
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Lint check
         run: |
           flake8 .
           black --check .
-          isort -rc -c .
+          isort --profile black -c .
 
       - name: Tests
         run: pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
