@@ -193,6 +193,7 @@ class GeneticHyperparamTuner:
             population(list): A list of agents
 
         """
+
         if len(population) <= 2:
             raise ValueError("More than 2 agents required")
 
@@ -203,6 +204,7 @@ class GeneticHyperparamTuner:
         graded = [x[1] for x in sorted(graded, key=lambda x: x[0], reverse=True)]
 
         # get the number we want to kep for next gen
+
         retain_length = max(int(len(graded) * self.retain), 2)
 
         # parents we want to retain

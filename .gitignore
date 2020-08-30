@@ -14,5 +14,5 @@ logs/
 .coverage
 .mypy*
 *.pt
-data/
 _build/
+data/
