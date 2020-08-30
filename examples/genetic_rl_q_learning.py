@@ -2,10 +2,10 @@ import argparse
 
 import gym
 
-from genrl.classical.common import Trainer
-from genrl.classical.qlearning import QLearning
+from genrl.agents import QLearning
 from genrl.evolutionary import GeneticHyperparamTuner
 from genrl.evolutionary.genetic_hyperparam import generate
+from genrl.trainers import ClassicalTrainer
 
 # Code inspired from https://github.com/harvitronix/neural-network-genetic-algorithm
 
@@ -32,7 +32,7 @@ def train_population(agents, envirnment, args):
 
         print(f"Training {i}th agent in current generation")
 
-        trainer = Trainer(
+        trainer = ClassicalTrainer(
             agent,
             envirnment,
             mode="dyna",

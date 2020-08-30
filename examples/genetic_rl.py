@@ -1,12 +1,12 @@
 import argparse
 
-from genrl import A2C
-from genrl.deep.common import OnPolicyTrainer
-from genrl.deep.common.actor_critic import MlpActorCritic
-from genrl.deep.common.utils import get_env_properties
+from genrl.agents import A2C
+from genrl.core import MlpActorCritic
 from genrl.environments import VectorEnv
 from genrl.evolutionary import GeneticHyperparamTuner
 from genrl.evolutionary.genetic_hyperparam import generate
+from genrl.trainers import OnPolicyTrainer
+from genrl.utils import get_env_properties
 
 # """
 # Okay so parameters to tune:-
