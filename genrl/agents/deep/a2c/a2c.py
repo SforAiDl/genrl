@@ -90,8 +90,8 @@ class A2C(OnPolicyAgent):
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """Select action given state
 
         Action Selection for On Policy Agents with Actor Critic
@@ -105,13 +105,11 @@ class A2C(OnPolicyAgent):
             value (:obj:`torch.Tensor`): Value of given state
             log_prob (:obj:`torch.Tensor`): Log probability of selected action
         """
-        state = torch.as_tensor(state).float().to(self.device)
-
         # create distribution based on actor output
         action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
-        return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
+        return action.detach(), value, dist.log_prob(action).cpu()
 
     def get_traj_loss(self, values: torch.Tensor, dones: torch.Tensor) -> None:
         """Get loss from trajectory traversed by agent during rollouts

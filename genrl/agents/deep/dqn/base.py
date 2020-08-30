@@ -94,7 +94,7 @@ class DQN(OffPolicyAgent):
         self.epsilon = self.calculate_epsilon_by_frame()
         self.logs["epsilon"].append(self.epsilon)
 
-    def get_greedy_action(self, state: torch.Tensor) -> np.ndarray:
+    def get_greedy_action(self, state: torch.Tensor) -> torch.Tensor:
         """Greedy action selection
 
         Args:
@@ -103,13 +103,13 @@ class DQN(OffPolicyAgent):
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
-        q_values = self.model(state.unsqueeze(0)).detach().numpy()
-        action = np.argmax(q_values, axis=-1).squeeze(0)
+        q_values = self.model(state.unsqueeze(0))  # .detach().numpy()
+        action = torch.argmax(q_values.squeeze(), dim=-1)
         return action
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """Select action given state
 
         Epsilon-greedy action-selection
@@ -121,11 +121,11 @@ class DQN(OffPolicyAgent):
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
-        state = torch.as_tensor(state).float()
+        # state = torch.as_tensor(state).float()
         action = self.get_greedy_action(state)
         if not deterministic:
             if np.random.rand() < self.epsilon:
-                action = np.asarray(self.env.sample())
+                action = self.env.sample()
         return action
 
     def _reshape_batch(self, batch: List):

@@ -155,8 +155,8 @@ class OffPolicyAgentAC(OffPolicyAgent):
         self.doublecritic = False
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = True
+    ) -> torch.Tensor:
         """Select action given state
 
         Deterministic Action Selection with Noise
@@ -168,9 +168,8 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
-        state = torch.as_tensor(state).float()
         action, _ = self.ac.get_action(state, deterministic)
-        action = action.detach().cpu().numpy()
+        action = action.detach()
 
         # add noise to output from policy network
         if self.noise is not None:

@@ -8,10 +8,7 @@ from genrl.agents.deep.dqn.base import DQN
 
 
 def ddqn_q_target(
-    agent: DQN,
-    next_states: torch.Tensor,
-    rewards: torch.Tensor,
-    dones: torch.Tensor,
+    agent: DQN, next_states: torch.Tensor, rewards: torch.Tensor, dones: torch.Tensor,
 ) -> torch.Tensor:
     """Double Q-learning target
 
@@ -74,7 +71,7 @@ def categorical_greedy_action(agent: DQN, state: torch.Tensor) -> np.ndarray:
     Returns:
         action (:obj:`np.ndarray`): Action taken by the agent
     """
-    q_value_dist = agent.model(state.unsqueeze(0)).detach().numpy()
+    q_value_dist = agent.model(state.unsqueeze(0)).detach()  # .numpy()
     # We need to scale and discretise the Q-value distribution obtained above
     q_value_dist = q_value_dist * np.linspace(agent.v_min, agent.v_max, agent.num_atoms)
     # Then we find the action with the highest Q-values for all discrete regions
@@ -82,7 +79,8 @@ def categorical_greedy_action(agent: DQN, state: torch.Tensor) -> np.ndarray:
     # So we take the sum of all the individual atom q_values and then take argmax
     # along action dim to get the optimal action. Since batch_size is 1 for this
     # function, we squeeze the first dimension out.
-    action = np.argmax(q_value_dist.sum(-1), axis=-1).squeeze(0)
+    # action = np.argmax(q_value_dist.sum(-1), axis=-1).squeeze(0)
+    action = torch.argmax(q_value_dist.sum(-1), axis=-1).squeeze(0)
     return action
 
 
@@ -118,10 +116,7 @@ def categorical_q_values(agent: DQN, states: torch.Tensor, actions: torch.Tensor
 
 
 def categorical_q_target(
-    agent: DQN,
-    next_states: np.ndarray,
-    rewards: List[float],
-    dones: List[bool],
+    agent: DQN, next_states: np.ndarray, rewards: List[float], dones: List[bool],
 ):
     """Projected Distribution of Q-values
 
@@ -170,14 +165,10 @@ def categorical_q_target(
 
     target_q_values = torch.zeros(next_q_values.size())
     target_q_values.view(-1).index_add_(
-        0,
-        (l + offset).view(-1),
-        (next_q_values * (u.float() - bz)).view(-1),
+        0, (l + offset).view(-1), (next_q_values * (u.float() - bz)).view(-1),
     )
     target_q_values.view(-1).index_add_(
-        0,
-        (u + offset).view(-1),
-        (next_q_values * (bz - l.float())).view(-1),
+        0, (u + offset).view(-1), (next_q_values * (bz - l.float())).view(-1),
     )
     return target_q_values
 

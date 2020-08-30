@@ -78,7 +78,7 @@ class OnPolicyAgent(BaseAgent):
         for i in range(self.rollout_size):
             action, values, old_log_probs = self.select_action(state)
 
-            next_state, reward, dones, _ = self.env.step(np.array(action))
+            next_state, reward, dones, _ = self.env.step(action)
 
             if self.render:
                 self.env.render()
