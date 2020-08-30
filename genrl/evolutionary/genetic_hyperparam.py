@@ -8,7 +8,6 @@ from genrl.evolutionary.utils import (
     set_params_agent,
 )
 
-
 """
 Code is heavily inspired from https://github.com/harvitronix/neural-network-genetic-algorithm
 """
