@@ -51,7 +51,7 @@ class OnPolicyTrainer(Trainer):
                 self.logger.write(
                     {
                         "timestep": epoch * self.agent.rollout_size,
-                        "Epoch": epoch,  # This is not the same as an episode. 1 epoch is 1 rollout.
+                        "Episode": epoch,
                         **self.agent.get_logging_params(),
                     },
                     self.log_key,
