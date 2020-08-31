@@ -45,8 +45,7 @@ class MushroomDataBandit(DataBasedBandit):
     """
 
     def __init__(
-        self,
-        **kwargs,
+        self, **kwargs,
     ):
         super(MushroomDataBandit, self).__init__(kwargs.get("device", "cpu"))
 
