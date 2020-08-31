@@ -22,22 +22,25 @@ import numpy as np
 
 
 def VectorEnv(
-    env_id: str, n_envs: int = 2, parallel: int = False, env_type: str = "gym"
+    env_id: str,
+    n_envs: int = 2,
+    parallel: int = False,
+    env_type: str = "gym",
 ) -> VecEnv:
     """
-    Chooses the kind of Vector Environment that is required
+        Chooses the kind of Vector Environment that is required
 
-    :param env_id: Gym environment to be vectorised
-    :param n_envs: Number of environments
-    :param parallel: True if we want environments to run parallely and (
-subprocesses, False if we want environments to run serially one after the other)
-    :param env_type: Type of environment. Currently, we support ["gym", "atari", "multiagent"]
-    :type env_id: string
-    :type n_envs: int
-    :type parallel: False
-    :type env_type: string
-    :returns: Vector Environment
-    :rtype: object
+        :param env_id: Gym environment to be vectorised
+        :param n_envs: Number of environments
+        :param parallel: True if we want environments to run parallely and (
+    subprocesses, False if we want environments to run serially one after the other)
+        :param env_type: Type of environment. Currently, we support ["gym", "atari"]
+        :type env_id: string
+        :type n_envs: int
+        :type parallel: False
+        :type env_type: string
+        :returns: Vector Environment
+        :rtype: object
     """
     if env_type == "atari":
         wrapper = AtariEnv

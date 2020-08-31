@@ -89,12 +89,12 @@ comparison of contextual bandit methods you can refer to
 
 The following are the agents implemented in ``genrl``
 
--  `Linear Posterior Inference <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.inpos>`__
--  `Neural Network based Linear <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_linpos>`__
--  `Variational <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.variational>`__
--  `Neural Netowork based Espilon Greedy <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_greedy>`__
--  `Bootstrap <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.bootstrap_neural>`__
--  `Parameter noise Sampling <../../../api/bandit/genrl.bandit.agents.cb_agents.html#module-genrl.bandit.agents.cb_agents.neural_noise_sampling>`__
+-  `Linear Posterior Inference <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.inpos>`__
+-  `Neural Network based Linear <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.neural_linpos>`__
+-  `Variational <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.variational>`__
+-  `Neural Netowork based Espilon Greedy <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.neural_greedy>`__
+-  `Bootstrap <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.bootstrap_neural>`__
+-  `Parameter noise Sampling <../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.neural_noise_sampling>`__
 
 You can find the tutorials for most of these in :ref:`bandit_tutorials`.
 
@@ -110,12 +110,12 @@ neccessary to tune these for individual use cases.
 
 The following bandits based on datasets are implemented in ``genrl``
 
--  `Adult Census Income Dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.adult_bandit>`__
--  `US Census Dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.census_bandit>`__
--  `Forest covertype Datset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.covertype_bandit>`__
--  `MAGIC Gamma Telescope dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.magic_bandit>`__
--  `Mushroom Dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.mushroom_bandit>`__
--  `Statlog Space Shuttle Dataset <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.statlog_bandit>`__
+-  `Adult Census Income Dataset <../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.adult_bandit>`__
+-  `US Census Dataset <../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.census_bandit>`__
+-  `Forest covertype Datset <../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.covertype_bandit>`__
+-  `MAGIC Gamma Telescope dataset <../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.magic_bandit>`__
+-  `Mushroom Dataset <../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.mushroom_bandit>`__
+-  `Statlog Space Shuttle Dataset <../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.statlog_bandit>`__
 
 For each bandit, while instatiating an object you can either specify a
 path to the data file or pass ``download=True`` as an argument to
@@ -127,7 +127,7 @@ Data based Bandit Example
 For this example, we'll model the
 `Statlog <https://archive.ics.uci.edu/ml/datasets/Statlog+(Shuttle)>`__
 dataset as a bandit problem. You can read more about the bandit in the
-`Statlog docs <../../../api/bandit/genrl.bandit.bandits.data_bandits.html#module-genrl.bandit.bandits.data_bandits.statlog_bandit>`__.
+`Statlog docs <../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.statlog_bandit>`__.
 In brief we have the number of arms as :math:`k = 7` and
 dimension of context vector as :math:`d = 9`. The agent will get a
 reward :math:`r =1` if it selects the correct arm else :math:`r = 0`.
