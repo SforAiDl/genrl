@@ -136,7 +136,10 @@ class SerialVecEnv(VecEnv):
 
     def __init__(self, *args, **kwargs):
         super(SerialVecEnv, self).__init__(*args, **kwargs)
-        self.states = torch.zeros(self.n_envs, *self.obs_shape,)
+        self.states = torch.zeros(
+            self.n_envs,
+            *self.obs_shape,
+        )
         self.rewards = torch.zeros(self.n_envs)
         self.dones = torch.zeros(self.n_envs)
         self.infos = [{} for _ in range(self.n_envs)]

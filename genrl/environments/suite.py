@@ -15,7 +15,10 @@ from genrl.environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
 def VectorEnv(
-    env_id: str, n_envs: int = 2, parallel: int = False, env_type: str = "gym",
+    env_id: str,
+    n_envs: int = 2,
+    parallel: int = False,
+    env_type: str = "gym",
 ) -> VecEnv:
     """
         Chooses the kind of Vector Environment that is required
