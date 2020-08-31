@@ -50,7 +50,8 @@ def run(args, agent, bandit, plot=True):
     if plot:
         fig, axs = plt.subplots(3, 2, figsize=(10, 10))
         fig.suptitle(
-            f"{agent.__class__.__name__} on {bandit.__class__.__name__}", fontsize=14,
+            f"{agent.__class__.__name__} on {bandit.__class__.__name__}",
+            fontsize=14,
         )
         axs[0, 0].scatter(list(range(len(bandit.regret_hist))), results["regrets"])
         axs[0, 0].set_title("Regret History")
