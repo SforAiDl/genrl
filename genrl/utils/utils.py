@@ -37,7 +37,9 @@ def get_model(type_: str, name_: str) -> Union:
 
 
 def mlp(
-    sizes: Tuple, activation: str = "relu", sac: bool = False,
+    sizes: Tuple,
+    activation: str = "relu",
+    sac: bool = False,
 ):
     """
         Generates an MLP model given sizes of each layer

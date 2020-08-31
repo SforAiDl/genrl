@@ -141,7 +141,8 @@ class SerialVecEnv(VecEnv):
     def __init__(self, *args, **kwargs):
         super(SerialVecEnv, self).__init__(*args, **kwargs)
         self.states = np.zeros(
-            (self.n_envs, *self.obs_shape), dtype=self.observation_space.dtype,
+            (self.n_envs, *self.obs_shape),
+            dtype=self.observation_space.dtype,
         )
         self.rewards = np.zeros((self.n_envs))
         self.dones = np.zeros((self.n_envs))
