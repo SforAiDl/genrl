@@ -41,7 +41,6 @@ class OffPolicyTrainer(Trainer):
         *args,
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         max_ep_len: int = 500,
-        max_timesteps: int = 100000,
         start_update: int = 1000,
         warmup_steps: int = 1000,
         update_interval: int = 50,
@@ -50,11 +49,13 @@ class OffPolicyTrainer(Trainer):
         super(OffPolicyTrainer, self).__init__(*args, off_policy=True, **kwargs)
 
         self.max_ep_len = max_ep_len
-        self.max_timesteps = max_timesteps
         self.warmup_steps = warmup_steps
         self.start_update = start_update
         self.update_interval = update_interval
         self.network = self.agent.network
+
+        if self.max_timesteps is None:
+            self.max_timesteps = 10000
 
         if buffer is None:
             if self.agent.replay_buffer is None:
