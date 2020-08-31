@@ -1,3 +1,4 @@
+import copy
 import multiprocessing as mp
 from abc import ABC, abstractmethod
 from typing import Any, Iterator, List, Tuple
@@ -157,16 +158,19 @@ class SerialVecEnv(VecEnv):
         """
         for i, env in enumerate(self.envs):
             obs, reward, done, info = env.step(actions[i])
+            if done:
+                obs = env.reset()
             self.states[i] = obs
             self.episode_reward[i] += reward
             self.rewards[i] = reward
             self.dones[i] = done
             self.infos[i] = info
+
         return (
             np.copy(self.states),
             self.rewards.copy(),
             self.dones.copy(),
-            self.infos,
+            copy.deepcopy(self.infos),
         )
 
     def reset(self) -> np.ndarray:
@@ -206,11 +210,11 @@ class SerialVecEnv(VecEnv):
 
     def render(self, mode="human"):
         """
-        Renders all envs in a tiles format similar to baselines
+                Renders all envs in a tiles format similar to baselines
 
-        :param mode: (Can either be 'human' or 'rgb_array'. Displays tiled
-            images in 'human' and returns tiled images in 'rgb_array')
-        :type mode: string
+                :param mode: (Can either be 'human' or 'rgb_array'. Displays tiled
+        images in 'human' and returns tiled images in 'rgb_array')
+                :type mode: string
         """
         self.env.render()
 
