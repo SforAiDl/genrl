@@ -57,28 +57,16 @@ if __name__ == "__main__":
         type=int,
     )
     parser.add_argument(
-        "--train-epochs",
-        help="Epochs to train for each update",
-        default=20,
-        type=int,
+        "--train-epochs", help="Epochs to train for each update", default=20, type=int,
     )
     parser.add_argument(
-        "--log-every",
-        help="Timesteps interval for logging",
-        default=100,
-        type=int,
+        "--log-every", help="Timesteps interval for logging", default=100, type=int,
     )
     parser.add_argument(
-        "--logdir",
-        help="Directory to store logs in",
-        default="./logs/",
-        type=str,
+        "--logdir", help="Directory to store logs in", default="./logs/", type=str,
     )
     parser.add_argument(
-        "--ignore-init",
-        help="Initial no. of step to ignore",
-        default=10,
-        type=int,
+        "--ignore-init", help="Initial no. of step to ignore", default=10, type=int,
     )
     parser.add_argument(
         "--init-train-epochs",
@@ -93,9 +81,7 @@ if __name__ == "__main__":
         type=int,
     )
     parser.add_argument(
-        "--download",
-        help="Download data for bandit",
-        action="store_true",
+        "--download", help="Download data for bandit", action="store_true",
     )
 
     args = parser.parse_args()

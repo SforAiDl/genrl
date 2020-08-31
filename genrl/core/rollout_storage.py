@@ -98,8 +98,7 @@ class BaseBuffer(object):
         self.full = False
 
     def sample(
-        self,
-        batch_size: int,
+        self, batch_size: int,
     ):
         """
         :param batch_size: (int) Number of element to sample
@@ -110,8 +109,7 @@ class BaseBuffer(object):
         return self._get_samples(batch_inds)
 
     def _get_samples(
-        self,
-        batch_inds: np.ndarray,
+        self, batch_inds: np.ndarray,
     ):
         """
         :param batch_inds: (torch.Tensor)
@@ -169,19 +167,10 @@ class RolloutBuffer(BaseBuffer):
 
     def reset(self) -> None:
         self.observations = np.zeros(
-            (
-                self.buffer_size,
-                self.env.n_envs,
-            )
-            + self.env.obs_shape,
-            dtype=np.float32,
+            (self.buffer_size, self.env.n_envs,) + self.env.obs_shape, dtype=np.float32,
         )
         self.actions = np.zeros(
-            (
-                self.buffer_size,
-                self.env.n_envs,
-            )
-            + self.env.action_shape,
+            (self.buffer_size, self.env.n_envs,) + self.env.action_shape,
             dtype=np.float32,
         )
         self.rewards = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
