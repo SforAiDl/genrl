@@ -40,7 +40,7 @@ class OffPolicyTrainer(Trainer):
         self,
         *args,
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
-        max_ep_len: int = 1000,
+        max_ep_len: int = 500,
         warmup_steps: int = 1000,
         start_update: int = 1000,
         update_interval: int = 50,
@@ -122,7 +122,7 @@ class OffPolicyTrainer(Trainer):
                 for i, di in enumerate(done):
                     if di:
                         self.rewards.append(self.env.episode_reward[i])
-                        self.env.episode_reward[i] = 0
+                        self.env.reset_single_env(i)
                         episode_len[i] = 0
                         episode[i] += 1
 
@@ -136,7 +136,7 @@ class OffPolicyTrainer(Trainer):
             ):
                 self.save(timestep)
 
-            if timestep >= self.max_timesteps:
+            if self.max_timesteps is not None and timestep >= self.max_timesteps:
                 break
 
         self.env.close()
