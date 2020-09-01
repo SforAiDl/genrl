@@ -1,5 +1,5 @@
-import numpy as np
 import pytest
+import torch
 
 from genrl.environments.suite import GymEnv, VectorEnv
 from genrl.environments.vec_env import RunningMeanStd, VecMonitor, VecNormalize
@@ -74,7 +74,7 @@ class TestVecEnvs:
         Tests working of the RMS utility function
         """
         rms = RunningMeanStd(shape=(5, 2))
-        batch = np.random.randn(5, 2)
+        batch = torch.randn(5, 2)
         rms.update(batch)
 
         assert rms.mean.shape == (5, 2)
