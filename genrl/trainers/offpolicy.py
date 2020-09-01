@@ -83,7 +83,7 @@ class OffPolicyTrainer(Trainer):
             action (:obj:`np.ndarray`): Action to be taken on the env
         """
         if timestep < self.warmup_steps:
-            action = np.array(self.env.sample())
+            action = self.env.sample()
         else:
             action = self.agent.select_action(state)
         return action
