@@ -53,7 +53,6 @@ def main(args):
 
     trainer.train()
     trainer.evaluate()
-    env.render()
 
 
 def get_logger(log):
@@ -92,7 +91,7 @@ if __name__ == "__main__":
         type=bool,
     )
     parser.add_argument(
-        "--epochs", help="How many epochs to train on", default=20, type=int
+        "--epochs", help="How many epochs to train on", default=100, type=int
     )
     parser.add_argument(
         "--render",
