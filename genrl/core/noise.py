@@ -2,8 +2,7 @@ import math
 from abc import ABC, abstractmethod
 
 import torch
-
-nn = torch.nn
+from torch import nn  # lgtm[py/import-and-import-from]
 
 
 class ActionNoise(ABC):

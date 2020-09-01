@@ -1,9 +1,8 @@
 from typing import Optional, Tuple
 
 import torch
+from torch import nn  # lgtm[py/import-and-import-from]
 from torch.distributions import Categorical, Normal
-
-nn = torch.nn
 
 
 class BasePolicy(nn.Module):

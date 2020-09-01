@@ -2,11 +2,10 @@ from copy import deepcopy
 from typing import Any, Dict, List
 
 import torch
+from torch import optim as opt  # lgtm[py/import-and-import-from]
 
 from genrl.agents import OffPolicyAgentAC
 from genrl.utils import get_env_properties, get_model, safe_mean
-
-opt = torch.optim
 
 
 class SAC(OffPolicyAgentAC):

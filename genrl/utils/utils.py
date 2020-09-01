@@ -4,12 +4,11 @@ from typing import Any, List, Tuple, Union
 import gym
 import numpy as np
 import torch
+from torch import nn  # lgtm[py/import-and-import-from]
 
 from genrl.core.base import BaseActorCritic, BasePolicy, BaseValue
 from genrl.core.noise import NoisyLinear
 from genrl.environments.vec_env import VecEnv
-
-nn = torch.nn
 
 
 def get_model(type_: str, name_: str) -> Union:

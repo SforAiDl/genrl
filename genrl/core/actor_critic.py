@@ -2,14 +2,13 @@ from typing import Tuple
 
 import torch
 from gym import spaces
+from torch import nn  # lgtm[py/import-and-import-from]
 from torch.distributions import Categorical, Normal
 
 from genrl.core.base import BaseActorCritic
 from genrl.core.policies import MlpPolicy
 from genrl.core.values import MlpValue
 from genrl.utils.utils import cnn
-
-nn = torch.nn
 
 
 class MlpActorCritic(BaseActorCritic):

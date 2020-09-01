@@ -2,11 +2,10 @@ from typing import Any, Dict
 
 import gym
 import torch
+from torch import optim as opt  # lgtm[py/import-and-import-from]
 
 from genrl.agents import OnPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean
-
-opt = torch.optim
 
 
 class VPG(OnPolicyAgent):

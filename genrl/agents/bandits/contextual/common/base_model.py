@@ -2,11 +2,10 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 import torch
+from torch import nn  # lgtm[py/import-and-import-from]
 from torch.nn import functional as F
 
 from genrl.agents.bandits.contextual.common.transition import TransitionDB
-
-nn = torch.nn
 
 
 class Model(nn.Module, ABC):
