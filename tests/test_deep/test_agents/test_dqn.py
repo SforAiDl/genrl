@@ -22,7 +22,7 @@ from genrl.trainers import OffPolicyTrainer
 class TestDQN:
     def test_vanilla_dqn(self):
         env = VectorEnv("CartPole-v0")
-        algo = DQN("mlp", env, batch_size=5, replay_size=100)
+        algo = DQN("mlp", env, batch_size=5, replay_size=100, value_layers=[1, 1])
         assert isinstance(algo.model, MlpValue)
         trainer = OffPolicyTrainer(
             algo,
@@ -39,7 +39,7 @@ class TestDQN:
 
     def test_double_dqn(self):
         env = VectorEnv("CartPole-v0")
-        algo = DoubleDQN("mlp", env, batch_size=5, replay_size=100)
+        algo = DoubleDQN("mlp", env, batch_size=5, replay_size=100, value_layers=[1, 1])
         assert isinstance(algo.model, MlpValue)
         trainer = OffPolicyTrainer(
             algo,
@@ -56,7 +56,9 @@ class TestDQN:
 
     def test_dueling_dqn(self):
         env = VectorEnv("CartPole-v0")
-        algo = DuelingDQN("mlp", env, batch_size=5, replay_size=100)
+        algo = DuelingDQN(
+            "mlp", env, batch_size=5, replay_size=100, value_layers=[1, 1]
+        )
         assert algo.dqn_type == "dueling"
         assert isinstance(algo.model, MlpDuelingValue)
         trainer = OffPolicyTrainer(
@@ -74,7 +76,9 @@ class TestDQN:
 
     def test_prioritized_dqn(self):
         env = VectorEnv("CartPole-v0")
-        algo = PrioritizedReplayDQN("mlp", env, batch_size=5, replay_size=100)
+        algo = PrioritizedReplayDQN(
+            "mlp", env, batch_size=5, replay_size=100, value_layers=[1, 1]
+        )
         assert isinstance(algo.model, MlpValue)
         assert isinstance(algo.replay_buffer, PrioritizedBuffer)
         trainer = OffPolicyTrainer(
@@ -92,7 +96,7 @@ class TestDQN:
 
     def test_noisy_dqn(self):
         env = VectorEnv("CartPole-v0")
-        algo = NoisyDQN("mlp", env, batch_size=5, replay_size=100)
+        algo = NoisyDQN("mlp", env, batch_size=5, replay_size=100, value_layers=[1, 1])
         assert algo.dqn_type == "noisy"
         assert algo.noisy
         assert isinstance(algo.model, MlpNoisyValue)
@@ -111,7 +115,9 @@ class TestDQN:
 
     def test_categorical_dqn(self):
         env = VectorEnv("CartPole-v0")
-        algo = CategoricalDQN("mlp", env, batch_size=5, replay_size=100)
+        algo = CategoricalDQN(
+            "mlp", env, batch_size=5, replay_size=100, value_layers=[1, 1]
+        )
         assert algo.dqn_type == "categorical"
         assert algo.noisy
         assert isinstance(algo.model, MlpCategoricalValue)

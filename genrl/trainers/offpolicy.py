@@ -41,7 +41,7 @@ class OffPolicyTrainer(Trainer):
         *args,
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         max_ep_len: int = 500,
-        max_timesteps: int = 10000,
+        max_timesteps: int = 5000,
         start_update: int = 1000,
         warmup_steps: int = 1000,
         update_interval: int = 50,
