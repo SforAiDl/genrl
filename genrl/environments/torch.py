@@ -2,10 +2,10 @@ from typing import Any
 
 import gym
 import torch
-from gym.core import Wrapper
+from genrl.environments import GymWrapper
 
 
-class TorchWrapper(Wrapper):
+class TorchWrapper(GymWrapper):
     """
     Wraps an environment to deal with tensors avoiding conversion to numpy at frontend.
 
@@ -30,16 +30,6 @@ class TorchWrapper(Wrapper):
 
     def sample(self) -> torch.Tensor:
         return torch.as_tensor(self.env.action_space.sample())
-
-    @property
-    def obs_shape(self):
-        obs_shape = self.env.observation_space.shape
-        return torch.as_tensor(obs_shape)
-
-    @property
-    def action_shape(self):
-        action_shape = self.env.action_space.shape
-        return torch.as_tensor(action_shape)
 
     def __getattr__(self, name: str) -> Any:
         """
