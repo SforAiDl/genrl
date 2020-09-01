@@ -3,8 +3,8 @@ from typing import Any, Dict
 import gym
 import numpy as np
 import torch
-import torch.nn.functional as F
-import torch.optim as opt
+from torch import optim as opt
+from torch.nn import functional as F
 
 from genrl.agents.deep.base import OnPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean

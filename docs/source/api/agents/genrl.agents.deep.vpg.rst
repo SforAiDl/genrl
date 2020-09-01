@@ -9,4 +9,3 @@ genrl.agents.deep.vpg.vpg module
    :members:
    :undoc-members:
    :show-inheritance:
-

@@ -4,7 +4,7 @@
     <br>
 <p>
     
-[![pypi](https://img.shields.io/badge/pypi%20package-v0.0.1-blue)](https://pypi.org/project/genrl/)
+[![pypi](https://img.shields.io/badge/pypi%20package-v0.0.2-blue)](https://pypi.org/project/genrl/)
 [![GitHub license](https://img.shields.io/github/license/SforAiDl/genrl)](https://github.com/SforAiDl/genrl/blob/master/LICENSE)
 [![Build Status](https://travis-ci.com/SforAiDl/genrl.svg?branch=master)](https://travis-ci.com/SforAiDl/genrl)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/SforAiDl/genrl.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/SforAiDl/genrl/alerts/)
@@ -12,7 +12,8 @@
 [![codecov](https://codecov.io/gh/SforAiDl/genrl/branch/master/graph/badge.svg)](https://codecov.io/gh/SforAiDl/genrl)
 [![Documentation Status](https://readthedocs.org/projects/genrl/badge/?version=latest)](https://genrl.readthedocs.io/en/latest/?badge=latest)
 [![Maintainability](https://api.codeclimate.com/v1/badges/c3f6e7d31c078528e0e1/maintainability)](https://codeclimate.com/github/SforAiDl/genrl/maintainability)
-![Lint, Test, Code Coverage](https://github.com/SforAiDl/genrl/workflows/Lint,%20Test,%20Code%20Coverage/badge.svg)
+[![Lint, Test, Code Coverage](https://github.com/SforAiDl/genrl/workflows/Lint,%20Test,%20Code%20Coverage/badge.svg)
+[![Slack - Chat](https://img.shields.io/badge/Slack-Chat-blueviolet)](https://join.slack.com/t/genrlworkspace/shared_invite/zt-gwlgnymd-Pw3TYC~0XDLy6VQDml22zg)
 
 ---
 
@@ -20,18 +21,19 @@
 
 ---
 
-**GenRL is a PyTorch reinforcement learning library centered around reproducible and generalizable algorithm implementations.** 
+**GenRL is a PyTorch reinforcement learning library centered around reproducible, generalizable algorithm implementations and improving accessibility in Reinforcement Learning** 
 
 Reinforcement learning research is moving faster than ever before. In order to keep up with the growing trend and ensure that RL research remains reproducible, GenRL aims to aid faster paper reproduction and benchmarking by providing the following main features:
 
 - **PyTorch-first**: Modular, Extensible and Idiomatic Python
+- **Tutorials and Example**: 20+ Tutorials from basic RL to SOTA Deep RL algorithm (with explanations)!
 - **Unified Trainer and Logging class**: code reusability and high-level UI
 - **Ready-made algorithm implementations**: ready-made implementations of popular RL algorithms.
 - **Faster Benchmarking**: automated hyperparameter tuning, environment implementations etc.
 
 By integrating these features into GenRL, we aim to eventually support **any new algorithm implementation in less than 100 lines**.
 
-**If you're interested in contributing, feel free to go through the issues and open PRs for code, docs, tests etc. In case of any questions, please check out the [Contributing Guidelines](https://github.com/SforAiDl/genrl/wiki/Contributing-Guidelines)**
+**If you're interested in contributing, feel free to go through the issues and open PRs for code, docs, tests etc. In case of any questions, please check out the [Contributing Guidelines](CONTRIBUTING.md)**
 
 
 ## Installation
@@ -55,10 +57,9 @@ To train a Soft Actor-Critic model from scratch on the `Pendulum-v0` gym environ
 ```python
 import gym
 
-from genrl import SAC, QLearning
-from genrl.classical.common import Trainer
-from genrl.deep.common import OffPolicyTrainer
+from genrl.agents import SAC, QLearning
 from genrl.environments import VectorEnv
+from genrl.trainers import ClassicalTrainer, OffPolicyTrainer
 
 env = VectorEnv("Pendulum-v0")
 agent = SAC('mlp', env)
@@ -69,13 +70,30 @@ trainer.train()
 To train a Tabular Dyna-Q model from scratch on the `FrozenLake-v0` gym environment and plot rewards:
 ```python
 
+
 env = gym.make("FrozenLake-v0")
 agent = QLearning(env)
-trainer = Trainer(agent, env, mode="dyna", model="tabular", n_episodes=10000)
+trainer = ClassicalTrainer(agent, env, mode="dyna", model="tabular", n_episodes=10000)
 episode_rewards = trainer.train()
 trainer.plot(episode_rewards)
 ```
 
+## Tutorials
+- [Multi Armed Bandits](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/bandit_overview.html)
+    - [Upper Confidence Bound](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/ucb.html)
+    - [Thompson Sampling](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/thompson_sampling.html)
+    - [Bayesian](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/bayesian.html)
+    - [Softmax Action Selection](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/gradients.html)
+- [Contextual Bandits](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/contextual_overview.html)
+    - [Linear Posterior Inference](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/linpos.html)
+    - [Variational Inference](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/variational.html)
+    - [https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/bootstrap.html](Bootstrap)
+    - [Parameter Noise Sampling](https://genrl.readthedocs.io/en/latest/usage/tutorials/bandit/noise.html)
+- [Deep Reinforcement Learning Background](https://genrl.readthedocs.io/en/latest/usage/tutorials/Deep/Background.html)
+    - [Vanilla Policy Gradients](https://genrl.readthedocs.io/en/latest/usage/tutorials/Deep/VPG.html)
+    - [Advantage Actor Critic](https://genrl.readthedocs.io/en/latest/usage/tutorials/Deep/A2C.html)
+    - [Proximal Policy Optimization](https://genrl.readthedocs.io/en/latest/usage/tutorials/Deep/PPO.html)
+    
 ## Algorithms
 
 ### Deep RL

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 import torch
-import torch.nn as nn
+from torch import nn as nn
 
 
 class ActionNoise(ABC):

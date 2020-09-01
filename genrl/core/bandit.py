@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 
 import torch
-import torch.nn.functional as F
+from torch.nn import functional as F
 
 
 class Bandit(ABC):
