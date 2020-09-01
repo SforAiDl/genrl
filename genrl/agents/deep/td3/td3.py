@@ -1,7 +1,6 @@
 from copy import deepcopy
 from typing import Any, Dict
 
-import numpy as np
 import torch
 
 from genrl.agents import OffPolicyAgentAC

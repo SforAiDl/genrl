@@ -1,11 +1,12 @@
 from typing import Dict, Optional, Tuple
 
 import torch
-from torch import nn as nn
 from torch.nn import functional as F
 
 from genrl.agents.bandits.contextual.common.base_model import Model
 from genrl.agents.bandits.contextual.common.transition import TransitionDB
+
+nn = torch.nn
 
 
 class BayesianLinear(nn.Module):

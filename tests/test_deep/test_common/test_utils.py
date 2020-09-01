@@ -2,13 +2,14 @@ import random
 
 import gym
 import torch
-from torch import nn as nn
 
 from genrl.agents import PPO1
 from genrl.core import CnnValue, MlpActorCritic, MlpPolicy, MlpValue
 from genrl.environments import VectorEnv
 from genrl.trainers import OnPolicyTrainer
 from genrl.utils import cnn, get_env_properties, get_model, mlp, set_seeds
+
+nn = torch.nn
 
 
 class TestUtils:

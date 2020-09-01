@@ -1,6 +1,5 @@
 from typing import List
 
-import numpy as np
 import torch
 
 from genrl.agents.deep.base import BaseAgent

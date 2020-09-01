@@ -1,8 +1,9 @@
 from typing import Optional, Tuple
 
 import torch
-from torch import nn as nn
 from torch.distributions import Categorical, Normal
+
+nn = torch.nn
 
 
 class BasePolicy(nn.Module):

@@ -1,13 +1,13 @@
 from copy import deepcopy
 from typing import Any, Dict
 
-import numpy as np
 import torch
-from torch import optim as opt
 
 from genrl.agents import OffPolicyAgentAC
 from genrl.core import ActionNoise
 from genrl.utils import get_env_properties, get_model, safe_mean
+
+opt = torch.optim
 
 
 class DDPG(OffPolicyAgentAC):

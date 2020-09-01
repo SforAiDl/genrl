@@ -1,6 +1,8 @@
-from torch import optim as opt
+import torch
 
 from genrl.agents.deep.dqn.base import DQN
+
+opt = torch.optim
 
 
 class DuelingDQN(DQN):

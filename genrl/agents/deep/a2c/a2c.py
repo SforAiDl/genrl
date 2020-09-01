@@ -3,11 +3,12 @@ from typing import Any, Dict
 import gym
 import numpy as np
 import torch
-from torch import optim as opt
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import OnPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean
+
+opt = torch.optim
 
 
 class A2C(OnPolicyAgent):
@@ -83,7 +84,7 @@ class A2C(OnPolicyAgent):
 
         if self.noise is not None:
             self.noise = self.noise(
-                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+                torch.zeros(action_dim), self.noise_std * torch.ones(action_dim)
             )
 
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
@@ -97,11 +98,11 @@ class A2C(OnPolicyAgent):
         Action Selection for On Policy Agents with Actor Critic
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
             deterministic (bool): Should the policy be deterministic or stochastic
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
             value (:obj:`torch.Tensor`): Value of given state
             log_prob (:obj:`torch.Tensor`): Log probability of selected action
         """

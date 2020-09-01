@@ -1,7 +1,6 @@
 import collections
 from typing import List
 
-import numpy as np
 import torch
 
 from genrl.agents.deep.dqn.base import DQN

@@ -3,13 +3,14 @@ from typing import Tuple
 import numpy as np
 import torch
 from gym import spaces
-from torch import nn as nn
 from torch.distributions import Categorical, Normal
 
 from genrl.core.base import BaseActorCritic
 from genrl.core.policies import MlpPolicy
 from genrl.core.values import MlpValue
 from genrl.utils.utils import cnn
+
+nn = torch.nn
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -98,7 +99,8 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
 
             # enforcing action bound (appendix of SAC paper)
             log_probs -= torch.log(
-                self.action_scale * (1 - action_probs.pow(2)) + np.finfo(np.float32).eps
+                self.action_scale * (1 - action_probs.pow(2))
+                + torch.finfo(torch.float32).eps
             )
             log_probs = log_probs.sum(1, keepdim=True)
             mean = torch.tanh(mean) * self.action_scale + self.action_bias
