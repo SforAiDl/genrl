@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -56,7 +55,7 @@ class NormalActionNoise(ActionNoise):
         """
         Return action noise randomly sampled from noise distribution
         """
-        return np.random.normal(self._mean, self._std)
+        return torch.normal(self._mean, self._std)
 
     def reset(self) -> None:
         pass
@@ -75,7 +74,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
     :type std: float
     :type theta: float
     :type dt: float
-    :type initial_noise: Numpy array
+    :type initial_noise: torch.Tensor
     """
 
     def __init__(
@@ -84,7 +83,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         std: float,
         theta: float = 0.15,
         dt: float = 1e-2,
-        initial_noise: np.ndarray = None,
+        initial_noise: torch.Tensor = None,
     ):
         super(OrnsteinUhlenbeckActionNoise, self).__init__(mean, std)
         self._theta = theta
@@ -103,7 +102,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         noise = (
             self.noise_prev
             + self._theta * (self._mean - self.noise_prev) * self._dt
-            + (self._std * np.sqrt(self._dt) * np.random.normal(size=self._mean.shape))
+            + (self._std * torch.sqrt(self._dt) * torch.normal(size=self._mean.shape))
         )
         self.noise_prev = noise
         return noise
@@ -115,7 +114,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.noise_prev = (
             self._initial_noise
             if self._initial_noise is not None
-            else np.zeros_like(self._mean)
+            else torch.zeros_like(self._mean)
         )
 
 
@@ -161,13 +160,13 @@ class NoisyLinear(nn.Module):
 
     def reset_parameters(self) -> None:
         """Reset parameters of layer"""
-        mu_range = 1 / np.sqrt(self.weight_mu.size(1))
+        mu_range = 1 / torch.sqrt(self.weight_mu.size(1))
 
         self.weight_mu.data.uniform_(-mu_range, mu_range)
-        self.weight_sigma.data.fill_(self.std_init / np.sqrt(self.weight_sigma.size(1)))
+        self.weight_sigma.data.fill_(self.std_init / torch.sqrt(self.weight_sigma.size(1)))
 
         self.bias_mu.data.uniform_(-mu_range, mu_range)
-        self.bias_sigma.data.fill_(self.std_init / np.sqrt(self.bias_sigma.size(0)))
+        self.bias_sigma.data.fill_(self.std_init / torch.sqrt(self.bias_sigma.size(0)))
 
     def reset_noise(self) -> None:
         """Reset noise components of layer"""
