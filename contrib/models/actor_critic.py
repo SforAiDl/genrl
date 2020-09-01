@@ -209,10 +209,10 @@ class Actor(BaseActorCritic):
 
 
 class Critic(BaseActorCritic):
-    def __init__(self, layer_sizes,weight_init,activation_func):
+    def __init__(self, layer_sizes,weight_init,activation_func,concat_ind):
         super(Critic, self).__init__()
 
-        self.critic = MLP(layer_sizes,weight_init,activation_func)
+        self.critic = MLP(layer_sizes,weight_init,activation_func,concat_ind)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(self.actor)
 

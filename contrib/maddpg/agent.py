@@ -43,6 +43,9 @@ class DDPGAgent:
 
         
     def setup_model(self,load_model):
+        critic = [self.critic_input_dim,1024,1024+self.action_dim,512,300,1]
+
+        self.actorcritc = ActorCritic()
 
         self.critic = CentralizedCritic(self.critic_input_dim, self.action_dim * self.num_agents).to(self.device)
         self.critic_target = CentralizedCritic(self.critic_input_dim, self.action_dim * self.num_agents).to(self.device)

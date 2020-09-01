@@ -73,7 +73,7 @@ class SharedMLP(nn.Module):
 
 
 class MLP(nn.Module):
-    def __init__(self,layer_sizes,weight_init,activation_func):
+    def __init__(self,layer_sizes,weight_init,activation_func,concat_ind):
         super(MLP, self).__init__()
 
         self.model = nn.ModuleList()
@@ -92,6 +92,8 @@ class MLP(nn.Module):
 
 
         for i in range(len(layer_sizes)-1):
+            if i==concat_ind:
+                i=i+1
             self.model.append(nn.Linear(layer_sizes[i],layer_sizes[i+1]))
             self.weight_init(self.model[-1])
 
