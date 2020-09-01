@@ -63,7 +63,7 @@ class A2CAgent:
         )
         if load_model is not None:
             self.actorcritic.load_state_dict(
-                torch.load(model_path, map_location=torch.device(self.device))
+                torch.load(load_model, map_location=torch.device(self.device))
             )
 
         self.optimizer = optim.Adam(self.actorcritic.parameters(), lr=self.lr)

@@ -33,7 +33,7 @@ class MADDPG:
             next_global_actions = []
             for agent in self.agents:
                 next_obs_batch_i = torch.FloatTensor(next_obs_batch_i)
-                indiv_next_action = agent.actor.forward(next_obs_batch_i)
+                indiv_next_action = agent.actor_target.forward(next_obs_batch_i)
                 indiv_next_action = [agent.onehot_from_logits(indiv_next_action_j) for indiv_next_action_j in indiv_next_action]
                 indiv_next_action = torch.stack(indiv_next_action)
                 next_global_actions.append(indiv_next_action)

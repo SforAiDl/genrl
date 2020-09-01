@@ -79,9 +79,9 @@ class MLP(nn.Module):
         self.model = nn.ModuleList()
 
         # add more activation functions
-        if activation_function == "relu":
+        if activation_func == "relu":
             self.activation = F.relu
-        elif activation_function == "tanh":
+        elif activation_func == "tanh":
             self.activation = torch.tanh
 
         # add more weight init
@@ -93,9 +93,9 @@ class MLP(nn.Module):
 
         for i in range(len(layer_sizes)-1):
             if i==concat_ind:
-                i=i+1
+                continue
             self.model.append(nn.Linear(layer_sizes[i],layer_sizes[i+1]))
-            self.weight_init(self.model[-1])
+            self.weight_init(self.model[-1].weight)
 
 
 

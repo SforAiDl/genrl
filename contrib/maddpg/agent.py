@@ -5,7 +5,8 @@ import torch.autograd as autograd
 import numpy as np 
 import sys
 sys.path.append("/home/aditya/Desktop/genrl/genrl")
-from contrib.models.actor_critic import ActorCritic
+from contrib.models.actor_critic import Critic
+from contrib.models.actor_critic import Actor as Actor_
 
 from model import CentralizedCritic, Actor
 
@@ -16,10 +17,11 @@ class DDPGAgent:
         self, 
         env, 
         agent_id, 
+        load_model=None,
         actor_lr=1e-4, 
         critic_lr=1e-3, 
         gamma=0.99, 
-        tau=1e-2
+        tau=1e-2,
     ):
 
         self.env = env
@@ -41,16 +43,32 @@ class DDPGAgent:
         self.critic_input_dim = int(np.sum([env.observation_space[agent].shape[0] for agent in range(env.n)]))
         self.actor_input_dim = self.obs_dim
 
+        self.setup_model(load_model)
+
         
     def setup_model(self,load_model):
-        critic = [self.critic_input_dim,1024,1024+self.action_dim,512,300,1]
+        
+        critic = [self.critic_input_dim,1024,1024+self.action_dim * self.num_agents,512,300,1]
+        actor = [self.actor_input_dim,512,128,self.action_dim]
 
-        self.actorcritc = ActorCritic()
+        self.critic = Critic(critic,"xavier_uniform","relu",1)
+        self.actor = Actor_(actor,"xavier_uniform","relu")
+        self.critic_target = Critic(critic,"xavier_uniform","relu",1)
+        self.actor_target = Actor_(actor,"xavier_uniform","relu")
 
-        self.critic = CentralizedCritic(self.critic_input_dim, self.action_dim * self.num_agents).to(self.device)
-        self.critic_target = CentralizedCritic(self.critic_input_dim, self.action_dim * self.num_agents).to(self.device)
-        self.actor = Actor(self.actor_input_dim, self.action_dim).to(self.device)
-        self.actor_target = Actor(self.actor_input_dim, self.action_dim).to(self.device)
+        if load_model is not None:
+            # load_model = [critic_path,actor_path]
+            self.critic.load_state_dict(
+                torch.load(load_model[0], map_location=torch.device(self.device))
+            )
+            self.actor.load_state_dict(
+                torch.load(load_model[1], map_location=torch.device(self.device))
+            )
+
+        # self.critic = CentralizedCritic(self.critic_input_dim, self.action_dim * self.num_agents).to(self.device)
+        # self.critic_target = CentralizedCritic(self.critic_input_dim, self.action_dim * self.num_agents).to(self.device)
+        # self.actor = Actor(self.actor_input_dim, self.action_dim).to(self.device)
+        # self.actor_target = Actor(self.actor_input_dim, self.action_dim).to(self.device)
 
         for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
             target_param.data.copy_(param.data)
@@ -60,8 +78,8 @@ class DDPGAgent:
 
         
         self.MSELoss = nn.MSELoss()
-        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_lr)
-        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
+        self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=self.critic_lr)
+        self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=self.actor_lr)
 
 
 
@@ -104,8 +122,8 @@ class DDPGAgent:
         # update critic        
         self.critic_optimizer.zero_grad()
         
-        curr_Q = self.critic.forward(global_state_batch, global_actions_batch)
-        next_Q = self.critic_target.forward(global_next_state_batch, next_global_actions)
+        curr_Q = self.critic.forward(global_state_batch, global_actions_batch,1)
+        next_Q = self.critic_target.forward(global_next_state_batch, next_global_actions,1)
         estimated_Q = indiv_reward_batch + self.gamma * next_Q
         
         critic_loss = self.MSELoss(curr_Q, estimated_Q.detach())
@@ -116,7 +134,7 @@ class DDPGAgent:
         # update actor
         self.actor_optimizer.zero_grad()
 
-        policy_loss = -self.critic.forward(global_state_batch, global_actions_batch).mean()
+        policy_loss = -self.critic.forward(global_state_batch, global_actions_batch,1).mean()
         curr_pol_out = self.actor.forward(indiv_obs_batch)
         policy_loss += -(curr_pol_out**2).mean() * 1e-3 
         policy_loss.backward()
@@ -129,3 +147,4 @@ class DDPGAgent:
 
         for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
             target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))        
+

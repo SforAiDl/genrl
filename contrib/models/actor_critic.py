@@ -156,9 +156,8 @@ class Actor(BaseActorCritic):
     def __init__(self, layer_sizes,weight_init,activation_func):
         super(Actor, self).__init__()
 
-        self.actor = MLP(layer_sizes,weight_init,activation_func)
+        self.actor = MLP(layer_sizes,weight_init,activation_func,-1)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(self.actor)
 
     def forward(self, policy):
 
@@ -214,13 +213,12 @@ class Critic(BaseActorCritic):
 
         self.critic = MLP(layer_sizes,weight_init,activation_func,concat_ind)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(self.actor)
 
     def forward(self, value, action, concatenate_index):
 
         for i in range(len(self.critic.model)):
             if i==concatenate_index:
-                torch.cat([value,action], 1)
+                value = torch.cat([value,action], 1)
             if self.critic.activation is not None:
                 value = self.critic.activation(self.critic.model[i](value))
             else:
@@ -238,6 +236,6 @@ class Critic(BaseActorCritic):
 
 
 
-model = SharedActorCritic([1,1],[1,1],[1,1],[1,1],[1,1],"xavier_uniform","relu")
-forward = model.forward(torch.Tensor([1]),None)
-print(forward)
+# model = SharedActorCritic([1,1],[1,1],[1,1],[1,1],[1,1],"xavier_uniform","relu")
+# forward = model.forward(torch.Tensor([1]),None)
+# print(forward)
