@@ -115,7 +115,7 @@ current index.
 
         def _get_context(self) -> torch.Tensor:
             return torch.tensor(
-                self._df.iloc[self.idx, 0].values,
+                self._df.iloc[self.idx, 1:].values,
                 device=self.device,
                 dtype=torch.float,
             )
