@@ -192,7 +192,7 @@ def safe_mean(log: Union[torch.Tensor, List[int]]):
     """
     Returns 0 if there are no elements in logs
     """
-    if type(log) == torch.Tensor:
+    if isinstance(log, torch.Tensor):
         return torch.mean(log) if len(log) > 0 else 0
     else:
         return np.mean(log) if len(log) > 0 else 0
