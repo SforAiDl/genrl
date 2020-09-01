@@ -1,29 +1,20 @@
 from typing import Tuple
 
+import gym
 import numpy as np
 import torch
 import torch.nn as nn
-
-import gym
-if gym.__version__ == "0.10.5":
-    from gym import Space
-else:
-    from gym.spaces import Space
-from torch.distributions import Categorical
-
 from torch.distributions import Categorical, Normal
 
-<<<<<<< HEAD:genrl/deep/common/actor_critic.py
-from genrl.deep.common.base import BaseActorCritic
-from genrl.deep.common.policies import MlpPolicy
-from genrl.deep.common.utils import cnn, init_weights, mlp
-from genrl.deep.common.values import MlpValue
-=======
 from genrl.core.base import BaseActorCritic
 from genrl.core.policies import MlpPolicy
 from genrl.core.values import MlpValue
 from genrl.utils.utils import cnn
->>>>>>> upstream/master:genrl/core/actor_critic.py
+
+if gym.__version__ == "0.10.5":
+    from gym import Space
+else:
+    from gym.spaces import Space
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -41,8 +32,8 @@ class MlpActorCritic(BaseActorCritic):
 
     def __init__(
         self,
-        state_dim: spaces.Space,
-        action_dim: spaces.Space,
+        state_dim: Space,
+        action_dim: Space,
         policy_layers: Tuple = (32, 32),
         value_layers: Tuple = (32, 32),
         val_type: str = "V",
@@ -73,7 +64,6 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         self,
         state_dim: Space,
         action_dim: Space,
-        hidden: Tuple = (32, 32),
         policy_layers: Tuple = (32, 32),
         value_layers: Tuple = (32, 32),
         val_type: str = "V",
@@ -152,6 +142,30 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         return values
 
 
+class MlpSharedActorCritic(BaseActorCritic):
+    """MLP Actor Critic with Shared Networks
+
+    Attributes:
+        state_dim (int): State dimensions of the environment
+        action_dim (int): Action space dimensions of the environment
+        shared_layers (:obj:`list` or :obj:`tuple`): Shared hidden layers of MLP
+    """
+
+    def __init__(
+        self, state_dim: int, action_dim: int, shared_layers: Tuple = (512, 256)
+    ):
+        super(MlpSharedActorCritic, self).__init__()
+
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+
+        self.shared = mlp([self.state_dim] + list(shared_layers))
+        self.actor = nn.Linear(shared_layers[-1], self.action_dim)
+        self.critic = nn.Linear(shared_layers[-1], 1)
+
+        init_weights(self.parameters())
+
+
 class CNNActorCritic(BaseActorCritic):
     """
         CNN Actor Critic
@@ -173,8 +187,6 @@ class CNNActorCritic(BaseActorCritic):
         self,
         framestack: int,
         action_dim: Space,
-        fc_layers: Tuple = (256,),
-        action_dim: spaces.Space,
         policy_layers: Tuple = (256,),
         value_layers: Tuple = (256,),
         val_type: str = "V",
@@ -237,6 +249,7 @@ actor_critic_registry = {
     "mlp": MlpActorCritic,
     "cnn": CNNActorCritic,
     "mlp12": MlpSingleActorMultiCritic,
+    "mlpshared": MlpSharedActorCritic,
 }
 
 
@@ -251,19 +264,3 @@ def get_actor_critic_from_name(name_: str):
     if name_ in actor_critic_registry:
         return actor_critic_registry[name_]
     raise NotImplementedError
-
-
-class MlpCentralizedActorCritic(BaseActorCritic):
-    def __init__(
-        self, state_dim: int, action_dim: int, shared_layers: Tuple = (512, 256)
-    ):
-        super(CentralizedActorCritic, self).__init__()
-
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-
-        self.shared = mlp([self.state_dim] + list(shared_layers))
-        self.actor = nn.Linear(shared_layers[-1], self.action_dim)
-        self.critic = nn.Linear(shared_layers[-1], 1)
-
-        init_weights(self.parameters())

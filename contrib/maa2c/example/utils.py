@@ -1,6 +1,8 @@
 import os
-from torch.utils.tensorboard import SummaryWriter
 from typing import Any, Dict
+
+from torch.utils.tensorboard import SummaryWriter
+
 
 class TensorboardLogger:
     """
