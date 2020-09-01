@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import List, Type, Union
 
 import numpy as np
 
@@ -17,6 +17,7 @@ class OffPolicyTrainer(Trainer):
         env (object): Environment
         buffer (object): Replay Buffer object
         max_ep_len (int): Maximum Episode length for training
+        max_timesteps (int): Maximum limit of timesteps to train for
         warmup_steps (int): Number of warmup steps. (random actions are taken to add randomness to training)
         start_update (int): Timesteps after which the agent networks should start updating
         update_interval (int): Timesteps between target network updates
@@ -25,7 +26,6 @@ class OffPolicyTrainer(Trainer):
         log_interval (int): Timesteps between successive logging of parameters onto the console
         logdir (str): Directory where log files should be saved.
         epochs (int): Total number of epochs to train for
-        max_timesteps (int): Maximum limit of timesteps to train for
         off_policy (bool): True if the agent is an off policy agent, False if it is on policy
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
         save_model (str): Directory where the checkpoints of agent parameters should be saved
@@ -41,17 +41,20 @@ class OffPolicyTrainer(Trainer):
         *args,
         buffer: Union[Type[ReplayBuffer], Type[PrioritizedBuffer]] = None,
         max_ep_len: int = 500,
-        warmup_steps: int = 1000,
+        max_timesteps: int = 5000,
         start_update: int = 1000,
+        warmup_steps: int = 1000,
         update_interval: int = 50,
         **kwargs
     ):
-        super(OffPolicyTrainer, self).__init__(*args, off_policy=True, **kwargs)
+        super(OffPolicyTrainer, self).__init__(
+            *args, off_policy=True, max_timesteps=max_timesteps, **kwargs
+        )
 
         self.max_ep_len = max_ep_len
         self.warmup_steps = warmup_steps
-        self.update_interval = update_interval
         self.start_update = start_update
+        self.update_interval = update_interval
         self.network = self.agent.network
 
         if buffer is None:
@@ -61,70 +64,106 @@ class OffPolicyTrainer(Trainer):
             self.agent.replay_buffer = buffer
         self.buffer = self.agent.replay_buffer
 
+    def noise_reset(self) -> None:
+        """Resets the agent's action noise functions"""
+        if "noise" in self.agent.__dict__ and self.agent.noise is not None:
+            self.agent.noise.reset()
+
+    def get_action(self, state: np.ndarray, timestep: int) -> np.ndarray:
+        """Gets the action to be performed on the environment
+
+        For the first few timesteps (Warmup steps) it selects an action randomly to introduce
+        stochasticity to the environment start position.
+
+        Args:
+            state (:obj:`np.ndarray`): Current state of the environment
+            timestep (int): Current timestep of training
+
+        Returns:
+            action (:obj:`np.ndarray`): Action to be taken on the env
+        """
+        if timestep < self.warmup_steps:
+            action = np.array(self.env.sample())
+        else:
+            action = self.agent.select_action(state)
+        return action
+
+    def log(self, timestep: int) -> None:
+        """Helper function to log
+
+        Sends useful parameters to the logger.
+
+        Args:
+            timestep (int): Current timestep of training
+        """
+        self.logger.write(
+            {
+                "timestep": timestep,
+                "Episode": self.episodes,
+                **self.agent.get_logging_params(),
+                "Episode Reward": safe_mean(self.training_rewards),
+            },
+            self.log_key,
+        )
+        self.training_rewards = []
+
+    def check_game_over_status(self, timestep: int, dones: List[bool]) -> bool:
+        """Takes care of game over status of envs
+
+        Whenever an env shows done, the reward accumulated is stored in a list
+        and the env is reset. Note that not all envs in the Vectorised Env are reset.
+
+        Args:
+            timestep (int): Current timestep of training
+            dones (:obj:`list`): Game over statuses of all envs
+
+        Return:
+            game_over (bool): True, if at least one environment was done. Else, False
+        """
+        game_over = False
+
+        for i, done_i in enumerate(dones):
+            if done_i:
+                self.training_rewards.append(self.env.episode_reward[i])
+                self.env.reset_single_env(i)
+                self.episodes += 1
+                game_over = True
+
+        return game_over
+
     def train(self) -> None:
         """Main training method"""
         if self.load_model is not None:
             self.load()
 
-        state, episode_len, episode = (
-            self.env.reset(),
-            np.zeros(self.env.n_envs),
-            np.zeros(self.env.n_envs),
-        )
-        total_steps = self.max_ep_len * self.epochs * self.env.n_envs
+        state = self.env.reset()
+        self.noise_reset()
 
-        if "noise" in self.agent.__dict__ and self.agent.noise is not None:
-            self.agent.noise.reset()
+        self.training_rewards = []
+        self.episodes = 0
 
-        assert self.update_interval % self.env.n_envs == 0
-
-        self.rewards = []
-
-        for timestep in range(0, total_steps, self.env.n_envs):
+        for timestep in range(0, self.max_timesteps, self.env.n_envs):
             self.agent.update_params_before_select_action(timestep)
 
-            if timestep < self.warmup_steps:
-                action = self.env.sample()
-            else:
-                action = self.agent.select_action(state)
-
-            next_state, reward, done, _ = self.env.step(action)
+            action = self.get_action(state, timestep)
+            next_state, reward, done, info = self.env.step(action)
 
             if self.render:
                 self.env.render()
 
-            episode_len += 1
+            # true_dones contains the "true" value of the dones (game over statuses). It is set
+            # to False when the environment is not actually done but instead reaches the max
+            # episode length.
+            true_dones = [info[i]["done"] for i in range(self.env.n_envs)]
+            self.buffer.push((state, action, reward, next_state, true_dones))
 
-            done = [
-                False if episode_len[i] == self.max_ep_len else done[i]
-                for i, ep_len in enumerate(episode_len)
-            ]
+            state = next_state.detach().clone()r
 
-            self.buffer.push((state, action, reward, next_state, done))
-            state = next_state.detach().clone()
+            if self.check_game_over_status(timestep, done):
+                self.noise_reset()
 
-            if np.any(done) or np.any(episode_len == self.max_ep_len):
-                if "noise" in self.agent.__dict__ and self.agent.noise is not None:
-                    self.agent.noise.reset()
-
-                if sum(episode) % self.log_interval == 0:
-                    self.logger.write(
-                        {
-                            "timestep": timestep,
-                            "Episode": sum(episode),
-                            **self.agent.get_logging_params(),
-                            "Episode Reward": safe_mean(self.rewards),
-                        },
-                        self.log_key,
-                    )
-                    self.rewards = []
-
-                for i, di in enumerate(done):
-                    if di:
-                        self.rewards.append(self.env.episode_reward[i])
-                        self.env.reset_single_env(i)
-                        episode_len[i] = 0
-                        episode[i] += 1
+                if self.episodes % self.log_interval == 0:
+                    self.log(timestep)
 
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.agent.update_params(self.update_interval)
@@ -135,9 +174,6 @@ class OffPolicyTrainer(Trainer):
                 and timestep % self.save_interval == 0
             ):
                 self.save(timestep)
-
-            if self.max_timesteps is not None and timestep >= self.max_timesteps:
-                break
 
         self.env.close()
         self.logger.close()
