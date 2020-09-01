@@ -62,8 +62,11 @@ class DDPG(OffPolicyAgentAC):
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        if isinstance(self.network, str) and self.shared_layers is not None:
-            self.ac = get_model("ac", self.network + "s")(
+        if isinstance(self.network, str):
+            arch_type = self.network
+            if self.shared_layers is not None:
+                arch_type += "s"
+            self.ac = get_model("ac", arch_type)(
                 state_dim,
                 action_dim,
                 self.shared_layers,
@@ -72,28 +75,10 @@ class DDPG(OffPolicyAgentAC):
                 "Qsa",
                 False,
             ).to(self.device)
-            actor_params = list(self.ac.actor.parameters()) + list(
-                self.ac.shared.parameters()
-            )
-            critic_params = list(self.ac.critic.parameters()) + list(
-                self.ac.shared.parameters()
-            )
-        elif isinstance(self.network, str) and self.shared_layers is None:
-            self.ac = get_model("ac", self.network)(
-                state_dim,
-                action_dim,
-                self.policy_layers,
-                self.value_layers,
-                "Qsa",
-                False,
-            ).to(self.device)
-            actor_params = self.ac.actor.parameters()
-            critic_params = self.ac.critic.parameters()
         else:
             self.ac = self.network
-            actor_params = self.ac.actor.parameters()
-            critic_params = self.ac.critic.parameters()
 
+        actor_params, critic_params = self.ac.get_params()
         self.ac_target = deepcopy(self.ac).to(self.device)
 
         self.optimizer_policy = opt.Adam(actor_params, lr=self.lr_policy)

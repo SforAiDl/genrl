@@ -174,7 +174,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
 
         # add noise to output from policy network
         if self.noise is not None:
-            action = action + self.noise()
+            action += self.noise()
 
         return np.clip(
             action, self.env.action_space.low[0], self.env.action_space.high[0]

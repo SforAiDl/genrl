@@ -66,8 +66,11 @@ class A2C(OnPolicyAgent):
         state_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network
         )
-        if isinstance(self.network, str) and self.shared_layers is not None:
-            self.ac = get_model("ac", self.network + "s")(
+        if isinstance(self.network, str):
+            arch_type = self.network
+            if self.shared_layers is not None:
+                arch_type += "s"
+            self.ac = get_model("ac", arch_type)(
                 state_dim,
                 action_dim,
                 shared_layers=self.shared_layers,
@@ -77,37 +80,18 @@ class A2C(OnPolicyAgent):
                 discrete=discrete,
                 action_lim=action_lim,
             ).to(self.device)
-            actor_params = list(self.ac.shared.parameters()) + list(
-                self.ac.actor.parameters()
-            )
-            critic_params = list(self.ac.shared.parameters()) + list(
-                self.ac.critic.parameters()
-            )
-        elif isinstance(self.network, str) and self.shared_layers is None:
-            self.ac = get_model("ac", self.network)(
-                state_dim,
-                action_dim,
-                policy_layers=self.policy_layers,
-                value_layers=self.value_layers,
-                val_type="V",
-                discrete=discrete,
-                action_lim=action_lim,
-            ).to(self.device)
-            actor_params = self.ac.actor.parameters()
-            critic_params = self.ac.critic.parameters()
 
         else:
             self.ac = self.network.to(self.device)
-            actor_params = self.ac.actor.parameters()
-            critic_params = self.ac.critic.parameters()
 
         if self.noise is not None:
             self.noise = self.noise(
                 np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
             )
 
-        self.optimizer_policy = opt.Adam(actor_params, lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(critic_params, lr=self.lr_value)
+        actor_params, critic_params = self.ac.get_params()
+        self.optimizer_policy = opt.Adam(critic_params, lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(actor_params, lr=self.lr_value)
 
     def select_action(
         self, state: np.ndarray, deterministic: bool = False

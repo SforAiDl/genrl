@@ -19,11 +19,3 @@ def test_ppo1_cnn():
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")
-
-
-def test_ppo1_shared():
-    env = VectorEnv("CartPole-v0")
-    algo = PPO1("mlp", env, shared_layers=(32, 32), rollout_size=128)
-    trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")

@@ -29,6 +29,7 @@ class MlpActorCritic(BaseActorCritic):
         self,
         state_dim: spaces.Space,
         action_dim: spaces.Space,
+        shared_layers: None,
         policy_layers: Tuple = (32, 32),
         value_layers: Tuple = (32, 32),
         val_type: str = "V",
@@ -39,6 +40,11 @@ class MlpActorCritic(BaseActorCritic):
 
         self.actor = MlpPolicy(state_dim, action_dim, policy_layers, discrete, **kwargs)
         self.critic = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
+
+    def get_params(self):
+        actor_params = self.actor.parameters()
+        critic_params = self.critic.parameters()
+        return actor_params, critic_params
 
 
 class MlpSharedActorCritic(BaseActorCritic):
@@ -76,7 +82,20 @@ class MlpSharedActorCritic(BaseActorCritic):
         self.state_dim = state_dim
         self.action_dim = action_dim
 
+    def get_params(self):
+        actor_params = list(self.shared.parameters()) + list(self.actor.parameters())
+        critic_params = list(self.shared.parameters()) + list(self.critic.parameters())
+        return actor_params, critic_params
+
     def get_features(self, state: torch.Tensor):
+        """Extract features from the state, which is then an input to get_action and get_value
+
+                Args:
+                    state (:obj:`torch.Tensor`): The state(s) being passed
+
+                Returns:
+                    features (:obj:`torch.Tensor`): The feature(s) extracted from the state
+                """
         features = self.shared(state)
         return features
 
@@ -100,7 +119,6 @@ class MlpSharedActorCritic(BaseActorCritic):
         if self.critic.val_type == "Qsa":
             features = self.shared(state[:, :, :-1])
             features = torch.cat([features, state[:, :, -1].unsqueeze(-1)], dim=-1)
-            print(f"features {features.shape}")
             value = self.critic(features).float().squeeze(-1)
         else:
             features = self.shared(state)
@@ -143,6 +161,13 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
 
         self.action_scale = kwargs["action_scale"] if "action_scale" in kwargs else 1
         self.action_bias = kwargs["action_bias"] if "action_bias" in kwargs else 0
+
+    def get_params(self):
+        actor_params = self.actor.parameters()
+        critic_params = list(self.critic1.parameters()) + list(
+            self.critic2.parameters()
+        )
+        return actor_params, critic_params
 
     def forward(self, x):
         q1_values = self.critic1(x).squeeze(-1)
@@ -204,6 +229,133 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         return values
 
 
+class MlpSharedSingleActorMultiCritic(BaseActorCritic):
+    """MLP Actor Critic
+
+    Attributes:
+        state_dim (int): State dimensions of the environment
+        action_dim (int): Action space dimensions of the environment
+        hidden (:obj:`list` or :obj:`tuple`): Hidden layers in the MLP
+        val_type (str): Value type of the critic network
+        discrete (bool): True if the action space is discrete, else False
+        num_critics (int): Number of critics in the architecture
+        sac (bool): True if a SAC-like network is needed, else False
+        activation (str): Activation function to be used. Can be either "tanh" or "relu"
+    """
+
+    def __init__(
+        self,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
+        shared_layers: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
+        val_type: str = "V",
+        discrete: bool = True,
+        num_critics: int = 2,
+        **kwargs,
+    ):
+        super(MlpSharedSingleActorMultiCritic, self).__init__()
+
+        self.num_critics = num_critics
+        self.shared = mlp([state_dim] + list(shared_layers))
+        self.actor = MlpPolicy(
+            shared_layers[-1], action_dim, policy_layers, discrete, **kwargs
+        )
+        self.critic1 = MlpValue(
+            shared_layers[-1], action_dim, "Qsa", value_layers, **kwargs
+        )
+        self.critic2 = MlpValue(
+            shared_layers[-1], action_dim, "Qsa", value_layers, **kwargs
+        )
+
+        self.action_scale = kwargs["action_scale"] if "action_scale" in kwargs else 1
+        self.action_bias = kwargs["action_bias"] if "action_bias" in kwargs else 0
+
+    def get_params(self):
+        actor_params = list(self.actor.parameters()) + list(self.shared.parameters())
+        critic_params = (
+            list(self.critic1.parameters())
+            + list(self.critic2.parameters())
+            + list(self.shared.parameters())
+        )
+        return actor_params, critic_params
+
+    def get_features(self, state: torch.Tensor):
+        """Extract features from the state, which is then an input to get_action and get_value
+
+        Args:
+            state (:obj:`torch.Tensor`): The state(s) being passed
+
+        Returns:
+            features (:obj:`torch.Tensor`): The feature(s) extracted from the state
+        """
+        features = self.shared(state)
+        return features
+
+    def forward(self, x):
+        q1_values = self.critic1(x).squeeze(-1)
+        q2_values = self.critic2(x).squeeze(-1)
+        return (q1_values, q2_values)
+
+    def get_action(self, state: torch.Tensor, deterministic: bool = False):
+        state = torch.as_tensor(state).float()
+        state = self.get_features(state)
+
+        if self.actor.sac:
+            mean, log_std = self.actor(state)
+            std = log_std.exp()
+            distribution = Normal(mean, std)
+
+            action_probs = distribution.rsample()
+            log_probs = distribution.log_prob(action_probs)
+            action_probs = torch.tanh(action_probs)
+
+            action = action_probs * self.action_scale + self.action_bias
+
+            # enforcing action bound (appendix of SAC paper)
+            log_probs -= torch.log(
+                self.action_scale * (1 - action_probs.pow(2)) + np.finfo(np.float32).eps
+            )
+            log_probs = log_probs.sum(1, keepdim=True)
+            mean = torch.tanh(mean) * self.action_scale + self.action_bias
+
+            action = (action.float(), log_probs, mean)
+        else:
+            action = self.actor.get_action(state, deterministic=deterministic)
+
+        return action
+
+    def get_value(self, state: torch.Tensor, mode="first") -> torch.Tensor:
+        """Get Values from the Critic
+
+        Arg:
+            state (:obj:`torch.Tensor`): The state(s) being passed to the critics
+            mode (str): What values should be returned. Types:
+                "both" --> Both values will be returned
+                "min" --> The minimum of both values will be returned
+                "first" --> The value from the first critic only will be returned
+
+        Returns:
+            values (:obj:`list`): List of values as estimated by each individual critic
+        """
+        state = torch.as_tensor(state).float()
+        x = self.get_features(state[:, :, :-1])
+        state = torch.cat([x, state[:, :, -1].unsqueeze(-1)], dim=-1)
+
+        if mode == "both":
+            values = self.forward(state)
+        elif mode == "min":
+            values = self.forward(state)
+            values = torch.min(*values).squeeze(-1)
+        elif mode == "first":
+            values = self.critic1(state)
+        else:
+            raise KeyError("Mode doesn't exist")
+
+        return values
+
+
 class CNNActorCritic(BaseActorCritic):
     """
         CNN Actor Critic
@@ -239,6 +391,11 @@ class CNNActorCritic(BaseActorCritic):
             output_size, action_dim, policy_layers, discrete, **kwargs
         )
         self.critic = MlpValue(output_size, action_dim, val_type, value_layers)
+
+    def get_params(self):
+        actor_params = list(self.feature.parameters()) + list(self.actor.parameters())
+        critic_params = list(self.feature.parameters()) + list(self.critic.parameters())
+        return actor_params, critic_params
 
     def get_action(
         self, state: torch.Tensor, deterministic: bool = False
@@ -288,6 +445,7 @@ actor_critic_registry = {
     "cnn": CNNActorCritic,
     "mlp12": MlpSingleActorMultiCritic,
     "mlps": MlpSharedActorCritic,
+    "mlp12s": MlpSharedSingleActorMultiCritic,
 }
 
 
