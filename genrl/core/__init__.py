@@ -3,7 +3,6 @@ from genrl.core.bandit import Bandit, BanditAgent
 from genrl.core.base import BaseActorCritic  # noqa
 from genrl.core.buffers import PrioritizedBuffer  # noqa
 from genrl.core.buffers import PrioritizedReplayBufferSamples  # noqa
-from genrl.core.buffers import PushReplayBuffer  # noqa
 from genrl.core.buffers import ReplayBuffer  # noqa
 from genrl.core.buffers import ReplayBufferSamples  # noqa
 from genrl.core.noise import ActionNoise  # noqa

@@ -138,8 +138,8 @@ class NeuralLinearPosteriorAgent(DCBAgent):
                     torch.stack(
                         [
                             torch.distributions.MultivariateNormal(
-                                torch.zeros(self.context_dim + 1),
-                                torch.eye(self.context_dim + 1),
+                                torch.zeros(self.latent_dim + 1),
+                                torch.eye(self.latent_dim + 1),
                             ).sample()
                             for i in range(self.n_actions)
                         ]
