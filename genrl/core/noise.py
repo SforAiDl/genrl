@@ -103,7 +103,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         noise = (
             self.noise_prev
             + self._theta * (self._mean - self.noise_prev) * self._dt
-            + (self._std * math.sqrt(self._dt) * torch.normal(size=self._mean.shape))
+            + (self._std * math.sqrt(self._dt) * torch.randn(self._mean.shape))
         )
         self.noise_prev = noise
         return noise
@@ -115,7 +115,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.noise_prev = (
             self._initial_noise
             if self._initial_noise is not None
-            else torch.zeros(self._mean)
+            else torch.zeros(self._mean.shape)
         )
 
 
