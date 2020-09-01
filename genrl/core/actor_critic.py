@@ -13,17 +13,10 @@ from torch.distributions import Categorical
 
 from torch.distributions import Categorical, Normal
 
-<<<<<<< HEAD:genrl/deep/common/actor_critic.py
-from genrl.deep.common.base import BaseActorCritic
-from genrl.deep.common.policies import MlpPolicy
-from genrl.deep.common.utils import cnn, init_weights, mlp
-from genrl.deep.common.values import MlpValue
-=======
 from genrl.core.base import BaseActorCritic
 from genrl.core.policies import MlpPolicy
 from genrl.core.values import MlpValue
 from genrl.utils.utils import cnn
->>>>>>> upstream/master:genrl/core/actor_critic.py
 
 
 class MlpActorCritic(BaseActorCritic):
