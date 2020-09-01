@@ -90,12 +90,12 @@ class MlpSharedActorCritic(BaseActorCritic):
     def get_features(self, state: torch.Tensor):
         """Extract features from the state, which is then an input to get_action and get_value
 
-                Args:
-                    state (:obj:`torch.Tensor`): The state(s) being passed
+        Args:
+            state (:obj:`torch.Tensor`): The state(s) being passed
 
-                Returns:
-                    features (:obj:`torch.Tensor`): The feature(s) extracted from the state
-                """
+        Returns:
+            features (:obj:`torch.Tensor`): The feature(s) extracted from the state
+        """
         features = self.shared(state)
         return features
 
@@ -391,11 +391,6 @@ class CNNActorCritic(BaseActorCritic):
             output_size, action_dim, policy_layers, discrete, **kwargs
         )
         self.critic = MlpValue(output_size, action_dim, val_type, value_layers)
-
-    def get_params(self):
-        actor_params = list(self.feature.parameters()) + list(self.actor.parameters())
-        critic_params = list(self.feature.parameters()) + list(self.critic.parameters())
-        return actor_params, critic_params
 
     def get_action(
         self, state: torch.Tensor, deterministic: bool = False
