@@ -7,9 +7,9 @@ from torch.nn import functional as F
 
 from genrl.agents.deep.base import BaseAgent
 from genrl.core import (
-    ReplayBuffer,
     PrioritizedBuffer,
     PrioritizedReplayBufferSamples,
+    ReplayBuffer,
     ReplayBufferSamples,
 )
 
