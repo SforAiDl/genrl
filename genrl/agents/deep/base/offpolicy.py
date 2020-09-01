@@ -174,7 +174,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         if self.noise is not None:
             action += self.noise()
 
-        return torch.clip(
+        return torch.clamp(
             action, self.env.action_space.low[0], self.env.action_space.high[0]
         )
 

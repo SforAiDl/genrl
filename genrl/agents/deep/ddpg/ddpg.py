@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Any, Dict
 
 import numpy as np
+import torch
 import torch.optim as opt
 
 from genrl.agents import OffPolicyAgentAC
@@ -59,7 +60,7 @@ class DDPG(OffPolicyAgentAC):
             )
         if self.noise is not None:
             self.noise = self.noise(
-                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+                torch.zeros(action_dim), self.noise_std * torch.ones(action_dim)
             )
 
         if isinstance(self.network, str):
