@@ -8,7 +8,7 @@ import numpy as np
 
 import sys
 sys.path.append("/home/aditya/Desktop/genrl/genrl")
-from contrib.utils.models import SharedMLP
+from contrib.utils.models import SharedMLP, MLP
 
 
 class BaseActorCritic(nn.Module):
@@ -24,7 +24,7 @@ class BaseActorCritic(nn.Module):
         self.actorcritic = None
 
     def get_action(
-        self, state: torch.Tensor, deterministic: bool = False
+        self, state: torch.Tensor, one_hot: bool = False, deterministic: bool = False
     ) -> torch.Tensor:
         """
                 Get action from the Actor based on input
@@ -61,7 +61,7 @@ class SharedActorCritic(BaseActorCritic):
         super(SharedActorCritic, self).__init__()
 
         self.actorcritic = SharedMLP(critic_prev,actor_prev,shared,critic_post,actor_post,weight_init,activation_func)
-        print(self.actorcritic)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, state_critic,state_action):
 
@@ -111,16 +111,22 @@ class SharedActorCritic(BaseActorCritic):
 
 
 
-    def get_action(self, state, device, one_hot=False):
-        state = torch.FloatTensor(state).to(device)
+    def get_action(self, state, one_hot=False, deterministic=False):
+        # state = torch.FloatTensor(state).to(self.device)
         logits = self.forward(None,state)
         if one_hot:
-            logits = self.onehot_from_logits(logits)
+            if deterministic:
+                logits = self.onehot_from_logits(logits,eps=1.0)
+            else:
+                logits = self.onehot_from_logits(logits,eps=0.0)
             return logits
 
         dist = F.softmax(logits, dim=0)
         probs = Categorical(dist)
-        index = probs.sample().cpu().detach().item()
+        if deterministic:
+            index = torch.argmax(probs)
+        else:
+            index = probs.sample().cpu().detach().item()
         return index
 
     def onehot_from_logits(self, logits, eps=0.0):
@@ -139,6 +145,95 @@ class SharedActorCritic(BaseActorCritic):
                 for i, r in enumerate(torch.rand(logits.shape[0]))
             ]
         )
+
+    def get_value(self, state):
+        # state = torch.FloatTensor(state).to(self.device)
+        value = self.forward(state,None)
+        return value
+
+
+class Actor(BaseActorCritic):
+    def __init__(self, layer_sizes,weight_init,activation_func):
+        super(Actor, self).__init__()
+
+        self.actor = MLP(layer_sizes,weight_init,activation_func)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(self.actor)
+
+    def forward(self, policy):
+
+        for i in range(len(self.actor.model)):
+            if self.actor.activation is not None:
+                policy = self.actor.activation(self.actor.model[i](policy))
+            else:
+                policy = self.actor.model[i](policy)
+
+        return policy
+
+
+
+    def get_action(self, state, one_hot=False, deterministic=False):
+        # state = torch.FloatTensor(state).to(self.device)
+        logits = self.forward(state)
+        if one_hot:
+            if deterministic:
+                logits = self.onehot_from_logits(logits,eps=1.0)
+            else:
+                logits = self.onehot_from_logits(logits,eps=0.0)
+            return logits
+
+        dist = F.softmax(logits, dim=0)
+        probs = Categorical(dist)
+        if deterministic:
+            index = torch.argmax(probs)
+        else:
+            index = probs.sample().cpu().detach().item()
+        return index
+
+    def onehot_from_logits(self, logits, eps=0.0):
+        # get best (according to current policy) actions in one-hot form
+        argmax_acs = (logits == logits.max(0, keepdim=True)[0]).float()
+        if eps == 0.0:
+            return argmax_acs
+        # get random actions in one-hot form
+        rand_acs = torch.eye(logits.shape[1])[
+            [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
+        ]
+        # chooses between best and random actions using epsilon greedy
+        return torch.stack(
+            [
+                argmax_acs[i] if r > eps else rand_acs[i]
+                for i, r in enumerate(torch.rand(logits.shape[0]))
+            ]
+        )
+
+
+class Critic(BaseActorCritic):
+    def __init__(self, layer_sizes,weight_init,activation_func):
+        super(Critic, self).__init__()
+
+        self.critic = MLP(layer_sizes,weight_init,activation_func)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(self.actor)
+
+    def forward(self, value, action, concatenate_index):
+
+        for i in range(len(self.critic.model)):
+            if i==concatenate_index:
+                torch.cat([value,action], 1)
+            if self.critic.activation is not None:
+                value = self.critic.activation(self.critic.model[i](value))
+            else:
+                value = self.actor.model[i](value)
+
+        return value
+
+
+
+    def get_value(self, state):
+        # state = torch.FloatTensor(state).to(self.device)
+        value = self.forward(state)
+        return value
 
 
 

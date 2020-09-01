@@ -3,13 +3,25 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.autograd as autograd
 import numpy as np 
+import sys
+sys.path.append("/home/aditya/Desktop/genrl/genrl")
+from contrib.models.actor_critic import ActorCritic
 
 from model import CentralizedCritic, Actor
 
 
 class DDPGAgent:
 
-    def __init__(self, env, agent_id, actor_lr=1e-4, critic_lr=1e-3, gamma=0.99, tau=1e-2):
+    def __init__(
+        self, 
+        env, 
+        agent_id, 
+        actor_lr=1e-4, 
+        critic_lr=1e-3, 
+        gamma=0.99, 
+        tau=1e-2
+    ):
+
         self.env = env
         self.agent_id = agent_id
         self.actor_lr = actor_lr
@@ -29,6 +41,9 @@ class DDPGAgent:
         self.critic_input_dim = int(np.sum([env.observation_space[agent].shape[0] for agent in range(env.n)]))
         self.actor_input_dim = self.obs_dim
 
+        
+    def setup_model(self,load_model):
+
         self.critic = CentralizedCritic(self.critic_input_dim, self.action_dim * self.num_agents).to(self.device)
         self.critic_target = CentralizedCritic(self.critic_input_dim, self.action_dim * self.num_agents).to(self.device)
         self.actor = Actor(self.actor_input_dim, self.action_dim).to(self.device)
@@ -39,10 +54,13 @@ class DDPGAgent:
         
         for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
             target_param.data.copy_(param.data)
+
         
         self.MSELoss = nn.MSELoss()
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_lr)
         self.actor_optimizer = optim.Adam(self.actor.parameters(), lr=actor_lr)
+
+
 
     def get_action(self, state):
         state = autograd.Variable(torch.from_numpy(state).float().squeeze(0)).to(self.device)
