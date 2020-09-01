@@ -1,6 +1,5 @@
 from typing import Tuple
 
-import numpy as np
 import torch
 from gym import spaces
 from torch.distributions import Categorical, Normal

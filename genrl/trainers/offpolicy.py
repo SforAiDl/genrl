@@ -124,7 +124,9 @@ class OffPolicyTrainer(Trainer):
 
         for i, done_i in enumerate(dones):
             if done_i:
-                self.training_rewards.append(self.env.episode_reward[i])
+                self.training_rewards.append(
+                    self.env.episode_reward[i].detach().clone()
+                )
                 self.env.reset_single_env(i)
                 self.episodes += 1
                 game_over = True

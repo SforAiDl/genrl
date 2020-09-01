@@ -4,7 +4,6 @@ from copy import deepcopy
 from typing import Any, Iterator, List, Tuple
 
 import gym
-import numpy as np
 import torch
 
 

@@ -188,8 +188,11 @@ def set_seeds(seed: int, env: Union[gym.Env, VecEnv] = None) -> None:
         env.seed(seed)
 
 
-def safe_mean(log: List[int]):
+def safe_mean(log: Union[torch.Tensor, List[int]]):
     """
     Returns 0 if there are no elements in logs
     """
-    return np.mean(log) if len(log) > 0 else 0
+    if type(log) == torch.Tensor:
+        return torch.mean(log) if len(log) > 0 else 0
+    else:
+        return np.mean(log) if len(log) > 0 else 0

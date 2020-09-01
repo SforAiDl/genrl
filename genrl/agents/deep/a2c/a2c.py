@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
 import gym
-import numpy as np
 import torch
 from torch.nn import functional as F
 

@@ -22,15 +22,20 @@ class TorchWrapper(GymWrapper):
         super(TorchWrapper, self).__init__(env, *args, **kwargs)
 
     def step(self, action: torch.Tensor) -> torch.Tensor:
-        state, reward, done, info = self.env.step(action.numpy())
+        if self.action_shape == (1,) and isinstance(
+            self.env.action_space, gym.spaces.Discrete
+        ):
+            state, reward, done, info = self.env.step(action.item())
+        else:
+            state, reward, done, info = self.env.step(action.data)
         state = torch.from_numpy(state)
         return state, reward, done, info
 
     def reset(self) -> torch.Tensor:
-        return torch.as_tensor(self.env.reset())
+        return torch.from_numpy(self.env.reset())
 
     def sample(self) -> torch.Tensor:
-        return torch.as_tensor(self.env.action_space.sample())
+        return torch.from_numpy(self.env.action_space.sample())
 
     def __getattr__(self, name: str) -> Any:
         """
