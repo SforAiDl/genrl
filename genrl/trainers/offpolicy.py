@@ -157,7 +157,7 @@ class OffPolicyTrainer(Trainer):
             true_dones = [info[i]["done"] for i in range(self.env.n_envs)]
             self.buffer.push((state, action, reward, next_state, true_dones))
 
-            state = next_state.detach().clone()r
+            state = next_state.detach().clone()
 
             if self.check_game_over_status(timestep, done):
                 self.noise_reset()

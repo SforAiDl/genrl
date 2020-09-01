@@ -1,5 +1,6 @@
 import multiprocessing as mp
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Any, Iterator, List, Tuple
 
 import gym
@@ -161,7 +162,7 @@ class SerialVecEnv(VecEnv):
             self.states.detach().clone(),
             self.rewards.detach().clone(),
             self.dones.detach().clone(),
-            copy.deepcopy(self.infos),
+            deepcopy(self.infos),
         )
 
     def reset(self) -> torch.Tensor:
