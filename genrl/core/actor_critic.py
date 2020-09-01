@@ -392,6 +392,11 @@ class CNNActorCritic(BaseActorCritic):
         )
         self.critic = MlpValue(output_size, action_dim, val_type, value_layers)
 
+    def get_params(self):
+        actor_params = list(self.feature.parameters()) + list(self.actor.parameters())
+        critic_params = list(self.feature.parameters()) + list(self.critic.parameters())
+        return actor_params, critic_params
+
     def get_action(
         self, state: torch.Tensor, deterministic: bool = False
     ) -> torch.Tensor:
