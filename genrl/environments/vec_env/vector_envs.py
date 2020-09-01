@@ -265,7 +265,8 @@ class SubProcessVecEnv(VecEnv):
         self.episode_reward = torch.zeros(self.n_envs)
 
         obs = [parent_conn.recv() for parent_conn in self.parent_conns]
-        return torch.Tensor(obs)
+        print(obs)
+        return torch.stack(obs)
 
     def step(self, actions: torch.Tensor) -> Tuple:
         """

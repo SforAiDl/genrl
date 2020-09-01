@@ -45,8 +45,8 @@ class TestVecEnvs:
         _, rewards, _, _ = env.step(env.sample())
         env.close()
 
-        assert np.all(-1.0 <= rewards)
-        assert np.all(1.0 >= rewards)
+        assert (-1.0 <= rewards).byte().all()
+        assert (1.0 >= rewards).byte().all()
 
     def test_vecmonitor(self):
         """

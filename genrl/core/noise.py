@@ -115,7 +115,7 @@ class OrnsteinUhlenbeckActionNoise(ActionNoise):
         self.noise_prev = (
             self._initial_noise
             if self._initial_noise is not None
-            else torch.zeros_like(self._mean)
+            else torch.zeros(self._mean)
         )
 
 
