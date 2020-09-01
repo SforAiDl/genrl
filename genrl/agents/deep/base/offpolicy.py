@@ -7,9 +7,9 @@ from torch.nn import functional as F
 
 from genrl.agents.deep.base import BaseAgent
 from genrl.core import (
+    ReplayBuffer,
     PrioritizedBuffer,
     PrioritizedReplayBufferSamples,
-    PushReplayBuffer,
     ReplayBufferSamples,
 )
 
@@ -43,7 +43,7 @@ class OffPolicyAgent(BaseAgent):
         self.replay_size = replay_size
 
         if buffer_type == "push":
-            self.replay_buffer = PushReplayBuffer(self.replay_size)
+            self.replay_buffer = ReplayBuffer(self.replay_size)
         elif buffer_type == "prioritized":
             self.replay_buffer = PrioritizedBuffer(self.replay_size)
         else:
@@ -99,7 +99,7 @@ class OffPolicyAgent(BaseAgent):
         states, actions, rewards, next_states, dones = self._reshape_batch(batch)
 
         # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if isinstance(self.replay_buffer, PushReplayBuffer):
+        if isinstance(self.replay_buffer, ReplayBuffer):
             batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
         elif isinstance(self.replay_buffer, PrioritizedBuffer):
             indices, weights = batch[5], batch[6]
