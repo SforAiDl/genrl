@@ -2,8 +2,8 @@ from typing import Tuple
 
 import numpy as np
 import torch
-import torch.nn as nn
 from gym import spaces
+from torch import nn as nn
 from torch.distributions import Categorical, Normal
 
 from genrl.core.base import BaseActorCritic

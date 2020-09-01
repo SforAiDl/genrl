@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 import numpy as np
 import torch
-import torch.optim as opt
+from torch import optim as opt
 
 from genrl.agents import OffPolicyAgentAC
 from genrl.utils import get_env_properties, get_model, safe_mean

@@ -3,7 +3,7 @@ from typing import Any, Dict
 
 import numpy as np
 import torch
-import torch.optim as opt
+from torch import optim as opt
 
 from genrl.agents import OffPolicyAgentAC
 from genrl.core import ActionNoise

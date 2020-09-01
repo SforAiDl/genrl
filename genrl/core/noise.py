@@ -2,7 +2,7 @@ import math
 from abc import ABC, abstractmethod
 
 import torch
-import torch.nn as nn
+from torch import nn as nn
 
 
 class ActionNoise(ABC):
@@ -164,7 +164,9 @@ class NoisyLinear(nn.Module):
         mu_range = 1 / math.sqrt(self.weight_mu.size(1))
 
         self.weight_mu.data.uniform_(-mu_range, mu_range)
-        self.weight_sigma.data.fill_(self.std_init / math.sqrt(self.weight_sigma.size(1)))
+        self.weight_sigma.data.fill_(
+            self.std_init / math.sqrt(self.weight_sigma.size(1))
+        )
 
         self.bias_mu.data.uniform_(-mu_range, mu_range)
         self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.bias_sigma.size(0)))

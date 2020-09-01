@@ -1,8 +1,8 @@
 import math
-
 from typing import Tuple
 
 import torch
+
 
 class RunningMeanStd:
     """
@@ -31,7 +31,7 @@ class RunningMeanStd:
         M2 = (
             self.var * self.count
             + batch_var * batch_count
-            + (delta**2) * self.count * batch_count / total_count
+            + (delta ** 2) * self.count * batch_count / total_count
         )
 
         self.mean = new_mean

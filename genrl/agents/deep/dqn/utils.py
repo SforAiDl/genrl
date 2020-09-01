@@ -76,7 +76,9 @@ def categorical_greedy_action(agent: DQN, state: torch.Tensor) -> torch.Tensor:
     """
     q_value_dist = agent.model(state.unsqueeze(0)).detach()  # .numpy()
     # We need to scale and discretise the Q-value distribution obtained above
-    q_value_dist = q_value_dist * torch.linspace(agent.v_min, agent.v_max, agent.num_atoms)
+    q_value_dist = q_value_dist * torch.linspace(
+        agent.v_min, agent.v_max, agent.num_atoms
+    )
     # Then we find the action with the highest Q-values for all discrete regions
     # Current shape of the q_value_dist is [1, n_envs, action_dim, num_atoms]
     # So we take the sum of all the individual atom q_values and then take argmax

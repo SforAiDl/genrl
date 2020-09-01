@@ -173,12 +173,11 @@ class RolloutBuffer(BaseBuffer):
 
     def reset(self) -> None:
         self.observations = torch.zeros(
-            *(
-                self.buffer_size,
-                self.env.n_envs,
-                *self.env.obs_shape))
+            *(self.buffer_size, self.env.n_envs, *self.env.obs_shape)
+        )
         self.actions = torch.zeros(
-            *(self.buffer_size,self.env.n_envs,*self.env.action_shape))
+            *(self.buffer_size, self.env.n_envs, *self.env.action_shape)
+        )
         self.rewards = torch.zeros(self.buffer_size, self.env.n_envs)
         self.returns = torch.zeros(self.buffer_size, self.env.n_envs)
         self.dones = torch.zeros(self.buffer_size, self.env.n_envs)

@@ -1,9 +1,10 @@
-import math, random
+import math
+import random
 from copy import deepcopy
 from typing import Any, Dict, List
 
 import torch
-import torch.optim as opt
+from torch import optim as opt
 
 from genrl.agents import OffPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean
