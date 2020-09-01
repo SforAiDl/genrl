@@ -1,7 +1,7 @@
+import math, random
 from copy import deepcopy
 from typing import Any, Dict, List
 
-import numpy as np
 import torch
 import torch.optim as opt
 
@@ -98,10 +98,10 @@ class DQN(OffPolicyAgent):
         """Greedy action selection
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
         """
         q_values = self.model(state.unsqueeze(0))  # .detach().numpy()
         action = torch.argmax(q_values.squeeze(), dim=-1)
@@ -115,16 +115,16 @@ class DQN(OffPolicyAgent):
         Epsilon-greedy action-selection
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
             deterministic (bool): Should the policy be deterministic or stochastic
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
         """
         # state = torch.as_tensor(state).float()
         action = self.get_greedy_action(state)
         if not deterministic:
-            if np.random.rand() < self.epsilon:
+            if random.random() < self.epsilon:
                 action = self.env.sample()
         return action
 
@@ -208,7 +208,7 @@ class DQN(OffPolicyAgent):
         Exponentially decays exploration rate from max epsilon to min epsilon
         The greater the value of epsilon_decay, the slower the decrease in epsilon
         """
-        return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
+        return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * math.exp(
             -1.0 * self.timestep / self.epsilon_decay
         )
 

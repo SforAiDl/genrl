@@ -64,25 +64,24 @@ def prioritized_q_loss(agent: DQN, batch: collections.namedtuple):
     return loss
 
 
-def categorical_greedy_action(agent: DQN, state: torch.Tensor) -> np.ndarray:
+def categorical_greedy_action(agent: DQN, state: torch.Tensor) -> torch.Tensor:
     """Greedy action selection for Categorical DQN
 
     Args:
         agent (:obj:`DQN`): The agent
-        state (:obj:`np.ndarray`): Current state of the environment
+        state (:obj:`torch.Tensor`): Current state of the environment
 
     Returns:
-        action (:obj:`np.ndarray`): Action taken by the agent
+        action (:obj:`torch.Tensor`): Action taken by the agent
     """
     q_value_dist = agent.model(state.unsqueeze(0)).detach()  # .numpy()
     # We need to scale and discretise the Q-value distribution obtained above
-    q_value_dist = q_value_dist * np.linspace(agent.v_min, agent.v_max, agent.num_atoms)
+    q_value_dist = q_value_dist * torch.linspace(agent.v_min, agent.v_max, agent.num_atoms)
     # Then we find the action with the highest Q-values for all discrete regions
     # Current shape of the q_value_dist is [1, n_envs, action_dim, num_atoms]
     # So we take the sum of all the individual atom q_values and then take argmax
     # along action dim to get the optimal action. Since batch_size is 1 for this
     # function, we squeeze the first dimension out.
-    # action = np.argmax(q_value_dist.sum(-1), axis=-1).squeeze(0)
     action = torch.argmax(q_value_dist.sum(-1), axis=-1).squeeze(0)
     return action
 
@@ -120,7 +119,7 @@ def categorical_q_values(agent: DQN, states: torch.Tensor, actions: torch.Tensor
 
 def categorical_q_target(
     agent: DQN,
-    next_states: np.ndarray,
+    next_states: torch.Tensor,
     rewards: List[float],
     dones: List[bool],
 ):
@@ -142,7 +141,13 @@ def categorical_q_target(
 
     next_q_value_dist = agent.target_model(next_states) * support
     next_actions = torch.argmax(next_q_value_dist.sum(-1), axis=-1)
-    next_actions = next_actions[:, :, np.newaxis, np.newaxis]
+    # next_actions = next_actions[:, :, np.newaxis, np.newaxis]
+    # print(next_actions.shape, type(next_actions))
+    # next_actions = torch.zeros(1)
+    next_actions = next_actions.unsqueeze(-1)
+    next_actions = next_actions.unsqueeze(-1)
+    print(next_actions.shape, type(next_actions))
+
     next_actions = next_actions.expand(
         agent.batch_size, agent.env.n_envs, 1, agent.num_atoms
     )
