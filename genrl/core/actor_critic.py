@@ -9,7 +9,7 @@ from torch.distributions import Categorical, Normal
 from genrl.core.base import BaseActorCritic
 from genrl.core.policies import MlpPolicy
 from genrl.core.values import MlpValue
-from genrl.utils.utils import cnn
+from genrl.utils.utils import cnn, mlp
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -39,6 +39,73 @@ class MlpActorCritic(BaseActorCritic):
 
         self.actor = MlpPolicy(state_dim, action_dim, policy_layers, discrete, **kwargs)
         self.critic = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
+
+
+class MlpSharedActorCritic(BaseActorCritic):
+    """MLP Shared Actor Critic
+
+    Attributes:
+        state_dim (int): State dimensions of the environment
+        action_dim (int): Action space dimensions of the environment
+        hidden (:obj:`list` or :obj:`tuple`): Hidden layers in the MLP
+        val_type (str): Value type of the critic network
+        discrete (bool): True if the action space is discrete, else False
+        sac (bool): True if a SAC-like network is needed, else False
+        activation (str): Activation function to be used. Can be either "tanh" or "relu"
+    """
+
+    def __init__(
+        self,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
+        shared_layers: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
+        val_type: str = "V",
+        discrete: bool = True,
+        **kwargs,
+    ):
+        super(MlpSharedActorCritic, self).__init__()
+        self.shared = mlp([state_dim] + list(shared_layers))
+        self.actor = MlpPolicy(
+            shared_layers[-1], action_dim, policy_layers, discrete, **kwargs
+        )
+        self.critic = MlpValue(
+            shared_layers[-1], action_dim, val_type, value_layers, **kwargs
+        )
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+
+    def get_features(self, state: torch.Tensor):
+        features = self.shared(state)
+        return features
+
+    def get_action(self, state: torch.Tensor, deterministic: bool = False):
+        state = torch.as_tensor(state).float()
+        features = self.get_features(state)
+        action_probs = self.actor(features)
+        action_probs = nn.Softmax(dim=-1)(action_probs)
+
+        if deterministic:
+            action = torch.argmax(action_probs, dim=-1).unsqueeze(-1).float()
+            distribution = None
+        else:
+            distribution = Categorical(probs=action_probs)
+            action = distribution.sample()
+
+        return action, distribution
+
+    def get_value(self, state: torch.Tensor):
+        state = torch.as_tensor(state).float()
+        if self.critic.val_type == "Qsa":
+            features = self.shared(state[:, :, :-1])
+            features = torch.cat([features, state[:, :, -1].unsqueeze(-1)], dim=-1)
+            print(f"features {features.shape}")
+            value = self.critic(features).float().squeeze(-1)
+        else:
+            features = self.shared(state)
+            value = self.critic(features)
+        return value
 
 
 class MlpSingleActorMultiCritic(BaseActorCritic):
@@ -220,6 +287,7 @@ actor_critic_registry = {
     "mlp": MlpActorCritic,
     "cnn": CNNActorCritic,
     "mlp12": MlpSingleActorMultiCritic,
+    "mlps": MlpSharedActorCritic,
 }
 
 

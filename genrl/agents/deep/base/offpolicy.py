@@ -174,7 +174,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
 
         # add noise to output from policy network
         if self.noise is not None:
-            action += self.noise()
+            action = action + self.noise()
 
         return np.clip(
             action, self.env.action_space.low[0], self.env.action_space.high[0]
@@ -233,7 +233,6 @@ class OffPolicyAgentAC(OffPolicyAgent):
             next_q_target_values = self.ac_target.get_value(
                 torch.cat([next_states, next_target_actions], dim=-1)
             )
-
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
 
         return target_q_values
