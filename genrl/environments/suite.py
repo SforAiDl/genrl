@@ -1,6 +1,10 @@
 from typing import List
 
 import gym
+import multiagent.scenarios as scenarios
+import numpy as np
+from multiagent.environment import MultiAgentEnv
+from torch.distributions import Categorical, Normal
 
 from genrl.environments import (
     AtariPreprocessing,
@@ -13,19 +17,8 @@ from genrl.environments.time_limit import AtariTimeLimit, TimeLimit
 from genrl.environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
-from multiagent.environment import MultiAgentEnv
-# from multiagent.scenarios.simple_spread import Scenario
-import multiagent.scenarios as scenarios
-import torch 
-import numpy as np
-
-
-
 def VectorEnv(
-    env_id: str,
-    n_envs: int = 2,
-    parallel: int = False,
-    env_type: str = "gym",
+    env_id: str, n_envs: int = 2, parallel: int = False, env_type: str = "gym",
 ) -> VecEnv:
     """
         Chooses the kind of Vector Environment that is required
@@ -111,17 +104,19 @@ def AtariEnv(
     return env
 
 
-def MultiagentEnv(env_id: str)-> gym.Env:
-    # load scenario from script
+def MultiEnv(env_id: str) -> gym.Env:
     scenario = scenarios.load(env_id + ".py").Scenario()
     benchmark = False
-    # scenario = Scenario()
-    # create world
     world = scenario.make_world()
-    # create multiagent environment
-    if benchmark:
-        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, scenario.benchmark_data, scenario.isFinished)
-    else:
-        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, None, scenario.isFinished)
+    benchmark_data = scenario.benchmark_data if benchmark else None
 
-    return GymWrapper(env)
+    env = MultiAgentEnv(
+        world,
+        reset_callback=scenario.reset_world,
+        reward_callback=scenario.reward,
+        observation_callback=scenario.observation,
+        info_callback=benchmark_data,
+        done_callback=scenario.isFinished,
+    )
+
+    return GymWrapper(env)  # TODO See if TimeLimit is relevant here

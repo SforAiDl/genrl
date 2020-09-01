@@ -1,5 +1,6 @@
-from multiagent.environment import MultiAgentEnv
 import multiagent.scenarios as scenarios
+from multiagent.environment import MultiAgentEnv
+
 
 def make_env(scenario_name, benchmark=False):
     # load scenario from script
@@ -9,7 +10,21 @@ def make_env(scenario_name, benchmark=False):
     world = scenario.make_world()
     # create multiagent environment
     if benchmark:
-        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, scenario.benchmark_data, scenario.isFinished)
+        env = MultiAgentEnv(
+            world,
+            scenario.reset_world,
+            scenario.reward,
+            scenario.observation,
+            scenario.benchmark_data,
+            scenario.isFinished,
+        )
     else:
-        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, None, scenario.isFinished)
+        env = MultiAgentEnv(
+            world,
+            scenario.reset_world,
+            scenario.reward,
+            scenario.observation,
+            None,
+            scenario.isFinished,
+        )
     return env

@@ -4,11 +4,20 @@ import torch.autograd as autograd
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
+
 from .a2c import CentralizedActorCritic
 
 
 class A2CAgent:
-    def __init__(self, env, lr=2e-4, gamma=0.99, load_model=None, entropy_weight=0.008, timesteps_per_episode = 300):
+    def __init__(
+        self,
+        env,
+        lr=2e-4,
+        gamma=0.99,
+        load_model=None,
+        entropy_weight=0.008,
+        timesteps_per_episode=300,
+    ):
         self.env = env
         self.lr = lr
         self.gamma = gamma
@@ -80,14 +89,30 @@ class A2CAgent:
             if all(dones) or step == self.steps_per_episode - 1:
 
                 dones = [1 for _ in range(self.num_agents)]
-                self.rollout.push((torch.FloatTensor(states), torch.LongTensor(actions), torch.FloatTensor(rewards), torch.FloatTensor(next_states), torch.LongTensor(dones)))
+                self.rollout.push(
+                    (
+                        torch.FloatTensor(states),
+                        torch.LongTensor(actions),
+                        torch.FloatTensor(rewards),
+                        torch.FloatTensor(next_states),
+                        torch.LongTensor(dones),
+                    )
+                )
                 print("REWARD: {} \n".format(np.round(self.epoch_reward, decimals=4)))
                 print("*" * 100)
                 self.final_step = step
                 break
             else:
                 dones = [0 for _ in range(self.num_agents)]
-                self.rollout.push((torch.FloatTensor(states), torch.LongTensor(actions), torch.FloatTensor(rewards), torch.FloatTensor(next_states), torch.LongTensor(dones)))
+                self.rollout.push(
+                    (
+                        torch.FloatTensor(states),
+                        torch.LongTensor(actions),
+                        torch.FloatTensor(rewards),
+                        torch.FloatTensor(next_states),
+                        torch.LongTensor(dones),
+                    )
+                )
                 current_states = next_states
                 self.final_step = step
 
@@ -142,7 +167,9 @@ class A2CAgent:
         )
 
         advantage = value_targets - curr_Q
-        self.policy_loss = -probs.log_prob(self.actions).unsqueeze(dim=-1) * advantage.detach()
+        self.policy_loss = (
+            -probs.log_prob(self.actions).unsqueeze(dim=-1) * advantage.detach()
+        )
         self.policy_loss = self.policy_loss.mean()
 
         self.total_loss = self.policy_loss + self.value_loss - self.w * self.entropy
