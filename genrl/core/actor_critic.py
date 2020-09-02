@@ -18,7 +18,8 @@ class MlpActorCritic(BaseActorCritic):
     Attributes:
         state_dim (int): State dimensions of the environment
         action_dim (int): Action space dimensions of the environment
-        hidden (:obj:`list` or :obj:`tuple`): Hidden layers in the MLP
+        policy_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the policy MLP
+        value_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the value MLP
         val_type (str): Value type of the critic network
         discrete (bool): True if the action space is discrete, else False
         sac (bool): True if a SAC-like network is needed, else False
@@ -53,7 +54,9 @@ class MlpSharedActorCritic(BaseActorCritic):
     Attributes:
         state_dim (int): State dimensions of the environment
         action_dim (int): Action space dimensions of the environment
-        hidden (:obj:`list` or :obj:`tuple`): Hidden layers in the MLP
+        shared_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the shared MLP
+        policy_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the policy MLP
+        value_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the value MLP
         val_type (str): Value type of the critic network
         discrete (bool): True if the action space is discrete, else False
         sac (bool): True if a SAC-like network is needed, else False
@@ -100,6 +103,18 @@ class MlpSharedActorCritic(BaseActorCritic):
         return features
 
     def get_action(self, state: torch.Tensor, deterministic: bool = False):
+        """Get Actions from the actor
+
+        Arg:
+            state (:obj:`torch.Tensor`): The state(s) being passed to the critics
+            deterministic (bool): True if the action space is deterministic, else False
+
+        Returns:
+            action (:obj:`list`): List of actions as estimated by the critic
+            distribution (): The distribution from which the action was sampled
+                            (None if determinist
+        """
+
         state = torch.as_tensor(state).float()
         features = self.get_features(state)
         action_probs = self.actor(features)
@@ -115,6 +130,14 @@ class MlpSharedActorCritic(BaseActorCritic):
         return action, distribution
 
     def get_value(self, state: torch.Tensor):
+        """Get Values from the Critic
+
+        Arg:
+            state (:obj:`torch.Tensor`): The state(s) being passed to the critics
+
+        Returns:
+            values (:obj:`list`): List of values as estimated by the critic
+        """
         state = torch.as_tensor(state).float()
         if self.critic.val_type == "Qsa":
             features = self.shared(state[:, :, :-1])
@@ -132,7 +155,8 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
     Attributes:
         state_dim (int): State dimensions of the environment
         action_dim (int): Action space dimensions of the environment
-        hidden (:obj:`list` or :obj:`tuple`): Hidden layers in the MLP
+        policy_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the policy MLP
+        value_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the value MLP
         val_type (str): Value type of the critic network
         discrete (bool): True if the action space is discrete, else False
         num_critics (int): Number of critics in the architecture
@@ -175,6 +199,17 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         return (q1_values, q2_values)
 
     def get_action(self, state: torch.Tensor, deterministic: bool = False):
+        """Get Actions from the actor
+
+        Arg:
+            state (:obj:`torch.Tensor`): The state(s) being passed to the critics
+            deterministic (bool): True if the action space is deterministic, else False
+
+        Returns:
+            action (:obj:`list`): List of actions as estimated by the critic
+            distribution (): The distribution from which the action was sampled
+                            (None if determinist
+        """
         state = torch.as_tensor(state).float()
 
         if self.actor.sac:
@@ -229,13 +264,15 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         return values
 
 
-class MlpSharedSingleActorMultiCritic(BaseActorCritic):
+class MlpSharedSingleActorMultiCritic(MlpSingleActorMultiCritic):
     """MLP Actor Critic
 
     Attributes:
         state_dim (int): State dimensions of the environment
         action_dim (int): Action space dimensions of the environment
-        hidden (:obj:`list` or :obj:`tuple`): Hidden layers in the MLP
+        shared_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the shared MLP
+        policy_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the policy MLP
+        value_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the value MLP
         val_type (str): Value type of the critic network
         discrete (bool): True if the action space is discrete, else False
         num_critics (int): Number of critics in the architecture
@@ -250,36 +287,22 @@ class MlpSharedSingleActorMultiCritic(BaseActorCritic):
         shared_layers: Tuple = (32, 32),
         policy_layers: Tuple = (32, 32),
         value_layers: Tuple = (32, 32),
-        val_type: str = "V",
+        val_type: str = "Qsa",
         discrete: bool = True,
         num_critics: int = 2,
         **kwargs,
     ):
-        super(MlpSharedSingleActorMultiCritic, self).__init__()
-
-        self.num_critics = num_critics
+        super(MlpSharedSingleActorMultiCritic, self).__init__(
+            shared_layers[-1],
+            action_dim,
+            policy_layers,
+            value_layers,
+            val_type,
+            discrete,
+            num_critics,
+            **kwargs,
+        )
         self.shared = mlp([state_dim] + list(shared_layers))
-        self.actor = MlpPolicy(
-            shared_layers[-1], action_dim, policy_layers, discrete, **kwargs
-        )
-        self.critic1 = MlpValue(
-            shared_layers[-1], action_dim, "Qsa", value_layers, **kwargs
-        )
-        self.critic2 = MlpValue(
-            shared_layers[-1], action_dim, "Qsa", value_layers, **kwargs
-        )
-
-        self.action_scale = kwargs["action_scale"] if "action_scale" in kwargs else 1
-        self.action_bias = kwargs["action_bias"] if "action_bias" in kwargs else 0
-
-    def get_params(self):
-        actor_params = list(self.actor.parameters()) + list(self.shared.parameters())
-        critic_params = (
-            list(self.critic1.parameters())
-            + list(self.critic2.parameters())
-            + list(self.shared.parameters())
-        )
-        return actor_params, critic_params
 
     def get_features(self, state: torch.Tensor):
         """Extract features from the state, which is then an input to get_action and get_value
@@ -293,41 +316,24 @@ class MlpSharedSingleActorMultiCritic(BaseActorCritic):
         features = self.shared(state)
         return features
 
-    def forward(self, x):
-        q1_values = self.critic1(x).squeeze(-1)
-        q2_values = self.critic2(x).squeeze(-1)
-        return (q1_values, q2_values)
-
     def get_action(self, state: torch.Tensor, deterministic: bool = False):
-        state = torch.as_tensor(state).float()
-        state = self.get_features(state)
+        """Get Actions from the actor
 
-        if self.actor.sac:
-            mean, log_std = self.actor(state)
-            std = log_std.exp()
-            distribution = Normal(mean, std)
+        Arg:
+            state (:obj:`torch.Tensor`): The state(s) being passed to the critics
+            deterministic (bool): True if the action space is deterministic, else False
 
-            action_probs = distribution.rsample()
-            log_probs = distribution.log_prob(action_probs)
-            action_probs = torch.tanh(action_probs)
+        Returns:
+            action (:obj:`list`): List of actions as estimated by the critic
+            distribution (): The distribution from which the action was sampled
+                            (None if determinist
+        """
+        return super(MlpSharedSingleActorMultiCritic, self).get_action(
+            self.get_features(state), deterministic=deterministic
+        )
 
-            action = action_probs * self.action_scale + self.action_bias
-
-            # enforcing action bound (appendix of SAC paper)
-            log_probs -= torch.log(
-                self.action_scale * (1 - action_probs.pow(2)) + np.finfo(np.float32).eps
-            )
-            log_probs = log_probs.sum(1, keepdim=True)
-            mean = torch.tanh(mean) * self.action_scale + self.action_bias
-
-            action = (action.float(), log_probs, mean)
-        else:
-            action = self.actor.get_action(state, deterministic=deterministic)
-
-        return action
-
-    def get_value(self, state: torch.Tensor, mode="first") -> torch.Tensor:
-        """Get Values from the Critic
+    def get_value(self, state: torch.Tensor, mode="first"):
+        """Get Values from both the Critic
 
         Arg:
             state (:obj:`torch.Tensor`): The state(s) being passed to the critics
@@ -342,18 +348,7 @@ class MlpSharedSingleActorMultiCritic(BaseActorCritic):
         state = torch.as_tensor(state).float()
         x = self.get_features(state[:, :, :-1])
         state = torch.cat([x, state[:, :, -1].unsqueeze(-1)], dim=-1)
-
-        if mode == "both":
-            values = self.forward(state)
-        elif mode == "min":
-            values = self.forward(state)
-            values = torch.min(*values).squeeze(-1)
-        elif mode == "first":
-            values = self.critic1(state)
-        else:
-            raise KeyError("Mode doesn't exist")
-
-        return values
+        return super(MlpSharedSingleActorMultiCritic, self).get_value(state, mode)
 
 
 class CNNActorCritic(BaseActorCritic):
