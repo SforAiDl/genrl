@@ -109,6 +109,7 @@ class DDPG(OffPolicyAgentAC):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural Network weights
         """
         hyperparams = {
             "network": self.network,
@@ -136,8 +137,7 @@ class DDPG(OffPolicyAgentAC):
         return logs
 
     def empty_logs(self):
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []

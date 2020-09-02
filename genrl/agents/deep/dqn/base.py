@@ -41,7 +41,7 @@ class DQN(OffPolicyAgent):
         *args,
         max_epsilon: float = 1.0,
         min_epsilon: float = 0.01,
-        epsilon_decay: int = 1000,
+        epsilon_decay: int = 500,
         **kwargs
     ):
         super(DQN, self).__init__(*args, **kwargs)
@@ -217,6 +217,7 @@ class DQN(OffPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "gamma": self.gamma,
@@ -232,9 +233,9 @@ class DQN(OffPolicyAgent):
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`Dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.Tensor`): neural net weights
         """
-        self.model.load_state_dict(weights["weights"])
+        self.model.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
@@ -250,8 +251,7 @@ class DQN(OffPolicyAgent):
         return logs
 
     def empty_logs(self) -> None:
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["value_loss"] = []
         self.logs["epsilon"] = []

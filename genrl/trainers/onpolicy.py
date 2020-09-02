@@ -32,8 +32,8 @@ class OnPolicyTrainer(Trainer):
 
     def train(self) -> None:
         """Main training method"""
-        # if self.load_model is not None:
-        self.load()
+        if self.load_weights is not None or self.load_hyperparams is not None:
+            self.load()
 
         for epoch in range(self.epochs):
             self.agent.epoch_reward = np.zeros(self.env.n_envs)
@@ -51,13 +51,16 @@ class OnPolicyTrainer(Trainer):
                 self.logger.write(
                     {
                         "timestep": epoch * self.agent.rollout_size,
-                        "Episode": epoch,
+                        "Epoch": epoch,  # This is not the same as an episode. 1 epoch is 1 rollout.
                         **self.agent.get_logging_params(),
                     },
                     self.log_key,
                 )
 
-            if epoch * self.agent.rollout_size >= self.max_timesteps:
+            if (
+                self.max_timesteps is not None
+                and epoch * self.agent.rollout_size >= self.max_timesteps
+            ):
                 break
 
             if self.render:

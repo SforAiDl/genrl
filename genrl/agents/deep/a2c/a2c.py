@@ -108,7 +108,7 @@ class A2C(OnPolicyAgent):
         state = torch.as_tensor(state).float().to(self.device)
 
         # create distribution based on actor output
-        action, dist = self.ac.get_action(state, deterministic=False)
+        action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
         return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
@@ -185,6 +185,7 @@ class A2C(OnPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -196,13 +197,13 @@ class A2C(OnPolicyAgent):
         }
         return hyperparams, self.ac.state_dict()
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.Tensor`): neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.ac.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
@@ -221,8 +222,7 @@ class A2C(OnPolicyAgent):
         return logs
 
     def empty_logs(self):
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []

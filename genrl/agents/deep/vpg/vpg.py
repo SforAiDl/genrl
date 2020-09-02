@@ -144,6 +144,7 @@ class VPG(OnPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,

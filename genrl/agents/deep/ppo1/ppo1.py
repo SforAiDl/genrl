@@ -192,6 +192,7 @@ class PPO1(OnPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -211,7 +212,7 @@ class PPO1(OnPolicyAgent):
         Args:
             weights (:obj:`dict`): Dictionary of different neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.ac.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
@@ -230,8 +231,7 @@ class PPO1(OnPolicyAgent):
         return logs
 
     def empty_logs(self):
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []

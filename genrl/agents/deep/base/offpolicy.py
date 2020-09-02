@@ -9,7 +9,7 @@ from genrl.agents.deep.base import BaseAgent
 from genrl.core import (
     PrioritizedBuffer,
     PrioritizedReplayBufferSamples,
-    PushReplayBuffer,
+    ReplayBuffer,
     ReplayBufferSamples,
 )
 
@@ -43,7 +43,7 @@ class OffPolicyAgent(BaseAgent):
         self.replay_size = replay_size
 
         if buffer_type == "push":
-            self.replay_buffer = PushReplayBuffer(self.replay_size)
+            self.replay_buffer = ReplayBuffer(self.replay_size)
         elif buffer_type == "prioritized":
             self.replay_buffer = PrioritizedBuffer(self.replay_size)
         else:
@@ -58,8 +58,7 @@ class OffPolicyAgent(BaseAgent):
         pass
 
     def update_params(self, update_interval: int) -> None:
-        """Update parameters of the model
-        """
+        """Update parameters of the model"""
         raise NotImplementedError
 
     def update_target_model(self) -> None:
@@ -100,7 +99,7 @@ class OffPolicyAgent(BaseAgent):
         states, actions, rewards, next_states, dones = self._reshape_batch(batch)
 
         # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if isinstance(self.replay_buffer, PushReplayBuffer):
+        if isinstance(self.replay_buffer, ReplayBuffer):
             batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
         elif isinstance(self.replay_buffer, PrioritizedBuffer):
             indices, weights = batch[5], batch[6]
@@ -274,10 +273,10 @@ class OffPolicyAgentAC(OffPolicyAgent):
         policy_loss = -torch.mean(q_values)
         return policy_loss
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.Tensor`): neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.ac.load_state_dict(weights)

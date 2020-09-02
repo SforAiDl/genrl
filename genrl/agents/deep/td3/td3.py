@@ -128,6 +128,7 @@ class TD3(OffPolicyAgentAC):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -158,8 +159,7 @@ class TD3(OffPolicyAgentAC):
         return logs
 
     def empty_logs(self):
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["policy_loss"] = []
         self.logs["value_loss"] = []
