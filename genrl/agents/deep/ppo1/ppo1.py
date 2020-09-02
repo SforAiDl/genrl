@@ -2,8 +2,8 @@ from typing import Any, Dict
 
 import gym
 import torch  # noqa
-from torch import nn as nn  # noqa
-from torch import optim as opt  # noqa
+import torch.nn as nn  # noqa
+import torch.optim as opt  # noqa
 
 from genrl.agents import OnPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean

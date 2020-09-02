@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 import torch  # noqa
-from torch import nn as nn  # noqa
+import torch.nn as nn  # noqa
 from torch.nn import functional as F
 
 from genrl.agents.bandits.contextual.common.transition import TransitionDB

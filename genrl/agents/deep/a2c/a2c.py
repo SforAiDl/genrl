@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import gym
 import torch
-from torch import optim as opt
+import torch.optim as opt
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import OnPolicyAgent

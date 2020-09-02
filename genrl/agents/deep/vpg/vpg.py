@@ -2,7 +2,7 @@ from typing import Any, Dict
 
 import gym
 import torch
-from torch import optim as opt
+import torch.optim as opt
 
 from genrl.agents import OnPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean

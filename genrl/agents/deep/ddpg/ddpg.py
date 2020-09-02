@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Any, Dict
 
 import torch
-from torch import optim as opt
+import torch.optim as opt
 
 from genrl.agents import OffPolicyAgentAC
 from genrl.core import ActionNoise
