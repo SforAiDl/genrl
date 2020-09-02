@@ -111,7 +111,7 @@ class VPG(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout.compute_returns_and_advantage(values.detach().cpu().numpy(), dones)
+        self.rollout.compute_returns_and_advantage(values.detach().clone(), dones)
 
     def update_params(self) -> None:
         """Updates the the A2C network
