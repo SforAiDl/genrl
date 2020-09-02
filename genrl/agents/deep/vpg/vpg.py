@@ -41,8 +41,7 @@ class VPG(OnPolicyAgent):
             self._create_model()
 
     def _create_model(self):
-        """Initialize policy network
-        """
+        """Initialize policy network"""
         state_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network
         )
@@ -156,13 +155,13 @@ class VPG(OnPolicyAgent):
 
         return hyperparams, self.actor.state_dict()
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
             weights (:obj:`dict`): Dictionary of different neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.actor.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
@@ -179,8 +178,7 @@ class VPG(OnPolicyAgent):
         return logs
 
     def empty_logs(self):
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["loss"] = []
         self.rewards = []

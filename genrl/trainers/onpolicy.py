@@ -31,10 +31,9 @@ class OnPolicyTrainer(Trainer):
         super(OnPolicyTrainer, self).__init__(*args, **kwargs)
 
     def train(self) -> None:
-        """Main training method
-        """
-        if self.load_model is not None:
-            self.load()
+        """Main training method"""
+        # if self.load_model is not None:
+        self.load()
 
         for epoch in range(self.epochs):
             self.agent.epoch_reward = np.zeros(self.env.n_envs)
