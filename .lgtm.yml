@@ -1,2 +1,2 @@
 queries: 
-  - exclude: py/import-and-import-from
+  exclude: py/import-and-import-from
