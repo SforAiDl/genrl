@@ -7,6 +7,7 @@ from genrl.environments import GymWrapper
 
 
 class TorchWrapper(GymWrapper):
+
     """
 
     Wraps an environment to deal with tensors avoiding conversion to numpy at frontend.
@@ -18,6 +19,7 @@ class TorchWrapper(GymWrapper):
         env (gym.Env): Environment
 
     """
+
     def __init__(self, env: gym.Env, *args, **kwargs):
         """
         Constructor for Torch Wrapper
