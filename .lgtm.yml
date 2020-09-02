@@ -1,7 +1,5 @@
---- 
-    path_classifiers: 
-      test: 
-        - test_**/*
-    queries: 
-      - 
-        exclude: py/import-and-import-from
+path_classifiers: 
+  test: 
+    - test_**/*
+queries: 
+  - exclude: py/import-and-import-from
