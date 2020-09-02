@@ -2,7 +2,7 @@ from typing import Dict, Optional, Tuple
 
 import torch  # noqa
 import torch.nn as nn  # noqa
-from torch.nn import functional as F
+import torch.nn.functional as F
 
 from genrl.agents.bandits.contextual.common.base_model import Model
 from genrl.agents.bandits.contextual.common.transition import TransitionDB

@@ -1,8 +1,8 @@
 from typing import Tuple
 
 import torch  # noqa
+import torch.nn as nn  # noqa
 from gym import spaces
-from torch import nn as nn  # noqa
 from torch.distributions import Categorical, Normal
 
 from genrl.core.base import BaseActorCritic

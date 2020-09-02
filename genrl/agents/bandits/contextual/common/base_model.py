@@ -3,7 +3,7 @@ from typing import Dict
 
 import torch  # noqa
 import torch.nn as nn  # noqa
-from torch.nn import functional as F
+import torch.nn.functional as F
 
 from genrl.agents.bandits.contextual.common.transition import TransitionDB
 
