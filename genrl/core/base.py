@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
-import torch
-from torch import nn
+import torch  # noqa
+from torch import nn as nn  # noqa
 from torch.distributions import Categorical, Normal
 
 

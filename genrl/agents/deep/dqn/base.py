@@ -3,8 +3,8 @@ import random
 from copy import deepcopy
 from typing import Any, Dict, List
 
-import torch
-from torch import optim as opt
+import torch  # noqa
+import torch.optim as opt  # noqa
 
 from genrl.agents import OffPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean
