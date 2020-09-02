@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
 import gym
-import torch  # lgtm[py/import-and-import-from]
-from torch import optim as opt  # lgtm[py/import-and-import-from]
+import torch
+from torch import optim as opt
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import OnPolicyAgent

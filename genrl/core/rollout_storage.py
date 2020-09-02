@@ -263,7 +263,6 @@ class RolloutBuffer(BaseBuffer):
             # Reshape 0-d tensor to avoid error
             log_prob = log_prob.reshape(-1, 1)
 
-        # print(action.squeeze())
         self.observations[self.pos] = obs.detach().clone()
         self.actions[self.pos] = action.squeeze().detach().clone()
         self.rewards[self.pos] = reward.detach().clone()

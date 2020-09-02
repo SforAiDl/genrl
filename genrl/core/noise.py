@@ -1,8 +1,8 @@
 import math
 from abc import ABC, abstractmethod
 
-import torch  # lgtm[py/import-and-import-from]
-from torch import nn  # lgtm[py/import-and-import-from]
+import torch
+from torch import nn
 
 
 class ActionNoise(ABC):

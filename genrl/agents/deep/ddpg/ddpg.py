@@ -1,8 +1,8 @@
 from copy import deepcopy
 from typing import Any, Dict
 
-import torch  # lgtm[py/import-and-import-from]
-from torch import optim as opt  # lgtm[py/import-and-import-from]
+import torch
+from torch import optim as opt
 
 from genrl.agents import OffPolicyAgentAC
 from genrl.core import ActionNoise

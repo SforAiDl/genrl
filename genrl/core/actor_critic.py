@@ -1,8 +1,8 @@
 from typing import Tuple
 
-import torch  # lgtm[py/import-and-import-from]
+import torch
 from gym import spaces
-from torch import nn  # lgtm[py/import-and-import-from]
+from torch import nn
 from torch.distributions import Categorical, Normal
 
 from genrl.core.base import BaseActorCritic

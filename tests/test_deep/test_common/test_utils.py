@@ -1,8 +1,8 @@
 import random
 
 import gym
-import torch  # lgtm[py/import-and-import-from]
-from torch import nn  # lgtm[py/import-and-import-from]
+import torch
+from torch import nn
 
 from genrl.agents import PPO1
 from genrl.core import CnnValue, MlpActorCritic, MlpPolicy, MlpValue

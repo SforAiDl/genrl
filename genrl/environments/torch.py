@@ -14,8 +14,7 @@ class TorchWrapper(GymWrapper):
         ``env = TorchWrapper(env)``
 
     Attributes:
-
-
+        env (gym.Env): Environment
     """
 
     def __init__(self, env: gym.Env, *args, **kwargs):

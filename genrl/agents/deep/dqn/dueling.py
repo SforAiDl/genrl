@@ -1,4 +1,4 @@
-from torch import optim as opt  # lgtm[py/import-and-import-from]
+from torch import optim as opt
 
 from genrl.agents.deep.dqn.base import DQN
 

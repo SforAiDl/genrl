@@ -3,8 +3,8 @@ from typing import Any, List, Tuple, Union
 
 import gym
 import numpy as np
-import torch  # lgtm[py/import-and-import-from]
-from torch import nn  # lgtm[py/import-and-import-from]
+import torch
+from torch import nn
 
 from genrl.core.base import BaseActorCritic, BasePolicy, BaseValue
 from genrl.core.noise import NoisyLinear
