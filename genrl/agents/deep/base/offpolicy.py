@@ -1,7 +1,6 @@
 import collections
 from typing import List
 
-import numpy as np
 import torch
 from torch.nn import functional as F
 
@@ -155,28 +154,27 @@ class OffPolicyAgentAC(OffPolicyAgent):
         self.doublecritic = False
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = True
+    ) -> torch.Tensor:
         """Select action given state
 
         Deterministic Action Selection with Noise
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
             deterministic (bool): Should the policy be deterministic or stochastic
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
         """
-        state = torch.as_tensor(state).float()
         action, _ = self.ac.get_action(state, deterministic)
-        action = action.detach().cpu().numpy()
+        action = action.detach()
 
         # add noise to output from policy network
         if self.noise is not None:
             action += self.noise()
 
-        return np.clip(
+        return torch.clamp(
             action, self.env.action_space.low[0], self.env.action_space.high[0]
         )
 

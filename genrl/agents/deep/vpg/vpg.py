@@ -1,7 +1,6 @@
 from typing import Any, Dict
 
 import gym
-import numpy as np
 import torch
 import torch.optim as opt
 
@@ -61,8 +60,8 @@ class VPG(OnPolicyAgent):
         self.optimizer_policy = opt.Adam(self.actor.parameters(), lr=self.lr_policy)
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """Select action given state
 
         Action Selection for Vanilla Policy Gradient
@@ -77,13 +76,11 @@ class VPG(OnPolicyAgent):
                 to find the value so we set this to a default 0 for convenience
             log_prob (:obj:`torch.Tensor`): Log probability of selected action
         """
-        state = torch.as_tensor(state).float().to(self.device)
-
         # create distribution based on policy_fn output
         action, dist = self.actor.get_action(state, deterministic=deterministic)
 
         return (
-            action.detach().cpu().numpy(),
+            action.detach(),
             torch.zeros((1, self.env.n_envs)),
             dist.log_prob(action).cpu(),
         )

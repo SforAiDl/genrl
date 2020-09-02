@@ -1,7 +1,6 @@
 import collections
-from typing import List, Tuple
+from typing import Tuple
 
-import numpy as np
 import torch
 
 from genrl.agents.deep.dqn.base import DQN
@@ -67,14 +66,14 @@ class CategoricalDQN(DQN):
         if self.create_model:
             self._create_model(noisy_layers=self.noisy_layers, num_atoms=self.num_atoms)
 
-    def get_greedy_action(self, state: torch.Tensor) -> np.ndarray:
+    def get_greedy_action(self, state: torch.Tensor) -> torch.Tensor:
         """Greedy action selection
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
         """
         return categorical_greedy_action(self, state)
 
@@ -91,7 +90,7 @@ class CategoricalDQN(DQN):
         return categorical_q_values(self, states, actions)
 
     def get_target_q_values(
-        self, next_states: np.ndarray, rewards: List[float], dones: List[bool]
+        self, next_states: torch.Tensor, rewards: torch.Tensor, dones: torch.Tensor
     ):
         """Projected Distribution of Q-values
 

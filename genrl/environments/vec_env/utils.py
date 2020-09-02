@@ -1,6 +1,6 @@
 from typing import Tuple
 
-import numpy as np
+import torch
 
 
 class RunningMeanStd:
@@ -14,13 +14,13 @@ class RunningMeanStd:
     """
 
     def __init__(self, epsilon: float = 1e-4, shape: Tuple = ()):
-        self.mean = np.zeros(shape, dtype=np.float64)
-        self.var = np.ones(shape, dtype=np.float64)
+        self.mean = torch.zeros(shape).double()
+        self.var = torch.ones(shape).double()
         self.count = epsilon
 
-    def update(self, batch: np.ndarray):
-        batch_mean = np.mean(batch, axis=0)
-        batch_var = np.var(batch, axis=0)
+    def update(self, batch: torch.Tensor):
+        batch_mean = torch.mean(batch, axis=0)
+        batch_var = torch.var(batch, axis=0)
         batch_count = batch.shape[0]
 
         total_count = self.count + batch_count
@@ -30,7 +30,7 @@ class RunningMeanStd:
         M2 = (
             self.var * self.count
             + batch_var * batch_count
-            + np.square(delta) * self.count * batch_count / total_count
+            + (delta ** 2) * self.count * batch_count / total_count
         )
 
         self.mean = new_mean
