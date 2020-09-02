@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Tuple
 
 import torch
-from torch import nn
+import torch.nn as nn
 from torch.nn import functional as F
 
 from genrl.agents.bandits.contextual.common.base_model import Model
