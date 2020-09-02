@@ -1,6 +1,6 @@
 from typing import Optional, Tuple
 
-import torch
+import torch  # lgtm[py/import-and-import-from]
 from torch import nn  # lgtm[py/import-and-import-from]
 from torch.distributions import Categorical, Normal
 

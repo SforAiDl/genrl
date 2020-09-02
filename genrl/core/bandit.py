@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Tuple, Union
 
-import torch
+import torch  # lgtm[py/import-and-import-from]
 from torch.nn import functional as F
 
 

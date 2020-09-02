@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 import gym
-import torch
+import torch  # lgtm[py/import-and-import-from]
 from torch import optim as opt  # lgtm[py/import-and-import-from]
 from torch.nn import functional as F
 

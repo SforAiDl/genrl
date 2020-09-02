@@ -3,7 +3,7 @@ from typing import Any, List, Tuple, Union
 
 import gym
 import numpy as np
-import torch
+import torch  # lgtm[py/import-and-import-from]
 from torch import nn  # lgtm[py/import-and-import-from]
 
 from genrl.core.base import BaseActorCritic, BasePolicy, BaseValue
@@ -191,7 +191,11 @@ def safe_mean(log: Union[torch.Tensor, List[int]]):
     """
     Returns 0 if there are no elements in logs
     """
+
+    if len(log) == 0:
+        return 0
     if isinstance(log, torch.Tensor):
-        return torch.mean(log) if len(log) > 0 else 0
+        func = torch.mean
     else:
-        return np.mean(log) if len(log) > 0 else 0
+        func = np.mean
+    return func(log)

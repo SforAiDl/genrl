@@ -68,7 +68,7 @@ class BaseBuffer(object):
             arr = arr.unsqueeze(-1)
             shape = shape + (1,)
 
-        return arr.permute(1, 0, *(2 + np.arange(0, len(shape) - 2))).reshape(
+        return arr.permute(1, 0, *(np.arange(2, len(shape)))).reshape(
             shape[0] * shape[1], *shape[2:]
         )
 

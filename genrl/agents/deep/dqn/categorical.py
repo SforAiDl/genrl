@@ -90,7 +90,7 @@ class CategoricalDQN(DQN):
         return categorical_q_values(self, states, actions)
 
     def get_target_q_values(
-        self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
+        self, next_states: torch.Tensor, rewards: torch.Tensor, dones: torch.Tensor
     ):
         """Projected Distribution of Q-values
 

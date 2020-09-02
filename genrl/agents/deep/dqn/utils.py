@@ -1,5 +1,4 @@
 import collections
-from typing import List
 
 import torch
 
@@ -121,8 +120,8 @@ def categorical_q_values(agent: DQN, states: torch.Tensor, actions: torch.Tensor
 def categorical_q_target(
     agent: DQN,
     next_states: torch.Tensor,
-    rewards: List[float],
-    dones: List[bool],
+    rewards: torch.Tensor,
+    dones: torch.Tensor,
 ):
     """Projected Distribution of Q-values
 
@@ -141,13 +140,9 @@ def categorical_q_target(
     support = torch.linspace(agent.v_min, agent.v_max, agent.num_atoms)
 
     next_q_value_dist = agent.target_model(next_states) * support
-    next_actions = torch.argmax(next_q_value_dist.sum(-1), axis=-1)
-    # next_actions = next_actions[:, :, np.newaxis, np.newaxis]
-    # print(next_actions.shape, type(next_actions))
-    # next_actions = torch.zeros(1)
-    next_actions = next_actions.unsqueeze(-1)
-    next_actions = next_actions.unsqueeze(-1)
-    print(next_actions.shape, type(next_actions))
+    next_actions = (
+        torch.argmax(next_q_value_dist.sum(-1), axis=-1).unsqueeze(-1).unsqueeze(-1)
+    )
 
     next_actions = next_actions.expand(
         agent.batch_size, agent.env.n_envs, 1, agent.num_atoms

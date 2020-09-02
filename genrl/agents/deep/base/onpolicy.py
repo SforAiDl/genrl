@@ -47,13 +47,13 @@ class OnPolicyAgent(BaseAgent):
         """Update parameters of the model"""
         raise NotImplementedError
 
-    def collect_rewards(self, reward: torch.Tensor, dones: torch.Tensor, timestep: int):
+    def collect_rewards(self, dones: torch.Tensor, timestep: int):
         """Helper function to collect rewards
 
         Runs through all the envs and collects rewards accumulated during rollouts
 
         Args:
-            dones (:obj:`list` of bool): Game over statuses of each environment
+            dones (:obj:`torch.Tensor`): Game over statuses of each environment
             timestep (int): Timestep during rollout
         """
         for i, done in enumerate(dones):
@@ -72,13 +72,12 @@ class OnPolicyAgent(BaseAgent):
 
         Returns:
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
-            dones (:obj:`list` of bool): Game over statuses of each environment
+            dones (:obj:`torch.Tensor`): Game over statuses of each environment
         """
         for i in range(self.rollout_size):
             action, values, old_log_probs = self.select_action(state)
 
             next_state, reward, dones, _ = self.env.step(action)
-            # print(reward)
 
             if self.render:
                 self.env.render()
@@ -94,6 +93,6 @@ class OnPolicyAgent(BaseAgent):
 
             state = next_state
 
-            self.collect_rewards(reward, dones, i)
+            self.collect_rewards(dones, i)
 
         return values, dones

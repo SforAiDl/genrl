@@ -3,7 +3,7 @@ import random
 from copy import deepcopy
 from typing import Any, Dict, List
 
-import torch
+import torch  # lgtm[py/import-and-import-from]
 from torch import optim as opt  # lgtm[py/import-and-import-from]
 
 from genrl.agents import OffPolicyAgent
@@ -104,7 +104,7 @@ class DQN(OffPolicyAgent):
         Returns:
             action (:obj:`torch.Tensor`): Action taken by the agent
         """
-        q_values = self.model(state.unsqueeze(0))  # .detach().numpy()
+        q_values = self.model(state.unsqueeze(0))
         action = torch.argmax(q_values.squeeze(), dim=-1)
         return action
 
@@ -122,7 +122,6 @@ class DQN(OffPolicyAgent):
         Returns:
             action (:obj:`torch.Tensor`): Action taken by the agent
         """
-        # state = torch.as_tensor(state).float()
         action = self.get_greedy_action(state)
         if not deterministic:
             if random.random() < self.epsilon:

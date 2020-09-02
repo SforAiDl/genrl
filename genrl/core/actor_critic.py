@@ -1,6 +1,6 @@
 from typing import Tuple
 
-import torch
+import torch  # lgtm[py/import-and-import-from]
 from gym import spaces
 from torch import nn  # lgtm[py/import-and-import-from]
 from torch.distributions import Categorical, Normal
