@@ -1,7 +1,6 @@
 import collections
 from typing import List
 
-import numpy as np
 import torch
 from torch.nn import functional as F
 
@@ -9,7 +8,7 @@ from genrl.agents.deep.base import BaseAgent
 from genrl.core import (
     PrioritizedBuffer,
     PrioritizedReplayBufferSamples,
-    PushReplayBuffer,
+    ReplayBuffer,
     ReplayBufferSamples,
 )
 
@@ -43,7 +42,7 @@ class OffPolicyAgent(BaseAgent):
         self.replay_size = replay_size
 
         if buffer_type == "push":
-            self.replay_buffer = PushReplayBuffer(self.replay_size)
+            self.replay_buffer = ReplayBuffer(self.replay_size)
         elif buffer_type == "prioritized":
             self.replay_buffer = PrioritizedBuffer(self.replay_size)
         else:
@@ -99,7 +98,7 @@ class OffPolicyAgent(BaseAgent):
         states, actions, rewards, next_states, dones = self._reshape_batch(batch)
 
         # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if isinstance(self.replay_buffer, PushReplayBuffer):
+        if isinstance(self.replay_buffer, ReplayBuffer):
             batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
         elif isinstance(self.replay_buffer, PrioritizedBuffer):
             indices, weights = batch[5], batch[6]
@@ -155,28 +154,27 @@ class OffPolicyAgentAC(OffPolicyAgent):
         self.doublecritic = False
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = True
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = True
+    ) -> torch.Tensor:
         """Select action given state
 
         Deterministic Action Selection with Noise
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
             deterministic (bool): Should the policy be deterministic or stochastic
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
         """
-        state = torch.as_tensor(state).float()
         action, _ = self.ac.get_action(state, deterministic)
-        action = action.detach().cpu().numpy()
+        action = action.detach()
 
         # add noise to output from policy network
         if self.noise is not None:
             action += self.noise()
 
-        return np.clip(
+        return torch.clamp(
             action, self.env.action_space.low[0], self.env.action_space.high[0]
         )
 
