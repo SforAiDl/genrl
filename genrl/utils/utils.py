@@ -62,6 +62,52 @@ def mlp(
 
     return nn.Sequential(*layers)
 
+
+# If at all you need to concatenate states to actions after passing states through n FC layers
+def mlp_(
+    self,
+    layer_sizes,
+    weight_init,
+    activation_func,
+    concat_ind,
+    sac
+    ):
+    """
+        Generates an MLP model given sizes of each layer
+
+        :param layer_sizes: Sizes of hidden layers
+        :param weight_init: type of weight initialization
+        :param activation_func: type of activation function
+        :param concat_ind: index of layer at which actions to be concatenated
+        :param sac: True if Soft Actor Critic is being used, else False
+        :type layer_sizes: tuple or list
+        :type concat_ind: int
+        :type sac: bool
+        :type weight_init,activation_func: string
+        :returns: (Neural Network with fully-connected linear layers and
+    activation layers)
+    """
+    layers = []
+    limit = len(layer_sizes) if sac is False else len(sizes) - 1
+
+    # add more activations
+    activation = nn.Tanh() if activation_func == "tanh" else nn.ReLU()
+
+    # add more weight init
+    if weight_init == "xavier_uniform":
+        weight_init = torch.nn.init.xavier_uniform_
+    elif weight_init == "xavier_normal":
+        weight_init = torch.nn.init.xavier_normal_
+
+
+    for layer in range(limit - 1):
+        if layer==concat_ind:
+            continue
+        act = activation if layer < limit - 2 else nn.Identity()
+        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act]
+        weight_init(layers[-1][0].weight)
+
+
 def shared_mlp(
     network1_prev,
     network2_prev,
@@ -102,14 +148,6 @@ def shared_mlp(
         network2_post = nn.ModuleList()
 
 
-     # add more activation functions
-    if activation_func == "relu":
-        activation = F.relu
-    elif activation_func == "tanh":
-        activation = torch.tanh
-    else:
-        activation = None
-
     # add more weight init
     if weight_init == "xavier_uniform":
         weight_init = torch.nn.init.xavier_uniform_
@@ -118,32 +156,49 @@ def shared_mlp(
     else:
         weight_init = None
 
+    if activation_func == "relu":
+            activation = nn.ReLU()
+        elif activation_func == "tanh":
+            activation = nn.Tanh()
+        else:
+            activation = None
+
     if len(shared) != 0 or len(network1_post) != 0 or len(network2_post) != 0:
         if not (network1_prev[-1]==network2_prev[-1] and network1_prev[-1]==shared[0] and network1_post[0]==network2_post[0] and network1_post[0]==shared[-1]):
             raise ValueError
 
     for i in range(len(network1_prev)-1):
         network1_prev.append(nn.Linear(network1_prev[i],network1_prev[i+1]))
+        if activation is not None:
+            network1_prev.append(activation)
         if weight_init is not None:
             weight_init(network1_prev[-1].weight)
 
     for i in range(len(network2_prev)-1):
         network2_prev.append(nn.Linear(network2_prev[i],network2_prev[i+1]))
+        if activation is not None:
+            network2_prev.append(activation)
         if weight_init is not None:
             weight_init(network2_prev[-1].weight)
 
     for i in range(len(shared)-1):
         shared.append(nn.Linear(shared[i], shared[i+1]))
+        if activation is not None:
+            shared.append(activation)
         if weight_init is not None:
             weight_init(shared[-1].weight)
 
     for i in range(len(network1_post)-1):
         network1_post.append(nn.Linear(network1_post[i],network1_post[i+1]))
+        if activation is not None:
+            network1_post.append(activation)
         if weight_init is not None:
             weight_init(network1_post[-1].weight)
 
     for i in range(len(network2_post)-1):
         network2_post.append(nn.Linear(network2_post[i],network2_post[i+1]))
+        if activation is not None:
+            network2_post.append(activation)
         if weight_init is not None:
             weight_init(network2_post[-1].weight)
 
