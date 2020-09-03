@@ -1,8 +1,7 @@
 from typing import Tuple
 
-import numpy as np
-import torch
-import torch.nn as nn
+import torch  # noqa
+import torch.nn as nn  # noqa
 from gym import spaces
 from torch.distributions import Categorical, Normal
 
@@ -98,7 +97,8 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
 
             # enforcing action bound (appendix of SAC paper)
             log_probs -= torch.log(
-                self.action_scale * (1 - action_probs.pow(2)) + np.finfo(np.float32).eps
+                self.action_scale * (1 - action_probs.pow(2))
+                + torch.finfo(torch.float32).eps
             )
             log_probs = log_probs.sum(1, keepdim=True)
             mean = torch.tanh(mean) * self.action_scale + self.action_bias

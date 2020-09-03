@@ -1,7 +1,6 @@
 from copy import deepcopy
 from typing import Any, Dict, List
 
-import numpy as np
 import torch
 import torch.optim as opt
 
@@ -108,8 +107,8 @@ class SAC(OffPolicyAgentAC):
             self.optimizer_alpha = opt.Adam([self.log_alpha], lr=self.lr_policy)
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """Select action given state
 
         Action Selection
@@ -121,9 +120,8 @@ class SAC(OffPolicyAgentAC):
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
-        state = torch.FloatTensor(state)
         action, _, _ = self.ac.get_action(state, deterministic)
-        return action.detach().cpu().numpy()
+        return action.detach()
 
     def update_target_model(self) -> None:
         """Function to update the target Q model
@@ -153,7 +151,7 @@ class SAC(OffPolicyAgentAC):
         next_target_actions, next_log_probs, _ = self.ac.get_action(next_states)
         next_q_target_values = self.ac_target.get_value(
             torch.cat([next_states, next_target_actions], dim=-1), mode="min"
-        ) - self.alpha * next_log_probs.squeeze(-1)
+        ).squeeze() - self.alpha * next_log_probs.squeeze(1)
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
         return target_q_values
 
