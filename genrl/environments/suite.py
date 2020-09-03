@@ -97,3 +97,33 @@ def AtariEnv(
             env = wrapper(env)
 
     return env
+
+
+def MultiAgentParticleEnv(
+    scenario_name:str, 
+    benchmark:bool
+    )->gym.Env:
+    """
+    Function to apply wrappers for all Atari envs by Trainer class
+
+    :param scenarion_name: Environment Name
+    :type env: string
+    :param benchmark: laod benchmark results
+    :type wrapper_list: bool
+    :returns: Gym Atari Environment
+    :rtype: object
+    """
+
+    import multiagent.scenarios as scenarios
+    # load scenario from script
+    scenario = scenarios.load(scenario_name + ".py").Scenario()
+    # create world
+    world = scenario.make_world()
+    # create multiagent environment
+    if benchmark:
+        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, scenario.benchmark_data)
+    else:
+        env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation)
+
+    return env
+
