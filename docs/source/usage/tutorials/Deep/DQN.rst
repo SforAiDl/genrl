@@ -36,7 +36,7 @@ Whenever an experience is played through (during the training loop), the experie
     :lines: 91-104
     :lineno-start: 91
 
-This Replay Buffer is later sampled from during updates (as you will see a little later)
+The transitions are later sampled in batches from the replay buffer for updating the network.
 
 Update Q-value Network
 ----------------------

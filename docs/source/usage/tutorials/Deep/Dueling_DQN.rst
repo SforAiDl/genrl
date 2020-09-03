@@ -73,7 +73,7 @@ Every transition occuring during the training is stored in a separate `Replay Bu
     :lines: 91-104
     :lineno-start: 91
 
-The transitions are later sampled from the replay buffer for updating the network
+The transitions are later sampled in batches from the replay buffer for updating the network
 
 Update the Q Network
 --------------------

@@ -32,7 +32,7 @@ Every transition occuring during the training is stored in a separate `Replay Bu
     :lines: 91-104
     :lineno-start: 91
 
-The transitions are later sampled from the replay buffer for updating the network.
+The transitions are later sampled in batches from the replay buffer for updating the network.
 
 Update the Q-Network
 --------------------
@@ -42,7 +42,7 @@ Doble DQN decouples the selection of the action from the evaluation of the Q-val
 .. math::
 
     L_t(\theta_t) = E_{s, a \sim \rho(.)}[(y_{t}^{DoubleDQN} - Q(s, a; \theta_t))^{2}]
-
+    
     y_t^{DoubleDQN} = R_{t+1} + \gamma Q(s_{t+1}, argmax_{a} Q(s_{t+1}, a; \theta_{t}), \theta_t^{-})
 
 The only thing that differs with DoubleDQN is the `get_target_q_values` function as shown below.
