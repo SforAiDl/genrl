@@ -284,6 +284,95 @@ class SharedActorCritic(BaseActorCritic):
         return value
 
 
+
+class Actor(BaseActorCritic):
+    def __init__(
+        self,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
+        policy_layers: Tuple = (32, 32),
+        discrete: bool = True,
+        **kwargs,
+    ):
+    def __init__(self, layer_sizes,weight_init,activation_func):
+        super(Actor, self).__init__()
+
+        self.actor = MlpPolicy(layer, action_dim, policy_layers, discrete, **kwargs)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, policy):
+        policy = self.actor(policy)
+        return policy
+
+
+
+    def get_action(self, state, one_hot=False, deterministic=False):
+        # state = torch.FloatTensor(state).to(self.device)
+        logits = self.forward(state)
+        if one_hot:
+            if deterministic:
+                logits = self.onehot_from_logits(logits,eps=1.0)
+            else:
+                logits = self.onehot_from_logits(logits,eps=0.0)
+            return logits
+
+        dist = F.softmax(logits, dim=0)
+        probs = Categorical(dist)
+        if deterministic:
+            index = torch.argmax(probs)
+        else:
+            index = probs.sample().cpu().detach().item()
+        return index
+
+    def onehot_from_logits(self, logits, eps=0.0):
+        # get best (according to current policy) actions in one-hot form
+        argmax_acs = (logits == logits.max(0, keepdim=True)[0]).float()
+        if eps == 0.0:
+            return argmax_acs
+        # get random actions in one-hot form
+        rand_acs = torch.eye(logits.shape[1])[
+            [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
+        ]
+        # chooses between best and random actions using epsilon greedy
+        return torch.stack(
+            [
+                argmax_acs[i] if r > eps else rand_acs[i]
+                for i, r in enumerate(torch.rand(logits.shape[0]))
+            ]
+        )
+
+
+class Critic(BaseActorCritic):
+    def __init__(
+        self,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
+        val_type: str = "V",
+        discrete: bool = True,
+        **kwargs,
+    ):
+        super(MlpActorCritic, self).__init__()
+
+        self.critic = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, value):
+
+        value = self.critic(value)
+
+        return value
+
+
+
+    def get_value(self, state):
+        # state = torch.FloatTensor(state).to(self.device)
+        value = self.forward(state)
+        return value
+
+
 actor_critic_registry = {
     "mlp": MlpActorCritic,
     "cnn": CNNActorCritic,
