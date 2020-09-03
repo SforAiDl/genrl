@@ -107,6 +107,8 @@ def mlp_(
         layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act]
         weight_init(layers[-1][0].weight)
 
+    return nn.Sequential(*layers)
+
 
 def shared_mlp(
     network1_prev,
