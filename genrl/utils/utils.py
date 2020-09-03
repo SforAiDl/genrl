@@ -117,7 +117,7 @@ def shared_mlp(
     weight_init,
     activation_func,
     sac
-    )
+    ):
 """
         Generates an MLP model given sizes of each layer (Mostly used for SharedActorCritic)
 

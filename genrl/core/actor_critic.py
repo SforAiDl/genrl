@@ -285,23 +285,22 @@ class SharedActorCritic(BaseActorCritic):
 
 
 
-class Actor(BaseActorCritic):
+class Actor(MlpPolicy):
     def __init__(
         self,
         state_dim: spaces.Space,
         action_dim: spaces.Space,
-        policy_layers: Tuple = (32, 32),
+        hidden: Tuple = (32, 32),
         discrete: bool = True,
         **kwargs,
     ):
     def __init__(self, layer_sizes,weight_init,activation_func):
         super(Actor, self).__init__()
 
-        self.actor = MlpPolicy(layer, action_dim, policy_layers, discrete, **kwargs)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, policy):
-        policy = self.actor(policy)
+        policy = self.model(policy)
         return policy
 
 
@@ -342,26 +341,22 @@ class Actor(BaseActorCritic):
         )
 
 
-class Critic(BaseActorCritic):
+class Critic(MlpValue):
     def __init__(
         self,
         state_dim: spaces.Space,
         action_dim: spaces.Space,
-        policy_layers: Tuple = (32, 32),
-        value_layers: Tuple = (32, 32),
+        fc_layers: Tuple = (32, 32),
         val_type: str = "V",
-        discrete: bool = True,
         **kwargs,
     ):
-        super(MlpActorCritic, self).__init__()
-
-        self.critic = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
+        super(Critic, self).__init__()
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, value):
 
-        value = self.critic(value)
+        value = self.model(value)
 
         return value
 
