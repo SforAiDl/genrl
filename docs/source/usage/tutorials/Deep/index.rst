@@ -1,4 +1,4 @@
-Deep RL Tutorials
+    Deep RL Tutorials
 =================
 
 .. toctree::
@@ -8,3 +8,7 @@ Deep RL Tutorials
     VPG
     A2C
     PPO
+    DQN
+    Double_DQN
+    Dueling_DQN
+    NoisyNet_DQN
