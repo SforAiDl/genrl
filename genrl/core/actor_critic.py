@@ -232,51 +232,14 @@ class SharedActorCritic(BaseActorCritic):
         self.critic,self.actor = shared_mlp(critic_prev,actor_prev,shared,critic_post,actor_post,weight_init,activation_func)
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
     def forward(self, state_critic,state_action):
 
         if state_critic is not None:
-
-            for i in range(len(self.actorcritic.network1_prev)):
-                if self.actorcritic.activation is not None:
-                    state_critic = self.actorcritic.activation(self.actorcritic.network1_prev[i](state_critic))
-                else:
-                    state_critic = self.actorcritic.network1_prev[i](state_critic)
-
-            for i in range(len(self.actorcritic.shared)):
-                if self.actorcritic.activation is not None:
-                    state_critic = self.actorcritic.activation(self.actorcritic.shared[i](state_critic))
-                else:
-                    state_critic = self.actorcritic.shared[i](state_critic)
-
-            for i in range(len(self.actorcritic.network1_post)):
-                if self.actorcritic.activation is not None:
-                    state_critic = self.actorcritic.activation(self.actorcritic.network1_post[i](state_critic))
-                else:
-                    state_critic = self.actorcritic.network1_post[i](state_critic)
-
-            return state_critic
+            return self.critic(state_critic)
 
         if state_action is not None:
-
-            for i in range(len(self.actorcritic.network2_prev)):
-                if self.actorcritic.activation is not None:
-                    state_action = self.actorcritic.activation(self.actorcritic.network2_prev[i](state_action))
-                else:
-                    state_action = self.actorcritic.network2_prev[i](state_action)
-
-            for i in range(len(self.actorcritic.shared)):
-                if self.actorcritic.activation is not None:
-                    state_action = self.actorcritic.activation(self.actorcritic.shared[i](state_action))
-                else:
-                    state_action = self.actorcritic.shared[i](state_action)
-
-            for i in range(len(self.actorcritic.network2_post)):
-                if self.actorcritic.activations is not None:
-                    state_action = self.actorcritic.activation(self.actorcritic.network2_post[i](state_action))
-                else:
-                    state_action = self.actorcritic.network2_post[i](state_action)
-
-            return state_action
+            return self.actor(state_action)
 
 
 
