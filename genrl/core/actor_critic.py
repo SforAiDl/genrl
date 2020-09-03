@@ -8,7 +8,7 @@ from torch.distributions import Categorical, Normal
 from genrl.core.base import BaseActorCritic
 from genrl.core.policies import MlpPolicy
 from genrl.core.values import MlpValue
-from genrl.utils.utils import cnn
+from genrl.utils.utils import cnn, shared_mlp
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -216,10 +216,116 @@ class CNNActorCritic(BaseActorCritic):
         return value
 
 
+class SharedActorCritic(BaseActorCritic):
+    def __init__(
+        self, 
+        critic_prev,
+        actor_prev,
+        shared,
+        critic_post,
+        actor_post,
+        weight_init,
+        activation_func
+        ):
+        super(SharedActorCritic, self).__init__()
+
+        self.critic,self.actor = shared_mlp(critic_prev,actor_prev,shared,critic_post,actor_post,weight_init,activation_func)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def forward(self, state_critic,state_action):
+
+        if state_critic is not None:
+
+            for i in range(len(self.actorcritic.network1_prev)):
+                if self.actorcritic.activation is not None:
+                    state_critic = self.actorcritic.activation(self.actorcritic.network1_prev[i](state_critic))
+                else:
+                    state_critic = self.actorcritic.network1_prev[i](state_critic)
+
+            for i in range(len(self.actorcritic.shared)):
+                if self.actorcritic.activation is not None:
+                    state_critic = self.actorcritic.activation(self.actorcritic.shared[i](state_critic))
+                else:
+                    state_critic = self.actorcritic.shared[i](state_critic)
+
+            for i in range(len(self.actorcritic.network1_post)):
+                if self.actorcritic.activation is not None:
+                    state_critic = self.actorcritic.activation(self.actorcritic.network1_post[i](state_critic))
+                else:
+                    state_critic = self.actorcritic.network1_post[i](state_critic)
+
+            return state_critic
+
+        if state_action is not None:
+
+            for i in range(len(self.actorcritic.network2_prev)):
+                if self.actorcritic.activation is not None:
+                    state_action = self.actorcritic.activation(self.actorcritic.network2_prev[i](state_action))
+                else:
+                    state_action = self.actorcritic.network2_prev[i](state_action)
+
+            for i in range(len(self.actorcritic.shared)):
+                if self.actorcritic.activation is not None:
+                    state_action = self.actorcritic.activation(self.actorcritic.shared[i](state_action))
+                else:
+                    state_action = self.actorcritic.shared[i](state_action)
+
+            for i in range(len(self.actorcritic.network2_post)):
+                if self.actorcritic.activations is not None:
+                    state_action = self.actorcritic.activation(self.actorcritic.network2_post[i](state_action))
+                else:
+                    state_action = self.actorcritic.network2_post[i](state_action)
+
+            return state_action
+
+
+
+    def get_action(self, state, one_hot=False, deterministic=False):
+        # state = torch.FloatTensor(state).to(self.device)
+        logits = self.forward(None,state)
+        if one_hot:
+            if deterministic:
+                logits = self.onehot_from_logits(logits,eps=1.0)
+            else:
+                logits = self.onehot_from_logits(logits,eps=0.0)
+            return logits
+
+        dist = F.softmax(logits, dim=0)
+        probs = Categorical(dist)
+        if deterministic:
+            index = torch.argmax(probs)
+        else:
+            index = probs.sample().cpu().detach().item()
+        return index
+
+    def onehot_from_logits(self, logits, eps=0.0):
+        # get best (according to current policy) actions in one-hot form
+        argmax_acs = (logits == logits.max(0, keepdim=True)[0]).float()
+        if eps == 0.0:
+            return argmax_acs
+        # get random actions in one-hot form
+        rand_acs = torch.eye(logits.shape[1])[
+            [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
+        ]
+        # chooses between best and random actions using epsilon greedy
+        return torch.stack(
+            [
+                argmax_acs[i] if r > eps else rand_acs[i]
+                for i, r in enumerate(torch.rand(logits.shape[0]))
+            ]
+        )
+
+    def get_value(self, state):
+        # state = torch.FloatTensor(state).to(self.device)
+        value = self.forward(state,None)
+        return value
+
+
 actor_critic_registry = {
     "mlp": MlpActorCritic,
     "cnn": CNNActorCritic,
     "mlp12": MlpSingleActorMultiCritic,
+    "mlpshared": SharedActorCritic,
 }
 
 
