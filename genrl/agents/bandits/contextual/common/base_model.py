@@ -77,7 +77,7 @@ class Model(nn.Module, ABC):
         if self.lr_decay is not None and self.lr_reset is True:
             self._reset_lr(self.init_lr)
 
-        for i in range(epochs):
+        for _ in range(epochs):
             x, a, y = db.get_data(batch_size)
             action_mask = F.one_hot(a, num_classes=self.n_actions)
             reward_vec = y.view(-1).repeat(self.n_actions, 1).T * action_mask
