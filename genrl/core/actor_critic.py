@@ -75,7 +75,7 @@ class MlpSharedActorCritic(BaseActorCritic):
         **kwargs,
     ):
         super(MlpSharedActorCritic, self).__init__()
-        self.shared = mlp([state_dim] + list(shared_layers))
+        self.shared_network = mlp([state_dim] + list(shared_layers))
         self.actor = MlpPolicy(
             shared_layers[-1], action_dim, policy_layers, discrete, **kwargs
         )
@@ -86,8 +86,12 @@ class MlpSharedActorCritic(BaseActorCritic):
         self.action_dim = action_dim
 
     def get_params(self):
-        actor_params = list(self.shared.parameters()) + list(self.actor.parameters())
-        critic_params = list(self.shared.parameters()) + list(self.critic.parameters())
+        actor_params = list(self.shared_network.parameters()) + list(
+            self.actor.parameters()
+        )
+        critic_params = list(self.shared_network.parameters()) + list(
+            self.critic.parameters()
+        )
         return actor_params, critic_params
 
     def get_features(self, state: torch.Tensor):
@@ -99,7 +103,7 @@ class MlpSharedActorCritic(BaseActorCritic):
         Returns:
             features (:obj:`torch.Tensor`): The feature(s) extracted from the state
         """
-        features = self.shared(state)
+        features = self.shared_network(state)
         return features
 
     def get_action(self, state: torch.Tensor, deterministic: bool = False):
@@ -116,8 +120,8 @@ class MlpSharedActorCritic(BaseActorCritic):
         """
 
         state = torch.as_tensor(state).float()
-        features = self.get_features(state)
-        action_probs = self.actor(features)
+        shared_features = self.get_features(state)
+        action_probs = self.actor(shared_features)
         action_probs = nn.Softmax(dim=-1)(action_probs)
 
         if deterministic:
@@ -139,17 +143,28 @@ class MlpSharedActorCritic(BaseActorCritic):
             values (:obj:`list`): List of values as estimated by the critic
         """
         state = torch.as_tensor(state).float()
+
         if self.critic.val_type == "Qsa":
-            features = self.shared(state[:, :, :-1])
-            features = torch.cat([features, state[:, :, -1].unsqueeze(-1)], dim=-1)
-            value = self.critic(features).float().squeeze(-1)
+            # state shape = [batch_size, number of vec envs, (state_dim + action_dim)]
+
+            # extract shared_features from just the state
+            # state[:, :, :-action_dim] -> [batch_size, number of vec envs, state_dim]
+            shared_features = self.shared_network(state[:, :, : -self.action_dim])
+
+            # concatenate the actions to the extracted shared_features
+            # state[:, :, -action_dim:] -> [batch_size, number of vec envs, action_dim]
+            shared_features = torch.cat(
+                [shared_features, state[:, :, -self.action_dim :]], dim=-1
+            )
+
+            value = self.critic(shared_features).float().squeeze(-1)
         else:
-            features = self.shared(state)
-            value = self.critic(features)
+            shared_features = self.shared_network(state)
+            value = self.critic(shared_features)
         return value
 
 
-class MlpSingleActorMultiCritic(BaseActorCritic):
+class MlpSingleActorTwoCritic(BaseActorCritic):
     """MLP Actor Critic
 
     Attributes:
@@ -175,7 +190,7 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         num_critics: int = 2,
         **kwargs,
     ):
-        super(MlpSingleActorMultiCritic, self).__init__()
+        super(MlpSingleActorTwoCritic, self).__init__()
 
         self.num_critics = num_critics
 
@@ -264,7 +279,7 @@ class MlpSingleActorMultiCritic(BaseActorCritic):
         return values
 
 
-class MlpSharedSingleActorMultiCritic(MlpSingleActorMultiCritic):
+class MlpSharedSingleActorTwoCritic(MlpSingleActorTwoCritic):
     """MLP Actor Critic
 
     Attributes:
@@ -292,7 +307,7 @@ class MlpSharedSingleActorMultiCritic(MlpSingleActorMultiCritic):
         num_critics: int = 2,
         **kwargs,
     ):
-        super(MlpSharedSingleActorMultiCritic, self).__init__(
+        super(MlpSharedSingleActorTwoCritic, self).__init__(
             shared_layers[-1],
             action_dim,
             policy_layers,
@@ -302,7 +317,19 @@ class MlpSharedSingleActorMultiCritic(MlpSingleActorMultiCritic):
             num_critics,
             **kwargs,
         )
-        self.shared = mlp([state_dim] + list(shared_layers))
+        self.shared_network = mlp([state_dim] + list(shared_layers))
+        self.action_dim = action_dim
+
+    def get_params(self):
+        actor_params = list(self.shared_network.parameters()) + list(
+            self.actor.parameters()
+        )
+        critic_params = (
+            list(self.shared_network.parameters())
+            + list(self.critic1.parameters())
+            + list(self.critic2.parameters())
+        )
+        return actor_params, critic_params
 
     def get_features(self, state: torch.Tensor):
         """Extract features from the state, which is then an input to get_action and get_value
@@ -313,7 +340,7 @@ class MlpSharedSingleActorMultiCritic(MlpSingleActorMultiCritic):
         Returns:
             features (:obj:`torch.Tensor`): The feature(s) extracted from the state
         """
-        features = self.shared(state)
+        features = self.shared_network(state)
         return features
 
     def get_action(self, state: torch.Tensor, deterministic: bool = False):
@@ -326,9 +353,9 @@ class MlpSharedSingleActorMultiCritic(MlpSingleActorMultiCritic):
         Returns:
             action (:obj:`list`): List of actions as estimated by the critic
             distribution (): The distribution from which the action was sampled
-                            (None if determinist
+                            (None if deterministic)
         """
-        return super(MlpSharedSingleActorMultiCritic, self).get_action(
+        return super(MlpSharedSingleActorTwoCritic, self).get_action(
             self.get_features(state), deterministic=deterministic
         )
 
@@ -346,9 +373,16 @@ class MlpSharedSingleActorMultiCritic(MlpSingleActorMultiCritic):
             values (:obj:`list`): List of values as estimated by each individual critic
         """
         state = torch.as_tensor(state).float()
-        x = self.get_features(state[:, :, :-1])
-        state = torch.cat([x, state[:, :, -1].unsqueeze(-1)], dim=-1)
-        return super(MlpSharedSingleActorMultiCritic, self).get_value(state, mode)
+        # state shape = [batch_size, number of vec envs, (state_dim + action_dim)]
+
+        # extract shard features for just the state
+        # state[:, :, :-action_dim] -> [batch_size, number of vec envs, state_dim]
+        x = self.get_features(state[:, :, : -self.action_dim])
+
+        # concatenate the actions to the extracted shared features
+        # state[:, :, -action_dim:] -> [batch_size, number of vec envs, action_dim]
+        state = torch.cat([x, state[:, :, -self.action_dim :]], dim=-1)
+        return super(MlpSharedSingleActorTwoCritic, self).get_value(state, mode)
 
 
 class CNNActorCritic(BaseActorCritic):
@@ -438,9 +472,9 @@ class CNNActorCritic(BaseActorCritic):
 actor_critic_registry = {
     "mlp": MlpActorCritic,
     "cnn": CNNActorCritic,
-    "mlp12": MlpSingleActorMultiCritic,
+    "mlp12": MlpSingleActorTwoCritic,
     "mlps": MlpSharedActorCritic,
-    "mlp12s": MlpSharedSingleActorMultiCritic,
+    "mlp12s": MlpSharedSingleActorTwoCritic,
 }
 
 
