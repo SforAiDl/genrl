@@ -138,7 +138,7 @@ serially or parallelly
         """
         All other calls would go to base env
         """
-        env = super(GymWrapper, self).__getattribute__("env")
+        env = super(MultiGymWrapper, self).__getattribute__("env")
         return getattr(env, name)
 
     @property
