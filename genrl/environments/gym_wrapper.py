@@ -122,7 +122,7 @@ serially or parallelly
     """
 
     def __init__(self, env: gym.Env):
-        super(GymWrapper, self).__init__(env)
+        super(MultiGymWrapper, self).__init__(env)
         self.env = env
 
         self.observation_space = self.env.observation_space

@@ -218,22 +218,29 @@ class CNNActorCritic(BaseActorCritic):
 
 class SharedActorCritic(BaseActorCritic):
     def __init__(
-        self, 
+        self,
         critic_prev,
         actor_prev,
         shared,
         critic_post,
         actor_post,
         weight_init,
-        activation_func
-        ):
+        activation_func,
+    ):
         super(SharedActorCritic, self).__init__()
 
-        self.critic,self.actor = shared_mlp(critic_prev,actor_prev,shared,critic_post,actor_post,weight_init,activation_func)
+        self.critic, self.actor = shared_mlp(
+            critic_prev,
+            actor_prev,
+            shared,
+            critic_post,
+            actor_post,
+            weight_init,
+            activation_func,
+        )
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-
-    def forward(self, state_critic,state_action):
+    def forward(self, state_critic, state_action):
 
         if state_critic is not None:
             return self.critic(state_critic)
@@ -241,16 +248,14 @@ class SharedActorCritic(BaseActorCritic):
         if state_action is not None:
             return self.actor(state_action)
 
-
-
     def get_action(self, state, one_hot=False, deterministic=False):
         # state = torch.FloatTensor(state).to(self.device)
-        logits = self.forward(None,state)
+        logits = self.forward(None, state)
         if one_hot:
             if deterministic:
-                logits = self.onehot_from_logits(logits,eps=1.0)
+                logits = self.onehot_from_logits(logits, eps=1.0)
             else:
-                logits = self.onehot_from_logits(logits,eps=0.0)
+                logits = self.onehot_from_logits(logits, eps=0.0)
             return logits
 
         dist = F.softmax(logits, dim=0)
@@ -280,9 +285,8 @@ class SharedActorCritic(BaseActorCritic):
 
     def get_value(self, state):
         # state = torch.FloatTensor(state).to(self.device)
-        value = self.forward(state,None)
+        value = self.forward(state, None)
         return value
-
 
 
 class Actor(MlpPolicy):
@@ -294,7 +298,6 @@ class Actor(MlpPolicy):
         discrete: bool = True,
         **kwargs,
     ):
-    def __init__(self, layer_sizes,weight_init,activation_func):
         super(Actor, self).__init__()
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -303,16 +306,14 @@ class Actor(MlpPolicy):
         policy = self.model(policy)
         return policy
 
-
-
     def get_action(self, state, one_hot=False, deterministic=False):
         # state = torch.FloatTensor(state).to(self.device)
         logits = self.forward(state)
         if one_hot:
             if deterministic:
-                logits = self.onehot_from_logits(logits,eps=1.0)
+                logits = self.onehot_from_logits(logits, eps=1.0)
             else:
-                logits = self.onehot_from_logits(logits,eps=0.0)
+                logits = self.onehot_from_logits(logits, eps=0.0)
             return logits
 
         dist = F.softmax(logits, dim=0)
@@ -359,8 +360,6 @@ class Critic(MlpValue):
         value = self.model(value)
 
         return value
-
-
 
     def get_value(self, state):
         # state = torch.FloatTensor(state).to(self.device)
