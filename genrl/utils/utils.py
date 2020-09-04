@@ -64,7 +64,14 @@ def mlp(
 
 
 # If at all you need to concatenate states to actions after passing states through n FC layers
-def mlp_(self, layer_sizes, weight_init, activation_func, concat_ind, sac):
+def mlp_(
+    self,
+    layer_sizes: Tuple,
+    weight_init: str,
+    activation_func: str,
+    concat_ind: int,
+    sac: bool,
+):
     """
             Generates an MLP model given sizes of each layer
 
@@ -81,7 +88,7 @@ def mlp_(self, layer_sizes, weight_init, activation_func, concat_ind, sac):
     activation layers)
     """
     layers = []
-    limit = len(layer_sizes) if sac is False else len(sizes) - 1
+    limit = len(layer_sizes) if sac is False else len(layer_sizes) - 1
 
     # add more activations
     activation = nn.Tanh() if activation_func == "tanh" else nn.ReLU()
@@ -96,21 +103,21 @@ def mlp_(self, layer_sizes, weight_init, activation_func, concat_ind, sac):
         if layer == concat_ind:
             continue
         act = activation if layer < limit - 2 else nn.Identity()
-        layers += [nn.Linear(sizes[layer], sizes[layer + 1]), act]
+        layers += [nn.Linear(layer_sizes[layer], layer_sizes[layer + 1]), act]
         weight_init(layers[-1][0].weight)
 
     return nn.Sequential(*layers)
 
 
 def shared_mlp(
-    network1_prev,
-    network2_prev,
-    shared,
-    network1_post,
-    network2_post,
-    weight_init,
-    activation_func,
-    sac,
+    network1_prev: Tuple,
+    network2_prev: Tuple,
+    shared: Tuple,
+    network1_post: Tuple,
+    network2_post: Tuple,
+    weight_init: str,
+    activation_func: str,
+    sac: bool,
 ):
     """
             Generates an MLP model given sizes of each layer (Mostly used for SharedActorCritic)
@@ -342,3 +349,21 @@ def safe_mean(log: Union[torch.Tensor, List[int]]):
     else:
         func = np.mean
     return func(log)
+
+
+def onehot_from_logits(self, logits, eps=0.0):
+    # get best (according to current policy) actions in one-hot form
+    argmax_acs = (logits == logits.max(0, keepdim=True)[0]).float()
+    if eps == 0.0:
+        return argmax_acs
+    # get random actions in one-hot form
+    rand_acs = torch.eye(logits.shape[1])[
+        [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
+    ]
+    # chooses between best and random actions using epsilon greedy
+    return torch.stack(
+        [
+            argmax_acs[i] if r > eps else rand_acs[i]
+            for i, r in enumerate(torch.rand(logits.shape[0]))
+        ]
+    )

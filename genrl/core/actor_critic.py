@@ -2,6 +2,7 @@ from typing import Tuple
 
 import torch  # noqa
 import torch.nn as nn  # noqa
+import torch.nn.functional as F
 from gym import spaces
 from torch.distributions import Categorical, Normal
 
@@ -237,6 +238,7 @@ class SharedActorCritic(BaseActorCritic):
             actor_post,
             weight_init,
             activation_func,
+            False,
         )
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -248,7 +250,7 @@ class SharedActorCritic(BaseActorCritic):
         if state_action is not None:
             return self.actor(state_action)
 
-    def get_action(self, state, one_hot=False, deterministic=False):
+    def get_action(self, state, deterministic=False):
         # state = torch.FloatTensor(state).to(self.device)
         logits = self.forward(None, state)
         if one_hot:
@@ -266,23 +268,6 @@ class SharedActorCritic(BaseActorCritic):
             index = probs.sample().cpu().detach().item()
         return index
 
-    def onehot_from_logits(self, logits, eps=0.0):
-        # get best (according to current policy) actions in one-hot form
-        argmax_acs = (logits == logits.max(0, keepdim=True)[0]).float()
-        if eps == 0.0:
-            return argmax_acs
-        # get random actions in one-hot form
-        rand_acs = torch.eye(logits.shape[1])[
-            [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
-        ]
-        # chooses between best and random actions using epsilon greedy
-        return torch.stack(
-            [
-                argmax_acs[i] if r > eps else rand_acs[i]
-                for i, r in enumerate(torch.rand(logits.shape[0]))
-            ]
-        )
-
     def get_value(self, state):
         # state = torch.FloatTensor(state).to(self.device)
         value = self.forward(state, None)
@@ -298,15 +283,15 @@ class Actor(MlpPolicy):
         discrete: bool = True,
         **kwargs,
     ):
-        super(Actor, self).__init__()
+        super(Actor, self).__init__(state_dim, action_dim, hidden, discrete ** kwargs)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, policy):
-        policy = self.model(policy)
-        return policy
+    def forward(self, state):
+        state = self.model(state)
+        return state
 
-    def get_action(self, state, one_hot=False, deterministic=False):
+    def get_action(self, state, deterministic=False):
         # state = torch.FloatTensor(state).to(self.device)
         logits = self.forward(state)
         if one_hot:
@@ -324,23 +309,6 @@ class Actor(MlpPolicy):
             index = probs.sample().cpu().detach().item()
         return index
 
-    def onehot_from_logits(self, logits, eps=0.0):
-        # get best (according to current policy) actions in one-hot form
-        argmax_acs = (logits == logits.max(0, keepdim=True)[0]).float()
-        if eps == 0.0:
-            return argmax_acs
-        # get random actions in one-hot form
-        rand_acs = torch.eye(logits.shape[1])[
-            [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
-        ]
-        # chooses between best and random actions using epsilon greedy
-        return torch.stack(
-            [
-                argmax_acs[i] if r > eps else rand_acs[i]
-                for i, r in enumerate(torch.rand(logits.shape[0]))
-            ]
-        )
-
 
 class Critic(MlpValue):
     def __init__(
@@ -351,15 +319,17 @@ class Critic(MlpValue):
         val_type: str = "V",
         **kwargs,
     ):
-        super(Critic, self).__init__()
+        super(Critic, self).__init__(
+            state_dim, action_dim, fc_layers, val_type, **kwargs
+        )
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def forward(self, value):
+    def forward(self, state):
 
-        value = self.model(value)
+        state = self.model(state)
 
-        return value
+        return state
 
     def get_value(self, state):
         # state = torch.FloatTensor(state).to(self.device)
