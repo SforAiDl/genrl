@@ -253,12 +253,6 @@ class SharedActorCritic(BaseActorCritic):
     def get_action(self, state, deterministic=False):
         # state = torch.FloatTensor(state).to(self.device)
         logits = self.forward(None, state)
-        if one_hot:
-            if deterministic:
-                logits = self.onehot_from_logits(logits, eps=1.0)
-            else:
-                logits = self.onehot_from_logits(logits, eps=0.0)
-            return logits
 
         dist = F.softmax(logits, dim=0)
         probs = Categorical(dist)
@@ -294,12 +288,6 @@ class Actor(MlpPolicy):
     def get_action(self, state, deterministic=False):
         # state = torch.FloatTensor(state).to(self.device)
         logits = self.forward(state)
-        if one_hot:
-            if deterministic:
-                logits = self.onehot_from_logits(logits, eps=1.0)
-            else:
-                logits = self.onehot_from_logits(logits, eps=0.0)
-            return logits
 
         dist = F.softmax(logits, dim=0)
         probs = Categorical(dist)

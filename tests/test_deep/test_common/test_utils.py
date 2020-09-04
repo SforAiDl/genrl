@@ -41,7 +41,7 @@ class TestUtils:
         sizes = [2, 3, 3, 2]
         mlp_nn = mlp(sizes)
         mlp_nn_sac = mlp(sizes, sac=True)
-        mlp_nn_concat = mlp(sizes, concat_ind=1, sac=False)
+        mlp_nn_concat = mlp_concat(sizes, concat_ind=1, sac=False)
         mlp_nn_concat_sac = mlp_concat(sizes, concat_ind=1, sac=True)
         shared_mlp_nn1, shared_mlp_nn2 = shared_mlp(
             sizes, sizes, sizes, sizes, sizes, sac=False
