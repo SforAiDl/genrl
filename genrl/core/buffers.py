@@ -196,6 +196,14 @@ class MultiAgentReplayBuffer:
     """
 
     def __init__(self, num_agents: int, capacity: int):
+        """
+        Initialising the buffer
+            :param num_agents: number of agents in the environment
+            :type num_agents: int
+            :param capacity: Max buffer size
+            :type capacity: int
+
+        """
         self.capacity = capacity
         self.num_agents = num_agents
         self.buffer = deque(maxlen=self.capacity)
