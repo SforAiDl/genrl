@@ -64,13 +64,12 @@ def mlp(
 
 
 # If at all you need to concatenate states to actions after passing states through n FC layers
-def mlp_(
-    self,
+def mlp_concat(
     layer_sizes: Tuple,
-    weight_init: str,
-    activation_func: str,
-    concat_ind: int,
-    sac: bool,
+    weight_init: str = "xavier_uniform",
+    activation_func: str = "relu",
+    concat_ind: int = -1,  # negative number means no concatenation
+    sac: bool = False,
 ):
     """
             Generates an MLP model given sizes of each layer
@@ -115,9 +114,9 @@ def shared_mlp(
     shared: Tuple,
     network1_post: Tuple,
     network2_post: Tuple,
-    weight_init: str,
-    activation_func: str,
-    sac: bool,
+    weight_init: str = "xavier_uniform",
+    activation_func: str = "relu",
+    sac: bool = False,
 ):
     """
             Generates an MLP model given sizes of each layer (Mostly used for SharedActorCritic)
