@@ -291,7 +291,6 @@ class SharedActorCritic(BaseActorCritic):
             False,
         )
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(self.actor, self.critic)
 
     def get_params(self):
         actor_params = self.actor.parameters()
@@ -309,6 +308,7 @@ class SharedActorCritic(BaseActorCritic):
     def get_action(self, state, deterministic=False):
         # state = torch.FloatTensor(state).to(self.device)
         logits = self.forward(None, state)
+
 
         probs = nn.Softmax(dim=-1)(logits)
         dist = Categorical(probs)
