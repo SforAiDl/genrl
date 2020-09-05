@@ -1,7 +1,7 @@
 import numpy as np
+import optuna
 import torch
 
-import optuna
 from genrl.agents.td3.td3 import TD3
 from genrl.environments.suite import VectorEnv
 from genrl.trainers.offpolicy import OffPolicyTrainer
