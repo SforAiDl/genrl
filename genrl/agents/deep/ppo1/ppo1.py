@@ -65,10 +65,8 @@ class PPO1(OnPolicyAgent):
         state_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network
         )
-        if isinstance(self.network, str):
+        if isinstance(self.network, str) and self.shared_layers is None:
             arch = self.network
-            if self.shared_layers is not None:
-                arch += "s"
             self.ac = get_model("ac", arch)(
                 state_dim,
                 action_dim,
@@ -79,6 +77,17 @@ class PPO1(OnPolicyAgent):
                 discrete=discrete,
                 action_lim=action_lim,
                 activation=self.activation,
+            ).to(self.device)
+        elif isinstance(self.network, str) and self.shared_layers is not None:
+            arch_type = self.network + "s"
+            self.ac = get_model("ac", arch_type)(
+                state_dim,
+                action_dim,
+                critic_prev=self.critic_prev,
+                actor_prev=self.actor_prev,
+                shared_layers=self.shared_layers,
+                critic_post=self.value_layers,
+                actor_post=self.policy_layers,
             ).to(self.device)
         else:
             self.ac = self.network.to(self.device)

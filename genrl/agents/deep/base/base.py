@@ -34,6 +34,8 @@ class BaseAgent(ABC):
         create_model: bool = True,
         batch_size: int = 64,
         gamma: float = 0.99,
+        actor_prev=[],
+        critic_prev=[],
         shared_layers=None,
         policy_layers: Tuple = (64, 64),
         value_layers: Tuple = (64, 64),
@@ -52,6 +54,8 @@ class BaseAgent(ABC):
         self.value_layers = value_layers
         self.lr_policy = lr_policy
         self.lr_value = lr_value
+        self.actor_prev = actor_prev
+        self.critic_prev = critic_prev
 
         self.seed = kwargs["seed"] if "seed" in kwargs else None
         self.render = kwargs["render"] if "render" in kwargs else False

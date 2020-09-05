@@ -8,7 +8,15 @@ from genrl.agents import PPO1
 from genrl.core import CnnValue, MlpActorCritic, MlpPolicy, MlpValue
 from genrl.environments import VectorEnv
 from genrl.trainers import OnPolicyTrainer
-from genrl.utils import cnn, get_env_properties, get_model, mlp, set_seeds
+from genrl.utils.utils import (
+    cnn,
+    get_env_properties,
+    get_model,
+    mlp,
+    mlp_concat,
+    set_seeds,
+    shared_mlp,
+)
 
 
 class TestUtils:
@@ -33,15 +41,41 @@ class TestUtils:
         sizes = [2, 3, 3, 2]
         mlp_nn = mlp(sizes)
         mlp_nn_sac = mlp(sizes, sac=True)
+        mlp_nn_concat = mlp_concat(sizes, concat_ind=1, sac=False)
+        mlp_nn_concat_sac = mlp_concat(sizes, concat_ind=1, sac=True)
+        shared_mlp_nn1, shared_mlp_nn2 = shared_mlp(
+            sizes, sizes, sizes, sizes, sizes, sac=False
+        )
+        shared_mlp_nn1_sac, shared_mlp_nn2_sac = shared_mlp(
+            sizes, sizes, sizes, sizes, sizes, sac=True
+        )
 
         assert len(mlp_nn) == 2 * (len(sizes) - 1)
         assert all(isinstance(mlp_nn[i], nn.Linear) for i in range(0, 5, 2))
+        assert len(mlp_nn_concat) == 2 * (len(sizes) - 1)
+        assert all(isinstance(mlp_nn_concat[i], nn.Linear) for i in range(0, 5, 2))
         assert len(mlp_nn_sac) == 2 * (len(sizes) - 2)
         assert all(isinstance(mlp_nn_sac[i], nn.Linear) for i in range(0, 4, 2))
+        assert len(mlp_nn_concat_sac) == 2 * (len(sizes) - 2)
+        assert all(isinstance(mlp_nn_concat_sac[i], nn.Linear) for i in range(0, 4, 2))
+        assert len(shared_mlp_nn1) == 2 * (len(sizes) - 1) * 3
+        assert len(shared_mlp_nn2) == 2 * (len(sizes) - 1) * 3
+        assert all(isinstance(shared_mlp_nn1[i], nn.Linear) for i in range(0, 8, 2))
+        assert all(isinstance(shared_mlp_nn2[i], nn.Linear) for i in range(0, 8, 2))
+        assert len(shared_mlp_nn1_sac) == 2 * (len(sizes) - 2) * 3
+        assert all(isinstance(shared_mlp_nn1_sac[i], nn.Linear) for i in range(0, 4, 2))
+        assert len(shared_mlp_nn2_sac) == 2 * (len(sizes) - 2) * 3
+        assert all(isinstance(shared_mlp_nn2_sac[i], nn.Linear) for i in range(0, 4, 2))
 
         inp = torch.randn((2,))
         assert mlp_nn(inp).shape == (2,)
+        assert mlp_nn_concat(inp).shape == (2,)
+        assert shared_mlp_nn1(inp).shape == (2,)
+        assert shared_mlp_nn2(inp).shape == (2,)
         assert mlp_nn_sac(inp).shape == (3,)
+        assert mlp_nn_concat_sac(inp).shape == (3,)
+        assert shared_mlp_nn1_sac(inp).shape == (3,)
+        assert shared_mlp_nn2_sac(inp).shape == (3,)
 
     def test_cnn(self):
         """
