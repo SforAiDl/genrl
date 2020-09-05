@@ -4,8 +4,8 @@ from typing import Any, List, Optional, Union
 
 import gym
 import numpy as np
-import torch
 import toml
+import torch
 
 from genrl.environments.vec_env import VecEnv
 from genrl.utils import Logger, set_seeds
