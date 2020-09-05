@@ -1,5 +1,5 @@
 =======================
-NoisyNet Deep Q-Network
+Deep Q Networks with Noisy Nets
 =======================
 
 Objective
@@ -69,4 +69,3 @@ Training through the API
     trainer = OffPolicyTrainer(agent, env, max_timesteps=20000)
     trainer.train()
     trainer.evaluate()
-
