@@ -277,7 +277,9 @@ class MultiAgentActor(MlpPolicy):
         discrete: bool = True,
         **kwargs,
     ):
-        super(Actor, self).__init__(state_dim, action_dim, hidden, discrete ** kwargs)
+        super(MultiAgentActor, self).__init__(
+            state_dim, action_dim, hidden, discrete ** kwargs
+        )
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -307,7 +309,7 @@ class MultiAgentCritic(MlpValue):
         val_type: str = "V",
         **kwargs,
     ):
-        super(Critic, self).__init__(
+        super(MultiAgentCritic, self).__init__(
             state_dim, action_dim, fc_layers, val_type, **kwargs
         )
 
