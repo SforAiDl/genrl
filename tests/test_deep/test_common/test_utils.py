@@ -2,7 +2,7 @@ import random
 
 import gym
 import torch
-from torch import nn as nn
+from torch import nn
 
 from genrl.agents import PPO1
 from genrl.core import CnnValue, MlpActorCritic, MlpPolicy, MlpValue

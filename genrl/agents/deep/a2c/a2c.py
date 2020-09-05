@@ -1,10 +1,9 @@
 from typing import Any, Dict
 
 import gym
-import numpy as np
 import torch
-import torch.nn.functional as F
 import torch.optim as opt
+from torch.nn import functional as F
 
 from genrl.agents.deep.base import OnPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean
@@ -86,7 +85,7 @@ class A2C(OnPolicyAgent):
 
         if self.noise is not None:
             self.noise = self.noise(
-                np.zeros_like(action_dim), self.noise_std * np.ones_like(action_dim)
+                torch.zeros(action_dim), self.noise_std * torch.ones(action_dim)
             )
 
         actor_params, critic_params = self.ac.get_params()
@@ -94,28 +93,26 @@ class A2C(OnPolicyAgent):
         self.optimizer_value = opt.Adam(actor_params, lr=self.lr_value)
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """Select action given state
 
         Action Selection for On Policy Agents with Actor Critic
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
             deterministic (bool): Should the policy be deterministic or stochastic
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
             value (:obj:`torch.Tensor`): Value of given state
             log_prob (:obj:`torch.Tensor`): Log probability of selected action
         """
-        state = torch.as_tensor(state).float().to(self.device)
-
         # create distribution based on actor output
         action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
-        return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
+        return action.detach(), value, dist.log_prob(action).cpu()
 
     def get_traj_loss(self, values: torch.Tensor, dones: torch.Tensor) -> None:
         """Get loss from trajectory traversed by agent during rollouts
