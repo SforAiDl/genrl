@@ -268,7 +268,7 @@ class SharedActorCritic(BaseActorCritic):
         return value
 
 
-class Actor(MlpPolicy):
+class MultiAgentActor(MlpPolicy):
     def __init__(
         self,
         state_dim: spaces.Space,
@@ -298,7 +298,7 @@ class Actor(MlpPolicy):
         return index
 
 
-class Critic(MlpValue):
+class MultiAgentCritic(MlpValue):
     def __init__(
         self,
         state_dim: spaces.Space,

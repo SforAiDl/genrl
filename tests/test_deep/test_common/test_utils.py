@@ -8,7 +8,7 @@ from genrl.agents import PPO1
 from genrl.core import CnnValue, MlpActorCritic, MlpPolicy, MlpValue
 from genrl.environments import VectorEnv
 from genrl.trainers import OnPolicyTrainer
-from genrl.utils import (
+from genrl.utils.utils import (
     cnn,
     get_env_properties,
     get_model,
