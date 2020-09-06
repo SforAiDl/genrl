@@ -10,6 +10,7 @@ from genrl.environments import (
     NoopReset,
 )
 from genrl.environments.time_limit import AtariTimeLimit, TimeLimit
+from genrl.environments.torch import TorchWrapper
 from genrl.environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
@@ -36,7 +37,7 @@ def VectorEnv(
     """
     wrapper = AtariEnv if env_type == "atari" else GymEnv
 
-    envs = [wrapper(env_id) for _ in range(n_envs)]
+    envs = [TorchWrapper(wrapper(env_id)) for _ in range(n_envs)]
 
     if parallel:
         venv = SubProcessVecEnv(envs, n_envs)
