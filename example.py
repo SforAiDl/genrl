@@ -82,8 +82,50 @@ trainer = OnPolicyTrainer(vpg_agent, env)
 trainer.train()
 
 
+"""Values
+Values are observation Networks.
+"""
+
+"""Policies
+Policies just need a head depending on the distribution -- can be figured out using the environment.
+"""
+
+"""Distributional
+Have a head for distributional forward
+"""
+
+"""Distributed
+Learners.
+Actors (Observation Networks)
+"""
+
+"""Offline
+Learners.
+"""
+
+
+"""OnPolicyTrainer
+Rollouts collection
+Make changes over Trajectory Data.
+Compute Loss and Backprop
+"""
+
+"""OffPolicyTrainer
+Observe
+Update 
+
+"""
+
+
+
 """
 Off Policy Agents
+
+Select Action.
+
+Sample 
+
+
 """
 
 class 
