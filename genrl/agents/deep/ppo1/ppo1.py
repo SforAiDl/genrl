@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as opt
 
 from genrl.agents import OnPolicyAgent
+from genrl.core import compute_returns_and_advantage
 from genrl.utils import get_env_properties, get_model, safe_mean
 
 
@@ -139,8 +140,8 @@ class PPO1(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout.compute_returns_and_advantage(
-            values.detach().cpu().numpy(), dones, use_gae=True
+        compute_returns_and_advantage(
+            self.rollout, values.detach().cpu().numpy(), dones, use_gae=True
         )
 
     def update_params(self):

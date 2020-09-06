@@ -318,3 +318,66 @@ class RolloutBuffer(BaseBuffer):
             self.returns[batch_inds].flatten(),
         )
         return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
+
+
+def compute_returns_and_advantage(
+    rollout_buffer: Union[RolloutBuffer, BaseBuffer],
+    last_value: torch.Tensor,
+    dones: np.ndarray,
+    use_gae: bool = False,
+) -> None:
+    """
+    Post-processing function: compute the returns (sum of discounted rewards)
+    and advantage (A(s) = R - V(S)).
+    Adapted from Stable-Baselines PPO2.
+    ;param rollout_buffer: (RolloutBuffer, BaseBuffer) An instance of the rollout buffer used in On-policy algorithms
+    :param last_value: (torch.Tensor)
+    :param dones: (np.ndarray)
+    :param use_gae: (bool) Whether to use Generalized Advantage Estimation
+        or normal advantage for advantage computation.
+    """
+    last_value = last_value.flatten()
+
+    if use_gae:
+        last_gae_lam = 0
+        for step in reversed(range(rollout_buffer.buffer_size)):
+            if step == rollout_buffer.buffer_size - 1:
+                next_non_terminal = 1.0 - dones
+                next_value = last_value
+            else:
+                next_non_terminal = 1.0 - rollout_buffer.dones[step + 1]
+                next_value = rollout_buffer.values[step + 1]
+            delta = (
+                rollout_buffer.rewards[step]
+                + rollout_buffer.gamma * next_value * next_non_terminal
+                - rollout_buffer.values[step]
+            )
+            last_gae_lam = (
+                delta
+                + rollout_buffer.gamma
+                * rollout_buffer.gae_lambda
+                * next_non_terminal
+                * last_gae_lam
+            )
+            rollout_buffer.advantages[step] = last_gae_lam
+        rollout_buffer.returns = rollout_buffer.advantages + rollout_buffer.values
+    else:
+        # Discounted return with value bootstrap
+        # Note: this is equivalent to GAE computation
+        # with gae_lambda = 1.0
+        last_return = 0.0
+        for step in reversed(range(rollout_buffer.buffer_size)):
+            if step == rollout_buffer.buffer_size - 1:
+                next_non_terminal = 1.0 - dones
+                next_value = last_value
+                last_return = (
+                    rollout_buffer.rewards[step] + next_non_terminal * next_value
+                )
+            else:
+                next_non_terminal = 1.0 - rollout_buffer.dones[step + 1]
+                last_return = (
+                    rollout_buffer.rewards[step]
+                    + rollout_buffer.gamma * last_return * next_non_terminal
+                )
+            rollout_buffer.returns[step] = last_return
+        rollout_buffer.advantages = rollout_buffer.returns - rollout_buffer.values
