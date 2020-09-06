@@ -10,30 +10,34 @@ from genrl.environments import (
     NoopReset,
 )
 from genrl.environments.time_limit import AtariTimeLimit, TimeLimit
+from genrl.environments.torch import TorchWrapper
 from genrl.environments.vec_env import SerialVecEnv, SubProcessVecEnv, VecEnv
 
 
 def VectorEnv(
-    env_id: str, n_envs: int = 2, parallel: int = False, env_type: str = "gym",
+    env_id: str,
+    n_envs: int = 2,
+    parallel: int = False,
+    env_type: str = "gym",
 ) -> VecEnv:
     """
-    Chooses the kind of Vector Environment that is required
+        Chooses the kind of Vector Environment that is required
 
-    :param env_id: Gym environment to be vectorised
-    :param n_envs: Number of environments
-    :param parallel: True if we want environments to run parallely and (
-subprocesses, False if we want environments to run serially one after the other)
-    :param env_type: Type of environment. Currently, we support ["gym", "atari"]
-    :type env_id: string
-    :type n_envs: int
-    :type parallel: False
-    :type env_type: string
-    :returns: Vector Environment
-    :rtype: object
+        :param env_id: Gym environment to be vectorised
+        :param n_envs: Number of environments
+        :param parallel: True if we want environments to run parallely and (
+    subprocesses, False if we want environments to run serially one after the other)
+        :param env_type: Type of environment. Currently, we support ["gym", "atari"]
+        :type env_id: string
+        :type n_envs: int
+        :type parallel: False
+        :type env_type: string
+        :returns: Vector Environment
+        :rtype: object
     """
     wrapper = AtariEnv if env_type == "atari" else GymEnv
 
-    envs = [wrapper(env_id) for _ in range(n_envs)]
+    envs = [TorchWrapper(wrapper(env_id)) for _ in range(n_envs)]
 
     if parallel:
         venv = SubProcessVecEnv(envs, n_envs)

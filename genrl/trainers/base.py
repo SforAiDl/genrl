@@ -42,8 +42,8 @@ class Trainer(ABC):
         log_key: str = "timestep",
         log_interval: int = 10,
         logdir: str = "logs",
-        epochs: int = 10,
-        max_timesteps: int = 1e6,
+        epochs: int = 50,
+        max_timesteps: int = None,
         off_policy: bool = False,
         save_interval: int = 0,
         save_model: str = "checkpoints",
@@ -87,7 +87,7 @@ class Trainer(ABC):
         Args:
             render (bool): Option to render the environment during evaluation
         """
-        episode, episode_reward = 0, np.zeros(self.env.n_envs)
+        episode, episode_reward = 0, torch.zeros(self.env.n_envs)
         episode_rewards = []
         state = self.env.reset()
         while True:
@@ -96,9 +96,6 @@ class Trainer(ABC):
             else:
                 action, _, _ = self.agent.select_action(state)
 
-            if isinstance(action, torch.Tensor):
-                action = action.numpy()
-
             next_state, reward, done, _ = self.env.step(action)
 
             if render:
@@ -106,7 +103,7 @@ class Trainer(ABC):
 
             episode_reward += reward
             state = next_state
-            if np.any(done):
+            if done.byte().any():
                 for i, di in enumerate(done):
                     if di:
                         episode += 1
@@ -114,7 +111,7 @@ class Trainer(ABC):
                         episode_reward[i] = 0
             if episode == self.evaluate_episodes:
                 print(
-                    "Evaluated for {} episodes, Mean Reward: {}, Std Deviation for the Reward: {}".format(
+                    "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
                         self.evaluate_episodes,
                         np.mean(episode_rewards),
                         np.std(episode_rewards),
@@ -155,8 +152,7 @@ class Trainer(ABC):
         )
 
     def load(self):
-        """Function to load saved parameters of a given agent
-        """
+        """Function to load saved parameters of a given agent"""
         path = self.load_model
         try:
             self.checkpoint = torch.load(path)
@@ -177,6 +173,5 @@ class Trainer(ABC):
 
     @property
     def n_envs(self) -> int:
-        """Number of environments
-        """
+        """Number of environments"""
         return self.env.n_envs

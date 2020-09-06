@@ -1,5 +1,5 @@
-import numpy as np
 import pytest
+import torch
 
 from genrl.environments.suite import GymEnv, VectorEnv
 from genrl.environments.vec_env import RunningMeanStd, VecMonitor, VecNormalize
@@ -35,13 +35,18 @@ class TestVecEnvs:
         Tests working of the VecNormalize wrapper
         """
         env = VectorEnv("CartPole-v1", 2)
-        env = VecNormalize(env, norm_obs=True, norm_reward=True, clip_reward=1.0,)
+        env = VecNormalize(
+            env,
+            norm_obs=True,
+            norm_reward=True,
+            clip_reward=1.0,
+        )
         env.reset()
         _, rewards, _, _ = env.step(env.sample())
         env.close()
 
-        assert np.all(-1.0 <= rewards)
-        assert np.all(1.0 >= rewards)
+        assert (-1.0 <= rewards).byte().all()
+        assert (1.0 >= rewards).byte().all()
 
     def test_vecmonitor(self):
         """
@@ -69,7 +74,7 @@ class TestVecEnvs:
         Tests working of the RMS utility function
         """
         rms = RunningMeanStd(shape=(5, 2))
-        batch = np.random.randn(5, 2)
+        batch = torch.randn(5, 2)
         rms.update(batch)
 
         assert rms.mean.shape == (5, 2)

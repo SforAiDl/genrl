@@ -1,6 +1,3 @@
-from typing import List
-
-import numpy as np
 import torch
 
 from genrl.agents.deep.base import BaseAgent
@@ -45,23 +42,22 @@ class OnPolicyAgent(BaseAgent):
             raise NotImplementedError
 
     def update_params(self) -> None:
-        """Update parameters of the model
-        """
+        """Update parameters of the model"""
         raise NotImplementedError
 
-    def collect_rewards(self, dones: List[bool], timestep: int):
+    def collect_rewards(self, dones: torch.Tensor, timestep: int):
         """Helper function to collect rewards
 
         Runs through all the envs and collects rewards accumulated during rollouts
 
         Args:
-            dones (:obj:`list` of bool): Game over statuses of each environment
+            dones (:obj:`torch.Tensor`): Game over statuses of each environment
             timestep (int): Timestep during rollout
         """
         for i, done in enumerate(dones):
             if done or timestep == self.rollout_size - 1:
-                self.rewards.append(self.env.episode_reward[i])
-                self.env.episode_reward[i] = 0
+                self.rewards.append(self.env.episode_reward[i].detach().clone())
+                self.env.reset_single_env(i)
 
     def collect_rollouts(self, state: torch.Tensor):
         """Function to collect rollouts
@@ -74,12 +70,12 @@ class OnPolicyAgent(BaseAgent):
 
         Returns:
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
-            dones (:obj:`list` of bool): Game over statuses of each environment
+            dones (:obj:`torch.Tensor`): Game over statuses of each environment
         """
         for i in range(self.rollout_size):
             action, values, old_log_probs = self.select_action(state)
 
-            next_state, reward, dones, _ = self.env.step(np.array(action))
+            next_state, reward, dones, _ = self.env.step(action)
 
             if self.render:
                 self.env.render()

@@ -1,7 +1,7 @@
 from typing import Optional, Tuple
 
-import torch
-import torch.nn as nn
+import torch  # noqa
+import torch.nn as nn  # noqa
 from torch.distributions import Categorical, Normal
 
 
@@ -62,14 +62,14 @@ class BasePolicy(nn.Module):
         self, state: torch.Tensor, deterministic: bool = False
     ) -> torch.Tensor:
         """
-        Get action from policy based on input
+                Get action from policy based on input
 
-        :param state: The state being passed as input to the policy
-        :param deterministic: (True if the action space is deterministic,
-else False)
-        :type state: Tensor
-        :type deterministic: boolean
-        :returns: action
+                :param state: The state being passed as input to the policy
+                :param deterministic: (True if the action space is deterministic,
+        else False)
+                :type state: Tensor
+                :type deterministic: boolean
+                :returns: action
         """
         action_probs = self.forward(state)
 
@@ -137,14 +137,14 @@ class BaseActorCritic(nn.Module):
         self, state: torch.Tensor, deterministic: bool = False
     ) -> torch.Tensor:
         """
-        Get action from the Actor based on input
+                Get action from the Actor based on input
 
-        :param state: The state being passed as input to the Actor
-        :param deterministic: (True if the action space is deterministic,
-else False)
-        :type state: Tensor
-        :type deterministic: boolean
-        :returns: action
+                :param state: The state being passed as input to the Actor
+                :param deterministic: (True if the action space is deterministic,
+        else False)
+                :type state: Tensor
+                :type deterministic: boolean
+                :returns: action
         """
         state = torch.as_tensor(state).float()
         return self.actor.get_action(state, deterministic=deterministic)

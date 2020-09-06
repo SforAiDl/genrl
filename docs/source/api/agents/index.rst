@@ -14,10 +14,17 @@ Agents
     genrl.agents.deep.sac
 
 
-
 .. toctree::
     :maxdepth: 1
     :caption: Classical
 
     genrl.agents.classical.qlearning
     genrl.agents.classical.sarsa
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Bandit
+
+   genrl.agents.bandits.contextual
+   genrl.agents.bandits.multiarmed

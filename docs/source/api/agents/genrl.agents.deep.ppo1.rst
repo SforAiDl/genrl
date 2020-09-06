@@ -1,9 +1,6 @@
 PPO1
 ====
 
-Submodules
-----------
-
 genrl.agents.deep.ppo1.ppo1 module
 ----------------------------------
 
@@ -12,11 +9,3 @@ genrl.agents.deep.ppo1.ppo1 module
    :undoc-members:
    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: genrl.agents.deep.ppo1
-   :members:
-   :undoc-members:
-   :show-inheritance:

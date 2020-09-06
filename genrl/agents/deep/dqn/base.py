@@ -1,9 +1,10 @@
+import math
+import random
 from copy import deepcopy
 from typing import Any, Dict, List
 
-import numpy as np
-import torch
-import torch.optim as opt
+import torch  # noqa
+import torch.optim as opt  # noqa
 
 from genrl.agents import OffPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean
@@ -41,7 +42,7 @@ class DQN(OffPolicyAgent):
         *args,
         max_epsilon: float = 1.0,
         min_epsilon: float = 0.01,
-        epsilon_decay: int = 1000,
+        epsilon_decay: int = 500,
         **kwargs
     ):
         super(DQN, self).__init__(*args, **kwargs)
@@ -94,38 +95,37 @@ class DQN(OffPolicyAgent):
         self.epsilon = self.calculate_epsilon_by_frame()
         self.logs["epsilon"].append(self.epsilon)
 
-    def get_greedy_action(self, state: torch.Tensor) -> np.ndarray:
+    def get_greedy_action(self, state: torch.Tensor) -> torch.Tensor:
         """Greedy action selection
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
         """
-        q_values = self.model(state.unsqueeze(0)).detach().numpy()
-        action = np.argmax(q_values, axis=-1).squeeze(0)
+        q_values = self.model(state.unsqueeze(0))
+        action = torch.argmax(q_values.squeeze(), dim=-1)
         return action
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """Select action given state
 
         Epsilon-greedy action-selection
 
         Args:
-            state (:obj:`np.ndarray`): Current state of the environment
+            state (:obj:`torch.Tensor`): Current state of the environment
             deterministic (bool): Should the policy be deterministic or stochastic
 
         Returns:
-            action (:obj:`np.ndarray`): Action taken by the agent
+            action (:obj:`torch.Tensor`): Action taken by the agent
         """
-        state = torch.as_tensor(state).float()
         action = self.get_greedy_action(state)
         if not deterministic:
-            if np.random.rand() < self.epsilon:
-                action = np.asarray(self.env.sample())
+            if random.random() < self.epsilon:
+                action = self.env.sample()
         return action
 
     def _reshape_batch(self, batch: List):
@@ -208,7 +208,7 @@ class DQN(OffPolicyAgent):
         Exponentially decays exploration rate from max epsilon to min epsilon
         The greater the value of epsilon_decay, the slower the decrease in epsilon
         """
-        return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * np.exp(
+        return self.min_epsilon + (self.max_epsilon - self.min_epsilon) * math.exp(
             -1.0 * self.timestep / self.epsilon_decay
         )
 
@@ -250,8 +250,7 @@ class DQN(OffPolicyAgent):
         return logs
 
     def empty_logs(self) -> None:
-        """Empties logs
-        """
+        """Empties logs"""
         self.logs = {}
         self.logs["value_loss"] = []
         self.logs["epsilon"] = []

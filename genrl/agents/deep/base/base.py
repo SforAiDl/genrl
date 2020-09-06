@@ -46,6 +46,7 @@ class BaseAgent(ABC):
         self.batch_size = batch_size
         self.gamma = gamma
         self.policy_layers = policy_layers
+        self.rewards = []
         self.value_layers = value_layers
         self.lr_policy = lr_policy
         self.lr_value = lr_value
@@ -65,8 +66,7 @@ class BaseAgent(ABC):
             set_seeds(self.seed, self.env)
 
     def _create_model(self) -> None:
-        """Function to initialize all models of the agent
-        """
+        """Function to initialize all models of the agent"""
         raise NotImplementedError
 
     def select_action(
@@ -111,6 +111,5 @@ class BaseAgent(ABC):
         raise NotImplementedError
 
     def empty_logs(self):
-        """Empties logs
-        """
+        """Empties logs"""
         raise NotImplementedError
