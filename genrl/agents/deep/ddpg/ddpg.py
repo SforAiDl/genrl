@@ -123,6 +123,9 @@ class DDPG(OffPolicyAgentAC):
         }
         return hyperparams
 
+    def get_weights(self):
+        return self.ac.state_dict()
+
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
 

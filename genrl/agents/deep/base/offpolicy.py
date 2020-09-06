@@ -106,7 +106,7 @@ class OffPolicyAgent(BaseAgent):
                 *[states, actions, rewards, next_states, dones, indices, weights]
             )
         else:
-            raise NotImplementedError
+            batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
         return batch
 
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:

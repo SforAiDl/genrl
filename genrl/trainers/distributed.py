@@ -1,7 +1,9 @@
 import copy
 import multiprocessing as mp
+import threading
 from typing import Type, Union
 
+import gym
 import numpy as np
 import reverb
 import tensorflow as tf
@@ -10,81 +12,7 @@ import torch
 from genrl.trainers import Trainer
 
 
-class ReverbReplayBuffer:
-    def __init__(
-        self,
-        size,
-        batch_size,
-        obs_shape,
-        action_shape,
-        discrete=True,
-        reward_shape=(1,),
-        done_shape=(1,),
-        n_envs=1,
-    ):
-        self.size = size
-        self.obs_shape = (n_envs, *obs_shape)
-        self.action_shape = (n_envs, *action_shape)
-        self.reward_shape = (n_envs, *reward_shape)
-        self.done_shape = (n_envs, *done_shape)
-        self.n_envs = n_envs
-        self.action_dtype = np.int64 if discrete else np.float32
-
-        self._pos = 0
-        self._table = reverb.Table(
-            name="replay_buffer",
-            sampler=reverb.selectors.Uniform(),
-            remover=reverb.selectors.Fifo(),
-            max_size=self.size,
-            rate_limiter=reverb.rate_limiters.MinSize(2),
-        )
-        self._server = reverb.Server(tables=[self._table], port=None)
-        self._server_address = f"localhost:{self._server.port}"
-        self._client = reverb.Client(self._server_address)
-        self._dataset = reverb.ReplayDataset(
-            server_address=self._server_address,
-            table="replay_buffer",
-            max_in_flight_samples_per_worker=2 * batch_size,
-            dtypes=(np.float32, self.action_dtype, np.float32, np.float32, np.bool),
-            shapes=(
-                tf.TensorShape([n_envs, *obs_shape]),
-                tf.TensorShape([n_envs, *action_shape]),
-                tf.TensorShape([n_envs, *reward_shape]),
-                tf.TensorShape([n_envs, *obs_shape]),
-                tf.TensorShape([n_envs, *done_shape]),
-            ),
-        )
-        self._iterator = self._dataset.batch(batch_size).as_numpy_iterator()
-
-    def push(self, inp):
-        i = []
-        i.append(np.array(inp[0], dtype=np.float32).reshape(self.obs_shape))
-        i.append(np.array(inp[1], dtype=self.action_dtype).reshape(self.action_shape))
-        i.append(np.array(inp[2], dtype=np.float32).reshape(self.reward_shape))
-        i.append(np.array(inp[3], dtype=np.float32).reshape(self.obs_shape))
-        i.append(np.array(inp[4], dtype=np.bool).reshape(self.done_shape))
-
-        self._client.insert(i, priorities={"replay_buffer": 1.0})
-        if self._pos < self.size:
-            self._pos += 1
-
-    def extend(self, inp):
-        for sample in inp:
-            self.push(sample)
-
-    def sample(self, *args, **kwargs):
-        sample = next(self._iterator)
-        obs, a, r, next_obs, d = [torch.from_numpy(t).float() for t in sample.data]
-        return obs, a, r.reshape(-1, self.n_envs), next_obs, d.reshape(-1, self.n_envs)
-
-    def __len__(self):
-        return self._pos
-
-    def __del__(self):
-        self._server.stop()
-
-
-class DistributedOffPolicyTrainer(Trainer):
+class DistributedOffPolicyTrainer:
     """Distributed Off Policy Trainer Class
 
     Trainer class for Distributed Off Policy Agents
@@ -93,27 +21,20 @@ class DistributedOffPolicyTrainer(Trainer):
 
     def __init__(
         self,
-        *args,
-        env,
         agent,
-        max_ep_len: int = 500,
-        max_timesteps: int = 5000,
-        update_interval: int = 50,
+        env,
         buffer_server_port=None,
         param_server_port=None,
         **kwargs,
     ):
-        super(DistributedOffPolicyTrainer, self).__init__(
-            *args, off_policy=True, max_timesteps=max_timesteps, **kwargs
-        )
         self.env = env
         self.agent = agent
-        self.max_ep_len = max_ep_len
-        self.update_interval = update_interval
         self.buffer_server_port = buffer_server_port
         self.param_server_port = param_server_port
 
-    def train(self, n_actors, max_buffer_size, batch_size, max_updates):
+    def train(
+        self, n_actors, max_buffer_size, batch_size, max_updates, update_interval
+    ):
         buffer_server = reverb.Server(
             tables=[
                 reverb.Table(
@@ -121,85 +42,142 @@ class DistributedOffPolicyTrainer(Trainer):
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
                     max_size=max_buffer_size,
-                    rate_limiter=reverb.rate_limiters.MinSize(2),
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
                 )
             ],
             port=self.buffer_server_port,
         )
-        buffer_server_address = f"localhost:{self.buffer_server.port}"
+        buffer_server_address = f"localhost:{buffer_server.port}"
 
         param_server = reverb.Server(
             tables=[
                 reverb.Table(
-                    name="replay_buffer",
+                    name="param_buffer",
                     sampler=reverb.selectors.Uniform(),
                     remover=reverb.selectors.Fifo(),
                     max_size=1,
+                    rate_limiter=reverb.rate_limiters.MinSize(1),
                 )
             ],
             port=self.param_server_port,
         )
-        param_server_address = f"localhost:{self.param_server.port}"
+        param_server_address = f"localhost:{param_server.port}"
 
         actor_procs = []
         for _ in range(n_actors):
-            p = mp.Process(
-                target=self._run_actor,
+            p = threading.Thread(
+                target=run_actor,
                 args=(
                     copy.deepcopy(self.agent),
                     copy.deepcopy(self.env),
                     buffer_server_address,
                     param_server_address,
                 ),
+                daemon=True,
             )
-            p.daemon = True
+            p.start()
             actor_procs.append(p)
 
-        learner_proc = mp.Process(
-            target=self._run_learner,
+        learner_proc = threading.Thread(
+            target=run_learner,
             args=(
-                self.agent,
+                copy.deepcopy(self.agent),
                 max_updates,
+                update_interval,
                 buffer_server_address,
                 param_server_address,
                 batch_size,
             ),
+            daemon=True,
         )
         learner_proc.daemon = True
+        learner_proc.start()
+        learner_proc.join()
 
-    def _run_actor(self, agent, env, buffer_server_address, param_server_address):
-        buffer_client = reverb.Client(buffer_server_address)
-        param_client = reverb.Client(param_server_address)
+        # param_client = reverb.Client(param_server_address)
+        # self.agent.replay_buffer = ReverbReplayDataset(
+        #     self.agent.env, buffer_server_address, batch_size
+        # )
 
-        state = env.reset()
+        # for _ in range(max_updates):
+        #     self.agent.update_params(update_interval)
+        #     params = self.agent.get_weights()
+        #     param_client.insert(params.values(), {"param_buffer": 1})
+        #     print("weights updated")
+        #     # print(list(param_client.sample("param_buffer")))
 
-        while True:
-            params = param_client.sample(table="replay_buffer")
-            agent.load_weights(params)
 
-            action = self.get_action(state)
-            next_state, reward, done, info = self.env.step(action)
+def run_actor(agent, env, buffer_server_address, param_server_address):
+    buffer_client = reverb.Client(buffer_server_address)
+    param_client = reverb.TFClient(param_server_address)
 
-            state = next_state.clone()
+    state = env.reset().astype(np.float32)
 
-            buffer_client.insert([state, action, reward, done, next_state])
+    for i in range(10):
+        # params = param_client.sample("param_buffer", [])
+        # print("Sampling done")
+        # print(list(params))
+        # agent.load_weights(params)
 
-    def _run_learner(
-        self,
-        agent,
-        max_updates,
-        buffer_server_address,
-        param_server_address,
-        batch_size,
-    ):
-        param_client = reverb.Client(param_server_address)
-        dataset = reverb.ReplayDataset(
-            server_address=buffer_server_address,
-            table="replay_buffer",
+        action = agent.select_action(state).numpy()
+        next_state, reward, done, _ = env.step(action)
+        next_state = next_state.astype(np.float32)
+        reward = np.array([reward]).astype(np.float32)
+        done = np.array([done]).astype(np.bool)
+
+        buffer_client.insert([state, action, reward, next_state, done], {"replay_buffer": 1})
+        print("transition inserted")
+        state = env.reset().astype(np.float32) if done else next_state.copy()
+
+
+def run_learner(
+    agent,
+    max_updates,
+    update_interval,
+    buffer_server_address,
+    param_server_address,
+    batch_size,
+):
+    param_client = reverb.Client(param_server_address)
+    agent.replay_buffer = ReverbReplayDataset(
+        agent.env, buffer_server_address, batch_size
+    )
+    for _ in range(max_updates):
+        agent.update_params(update_interval)
+        params = agent.get_weights()
+        param_client.insert(params.values(), {"param_buffer": 1})
+        print("weights updated")
+        # print(list(param_client.sample("param_buffer")))
+
+
+class ReverbReplayDataset:
+    def __init__(self, env, address, batch_size):
+        action_dtype = (
+            np.int64
+            if isinstance(env.action_space, gym.spaces.discrete.Discrete)
+            else np.float32
         )
-        data_iter = dataset.batch(batch_size).as_numpy_iterator()
+        obs_shape = env.observation_space.shape
+        action_shape = env.action_space.shape
+        reward_shape = 1
+        done_shape = 1
 
-        for _ in range(max_updates):
-            sample = next(data_iter)
-            agent.update_params(sample)
-            param_client.insert(agent.get_weights())
+        self._dataset = reverb.ReplayDataset(
+            server_address=address,
+            table="replay_buffer",
+            max_in_flight_samples_per_worker=2 * batch_size,
+            dtypes=(np.float32, action_dtype, np.float32, np.float32, np.bool),
+            shapes=(
+                tf.TensorShape(obs_shape),
+                tf.TensorShape(action_shape),
+                tf.TensorShape(reward_shape),
+                tf.TensorShape(obs_shape),
+                tf.TensorShape(done_shape),
+            ),
+        )
+        self._data_iter = self._dataset.batch(batch_size).as_numpy_iterator()
+
+    def sample(self, *args, **kwargs):
+        sample = next(self._data_iter)
+        obs, a, r, next_obs, d = [torch.from_numpy(t).float() for t in sample.data]
+        return obs, a, r, next_obs, d
