@@ -1,10 +1,9 @@
 from typing import Any, Dict
 
 import gym
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as opt
+import torch  # noqa
+import torch.nn as nn  # noqa
+import torch.optim as opt  # noqa
 
 from genrl.agents import OnPolicyAgent
 from genrl.utils import get_env_properties, get_model, safe_mean
@@ -84,8 +83,8 @@ class PPO1(OnPolicyAgent):
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
     def select_action(
-        self, state: np.ndarray, deterministic: bool = False
-    ) -> np.ndarray:
+        self, state: torch.Tensor, deterministic: bool = False
+    ) -> torch.Tensor:
         """Select action given state
 
         Action Selection for On Policy Agents with Actor Critic
@@ -99,12 +98,11 @@ class PPO1(OnPolicyAgent):
             value (:obj:`torch.Tensor`): Value of given state
             log_prob (:obj:`torch.Tensor`): Log probability of selected action
         """
-        state = torch.as_tensor(state).float().to(self.device)
         # create distribution based on policy output
         action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
-        return action.detach().cpu().numpy(), value, dist.log_prob(action).cpu()
+        return action.detach(), value, dist.log_prob(action).cpu()
 
     def evaluate_actions(self, states: torch.Tensor, actions: torch.Tensor):
         """Evaluates actions taken by actor
@@ -134,9 +132,7 @@ class PPO1(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout.compute_returns_and_advantage(
-            values.detach().cpu().numpy(), dones, use_gae=True
-        )
+        self.rollout.compute_returns_and_advantage(values.detach(), dones, use_gae=True)
 
     def update_params(self):
         """Updates the the A2C network

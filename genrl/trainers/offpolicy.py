@@ -83,7 +83,7 @@ class OffPolicyTrainer(Trainer):
             action (:obj:`np.ndarray`): Action to be taken on the env
         """
         if timestep < self.warmup_steps:
-            action = np.array(self.env.sample())
+            action = self.env.sample()
         else:
             action = self.agent.select_action(state)
         return action
@@ -124,7 +124,9 @@ class OffPolicyTrainer(Trainer):
 
         for i, done_i in enumerate(dones):
             if done_i:
-                self.training_rewards.append(self.env.episode_reward[i])
+                self.training_rewards.append(
+                    self.env.episode_reward[i].detach().clone()
+                )
                 self.env.reset_single_env(i)
                 self.episodes += 1
                 game_over = True
@@ -157,7 +159,7 @@ class OffPolicyTrainer(Trainer):
             true_dones = [info[i]["done"] for i in range(self.env.n_envs)]
             self.buffer.push((state, action, reward, next_state, true_dones))
 
-            state = next_state.copy()
+            state = next_state.detach().clone()
 
             if self.check_game_over_status(timestep, done):
                 self.noise_reset()

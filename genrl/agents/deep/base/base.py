@@ -46,6 +46,7 @@ class BaseAgent(ABC):
         self.batch_size = batch_size
         self.gamma = gamma
         self.policy_layers = policy_layers
+        self.rewards = []
         self.value_layers = value_layers
         self.lr_policy = lr_policy
         self.lr_value = lr_value

@@ -91,7 +91,7 @@ class Trainer(ABC):
         Args:
             render (bool): Option to render the environment during evaluation
         """
-        episode, episode_reward = 0, np.zeros(self.env.n_envs)
+        episode, episode_reward = 0, torch.zeros(self.env.n_envs)
         episode_rewards = []
         state = self.env.reset()
         while True:
@@ -100,9 +100,6 @@ class Trainer(ABC):
             else:
                 action, _, _ = self.agent.select_action(state)
 
-            if isinstance(action, torch.Tensor):
-                action = action.numpy()
-
             next_state, reward, done, _ = self.env.step(action)
 
             if render:
@@ -110,7 +107,7 @@ class Trainer(ABC):
 
             episode_reward += reward
             state = next_state
-            if np.any(done):
+            if done.byte().any():
                 for i, di in enumerate(done):
                     if di:
                         episode += 1
