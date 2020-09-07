@@ -12,11 +12,20 @@ from genrl.losses import VanillaPolicyGradientLoss, TDErrorLoss
 env = VectorEnv("CartPole-v1", 2)
 
 obs_network = get_obs_network(env, 64)
+# obs_network = nn.Linear(4, 64)
+
+# gnn = nn.Linear()
+
 distribution = get_distribution(env)
+# Policy
 
 mlp = nn.Linear(64, 64)
 
-vpg_agent = OnPolicyAgent(nn.Sequential([obs_network, mlp, distribution, VanillaPolicyGradientLoss]))
+vpg_agent = OnPolicyAgent(nn.Sequential([obs_network, mlp, distribution, VanillaPolicyGradientLoss]), )
+# 1. Shared Actor Critics?
+
+
+# Actor Critic 
 trainer = OnPolicyTrainer(vpg_agent, env)
 trainer.train()
 
@@ -96,7 +105,7 @@ Have a head for distributional forward
 
 """Distributed
 Learners.
-Actors (Observation Networks)
+Actors (Observation Networks) --> MultiAgent
 """
 
 """Offline
@@ -112,8 +121,7 @@ Compute Loss and Backprop
 
 """OffPolicyTrainer
 Observe
-Update 
-
+Update
 """
 
 

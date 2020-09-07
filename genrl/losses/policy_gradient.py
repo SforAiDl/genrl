@@ -6,7 +6,7 @@ class VanillaPolicyGradientLoss(nn.Module):
     def __init__(self):
         super(PolicyGradientLoss, self).__init__()
 
-    def forward(self, rollout: ):
+    def forward(self, rollout):
         return -1*torch.mean(rollout.log_probs)
 
 
