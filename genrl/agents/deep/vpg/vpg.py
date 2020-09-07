@@ -113,7 +113,7 @@ class VPG(OnPolicyAgent):
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
         compute_returns_and_advantage(
-            self.rollout, values.detach().cpu().numpy(), dones
+            self.rollout, values.detach().cpu().numpy(), dones.cpu().numpy()
         )
 
     def update_params(self) -> None:

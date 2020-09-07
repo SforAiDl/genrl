@@ -138,8 +138,12 @@ class PPO1(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
+        print(type(dones))
         compute_returns_and_advantage(
-            self.rollout, values.detach().cpu().numpy(), dones, use_gae=True
+            self.rollout,
+            values.detach().cpu().numpy(),
+            dones.cpu().numpy(),
+            use_gae=True,
         )
 
     def update_params(self):
