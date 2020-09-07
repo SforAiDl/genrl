@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Tuple
 
-import torch
-import torch.nn as nn
+import torch  # noqa
+import torch.nn as nn  # noqa
 import torch.nn.functional as F
 
 from genrl.agents.bandits.contextual.common.base_model import Model
@@ -173,8 +173,4 @@ class BayesianNNBanditModel(Model):
             kl_val / db.db_size
         )
 
-        self.optimizer.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-        if self.lr_decay is not None:
-            self.lr_scheduler.step()
+        return loss

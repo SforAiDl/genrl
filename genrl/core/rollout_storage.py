@@ -65,8 +65,12 @@ class BaseBuffer(object):
         """
         shape = arr.shape
         if len(shape) < 3:
+            arr = arr.unsqueeze(-1)
             shape = shape + (1,)
-        return arr.swapaxes(0, 1).reshape(shape[0] * shape[1], *shape[2:])
+
+        return arr.permute(1, 0, *(np.arange(2, len(shape)))).reshape(
+            shape[0] * shape[1], *shape[2:]
+        )
 
     def size(self) -> int:
         """
@@ -129,8 +133,8 @@ class BaseBuffer(object):
         :return: (torch.Tensor)
         """
         if copy:
-            return torch.tensor(array).to(self.device)
-        return torch.as_tensor(array).to(self.device)
+            return array.detach().clone()
+        return array
 
 
 class RolloutBuffer(BaseBuffer):
@@ -168,47 +172,35 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
-        self.observations = np.zeros(
-            (
-                self.buffer_size,
-                self.env.n_envs,
-            )
-            + self.env.obs_shape,
-            dtype=np.float32,
+        self.observations = torch.zeros(
+            *(self.buffer_size, self.env.n_envs, *self.env.obs_shape)
         )
-        self.actions = np.zeros(
-            (
-                self.buffer_size,
-                self.env.n_envs,
-            )
-            + self.env.action_shape,
-            dtype=np.float32,
+        self.actions = torch.zeros(
+            *(self.buffer_size, self.env.n_envs, *self.env.action_shape)
         )
-        self.rewards = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
-        self.returns = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
-        self.dones = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
-        self.values = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
-        self.log_probs = np.zeros((self.buffer_size, self.env.n_envs), dtype=np.float32)
-        self.advantages = np.zeros(
-            (self.buffer_size, self.env.n_envs), dtype=np.float32
-        )
+        self.rewards = torch.zeros(self.buffer_size, self.env.n_envs)
+        self.returns = torch.zeros(self.buffer_size, self.env.n_envs)
+        self.dones = torch.zeros(self.buffer_size, self.env.n_envs)
+        self.values = torch.zeros(self.buffer_size, self.env.n_envs)
+        self.log_probs = torch.zeros(self.buffer_size, self.env.n_envs)
+        self.advantages = torch.zeros(self.buffer_size, self.env.n_envs)
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
     def add(
         self,
-        obs: np.ndarray,
-        action: np.ndarray,
-        reward: np.ndarray,
-        done: np.ndarray,
+        obs: torch.zeros,
+        action: torch.zeros,
+        reward: torch.zeros,
+        done: torch.zeros,
         value: torch.Tensor,
         log_prob: torch.Tensor,
     ) -> None:
         """
-        :param obs: (np.ndarray) Observation
-        :param action: (np.ndarray) Action
-        :param reward: (np.ndarray)
-        :param done: (np.ndarray) End of episode signal.
+        :param obs: (torch.zeros) Observation
+        :param action: (torch.zeros) Action
+        :param reward: (torch.zeros)
+        :param done: (torch.zeros) End of episode signal.
         :param value: (torch.Tensor) estimated value of the current state
             following the current policy.
         :param log_prob: (torch.Tensor) log probability of the action
@@ -218,12 +210,12 @@ class RolloutBuffer(BaseBuffer):
             # Reshape 0-d tensor to avoid error
             log_prob = log_prob.reshape(-1, 1)
 
-        self.observations[self.pos] = np.array(obs).copy()
-        self.actions[self.pos] = np.array(action).copy()
-        self.rewards[self.pos] = np.array(reward).copy()
-        self.dones[self.pos] = np.array(done).copy()
-        self.values[self.pos] = value.clone().cpu().numpy().flatten()
-        self.log_probs[self.pos] = log_prob.clone().cpu().numpy().flatten()
+        self.observations[self.pos] = obs.detach().clone()
+        self.actions[self.pos] = action.squeeze().detach().clone()
+        self.rewards[self.pos] = reward.detach().clone()
+        self.dones[self.pos] = done.detach().clone()
+        self.values[self.pos] = value.detach().clone().flatten()
+        self.log_probs[self.pos] = log_prob.detach().clone().flatten()
         self.pos += 1
         if self.pos == self.buffer_size:
             self.full = True

@@ -48,6 +48,7 @@ class BaseAgent(ABC):
         self.gamma = gamma
         self.shared_layers = shared_layers
         self.policy_layers = policy_layers
+        self.rewards = []
         self.value_layers = value_layers
         self.lr_policy = lr_policy
         self.lr_value = lr_value
