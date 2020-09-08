@@ -278,45 +278,30 @@ def compute_returns_and_advantage(
     last_value = last_value.flatten()
 
     if use_gae:
-        last_gae_lam = 0
-        for step in reversed(range(rollout_buffer.buffer_size)):
-            if step == rollout_buffer.buffer_size - 1:
-                next_non_terminal = 1.0 - dones
-                next_value = last_value
-            else:
-                next_non_terminal = 1.0 - rollout_buffer.dones[step + 1]
-                next_value = rollout_buffer.values[step + 1]
-            delta = (
-                rollout_buffer.rewards[step]
-                + rollout_buffer.gamma * next_value * next_non_terminal
-                - rollout_buffer.values[step]
-            )
-            last_gae_lam = (
-                delta
-                + rollout_buffer.gamma
-                * rollout_buffer.gae_lambda
-                * next_non_terminal
-                * last_gae_lam
-            )
-            rollout_buffer.advantages[step] = last_gae_lam
-        rollout_buffer.returns = rollout_buffer.advantages + rollout_buffer.values
+        gae_lambda = rollout_buffer.gae_lambda
     else:
-        # Discounted return with value bootstrap
-        # Note: this is equivalent to GAE computation
-        # with gae_lambda = 1.0
-        last_return = 0.0
-        for step in reversed(range(rollout_buffer.buffer_size)):
-            if step == rollout_buffer.buffer_size - 1:
-                next_non_terminal = 1.0 - dones
-                next_value = last_value
-                last_return = (
-                    rollout_buffer.rewards[step] + next_non_terminal * next_value
-                )
-            else:
-                next_non_terminal = 1.0 - rollout_buffer.dones[step + 1]
-                last_return = (
-                    rollout_buffer.rewards[step]
-                    + rollout_buffer.gamma * last_return * next_non_terminal
-                )
-            rollout_buffer.returns[step] = last_return
-        rollout_buffer.advantages = rollout_buffer.returns - rollout_buffer.values
+        gae_lambda = 1
+
+    temp_dones = torch.cat(
+        [rollout_buffer.dones, torch.as_tensor(dones).unsqueeze(0)], dim=0
+    )
+    temp_values = torch.cat(
+        [rollout_buffer.values, torch.as_tensor(last_value).unsqueeze(0)], dim=0
+    )
+
+    running_advantage = 0.0
+    for step in reversed(range(rollout_buffer.buffer_size)):
+        next_non_terminal = 1 - temp_dones[step + 1]
+        next_values = temp_values[step + 1]
+        delta = (
+            rollout_buffer.rewards[step]
+            + rollout_buffer.gamma * next_non_terminal * next_values
+            - temp_values[step]
+        )
+        running_advantage = (
+            delta
+            + rollout_buffer.gamma * gae_lambda * next_non_terminal * running_advantage
+        )
+        rollout_buffer.advantages[step] = running_advantage
+
+    rollout_buffer.returns = rollout_buffer.advantages + rollout_buffer.values
