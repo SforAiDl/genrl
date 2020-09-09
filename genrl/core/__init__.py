@@ -15,10 +15,7 @@ from genrl.core.policies import (  # noqa
     MlpPolicy,
     get_policy_from_name,
 )
-from genrl.core.rollout_storage import (  # noqa
-    RolloutBuffer,
-    compute_returns_and_advantage,
-)
+from genrl.core.rollout_storage import RolloutBuffer  # noqa
 from genrl.core.values import (  # noqa
     BaseValue,
     CnnCategoricalValue,

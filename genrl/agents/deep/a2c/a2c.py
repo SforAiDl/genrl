@@ -6,7 +6,6 @@ import torch.optim as opt
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import OnPolicyAgent
-from genrl.core import compute_returns_and_advantage
 from genrl.utils import get_env_properties, get_model, safe_mean
 
 
@@ -124,8 +123,8 @@ class A2C(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        compute_returns_and_advantage(
-            self.rollout, values.detach().cpu().numpy(), dones.cpu().numpy()
+        self.compute_returns_and_advantage(
+            values.detach().cpu().numpy(), dones.cpu().numpy()
         )
 
     def evaluate_actions(self, states: torch.Tensor, actions: torch.Tensor):
