@@ -12,3 +12,4 @@
     Double_DQN
     Dueling_DQN
     NoisyNet_DQN
+    Prioritized_DQN

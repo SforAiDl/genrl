@@ -7,7 +7,8 @@ For background on Deep RL, its core definitions and problem formulations refer t
 Objective
 =========
 
-The DQN uses the concept of Q-learning. The objective is to get as close to the Bellman Expectation of the Q-value function as possible. This is done by minimising the loss function which is defined as
+The DQN uses the concept of Q-learning. When the state space is too huge, it require a large number of epochs to explore and update the Q-value of every state even at least once.
+Hence, we make use of function approximators. DQN uses a neural network as a function approximator and objective is to get as close to the Bellman Expectation of the Q-value function as possible. This is done by minimising the loss function which is defined as
 
 .. math::
 
