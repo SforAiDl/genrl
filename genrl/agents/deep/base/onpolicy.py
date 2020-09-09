@@ -130,11 +130,7 @@ class OnPolicyAgent(BaseAgent):
                 - self.rollout.values[step]
             )
             running_advantage = (
-                delta
-                + self.rollout.gamma
-                * gae_lambda
-                * next_non_terminal
-                * running_advantage
+                delta + self.rollout.gamma * gae_lambda * running_advantage
             )
             next_non_terminal = 1 - self.rollout.dones[step]
             next_values = self.rollout.values[step]
