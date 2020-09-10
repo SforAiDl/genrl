@@ -1,11 +1,11 @@
-from typing import Union
+from typing import Any
 
 import numpy as np
 import torch
 
 
 def compute_returns_and_advantage(
-    rollout_buffer,
+    rollout_buffer: Any,
     last_value: torch.Tensor,
     dones: np.ndarray,
     use_gae: bool = False,
