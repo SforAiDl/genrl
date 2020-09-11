@@ -2,8 +2,9 @@
     <br>
     <img src="https://github.com/SforAiDl/genrl/blob/master/docs/source/assets/images/genrl.png" width="200"/>
     <br>
-<p>
+</p>
 <div align='center'>
+
 [![pypi](https://img.shields.io/badge/pypi%20package-v0.0.2-blue)](https://pypi.org/project/genrl/)
 [![Downloads](https://pepy.tech/badge/genrl)](https://pepy.tech/project/genrl)
 [![codecov](https://codecov.io/gh/SforAiDl/genrl/branch/master/graph/badge.svg)](https://codecov.io/gh/SforAiDl/genrl)
