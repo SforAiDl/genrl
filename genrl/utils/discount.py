@@ -14,11 +14,15 @@ def compute_returns_and_advantage(
     Post-processing function: compute the returns (sum of discounted rewards)
     and advantage (A(s) = R - V(S)).
     Adapted from Stable-Baselines PPO2.
-    ;param rollout_buffer: (RolloutBuffer, BaseBuffer) An instance of the rollout buffer used in On-policy algorithms
-    :param last_value: (torch.Tensor)
-    :param dones: (np.ndarray)
-    :param use_gae: (bool) Whether to use Generalized Advantage Estimation
-        or normal advantage for advantage computation.
+
+    Args:
+        rollout_buffer: An instance of the rollout buffer used for OnPolicy Agents
+        last_value: (:obj: torch.tensor)
+        dones: (:obj: np.ndarray)
+        use_gae: (bool) True if Generalized Advantage Estimation is to be used, else False
+
+    Returns:
+        A modified Rollout Buffer with advantages calculated
     """
     last_value = last_value.flatten()
 
