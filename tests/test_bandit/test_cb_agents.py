@@ -35,8 +35,8 @@ class TestCBAgent:
             trainer.train(timesteps=10, update_interval=2, update_after=5, batch_size=2)
             shutil.rmtree("./logs")
 
-#    def test_linear_posterior_agent(self) -> None:
-#        self._test_fn(LinearPosteriorAgent)
+    # def test_linear_posterior_agent(self) -> None:
+    #     self._test_fn(LinearPosteriorAgent)
 
     def test_neural_linear_posterior_agent(self) -> None:
         self._test_fn(NeuralLinearPosteriorAgent)
