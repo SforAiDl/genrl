@@ -7,10 +7,6 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
-#    container:
-#      image: genrl/ubuntu-build:latest
-    
     strategy:
       matrix:
         python-version: [ '3.6' ]
