@@ -48,6 +48,7 @@ class BaseAgent(ABC):
         self.gamma = gamma
         self.shared_layers = shared_layers
         self.policy_layers = policy_layers
+        self.rewards = []
         self.value_layers = value_layers
         self.lr_policy = lr_policy
         self.lr_value = lr_value
@@ -94,11 +95,11 @@ class BaseAgent(ABC):
         """
         raise NotImplementedError
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.tensor`): neural net weights
         """
 
         raise NotImplementedError

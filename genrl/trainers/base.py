@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Union
 
 import gym
 import numpy as np
+import toml
 import torch
 
 from genrl.environments.vec_env import VecEnv
@@ -28,7 +29,8 @@ class Trainer(ABC):
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
         save_model (str): Directory where the checkpoints of agent parameters should be saved
         run_num (int): A run number allotted to the save of parameters
-        load_model (str): File to load saved parameter checkpoint from
+        load_weights (str): Weights file
+        load_hyperparams (str): File to load hyperparameters
         render (bool): True if environment is to be rendered during training, else False
         evaluate_episodes (int): Number of episodes to evaluate for
         seed (int): Set seed for reproducibility
@@ -48,7 +50,8 @@ class Trainer(ABC):
         save_interval: int = 0,
         save_model: str = "checkpoints",
         run_num: int = None,
-        load_model: str = None,
+        load_weights: str = None,
+        load_hyperparams: str = None,
         render: bool = False,
         evaluate_episodes: int = 50,
         seed: Optional[int] = None,
@@ -65,7 +68,8 @@ class Trainer(ABC):
         self.save_interval = save_interval
         self.save_model = save_model
         self.run_num = run_num
-        self.load_model = load_model
+        self.load_weights = load_weights
+        self.load_hyperparams = load_hyperparams
         self.render = render
         self.evaluate_episodes = evaluate_episodes
 
@@ -87,7 +91,7 @@ class Trainer(ABC):
         Args:
             render (bool): Option to render the environment during evaluation
         """
-        episode, episode_reward = 0, np.zeros(self.env.n_envs)
+        episode, episode_reward = 0, torch.zeros(self.env.n_envs)
         episode_rewards = []
         state = self.env.reset()
         while True:
@@ -96,9 +100,6 @@ class Trainer(ABC):
             else:
                 action, _, _ = self.agent.select_action(state)
 
-            if isinstance(action, torch.Tensor):
-                action = action.numpy()
-
             next_state, reward, done, _ = self.env.step(action)
 
             if render:
@@ -106,7 +107,7 @@ class Trainer(ABC):
 
             episode_reward += reward
             state = next_state
-            if np.any(done):
+            if done.byte().any():
                 for i, di in enumerate(done):
                     if di:
                         episode += 1
@@ -149,30 +150,34 @@ class Trainer(ABC):
                 run_num = int(last_path[len(path) + 1 :].split("-")[0]) + 1
             self.run_num = run_num
 
-        torch.save(
-            self.agent.get_hyperparams(),
-            "{}/{}-log-{}.pt".format(path, run_num, timestep),
-        )
+        filename_hyperparams = "{}/{}-log-{}.toml".format(path, run_num, timestep)
+        filename_weights = "{}/{}-log-{}.pt".format(path, run_num, timestep)
+        hyperparameters, weights = self.agent.get_hyperparams()
+        with open(filename_hyperparams, mode="w") as f:
+            toml.dump(hyperparameters, f)
+
+        torch.save(weights, filename_weights)
 
     def load(self):
         """Function to load saved parameters of a given agent"""
-        path = self.load_model
         try:
-            self.checkpoint = torch.load(path)
-        except FileNotFoundError:
-            raise Exception("Invalid File Name")
+            self.checkpoint_hyperparams = {}
+            with open(self.load_hyperparams, mode="r") as f:
+                self.checkpoint_hyperparams = toml.load(f, _dict=dict)
 
-        weights = {}
-
-        for key, item in self.checkpoint.items():
-            if "weights" not in key:
+            for key, item in self.checkpoint_hyperparams.items():
                 setattr(self, key, item)
-            else:
-                weights[key] = item
 
-        self.agent.load_weights(weights)
+        except FileNotFoundError:
+            raise Exception("Invalid hyperparameters File Name")
 
-        print("Loaded Pretrained Model!")
+        try:
+            self.checkpoint_weights = torch.load(self.load_weights)
+            self.agent._load_weights(self.checkpoint_weights)
+        except FileNotFoundError:
+            raise Exception("Invalid weights File Name")
+
+        print("Loaded Pretrained Model weights and hyperparameters!")
 
     @property
     def n_envs(self) -> int:

@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 
-import torch
-import torch.nn as nn
+import torch  # noqa
+import torch.nn as nn  # noqa
 import torch.nn.functional as F
 
 from genrl.agents.bandits.contextual.common.transition import TransitionDB

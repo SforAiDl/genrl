@@ -57,7 +57,7 @@ class VecMonitor(VecEnvWrapper):
         """
         observations, rewards, dones, infos = self.venv.step(actions)
 
-        self.episode_returns += rewards
+        self.episode_returns += rewards.numpy()
         self.episode_lens += 1
 
         new_infos = infos.copy()
