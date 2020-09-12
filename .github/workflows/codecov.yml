@@ -16,9 +16,7 @@ jobs:
         python-version: [ '3.6' ]
         platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
-    
-    name: Python ${{ matrix.python-version }} - ${{ matrix.platform }}
-       
+           
     steps:
       # Caching Linux
       - uses: actions/cache@v2
