@@ -1,0 +1,55 @@
+pull_request_rules:
+    - name: say hi on new contribution
+    conditions:
+      - author!=@myorg/regularcontributors
+    actions:
+        comment:
+          message: |
+              Welcome!
+              Thanks for making your first PR submission to GenRL!
+
+    - name: Automatic merge on approval
+      conditions:
+        - base=master
+        - "#approved-reviews-by>=2"
+        - "#review-requested=0"
+        - "#changes-requested-reviews-by=0"
+        - "#status-success>=9"
+        # no conflict with master branch
+        - -conflict
+        # was not closed yet
+        - -closed
+        # filter-out GH draft PRs
+        - -draft
+      actions:
+        delete_head_branch: {}
+        merge:
+          # https://doc.mergify.io/merge-action.html#strict-merge
+          # (on head branch) $ git merge --no-ff base
+          # (on head branch) # Wait for CI to go green
+          # (on head branch) # Squash all commits
+          # (on base branch) $ git merge --ff head
+          strict: true
+          method: squash
+        comment:
+          message: Great work!
+  
+    - name: warn on conflicts
+      conditions:
+        - conflict
+        # filter-out GH draft PRs
+        - -draft
+      actions:
+        comment:
+          message: PR cannot be merged due to Merge conflicts. Please resolve them @{{author}}
+  
+    - name: add core reviewer
+      conditions:
+        # filter-out GH draft PRs
+        - -draft
+        # number of review approvals
+        - "#approved-reviews-by<3"
+      actions:
+        request_reviews:
+          teams:
+            - core-contributors
