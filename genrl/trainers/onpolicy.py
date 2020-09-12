@@ -32,7 +32,7 @@ class OnPolicyTrainer(Trainer):
 
     def train(self) -> None:
         """Main training method"""
-        if self.load_model is not None:
+        if self.load_weights is not None or self.load_hyperparams is not None:
             self.load()
 
         for epoch in range(self.epochs):
