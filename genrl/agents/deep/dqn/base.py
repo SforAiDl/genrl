@@ -153,6 +153,9 @@ class DQN(OffPolicyAgent):
             q_values (:obj:`torch.Tensor`): Q values for the given states and actions
         """
         q_values = self.model(states)
+        if len(q_values.shape) == 2:
+            q_values = q_values.unsqueeze(1)
+            actions = actions.unsqueeze(1)
         q_values = q_values.gather(2, actions)
         return q_values
 
@@ -171,6 +174,8 @@ class DQN(OffPolicyAgent):
             target_q_values (:obj:`torch.Tensor`): Target Q values for the DQN
         """
         # Next Q-values according to target model
+        if len(next_states.shape) == 2:
+            next_states = next_states.unsqueeze(1)
         next_q_target_values = self.target_model(next_states)
         # Maximum of next q_target values
         max_next_q_target_values = next_q_target_values.max(2)[0]

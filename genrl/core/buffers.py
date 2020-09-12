@@ -1,3 +1,4 @@
+import copy
 import random
 from collections import deque
 from typing import NamedTuple, Tuple
@@ -70,7 +71,7 @@ class ReplayBuffer:
 
         :returns: Length of replay memory
         """
-        return self.pos
+        return len(self.memory)
 
 
 class PrioritizedBuffer:
@@ -172,7 +173,7 @@ class PrioritizedBuffer:
 
     def __len__(self) -> int:
         """
-        Gives number of experiences in buffer currently
+        Gives number of expesampleriences in buffer currently
 
         :returns: Length of replay memory
         """
@@ -181,3 +182,106 @@ class PrioritizedBuffer:
     @property
     def pos(self):
         return len(self.buffer)
+
+
+class HERWrapper:
+    """
+    A wrapper class to convert a replay buffer to a HER Style Buffer
+
+    Args:
+        replay_buffer (ReplayBuffer): An instance of the replay buffer to be converted to a HER style buffer
+        n_sampled_goals (int): The number of artificial transitions to generate for each actual transition
+        goal_selection_strategy (str): The strategy to be used to generate goals for the artificial transitions
+        env (HerGoalEnvWrapper): The goal env, wrapped using HERGoalEnvWrapper
+    """
+
+    def __init__(self, replay_buffer, n_sampled_goal, goal_selection_strategy, env):
+
+        self.n_sampled_goal = n_sampled_goal
+        self.goal_selection_strategy = goal_selection_strategy
+        self.replay_buffer = replay_buffer
+        self.transitions = []
+        self.allowed_strategies = ["future", "final", "episode", "random"]
+        self.env = env
+
+    def push(self, inp: Tuple):
+        state, action, reward, next_state, done = inp
+        state = self.env.convert_dict_to_obs(state)
+        next_state = self.env.convert_dict_to_obs(next_state)
+
+        self.transitions.append((state, action, reward, next_state, done))
+        self.replay_buffer.push((state, action, reward, next_state, done))
+
+        if inp[-1]:
+            self._store_episode()
+            self.transitions = []
+
+    def sample(self, batch_size):
+        return self.replay_buffer.sample(batch_size)
+
+    def _sample_achieved_goal(self, ep_transitions, transition_idx):
+        if self.goal_selection_strategy == "future":
+            # Sample a goal that was observed in the future
+            selected_idx = np.random.choice(
+                np.arange(transition_idx + 1, len(ep_transitions))
+            )
+            selected_transition = ep_transitions[selected_idx]
+        elif self.goal_selection_strategy == "final":
+            # Sample the goal that was finally achieved during the episode
+            selected_transition = ep_transitions[-1]
+        elif self.goal_selection_strategy == "episode":
+            # Sample a goal that was observed in the episode
+            selected_idx = np.random.choice(np.arange(len(ep_transitions)))
+            selected_transition = ep_transitions[selected_idx]
+        elif self.goal_selection_strategy == "random":
+            # Sample a random goal from the entire replay buffer
+            selected_idx = np.random.choice(len(self.replay_buffer))
+            selected_transition = self.replay_buffer.memory[selected_idx]
+        else:
+            raise ValueError(
+                f"Goal selection strategy must be one of {self.allowed_strategies}"
+            )
+
+        return self.env.convert_obs_to_dict(selected_transition[0])["achieved_goal"]
+
+    def _sample_batch_goals(self, ep_transitions, transition_idx):
+        return [
+            self._sample_achieved_goal(ep_transitions, transition_idx)
+            for _ in range(self.n_sampled_goal)
+        ]
+
+    def _store_episode(self):
+        for transition_idx, transition in enumerate(self.transitions):
+
+            # We cannot sample from the future on the last step
+            if (
+                transition_idx == len(self.transitions) - 1
+                and self.goal_selection_strategy == "future"
+            ):
+                break
+
+            sampled_goals = self._sample_batch_goals(self.transitions, transition_idx)
+
+            for goal in sampled_goals:
+                state, action, reward, next_state, done = copy.deepcopy(transition)
+
+                # Convert concatenated obs to dict, so we can update the goals
+                state_dict = self.env.convert_obs_to_dict(state)
+                next_state_dict = self.convert_obs_to_dict(next_state)
+
+                # Update the desired goals in the transition
+                state_dict["desired_goal"] = goal
+                next_state_dict["desired_goal"] = goal
+
+                # Update the reward according to the new desired goal
+                reward = self.env.compute_reward(
+                    next_state_dict["achieved_goal"], goal, info
+                )
+
+                # Store the newly created transition in the replay buffer
+                state = self.env.convert_dict_to_obs(state_dict)
+                next_state = self.env.convert_dict_to_obs(next_state_dict)
+                self.replay_buffer.push((state, action, reward, next_state, done))
+
+    def __len__(self):
+        return len(self.replay_buffer)
