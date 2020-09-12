@@ -1,4 +1,4 @@
-name: Lint, Test, Code Coverage
+name: Lint
 
 on:
   push:
@@ -13,8 +13,8 @@ jobs:
     
     strategy:
       matrix:
-        python-version: [ '3.6','3.7' ]
-        platform: [ubuntu-latest, macos-latest]
+        python-version: [ '3.7' ]
+        platform: [ubuntu-latest]
     runs-on: ${{ matrix.platform }}
     
     name: Python ${{ matrix.python-version }} - ${{ matrix.platform }} - Lint, Build and Code Coverage
@@ -25,15 +25,6 @@ jobs:
         if: startsWith(runner.os, 'Linux')
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # Caching MacOS
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'macOS')
-        with:
-          path: ~/Library/Caches/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
@@ -57,10 +48,3 @@ jobs:
           flake8 .
           black --check .
           isort --profile black -c .
-
-      - name: Tests
-        run: pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
-
-      - name: Code Coverage CodeCov.io
-        shell: bash
-        run: codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
