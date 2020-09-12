@@ -267,16 +267,14 @@ class HERWrapper:
 
                 # Convert concatenated obs to dict, so we can update the goals
                 state_dict = self.env.convert_obs_to_dict(state)
-                next_state_dict = self.convert_obs_to_dict(next_state)
+                next_state_dict = self.env.convert_obs_to_dict(next_state)
 
                 # Update the desired goals in the transition
                 state_dict["desired_goal"] = goal
                 next_state_dict["desired_goal"] = goal
 
                 # Update the reward according to the new desired goal
-                reward = self.env.compute_reward(
-                    next_state_dict["achieved_goal"], goal, info
-                )
+                reward = self.env.compute_reward(next_state_dict["achieved_goal"], goal)
 
                 # Store the newly created transition in the replay buffer
                 state = self.env.convert_dict_to_obs(state_dict)

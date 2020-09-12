@@ -1,11 +1,6 @@
-from typing import List, Type, Union
+from typing import Type, Union
 
-import numpy as np
-import torch
-
-from genrl.core import PrioritizedBuffer, ReplayBuffer
-from genrl.trainers import OffPolicyTrainer, Trainer
-from genrl.utils import safe_mean
+from genrl.trainers import OffPolicyTrainer
 
 
 class HERTrainer(OffPolicyTrainer):
@@ -37,7 +32,7 @@ class HERTrainer(OffPolicyTrainer):
 
     def train(self) -> None:
         """Main training method"""
-        if self.load_model is not None:
+        if self.load_weights is not None or self.load_hyperparams is not None:
             self.load()
 
         state = self.env.reset()
