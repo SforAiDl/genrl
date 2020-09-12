@@ -222,6 +222,7 @@ class DQN(OffPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "gamma": self.gamma,
@@ -231,15 +232,15 @@ class DQN(OffPolicyAgent):
             "weights": self.model.state_dict(),
             "timestep": self.timestep,
         }
-        return hyperparams
+        return hyperparams, self.model.state_dict()
 
     def load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`Dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.Tensor`): neural net weights
         """
-        self.model.load_state_dict(weights["weights"])
+        self.model.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
