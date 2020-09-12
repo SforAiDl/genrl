@@ -17,7 +17,7 @@ jobs:
         platform: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.platform }}
     
-    name: Python ${{ matrix.python-version }} - ${{ matrix.platform }} - Lint, Build and Code Coverage
+    name: Python ${{ matrix.python-version }} - ${{ matrix.platform }}
        
     steps:
       # Caching Linux
