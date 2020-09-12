@@ -33,6 +33,7 @@ parameter. ``shared_layers`` takes the sizes of the mlp layers o be used, and ``
 used
 
 As an example - in A2C -
+
 .. code-block:: python
 # The imports
 from genrl.agents import A2C
@@ -57,6 +58,7 @@ trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1
 trainer.train()
 
 The above example uses and mlp of layer sizes (32, 64) as the decoder, and can be visualised as follows -
+
 .. code-block:: none
 
                 state
