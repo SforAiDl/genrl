@@ -8,14 +8,8 @@ on:
 
 jobs:
   build:
-#    container:
-#      image: genrl/ubuntu-build:latest
-    
     strategy:
-      matrix:
-        python-version: [ '3.7' ]
-        platform: [ubuntu-latest]
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
            
     steps:
       # Caching Linux
@@ -29,10 +23,10 @@ jobs:
 
       # Setup
       - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.7
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: 3.7
 
       # Install Dependencies
       - name: Install dependencies
