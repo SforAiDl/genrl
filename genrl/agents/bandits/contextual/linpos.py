@@ -145,7 +145,7 @@ class LinearPosteriorAgent(DCBAgent):
         x, y = self.db.get_data_for_action(action, batch_size)
         x = torch.cat([x, torch.ones(x.shape[0], 1)], dim=1)
         inv_cov = torch.mm(x.T, x) + self.lambda_prior * torch.eye(self.context_dim + 1)
-        cov = torch.inverse(inv_cov)
+        cov = torch.pinverse(inv_cov)
         mu = torch.mm(cov, torch.mm(x.T, y))
         a = self.a0 + self.t / 2
         b = self.b0 + (torch.mm(y.T, y) - torch.mm(mu.T, torch.mm(inv_cov, mu))) / 2
