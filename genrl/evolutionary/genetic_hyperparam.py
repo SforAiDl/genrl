@@ -1,6 +1,6 @@
 import gc
 import random
-from typing import Dict, Tuple
+from typing import Dict
 
 from genrl.evolutionary.utils import (
     create_random_agent,
@@ -157,8 +157,7 @@ class GeneticHyperparamTuner:
 
         # DELETE ALL OTHERS in to_be_deleted
         # done to avoid any memory leak
-        for individual in to_be_deleted:
-            del individual
+        del to_be_deleted[:]
         del to_be_deleted
         gc.collect()
 
@@ -172,7 +171,7 @@ class GeneticHyperparamTuner:
 
             if parents_length == 1:
                 male = parents[0]
-                babies = babies = self.breed(male, male)
+                babies = self.breed(male, male)
 
                 for baby in babies:
                     if len(children) < children_length:
