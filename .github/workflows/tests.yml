@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.6','3.7' ]
-        platform: [ubuntu-latest, macos-latest]
+        platform: [ubuntu-20.04, windows-2019, macOS-10.15]
     runs-on: ${{ matrix.platform }}
     
     name: Python ${{ matrix.python-version }} - ${{ matrix.platform }}
