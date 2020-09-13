@@ -61,15 +61,12 @@ jobs:
       - name: Install Windows dependencies
         if: startsWith(runner.os, 'Windows')
         run: |
-          conda install -c conda-forge swig
-          .scripts/windows_build.ps1
+          .scripts/windows_cpu_build.ps1
 
       - name: Install Linux Dependencies
         if: startsWith(runner.os, 'macOS') || startsWith(runner.os, 'Linux')
         run: |
-          python -m pip install --upgrade pip
-          pip install torch==1.4.0 --quiet  --find-links https://download.pytorch.org/whl/cpu/torch_stable.html --upgrade
-          pip install -r requirements.txt
+          ./.scripts/unix_cpu_build.sh
 
       - name: Tests
         run: pytest --durations=0
