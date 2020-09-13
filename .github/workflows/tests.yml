@@ -62,7 +62,6 @@ jobs:
         if: startsWith(runner.os, 'macOS') || startsWith(runner.os, 'Linux')
         run: |
           python -m pip install --upgrade pip
-          wget http://prdownloads.sourceforge.net/swig/swigwin-4.0.2.zip && unzip swigwin-4.0.2 && cp swigwin-4.0.2/swig.exe ./ && rm -r swigwin-4.0.2
           pip install torch==1.4.0 --quiet  --find-links https://download.pytorch.org/whl/cpu/torch_stable.html --upgrade
           pip install -r requirements.txt
 
