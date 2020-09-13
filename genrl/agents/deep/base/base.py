@@ -95,11 +95,11 @@ class BaseAgent(ABC):
         """
         raise NotImplementedError
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.tensor`): neural net weights
         """
 
         raise NotImplementedError

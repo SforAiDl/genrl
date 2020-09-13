@@ -148,6 +148,7 @@ class VPG(OnPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -155,18 +156,17 @@ class VPG(OnPolicyAgent):
             "gamma": self.gamma,
             "lr_policy": self.lr_policy,
             "rollout_size": self.rollout_size,
-            "weights": self.ac.state_dict(),
         }
 
-        return hyperparams
+        return hyperparams, self.actor.state_dict()
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
             weights (:obj:`dict`): Dictionary of different neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.actor.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
