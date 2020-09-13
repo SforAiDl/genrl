@@ -53,9 +53,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - uses: goanpeca/setup-miniconda@v1
-      with:
-        auto-update-conda: true
-        python-version: ${{ matrix.python-version }}
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
 
       # Install Dependencies
       - name: Install Windows dependencies
