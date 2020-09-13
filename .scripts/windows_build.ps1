@@ -15,6 +15,7 @@ function Unzip
 (New-Object System.Net.WebClient).DownloadFile("http://prdownloads.sourceforge.net/swig/swigwin-4.0.1.zip","swigwin-4.0.1.zip");
 Expand-Archive .\swigwin-4.0.1.zip .;
 Copy-item -path ".\swigwin-4.0.1\swig.exe" -destination ".\"
+$env:Path += ";D:\a\genrl\genrl\"
 
 pip install torch==1.4.0 --quiet --find-links https://download.pytorch.org/whl/cpu/torch_stable.html --upgrade
 pip install -r requirements.txt
