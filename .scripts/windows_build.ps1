@@ -8,7 +8,7 @@ function Unzip
     [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
 }
 
-Invoke-WebRequest http://prdownloads.sourceforge.net/swig/swigwin-4.0.2.zip
+Invoke-WebRequest http://prdownloads.sourceforge.net/swig/swigwin-4.0.2.zip -OutFile swigwin-4.0.2.zip
 Unzip "swigwin-4.0.2.zip" ".\"
 copy-item -path "swigwin-4.0.2\swig.exe" -destination ".\"
 
