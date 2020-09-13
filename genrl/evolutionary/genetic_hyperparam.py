@@ -157,8 +157,7 @@ class GeneticHyperparamTuner:
 
         # DELETE ALL OTHERS in to_be_deleted
         # done to avoid any memory leak
-        for _individual in to_be_deleted:
-            del _individual
+        del to_be_deleted[:]
         del to_be_deleted
         gc.collect()
 
