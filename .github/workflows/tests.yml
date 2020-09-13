@@ -52,10 +52,16 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - uses: goanpeca/setup-miniconda@v1
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
+
       # Install Dependencies
       - name: Install Windows dependencies
         if: startsWith(runner.os, 'Windows')
         run: |
+          conda install -c conda-forge swig
           .scripts/windows_build.ps1
 
       - name: Install Linux Dependencies
