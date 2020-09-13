@@ -59,7 +59,7 @@ jobs:
           isort --profile black -c .
 
       - name: Tests
-        run: pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
+        run: pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc --durations=0
 
       - name: Code Coverage CodeCov.io
         shell: bash
