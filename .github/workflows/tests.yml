@@ -53,10 +53,12 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       # Install Dependencies
-      - name: Install dependencies
+      - name: Install Windows dependencies
         if: startsWith(runner.os, 'Windows')
         run: |
           .scripts/windows_build.ps1
+
+      - name: Install Linux Dependencies
         if: startsWith(runner.os, 'macOS') || startsWith(runner.os, 'Linux')
         run: |
           python -m pip install --upgrade pip
