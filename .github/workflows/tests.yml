@@ -35,14 +35,15 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      
+
+      # Caching Windows
       - uses: actions/cache@v2
-      if: startsWith(runner.os, 'Windows')
-      with:
-        path: ~\AppData\Local\pip\Cache
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        if: startsWith(runner.os, 'Windows')
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       # Setup
       - uses: actions/checkout@v2
