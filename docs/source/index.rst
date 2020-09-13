@@ -21,9 +21,6 @@ Contents
    :maxdepth: 2
    :caption: Reinforcement Learning
 
-   RL/background/index
-   RL/introduction/index
-
 
 .. toctree::
    :maxdepth: 2
