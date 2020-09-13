@@ -24,6 +24,7 @@ class custom_actorcritic(MlpActorCritic):
         self,
         state_dim,
         action_dim,
+        shared_layers=None,
         policy_layers=(1, 1),
         value_layers=(1, 1),
         val_type="V",
@@ -32,11 +33,17 @@ class custom_actorcritic(MlpActorCritic):
         super(custom_actorcritic, self).__init__(
             state_dim,
             action_dim,
+            shared_layers=shared_layers,
             policy_layers=policy_layers,
             value_layers=value_layers,
             val_type=val_type,
             **kwargs
         )
+
+    def get_params(self):
+        actor_params = self.actor.parameters()
+        critic_params = self.critic.parameters()
+        return actor_params, critic_params
 
 
 def test_custom_vpg():

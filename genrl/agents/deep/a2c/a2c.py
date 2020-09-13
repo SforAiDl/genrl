@@ -66,27 +66,31 @@ class A2C(OnPolicyAgent):
             self.env, self.network
         )
         if isinstance(self.network, str):
-            self.ac = get_model("ac", self.network)(
+            arch_type = self.network
+            if self.shared_layers is not None:
+                arch_type += "s"
+            self.ac = get_model("ac", arch_type)(
                 state_dim,
                 action_dim,
+                shared_layers=self.shared_layers,
                 policy_layers=self.policy_layers,
                 value_layers=self.value_layers,
                 val_type="V",
                 discrete=discrete,
                 action_lim=action_lim,
             ).to(self.device)
+
         else:
             self.ac = self.network.to(self.device)
-
-            # action_dim = self.network.action_dim
 
         if self.noise is not None:
             self.noise = self.noise(
                 torch.zeros(action_dim), self.noise_std * torch.ones(action_dim)
             )
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        actor_params, critic_params = self.ac.get_params()
+        self.optimizer_policy = opt.Adam(critic_params, lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(actor_params, lr=self.lr_value)
 
     def select_action(
         self, state: torch.Tensor, deterministic: bool = False

@@ -66,9 +66,13 @@ class PPO1(OnPolicyAgent):
             self.env, self.network
         )
         if isinstance(self.network, str):
-            self.ac = get_model("ac", self.network)(
+            arch = self.network
+            if self.shared_layers is not None:
+                arch += "s"
+            self.ac = get_model("ac", arch)(
                 state_dim,
                 action_dim,
+                shared_layers=self.shared_layers,
                 policy_layers=self.policy_layers,
                 value_layers=self.value_layers,
                 val_typ="V",
@@ -79,8 +83,9 @@ class PPO1(OnPolicyAgent):
         else:
             self.ac = self.network.to(self.device)
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        actor_params, critic_params = self.ac.get_params()
+        self.optimizer_policy = opt.Adam(actor_params, lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(critic_params, lr=self.lr_value)
 
     def select_action(
         self, state: torch.Tensor, deterministic: bool = False
