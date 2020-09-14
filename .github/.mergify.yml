@@ -55,7 +55,7 @@ pull_request_rules:
         # filter-out GH draft PRs
         - -draft
         # number of review approvals
-        - "#approved-reviews-by<3"
+        - "#approved-reviews-by<1"
       actions:
         request_reviews:
           teams:
