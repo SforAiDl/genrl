@@ -15,6 +15,7 @@ pull_request_rules:
         - "#review-requested=0"
         - "#changes-requested-reviews-by=0"
         - "#status-success>=9"
+        - status-success=Tests
         # no conflict with master branch
         - -conflict
         # was not closed yet
