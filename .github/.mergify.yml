@@ -14,8 +14,14 @@ pull_request_rules:
         - "#approved-reviews-by>=2"
         - "#review-requested=0"
         - "#changes-requested-reviews-by=0"
-        - "#status-success>=9"
+        - "#status-success>=12"
+        
+        # Hardcoding in case new CI workflows are added
         - status-success=Tests
+        - status-success=Lint
+        - status-success=Code Coverage
+        - status-success=LGTM analysis: Python
+        - status-success=Travis CI
         # no conflict with master branch
         - -conflict
         # was not closed yet
