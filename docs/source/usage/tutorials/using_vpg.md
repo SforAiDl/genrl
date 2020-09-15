@@ -22,8 +22,8 @@ This is a very minimal way to run a VPG agent on **GenRL**
 ```python
 import gym  # OpenAI Gym
 
-from genrl import VPG
-from genrl.deep.common import OnPolicyTrainer
+from genrl.agents import VPG
+from genrl.trainers import OnPolicyTrainer
 from genrl.environments import VectorEnv
 
 env = VectorEnv("CartPole-v1")
