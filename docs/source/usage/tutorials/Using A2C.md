@@ -5,8 +5,8 @@
 ```python
 import gym
 
-from genrl import A2C
-from genrl.deep.common import OnPolicyTrainer
+from genrl.agents import A2C
+from genrl.trainers import OnPolicyTrainer
 from genrl.environments import VectorEnv
 
 env = VectorEnv("CartPole-v0")
