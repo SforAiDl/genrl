@@ -205,11 +205,12 @@ class HERWrapper:
         self.env = env
 
     def push(self, inp: Tuple):
-        state, action, reward, next_state, done = inp
-        state = self.env.convert_dict_to_obs(state)
-        next_state = self.env.convert_dict_to_obs(next_state)
+        state, action, reward, next_state, done, info = inp
+        if isinstance(state, dict):
+            state = self.env.convert_dict_to_obs(state)
+            next_state = self.env.convert_dict_to_obs(next_state)
 
-        self.transitions.append((state, action, reward, next_state, done))
+        self.transitions.append((state, action, reward, next_state, done, info))
         self.replay_buffer.push((state, action, reward, next_state, done))
 
         if inp[-1]:
@@ -263,7 +264,9 @@ class HERWrapper:
             sampled_goals = self._sample_batch_goals(self.transitions, transition_idx)
 
             for goal in sampled_goals:
-                state, action, reward, next_state, done = copy.deepcopy(transition)
+                state, action, reward, next_state, done, info = copy.deepcopy(
+                    transition
+                )
 
                 # Convert concatenated obs to dict, so we can update the goals
                 state_dict = self.env.convert_obs_to_dict(state)
@@ -274,7 +277,9 @@ class HERWrapper:
                 next_state_dict["desired_goal"] = goal
 
                 # Update the reward according to the new desired goal
-                reward = self.env.compute_reward(next_state_dict["achieved_goal"], goal)
+                reward = self.env.compute_reward(
+                    next_state_dict["achieved_goal"], goal, info
+                )
 
                 # Store the newly created transition in the replay buffer
                 state = self.env.convert_dict_to_obs(state_dict)

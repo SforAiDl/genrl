@@ -1,6 +1,8 @@
 from typing import Type, Union
 
-from genrl.trainers import OffPolicyTrainer
+import numpy as np
+
+from genrl.trainers.offpolicy import OffPolicyTrainer
 
 
 class HERTrainer(OffPolicyTrainer):
@@ -43,8 +45,13 @@ class HERTrainer(OffPolicyTrainer):
 
         for timestep in range(0, self.max_timesteps):
             self.agent.update_params_before_select_action(timestep)
+            action = self.get_action(np.expand_dims(state, axis=0), timestep)
 
-            action = self.get_action(state, timestep)
+            if (
+                not isinstance(action, int)
+                and action.shape != self.env.action_space.shape
+            ):
+                action = action.squeeze(0)
             next_state, reward, done, info = self.env.step(action)
 
             if self.render:
@@ -54,7 +61,7 @@ class HERTrainer(OffPolicyTrainer):
             # to False when the environment is not actually done but instead reaches the max
             # episode length.
             true_dones = info["done"]
-            self.buffer.push((state, action, reward, next_state, true_dones))
+            self.buffer.push((state, action, reward, next_state, true_dones, info))
 
             state = next_state
 

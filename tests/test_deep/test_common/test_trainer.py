@@ -58,8 +58,8 @@ def test_load_params():
         algo,
         env,
         epochs=0,
-        load_hyperparams="test_ckpt/PPO1_CartPole-v0/0-log-0.toml",
-        load_weights="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",
+        load_hyperparams="test_ckpt/PPO1_CartPole-v0/20-log-0.toml",
+        load_weights="test_ckpt/PPO1_CartPole-v0/20-log-0.pt",
     )
     trainer.train()
 

@@ -1,5 +1,12 @@
+import collections
+from collections import OrderedDict
+
 import numpy as np
+import torch
 from gym import GoalEnv, spaces
+
+from genrl.environments.torch import TorchWrapper
+from genrl.environments.vec_env import SubProcessVecEnv
 
 
 class HERGoalEnvWrapper(GoalEnv):
@@ -42,6 +49,7 @@ class HERGoalEnvWrapper(GoalEnv):
             raise NotImplementedError(f"{type(self.spaces[0])} space is not supported")
 
         self.keys = ["observation", "achieved_goal", "desired_goal"]
+        self.episode_reward = torch.zeros(1)
 
     def convert_dict_to_obs(self, obs_dict):
         return np.concatenate([obs_dict[key] for key in self.keys])
@@ -49,27 +57,35 @@ class HERGoalEnvWrapper(GoalEnv):
     def convert_obs_to_dict(self, obs):
         return OrderedDict(
             [
-                ("observation", observations[: self.obs_dim]),
+                ("observation", obs[: self.obs_dim]),
                 (
                     "achieved_goal",
-                    observations[self.obs_dim : self.obs_dim + self.goal_dim],
+                    obs[self.obs_dim : self.obs_dim + self.goal_dim],
                 ),
-                ("desired_goal", observations[self.obs_dim + self.goal_dim :]),
+                ("desired_goal", obs[self.obs_dim + self.goal_dim :]),
             ]
         )
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
+        self.episode_reward += reward
+
+        if "done" not in info.keys():
+            info["done"] = done
         return self.convert_dict_to_obs(obs), reward, done, info
+
+    def sample(self):
+        return self.env.action_space.sample()
 
     def seed(self, seed=None):
         return self.env.seed(seed)
 
     def reset(self):
+        self.episode_reward = torch.zeros(1)
         return self.convert_dict_to_obs(self.env.reset())
 
-    def compute_reward(self, achieved_goal, desired_goal):
-        return self.env.compute_reward(achieverd_goal, desired_goal, info)
+    def compute_reward(self, achieved_goal, desired_goal, info):
+        return self.env.compute_reward(achieved_goal, desired_goal, info)
 
     def render(self, mode="human"):
         return self.env.render(mode)

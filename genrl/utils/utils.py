@@ -144,12 +144,7 @@ def get_env_properties(
     discreteness of action space and action limit (highest action value)
         :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
-    if isinstance(env, gym.GoalEnv):
-        obs = env.observation_space["observation"]
-        des_goal = env.observation_space["desired_goal"]
-        ach_goal = env.observation_space["achieved_goal"]
-        state_dim = obs.shape[0] + des_goal.shape[0] + ach_goal.shape[0]
-    elif isinstance(env, (VecEnv, gym.Env)):
+    if isinstance(env, (VecEnv, gym.Env)):
         if network == "cnn":
             state_dim = env.framestack
         elif network == "mlp":

@@ -71,7 +71,6 @@ class DQN(OffPolicyAgent):
             )
         else:
             self.model = self.network
-
         self.target_model = deepcopy(self.model)
 
         self.optimizer = opt.Adam(self.model.parameters(), lr=self.lr_value)
@@ -104,6 +103,8 @@ class DQN(OffPolicyAgent):
         Returns:
             action (:obj:`torch.Tensor`): Action taken by the agent
         """
+        if not isinstance(state, torch.Tensor):
+            state = torch.as_tensor(state).float()
         q_values = self.model(state.unsqueeze(0))
         action = torch.argmax(q_values.squeeze(), dim=-1)
         return action
@@ -152,10 +153,10 @@ class DQN(OffPolicyAgent):
         Returns:
             q_values (:obj:`torch.Tensor`): Q values for the given states and actions
         """
-        q_values = self.model(states)
-        if len(q_values.shape) == 2:
-            q_values = q_values.unsqueeze(1)
+        if len(states.shape) < 3:
+            states = states.unsqueeze(1)
             actions = actions.unsqueeze(1)
+        q_values = self.model(states)
         q_values = q_values.gather(2, actions)
         return q_values
 
@@ -173,9 +174,9 @@ class DQN(OffPolicyAgent):
         Returns:
             target_q_values (:obj:`torch.Tensor`): Target Q values for the DQN
         """
-        # Next Q-values according to target model
-        if len(next_states.shape) == 2:
+        if len(next_states.shape) < 3:
             next_states = next_states.unsqueeze(1)
+        # Next Q-values according to target model
         next_q_target_values = self.target_model(next_states)
         # Maximum of next q_target values
         max_next_q_target_values = next_q_target_values.max(2)[0]
