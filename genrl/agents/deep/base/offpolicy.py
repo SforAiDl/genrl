@@ -1,11 +1,12 @@
 import collections
-from typing import List
+from typing import List, Union
 
 import torch
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import BaseAgent
 from genrl.core import (
+    HERWrapper,
     PrioritizedBuffer,
     PrioritizedReplayBufferSamples,
     ReplayBuffer,
@@ -98,7 +99,7 @@ class OffPolicyAgent(BaseAgent):
         states, actions, rewards, next_states, dones = self._reshape_batch(batch)
 
         # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if isinstance(self.replay_buffer, ReplayBuffer):
+        if isinstance(self.replay_buffer, (ReplayBuffer, HERWrapper)):
             batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
         elif isinstance(self.replay_buffer, PrioritizedBuffer):
             indices, weights = batch[5], batch[6]

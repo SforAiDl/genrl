@@ -144,16 +144,17 @@ def get_env_properties(
     discreteness of action space and action limit (highest action value)
         :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
-    if network == "cnn":
-        state_dim = env.framestack
-    elif network == "mlp":
-        state_dim = env.observation_space.shape[0]
-    elif isinstance(network, (BasePolicy, BaseValue)):
-        state_dim = network.state_dim
-    elif isinstance(network, BaseActorCritic):
-        state_dim = network.actor.state_dim
-    else:
-        raise TypeError
+    if isinstance(env, (VecEnv, gym.Env)):
+        if network == "cnn":
+            state_dim = env.framestack
+        elif network == "mlp":
+            state_dim = env.observation_space.shape[0]
+        elif isinstance(network, (BasePolicy, BaseValue)):
+            state_dim = network.state_dim
+        elif isinstance(network, BaseActorCritic):
+            state_dim = network.actor.state_dim
+        else:
+            raise TypeError
 
     if isinstance(env.action_space, gym.spaces.Discrete):
         action_dim = env.action_space.n

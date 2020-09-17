@@ -225,7 +225,6 @@ class MlpSingleActorTwoCritic(BaseActorCritic):
                             (None if determinist
         """
         state = torch.as_tensor(state).float()
-
         if self.actor.sac:
             mean, log_std = self.actor(state)
             std = log_std.exp()
@@ -270,7 +269,7 @@ class MlpSingleActorTwoCritic(BaseActorCritic):
             values = self.forward(state)
         elif mode == "min":
             values = self.forward(state)
-            values = torch.min(*values).squeeze(-1)
+            values = torch.min(*values)
         elif mode == "first":
             values = self.critic1(state)
         else:
@@ -340,6 +339,7 @@ class MlpSharedSingleActorTwoCritic(MlpSingleActorTwoCritic):
         Returns:
             features (:obj:`torch.Tensor`): The feature(s) extracted from the state
         """
+        state = torch.as_tensor(state).float()
         features = self.shared_network(state)
         return features
 
@@ -373,15 +373,12 @@ class MlpSharedSingleActorTwoCritic(MlpSingleActorTwoCritic):
             values (:obj:`list`): List of values as estimated by each individual critic
         """
         state = torch.as_tensor(state).float()
-        # state shape = [batch_size, number of vec envs, (state_dim + action_dim)]
 
-        # extract shard features for just the state
-        # state[:, :, :-action_dim] -> [batch_size, number of vec envs, state_dim]
-        x = self.get_features(state[:, :, : -self.action_dim])
-
-        # concatenate the actions to the extracted shared features
-        # state[:, :, -action_dim:] -> [batch_size, number of vec envs, action_dim]
-        state = torch.cat([x, state[:, :, -self.action_dim :]], dim=-1)
+        state_shape = state.shape
+        temp = state.reshape(-1, state_shape[-1])[:, : -self.action_dim]
+        x = self.get_features(temp.reshape(list(state_shape[:-1]) + [-1]))
+        temp = state.reshape(-1, state_shape[-1])[:, -self.action_dim :]
+        state = torch.cat([x, temp.reshape(list(state_shape[:-1]) + [-1])], dim=-1)
         return super(MlpSharedSingleActorTwoCritic, self).get_value(state, mode)
 
 
