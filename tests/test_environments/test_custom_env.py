@@ -1,13 +1,15 @@
 import shutil
 
 from genrl.agents import DQN
-from genrl.core import HERWrapper
-from genrl.environments.custom_envs import BitFlipEnv
+from genrl.core import HERWrapper, ReplayBuffer
+from genrl.environments import HERGoalEnvWrapper
+from genrl.environments.custom_envs import BitFlipEnv, BitFlippingEnv
 from genrl.trainers import HERTrainer
 
 
 def test_her():
-    env = BitFlipEnv()
+    env = BitFlippingEnv()
+    env = HERGoalEnvWrapper(env)
     algo = DQN("mlp", env, batch_size=5, replay_size=10, value_layers=[1, 1])
     buffer = HERWrapper(ReplayBuffer(1000), 1, "future", env)
     print(isinstance(buffer, ReplayBuffer))
