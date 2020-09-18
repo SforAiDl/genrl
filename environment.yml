@@ -7,13 +7,11 @@ dependencies:
   - ca-certificates=2020.6.20
   - libcxx
   - libffi=3.2.1
-  - ncurses
   - openssl=1.1.1g
   - pcre=8.44
   - pip=20.2.3
   #- python=3.8.5=h0ed32c4_8_cpython
   #- python_abi=3.8=1_cp38
-  - readline
   - sqlite=3.33.0
   - swig=4.0.2
   - tk=8.6.10
