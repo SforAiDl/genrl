@@ -98,8 +98,8 @@ Training through the API
 
     import gym
 
-    from genrl import PPO1
-    from genrl.deep.common import OnPolicyTrainer
+    from genrl.agents import PPO1
+    from genrl.trainers import OnPolicyTrainer
     from genrl.environments import VectorEnv
 
     env = VectorEnv("CartPole-v0")

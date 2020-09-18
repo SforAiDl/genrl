@@ -5,7 +5,12 @@ import torch
 import torch.optim as opt
 
 from genrl.agents import OnPolicyAgent
-from genrl.utils import get_env_properties, get_model, safe_mean
+from genrl.utils import (
+    compute_returns_and_advantage,
+    get_env_properties,
+    get_model,
+    safe_mean,
+)
 
 
 class VPG(OnPolicyAgent):
@@ -111,7 +116,9 @@ class VPG(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout.compute_returns_and_advantage(values.detach().clone(), dones)
+        compute_returns_and_advantage(
+            self.rollout, values.detach().cpu().numpy(), dones.cpu().numpy()
+        )
 
     def update_params(self) -> None:
         """Updates the the A2C network
@@ -141,6 +148,7 @@ class VPG(OnPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -148,18 +156,17 @@ class VPG(OnPolicyAgent):
             "gamma": self.gamma,
             "lr_policy": self.lr_policy,
             "rollout_size": self.rollout_size,
-            "weights": self.ac.state_dict(),
         }
 
-        return hyperparams
+        return hyperparams, self.actor.state_dict()
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
             weights (:obj:`dict`): Dictionary of different neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.actor.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
