@@ -11,7 +11,7 @@ jobs:
     
     strategy:
       matrix:
-        python-version: [ '3.6','3.7' ]
+        python-version: [ '3.6','3.7','3.8' ]
         platform: [ubuntu-20.04, windows-2019, macOS-10.15]
     runs-on: ${{ matrix.platform }}
     
@@ -56,17 +56,31 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+          activate-environment: test
+      
+      - name: Update conda env dependencies
+        shell: bash -l {0}
+        run: |
+          conda config --set ssl_verify no
+          conda install pytorch==1.4.0 torchvision==0.5.0 cpuonly -c pytorch
+          pip install -f https://github.com/Kojoley/atari-py/releases atari_py
+          conda env update environment.yml
 
       # Install Dependencies
       - name: Install Windows dependencies
+        shell: pwsh
         if: startsWith(runner.os, 'Windows')
         run: |
           ./.scripts/windows_cpu_build.ps1
 
       - name: Install Linux Dependencies
+        shell: bash -l {0}
         if: startsWith(runner.os, 'macOS') || startsWith(runner.os, 'Linux')
         run: |
           ./.scripts/unix_cpu_build.sh
 
       - name: Tests
-        run: pytest --durations=0
+        shell: bash -l {0}
+        run: |
+          conda activate test
+          pytest --durations=0
