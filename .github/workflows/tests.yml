@@ -78,4 +78,7 @@ jobs:
           ./.scripts/unix_cpu_build.sh
 
       - name: Tests
-        run: pytest --durations=0
+        shell: bash -l {0}
+        run: |
+          conda activate test
+          pytest --durations=0
