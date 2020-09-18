@@ -21,7 +21,7 @@ dependencies:
   - pip:
     - absl-py==0.10.0
     - appdirs==1.4.4
-    - atari-py==0.2.6
+    #- atari-py==0.2.6
     - attrs==20.2.0
     - box2d-py==2.3.8
     - certifi==2019.11.28
