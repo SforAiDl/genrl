@@ -40,5 +40,5 @@ class MultiVariateNormalDiagonalDistributional(nn.Module):
         return torch.distributions.MultiVariateNormalDiag(mean, scale)
 
 
-class MixtureOfGaussians(nn.Module):
-    def __init__(self, )
+# class MixtureOfGaussians(nn.Module):
+#     def __init__(self, )
