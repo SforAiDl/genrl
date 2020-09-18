@@ -4,22 +4,22 @@ channels:
   - soumith
   - defaults
 dependencies:
-  - ca-certificates=2020.6.20=hecda079_0
-  - libcxx=10.0.1=h5f48129_0
-  - libffi=3.2.1=hb1e8313_1007
-  - ncurses=6.2=hb1e8313_1
-  - openssl=1.1.1g=haf1e3a3_1
-  - pcre=8.44=h4a8c4bd_0
-  - pip=20.2.3=py_0
+  - ca-certificates=2020.6.20
+  - libcxx=10.0.1
+  - libffi=3.2.1
+  - ncurses=6.2
+  - openssl=1.1.1g
+  - pcre=8.44
+  - pip=20.2.3
   #- python=3.8.5=h0ed32c4_8_cpython
   #- python_abi=3.8=1_cp38
-  - readline=8.0=h0678c8f_2
-  - sqlite=3.33.0=h960bd1c_0
-  - swig=4.0.2=h4a8c4bd_0
-  - tk=8.6.10=hb0a8c7a_0
-  - wheel=0.35.1=pyh9f0ad1d_0
-  - xz=5.2.5=haf1e3a3_1
-  - zlib=1.2.11=h7795811_1009
+  - readline=8.0
+  - sqlite=3.33.0
+  - swig=4.0.2
+  - tk=8.6.10
+  - wheel=0.35.1
+  - xz=5.2.5
+  - zlib=1.2.11
   - pip:
     - absl-py==0.10.0
     - appdirs==1.4.4
