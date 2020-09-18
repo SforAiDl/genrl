@@ -63,9 +63,13 @@ class DDPG(OffPolicyAgentAC):
             )
 
         if isinstance(self.network, str):
-            self.ac = get_model("ac", self.network)(
+            arch_type = self.network
+            if self.shared_layers is not None:
+                arch_type += "s"
+            self.ac = get_model("ac", arch_type)(
                 state_dim,
                 action_dim,
+                self.shared_layers,
                 self.policy_layers,
                 self.value_layers,
                 "Qsa",
@@ -74,10 +78,11 @@ class DDPG(OffPolicyAgentAC):
         else:
             self.ac = self.network
 
+        actor_params, critic_params = self.ac.get_params()
         self.ac_target = deepcopy(self.ac).to(self.device)
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(actor_params, lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(critic_params, lr=self.lr_value)
 
     def update_params(self, update_interval: int) -> None:
         """Update parameters of the model
@@ -109,6 +114,7 @@ class DDPG(OffPolicyAgentAC):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural Network weights
         """
         hyperparams = {
             "network": self.network,
@@ -119,9 +125,8 @@ class DDPG(OffPolicyAgentAC):
             "noise_std": self.noise_std,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
-            "weights": self.ac.state_dict(),
         }
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging

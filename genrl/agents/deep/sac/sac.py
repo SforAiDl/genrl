@@ -75,8 +75,10 @@ class SAC(OffPolicyAgentAC):
             state_dim, action_dim, discrete, _ = get_env_properties(
                 self.env, self.network
             )
-
-            self.ac = get_model("ac", self.network + "12")(
+            arch = self.network + "12"
+            if self.shared_layers is not None:
+                arch += "s"
+            self.ac = get_model("ac", arch)(
                 state_dim,
                 action_dim,
                 policy_layers=self.policy_layers,
@@ -91,13 +93,9 @@ class SAC(OffPolicyAgentAC):
             self.model = self.network
 
         self.ac_target = deepcopy(self.ac)
-
-        self.critic_params = list(self.ac.critic1.parameters()) + list(
-            self.ac.critic2.parameters()
-        )
-
-        self.optimizer_value = opt.Adam(self.critic_params, self.lr_value)
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), self.lr_policy)
+        actor_params, critic_params = self.ac.get_params()
+        self.optimizer_value = opt.Adam(critic_params, self.lr_value)
+        self.optimizer_policy = opt.Adam(actor_params, self.lr_policy)
 
         if self.entropy_tuning:
             self.target_entropy = -torch.prod(
@@ -222,6 +220,7 @@ class SAC(OffPolicyAgentAC):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -232,9 +231,8 @@ class SAC(OffPolicyAgentAC):
             "entropy_tuning": self.entropy_tuning,
             "alpha": self.alpha,
             "polyak": self.polyak,
-            "weights": self.ac.state_dict(),
         }
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging

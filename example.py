@@ -26,6 +26,7 @@ vpg_agent = OnPolicyAgent(nn.Sequential([obs_network, mlp, distribution, Vanilla
 
 
 # Actor Critic 
+
 trainer = OnPolicyTrainer(vpg_agent, env)
 trainer.train()
 
