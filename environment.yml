@@ -1,4 +1,4 @@
-name: genrl38
+name: test
 channels:
   - conda-forge
   - soumith
@@ -11,8 +11,8 @@ dependencies:
   - openssl=1.1.1g=haf1e3a3_1
   - pcre=8.44=h4a8c4bd_0
   - pip=20.2.3=py_0
-  - python=3.8.5=h0ed32c4_8_cpython
-  - python_abi=3.8=1_cp38
+  #- python=3.8.5=h0ed32c4_8_cpython
+  #- python_abi=3.8=1_cp38
   - readline=8.0=h0678c8f_2
   - sqlite=3.33.0=h960bd1c_0
   - swig=4.0.2=h4a8c4bd_0
