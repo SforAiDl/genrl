@@ -57,14 +57,17 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           activate-environment: test
+          environment-file: environment.yml
 
       # Install Dependencies
       - name: Install Windows dependencies
+        shell: pwsh
         if: startsWith(runner.os, 'Windows')
         run: |
           ./.scripts/windows_cpu_build.ps1
 
       - name: Install Linux Dependencies
+        shell: bash -l {0}
         if: startsWith(runner.os, 'macOS') || startsWith(runner.os, 'Linux')
         run: |
           ./.scripts/unix_cpu_build.sh
