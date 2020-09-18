@@ -8,7 +8,7 @@ dependencies:
   - libcxx=10.0.1
   - libffi=3.2.1
   - ncurses=6.2
-  - openssl=1.1.1g=haf1e3a3_1
+  - openssl=1.1.1g
   - pcre=8.44
   - pip=20.2.3
   #- python=3.8.5=h0ed32c4_8_cpython

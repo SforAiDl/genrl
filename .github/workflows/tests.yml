@@ -57,7 +57,12 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
           activate-environment: test
-          environment-file: environment.yml
+      
+      - name: Update conda env dependencies
+        shell: bash -l {0}
+        run: |
+          conda config --set ssl_verify no 
+          conda env update environment.yml
 
       # Install Dependencies
       - name: Install Windows dependencies
