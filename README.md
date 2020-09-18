@@ -6,6 +6,7 @@
 <div align='center'>
 
 [![pypi](https://img.shields.io/badge/pypi%20package-v0.0.2-blue)](https://pypi.org/project/genrl/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/genrl.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![Downloads](https://pepy.tech/badge/genrl)](https://pepy.tech/project/genrl)
 [![codecov](https://codecov.io/gh/SforAiDl/genrl/branch/master/graph/badge.svg)](https://codecov.io/gh/SforAiDl/genrl)
 [![GitHub license](https://img.shields.io/github/license/SforAiDl/genrl)](https://github.com/SforAiDl/genrl/blob/master/LICENSE)
