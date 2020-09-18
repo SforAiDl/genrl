@@ -63,6 +63,7 @@ jobs:
         run: |
           conda config --set ssl_verify no
           conda install pytorch==1.4.0 torchvision==0.5.0 cpuonly -c pytorch
+          pip install -f https://github.com/Kojoley/atari-py/releases atari_py
           conda env update environment.yml
 
       # Install Dependencies
