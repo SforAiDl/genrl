@@ -277,4 +277,4 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Args:
             weights (:obj:`dict`): Dictionary of different neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.ac.load_state_dict(weights)
