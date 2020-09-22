@@ -16,6 +16,12 @@ Features
 
 Contents
 ========
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reinforcement Learning
+
+
 .. toctree::
    :maxdepth: 2
    :caption: User Guide
