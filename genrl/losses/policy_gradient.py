@@ -22,11 +22,7 @@ class PolicyGradientLoss(nn.Module):
 #     def __init__(self):
 #         super(DeterministicPolicyGradientLoss, self).__init__()
 
-#     def forward(self, )
-
 
 # class TDLoss(nn.Module):
 #     def __init__(self):
 #         super(TDLoss, self).__init__()
-
-#     def forward(self,)
