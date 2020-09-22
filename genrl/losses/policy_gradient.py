@@ -18,15 +18,15 @@ class PolicyGradientLoss(nn.Module):
         return -1*torch.mean(log_probs*phi)
 
 
-# class DeterministicPolicyGradientLoss(nn.Module):
-#     def __init__(self):
-#         super(DeterministicPolicyGradientLoss, self).__init__()
+class DeterministicPolicyGradientLoss(nn.Module):
+    def __init__(self):
+        super(DeterministicPolicyGradientLoss, self).__init__()
 
-#     def forward(self, )
+    def forward(self, )
 
 
-# class TDLoss(nn.Module):
-#     def __init__(self):
-#         super(TDLoss, self).__init__()
+class TDLoss(nn.Module):
+    def __init__(self):
+        super(TDLoss, self).__init__()
 
-#     def forward(self,)
+    def forward(self,)
