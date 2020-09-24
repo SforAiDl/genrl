@@ -13,3 +13,7 @@
     Dueling_DQN
     NoisyNet_DQN
     Prioritized_DQN
+    DDPG
+    TD3
+    SAC
+

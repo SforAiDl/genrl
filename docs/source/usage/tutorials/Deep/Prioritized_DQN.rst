@@ -75,7 +75,7 @@ Training through the API
 
 .. code-block:: python
 
-    from genrl.agents import PriritizedReplayDQN
+    from genrl.agents import PrioritizedReplayDQN
     from genrl.environments import VectorEnv
     from genrl.trainers import OffPolicyTrainer
 

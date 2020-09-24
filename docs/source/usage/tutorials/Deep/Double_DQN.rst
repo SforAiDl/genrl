@@ -5,7 +5,22 @@ Double Deep Q-Network
 Objective
 =========
 
-Double DQN builds upon the notion of Double Q-Learning and extends it to Deep Q-networks. The main objective is to resolve the problem of overestimation of Q-values. This is done by defining the traget q-values in a slightly differen manner. The loss function is defined as:
+Double DQN builds upon the notion of Double Q-Learning and extends it to Deep Q-networks. We use function approximators for predicting the Q-values of the states and a function approximator is always corrupted with some noise.
+Now, when we maximise over the values of state-action pairs while calculating the target for the TD-update, the maximum is taken over the true values plus the noise. Thus, the maximum of a noisy function is always bigger than the maximum 
+of the true function:
+
+.. math::
+
+    E[max(X_1, X_2)] \ge max[E(X_1), E(X_2)]
+    
+where :math:`X_1` and :math:`X_2` are two random variables. This leads to overestimations of the values of state-action pairs and cnsequently suboptimal action selection. This overestimation is bound to propagate and increase over the course of 
+multiple updates because the same approximator is used to select the maximum action and to estimate it's Q-value.
+
+.. math::
+
+    max_{a'}Q_{\phi'}(s', a') = Q_{\phi'}(s', argmax_{a'}Q_{\phi'}(s', a'))
+    
+This problem can be solved by decoupling the action selection and the value estimation using two separate function approximators(and hence different noise distributions) for both the purposes which is what a Double-DQN does. The loss function is defined as:
 
 .. math::
 
