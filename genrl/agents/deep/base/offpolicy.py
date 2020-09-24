@@ -231,7 +231,6 @@ class OffPolicyAgentAC(OffPolicyAgent):
             next_q_target_values = self.ac_target.get_value(
                 torch.cat([next_states, next_target_actions], dim=-1)
             )
-
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
 
         return target_q_values
@@ -271,10 +270,10 @@ class OffPolicyAgentAC(OffPolicyAgent):
         policy_loss = -torch.mean(q_values)
         return policy_loss
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.Tensor`): neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.ac.load_state_dict(weights)

@@ -6,7 +6,12 @@ import torch.nn as nn  # noqa
 import torch.optim as opt  # noqa
 
 from genrl.agents import OnPolicyAgent
-from genrl.utils import get_env_properties, get_model, safe_mean
+from genrl.utils import (
+    compute_returns_and_advantage,
+    get_env_properties,
+    get_model,
+    safe_mean,
+)
 
 
 class PPO1(OnPolicyAgent):
@@ -66,9 +71,13 @@ class PPO1(OnPolicyAgent):
             self.env, self.network
         )
         if isinstance(self.network, str):
-            self.ac = get_model("ac", self.network)(
+            arch = self.network
+            if self.shared_layers is not None:
+                arch += "s"
+            self.ac = get_model("ac", arch)(
                 state_dim,
                 action_dim,
+                shared_layers=self.shared_layers,
                 policy_layers=self.policy_layers,
                 value_layers=self.value_layers,
                 val_typ="V",
@@ -79,8 +88,9 @@ class PPO1(OnPolicyAgent):
         else:
             self.ac = self.network.to(self.device)
 
-        self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
+        actor_params, critic_params = self.ac.get_params()
+        self.optimizer_policy = opt.Adam(actor_params, lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(critic_params, lr=self.lr_value)
 
     def select_action(
         self, state: torch.Tensor, deterministic: bool = False
@@ -132,7 +142,12 @@ class PPO1(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout.compute_returns_and_advantage(values.detach(), dones, use_gae=True)
+        compute_returns_and_advantage(
+            self.rollout,
+            values.detach().cpu().numpy(),
+            dones.cpu().numpy(),
+            use_gae=True,
+        )
 
     def update_params(self):
         """Updates the the A2C network
@@ -188,6 +203,7 @@ class PPO1(OnPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -197,18 +213,17 @@ class PPO1(OnPolicyAgent):
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
             "rollout_size": self.rollout_size,
-            "weights": self.ac.state_dict(),
         }
 
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
             weights (:obj:`dict`): Dictionary of different neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.ac.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging

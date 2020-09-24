@@ -55,7 +55,11 @@ def test_load_params():
     env = VectorEnv("CartPole-v0", 1)
     algo = PPO1("mlp", env)
     trainer = OnPolicyTrainer(
-        algo, env, epochs=0, load_model="test_ckpt/PPO1_CartPole-v0/0-log-0.pt"
+        algo,
+        env,
+        epochs=0,
+        load_hyperparams="test_ckpt/PPO1_CartPole-v0/0-log-0.toml",
+        load_weights="test_ckpt/PPO1_CartPole-v0/0-log-0.pt",
     )
     trainer.train()
 
