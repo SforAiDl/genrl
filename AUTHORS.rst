@@ -5,7 +5,7 @@ Credits
 Keepers of the Crystal
 ----------------------
 
-* Sharad Chitlangia
+* Sharad Chitlangia (Co-founder)
 * Sampreet Arthi
 * Atharv Sonwane
 * Het Shah
@@ -15,9 +15,9 @@ Patches, etc
 ------------
 <Feel Free to Update this list if you suggest a Patch>
 
-Contributions from people, a long long time ago
------------------------------------------------
-* Ajay Subramanian
+Major Contributions from people, a long time ago
+------------------------------------------------
+* Ajay Subramanian (Co-founder)
 
 
 
