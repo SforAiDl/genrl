@@ -36,7 +36,7 @@ Both of the critic networks are updated using the loss functions mentioned above
 Experience Replay
 -----------------
 
-TD3 being an off-policy algorithm, makes use of *Replay Buffers*. Whenever a transition :math:`(s_t, a_t, r_t, s_{t+1})` is encountered, it is stored into the replay buffer. Batches of these transitions are
+TD3 being an off-policy algorithm, makes use of *Replay Buffer*. Whenever a transition :math:`(s_t, a_t, r_t, s_{t+1})` is encountered, it is stored into the replay buffer. Batches of these transitions are
 sampled while updating the network parameters. This helps in breaking the strong correlation between the updates that would have been present had the transitions been trained and discarded immediately after they are encountered
 and also helps to avoid the rapid forgetting of the possibly rare transitions that would be useful later on.
 
