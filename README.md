@@ -30,6 +30,8 @@
 
 **GenRL is a PyTorch reinforcement learning library centered around reproducible, generalizable algorithm implementations and improving accessibility in Reinforcement Learning** 
 
+**GenRL's current release is at v0.0.2. Expect breaking changes**
+
 Reinforcement learning research is moving faster than ever before. In order to keep up with the growing trend and ensure that RL research remains reproducible, GenRL aims to aid faster paper reproduction and benchmarking by providing the following main features:
 
 - **PyTorch-first**: Modular, Extensible and Idiomatic Python
