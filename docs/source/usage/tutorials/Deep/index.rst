@@ -16,4 +16,5 @@
     DDPG
     TD3
     SAC
+    Categorical_DQN
 

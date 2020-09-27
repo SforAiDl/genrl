@@ -29,7 +29,7 @@ Advantage function.
     A(s, a) = Q(s, a) - V(s, a)
 
 The advantage for a state action pair represents how beneficial it is to take an action over others when in a particular state.
-The dueling architechture can learn which states are/are not valuable without having to learn the effect of action for each state.
+The dueling architechture can learn which states are or are not valuable without having to learn the effect of action for each state.
 This is useful in instances when taking any action would affect the environment in any significant way.
 
 Another layer combines the value stream and the advantage stream to get the Q-values

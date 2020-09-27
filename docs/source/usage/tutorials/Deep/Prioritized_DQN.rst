@@ -47,19 +47,19 @@ over again and sensitivity to noise spikes. To tackle these problems, instead of
 
 .. math::
 
-    P(i) = p_i^{\alpha} / \Sigma_k p_k^{\alpha}
+    P(i) = \frac{p_i^{\alpha}}{\Sigma_k p_k^{\alpha}}
 
 where :math:`p_i > 0` is the priority of transition :math:`i`. :math:`\alpha` determines the amount of prioritization done. The priority of the transition can be defined in the following two ways:
 
 * :math:`p_i = |\delta_i| + \epsilon`
-* :math:`p_i = 1 / rank(i)`
+* :math:`p_i = \frac{1}{rank(i)}`
 
 where :math:`\epsilon` is a small positive constant to ensure that the sampling probability is not zero for any transition and :math:`rank(i)` is the rank of the transition when the replay buffer is sorted with respect to priorities.
 
 We also use importance sampling (IS) weights to correct certain bais introduced by prioritized experience replay. 
 
 .. math::
-    w_i = (1/N 1/P(i))^{\beta}
+    w_i = (\frac{1}{N} \frac{1}{P(i)})^{\beta}
 
 Update the Q-value Networks
 ---------------------------

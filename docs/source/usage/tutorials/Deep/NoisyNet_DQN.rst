@@ -20,7 +20,7 @@ Algorithm Details
 Action Selection
 ----------------
 
-The action selection is no longer greedy since the exploration is driven by the noise in the neural network layers. The action selection is done greedily.
+The action selection is no longer epsilon-greedy since the exploration is driven by the noise in the neural network layers. The action selection is done greedily.
 
 Noisy Parameters
 ----------------
@@ -37,7 +37,7 @@ and the optimization now takes place with respect to :math:`\Sigma` and :math:`\
 Experience Replay
 -----------------
 
-Every transition occuring during the training is stored in a separate `Replay Buffer`
+Every transition occuring during the training is stored in a separate *Replay Buffer*
 
 .. literalinclude:: ../../../../../genrl/trainers/offpolicy.py
     :lines: 91-104
