@@ -16,26 +16,27 @@ The bellman equation can be adapted to this form as
 
 .. math::
 
-    Z(x, a) \stackrel{D}{\eq} R(x, a) + \gamma Z(x', a')
+    Z(x, a) \stackrel{D}{=} R(x, a) + \gamma Z(x', a')
 
 where :math:`Z(s, a)` (the value distribution) and :math:`R(s, a)` (the reward distribution) are now probability distributions. The equality or similarity of two distributions can be effectivelyevaluated using 
 the Kullback-Leibler(KL) - divergence or the cross-entropy loss. 
 
 .. math::
 
-    Q^{\pi}(x, a) \coloneqq \mathbb{E} Z^{\pi}(x, a) = \mathbb{E}\left[\sum_{t=0}^{\inf} \gamma^{t} R(x_t, a_t)\right]
+    Q^{\pi}(x, a) := \mathbb{E} Z^{\pi}(x, a) = \mathbb{E}\left[\sum_{t=0}^{\inf} \gamma^{t} R(x_t, a_t)\right]
+|
     z \sim P(\odot \vert x_{t-1}, a_{t-1}). a_t \sim \pi(\odot \vert x_t), x_0 = x, a_0 =a
 
-The transition operator :math:`P^\pi : \Zstroke \rightarrow \Zstroke` and the bellman operator :math:`\mathcal{T} : \Zstroke \rightarrow \Zstroke`
+The transition operator :math:`P^\pi : \mathcal{Z} \rightarrow \mathcal{Z}` and the bellman operator :math:`\mathcal{T} : \mathcal{Z} \rightarrow \mathcal{Z}`
 can be defined as 
 
 .. math::
 
-    P^{\pi}Z(x, a) \stackrel{D}{\coloneqq} Z(X', A') ; X' \sim P(\odot \vert x, a), A' \sim \pi(\odot \vert X')
+    P^{\pi}Z(x, a) \stackrel{D}{:=} Z(X', A') ; X' \sim P(\odot \vert x, a), A' \sim \pi(\odot \vert X')
 
 .. math::
 
-    \mathcal{T}^{\pi}Z(x, a) \stackrel{D}{\coloneqq} R(x, a)+ \gamma P^{\pi}Z(x, a)
+    \mathcal{T}^{\pi}Z(x, a) \stackrel{D}{:=} R(x, a)+ \gamma P^{\pi}Z(x, a)
 
 Algorithm Details
 =================
@@ -48,13 +49,13 @@ This set of atoms is determined as
 
 .. math::
 
-    {\mathcal{z}_i = V_{MIN} + i \nabla \mathcal{z} : 0 \leq i < N}; \nabla \mathcal{z} \coloneqq \frac{V_{MAX} - V_{MIN}}{N - 1}
+    {\mathcal{z}_i = V_{MIN} + i \nabla \mathcal{z} : 0 \leq i < N}; \nabla \mathcal{z} := \frac{V_{MAX} - V_{MIN}}{N - 1}
 
 where :math:`N \in \mathbb{N}` and :math:`V_{MAX}, V_{MIN} \in \mathbb{R}` are the distribution parameters. The probability of each atom is modeled as
 
 .. math::
 
-    Z_\theta(x, a) = \mathcal{z}_i w.p. p_i(x, a) \coloneqq \frac{\exp{\theta_i(x, a)}}{\sum_j \exp{\theta_j(x, a)}}
+    Z_\theta(x, a) = \mathcal{z}_i w.p. p_i(x, a) := \frac{\exp{\theta_i(x, a)}}{\sum_j \exp{\theta_j(x, a)}}
 
 Action Selection
 ----------------
@@ -84,14 +85,14 @@ figure below. The bellman update for each atom :math:`j` can be calculated as
 
 .. math::
 
-    \hat{\mathcal{T}}\mathcal{z_j} \coloneqq r + \gamma \mathcal{z_j}
+    \hat{\mathcal{T}}\mathcal{z_j} := r + \gamma \mathcal{z_j}
 
 and then it's probability :math:`\mathcal{p_j}(x', \pi{x'})` is distributed to the neighbours of the update. Here, :math:`(x, a, r, x')` is a sample transition.
 The :math:`i^{th}` component of the projected update is calculated as 
 
 .. math::
 
-    (\Phi \hat{\mathcal{T}} Z_\theta(x, a))_i = \mathlarger{\sum}_{j=0}^{N-1}\left [1 - \frac{\mid \left [\hat{\mathcal{T}}\mathcal{z_j}\right]_{V_{MIN}}^{V_{MAX}} - \mathcal{z_i} \mid}{\Delta \mathcal{z}}\right]_{0}^{1} \mathcal{p_j}(x', \pi(x'))
+    (\Phi \hat{\mathcal{T}} Z_\theta(x, a))_i = \sum_{j=0}^{N-1}\left [1 - \frac{\mid \left [\hat{\mathcal{T}}\mathcal{z_j}\right]_{V_{MIN}}^{V_{MAX}} - \mathcal{z_i} \mid}{\Delta \mathcal{z}}\right]_{0}^{1} \mathcal{p_j}(x', \pi(x'))
 
 The loss is calculated using KL divergence (cross entropy loss). This is also known as the **Bernoulli algorithm**
 
@@ -102,6 +103,9 @@ The loss is calculated using KL divergence (cross entropy loss). This is also kn
 |
 
 .. image:: static/Categorical_DQN.png
+    :align: center
+    :width: 600px
+    :height: 400px
 
 .. literalinclude:: ../../../../../genrl/agents/deep/dqn/utils.py
     :lines: 120-185

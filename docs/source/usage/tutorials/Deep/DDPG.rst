@@ -26,7 +26,7 @@ This problem can be solved by considering the fact that a policy can be improved
 
 .. math::
 
-    \nabla_\theta^{\mu} J = \mathbb{E_{s_t \sim \rho^{\beta}}}[\nabla_{\theta^{\mu^}}Q(s, a \vert \theta^{Q})\vert_{s=s_t, a=\mu(s_t \vert \theta^{\mu})}]
+    \nabla_{\theta^{\mu}}J = \mathbb{E}_{s_t \sim \rho^{\beta}}[\nabla_{\theta^{\mu}}Q(s, a \vert \theta^{Q}) \vert_{s=s_t, a=\mu(s_t, \theta^{\mu})}]
 
 Action Selection
 ----------------
@@ -57,11 +57,11 @@ and also helps to avoid the rapid forgetting of the possibly rare transitions th
 Update the Value and Policy Networks
 ------------------------------------
 
-DDPG makes use of target networks for the actor(policy) and the critic(value) networks to stabilise the training. The Q-network is update using TD-learning updates> The target and the loss function for the same are defined as:
+DDPG makes use of target networks for the actor(policy) and the critic(value) networks to stabilise the training. The Q-network is update using TD-learning updates. The target and the loss function for the same are defined as:
 
 .. math::
 
-    L(\theta^{Q}) = \mathbb{E}_{s_t \sim \rho^{\beta}, a_t \sim \beta, r_t \sim E}[(Q(s_t, a_t \vert \theta^{Q}) - y_t)^{2}]
+    L(\theta^{Q}) = \mathbb{E}_{(s_t \sim \rho^{\beta}, a_t \sim \beta, t_t \sim R)}[(Q(s_t, a_t \vert \theta^{Q}) - y_t)^{2}]
 
 .. math::
 
@@ -71,8 +71,11 @@ Buliding up on Deterministic Policy Gradients, the gradient of the policy can be
 
 .. math::
 
-    \nabla_\theta^{\mu} J = \mathbb{E}_{s_t \sim \rho^{\beta}}[\nabla_{\theta^{\mu^}}Q(s, a \vert \theta^{Q})\vert_{s=s_t, a=\mu(s_t \vert \theta^{\mu})}]
-                          = \mathbb{E}_{s_t \sim \rho^{\beta}}[\nabla_a Q(s, a \vert \theta^{Q}) \vert_{s=s_t, a=\mu(s_t)}\nabla_{\theta_\mu}\mu(s \vert \theta^{\mu}) \vert_{s=s_t}]
+    \nabla_{\theta^{\mu}} J = \mathbb{E}_{s_t \sim \rho^{\beta}}[\nabla_{\theta^{\mu}}Q(s, a \vert \theta^{Q})\vert_{s=s_t, a=\mu(s_t \vert \theta^{\mu})}]
+
+.. math::
+
+    \nabla_{\theta^{\mu}} J  = \mathbb{E}_{s_t \sim \rho^{\beta}}[\nabla_a Q(s, a \vert \theta^{Q}) \vert_{s=s_t, a=\mu(s_t)}\nabla_{\theta_\mu}\mu(s \vert \theta^{\mu}) \vert_{s=s_t}]
 
 The target networks are updated at regular intervals
 
