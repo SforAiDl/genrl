@@ -23,7 +23,7 @@ the Kullback-Leibler(KL) - divergence or the cross-entropy loss.
 
 .. math::
 
-    Q^{\pi}(x, a) \coloneqq \mathbb{E} Z^{\pi}(x, a) = \mathbb{E}[\Sigma_{t=0}^{\inf} \gamma^{t} R(x_t, a_t)]
+    Q^{\pi}(x, a) \coloneqq \mathbb{E} Z^{\pi}(x, a) = \mathbb{E}\left[\sum_{t=0}^{\inf} \gamma^{t} R(x_t, a_t)\right]
     z \sim P(\odot \vert x_{t-1}, a_{t-1}). a_t \sim \pi(\odot \vert x_t), x_0 = x, a_0 =a
 
 The transition operator :math:`P^\pi : \Zstroke \rightarrow \Zstroke` and the bellman operator :math:`\mathcal{T} : \Zstroke \rightarrow \Zstroke`
@@ -48,13 +48,13 @@ This set of atoms is determined as
 
 .. math::
 
-    {\mathcal{z}_i = V_MIN + i \nabla \mathcal{z} : 0 \leq i < N}; \nabla \mathcal{z} \coloneqq \frac{V_MAX - V_MIN}{N - 1}
+    {\mathcal{z}_i = V_{MIN} + i \nabla \mathcal{z} : 0 \leq i < N}; \nabla \mathcal{z} \coloneqq \frac{V_{MAX} - V_{MIN}}{N - 1}
 
-where :math:`N \in \mathbb{N}` and :math:`V_MAX, V_MIN \in \mathbb{R}` are the distribution parameters. The probability of each atom is modeled as
+where :math:`N \in \mathbb{N}` and :math:`V_{MAX}, V_{MIN} \in \mathbb{R}` are the distribution parameters. The probability of each atom is modeled as
 
 .. math::
 
-    Z_\theta(x, a) = \mathcal{z}_i w.p. p_i(x, a) \coloneqq \frac{\exp{\theta_i(x, a)}}{\Sigma_j \exp{\theta_j(x, a)}}
+    Z_\theta(x, a) = \mathcal{z}_i w.p. p_i(x, a) \coloneqq \frac{\exp{\theta_i(x, a)}}{\sum_j \exp{\theta_j(x, a)}}
 
 Action Selection
 ----------------
@@ -91,7 +91,7 @@ The :math:`i^{th}` component of the projected update is calculated as
 
 .. math::
 
-    (\Phi \hat{\mathcal{T}} Z_\theta(x, a))_i = \Sigma_{j=0}^{N-1}[1 - \frac{\mid [\hat{\mathcal{T}}\mathcal{z_j}]_{V_MIN}^{V_MAX} - \mathcal{z_i} \mid}{\Delta \mathcal{z}}]_{0}^{1} \mathcal{p_j}(x', \pi(x'))
+    (\Phi \hat{\mathcal{T}} Z_\theta(x, a))_i = \mathlarger{\sum}_{j=0}^{N-1}\left [1 - \frac{\mid \left [\hat{\mathcal{T}}\mathcal{z_j}\right]_{V_{MIN}}^{V_{MAX}} - \mathcal{z_i} \mid}{\Delta \mathcal{z}}\right]_{0}^{1} \mathcal{p_j}(x', \pi(x'))
 
 The loss is calculated using KL divergence (cross entropy loss). This is also known as the **Bernoulli algorithm**
 
@@ -99,8 +99,9 @@ The loss is calculated using KL divergence (cross entropy loss). This is also kn
 
     D_{KL}(\Phi\hat{\mathcal{T}}Z_\tilde{\theta}(x, a) || Z_\theta (x, a))
 
+|
+
 .. image:: static/Categorical_DQN.png
-   :width: 400
 
 .. literalinclude:: ../../../../../genrl/agents/deep/dqn/utils.py
     :lines: 120-185

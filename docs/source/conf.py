@@ -93,6 +93,8 @@ latex_elements = {
 \usepackage{algorithmic}
 \usepackage{amsmath}
 \usepackage{cancel}
+\usepackage{mathtools}
+\usepackage{relsize}
 \newcommand{\E}{{\mathrm E}}
 \newcommand{\underE}[2]{\underset{\begin{subarray}{c}#1 \end{subarray}}{\E}\left[ #2 \right]}
 \newcommand{\Epi}[1]{\underset{\begin{subarray}{c}\tau \sim \pi \end{subarray}}{\E}\left[ #1 \right]}

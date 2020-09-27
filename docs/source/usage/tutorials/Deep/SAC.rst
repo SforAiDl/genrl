@@ -39,15 +39,18 @@ the new Q-value can be expressed as
 .. math::
 
     Q^{\pi}(s, a) = \mathbb{E}_(s' \sim P, a' \sim \pi)[R(s, a, s') + \gamma(Q^{\pi}(s', a') + \alpha\mathcal{H}(\pi(\cdot \vert s')))]
-                  = \mathbb{E}_(s' \sim P, a' \sim \pi)[R(s, a, s') + \gamma(Q^{\pi}(s', a') + \alpha log\pi(a' \vert s'))]
+    
+.. math::
+
+    Q^{\pi}(s, a) = \mathbb{E}_(s' \sim P, a' \sim \pi)[R(s, a, s') + \gamma(Q^{\pi}(s', a') + \alpha log\pi(a' \vert s'))]
 
 Thus, the action-value for one state-action pair can be approximated as
 
 .. math::
 
-    Q^{\pi}(s, a) \approx r + \gamma(Q^{\pi}(s', \tilde{a'}) - \alpha log \pi(\tilde{a' } \vert s'))
+    Q^{\pi}(s, a) \approx r + \gamma(Q^{\pi}(s', \tilde{a}') - \alpha log \pi(\tilde{a}' \vert s'))
 
-where :math:`\tilde{a'}` (action taken in next state) is sampled from the policy.
+where :math:`\tilde{a}'` (action taken in next state) is sampled from the policy.
 
 Experience Replay
 -----------------
@@ -68,9 +71,9 @@ Just like TD3, SAC uses *Clipped Double Q-Learning* to calculate the target valu
 
 .. math::
 
-    y^{t}(r, s', d) = r + \gamma (min_{j=1,2}Q_{\phi_{targ,j}}(s', \tilde{a'}) - \alpha log \pi_{\theta}(\tilde{a'} \vert s'))
+    y^{t}(r, s', d) = r + \gamma (min_{j=1,2}Q_{\phi_{targ,j}}(s', \tilde{a}') - \alpha log \pi_{\theta}(\tilde{a}' \vert s'))
 
-where :math:`\tilde{a'}` is sampled from the policy. The loss function can then be defined as
+where :math:`\tilde{a}'` is sampled from the policy. The loss function can then be defined as
 
 .. math::
 
@@ -91,11 +94,11 @@ The policy is now parameterised as
 
 .. math::
 
-    \tilde{a'}_t = \mathcal{f}_\theta(\xi_t; s_t)
+    \tilde{a}'_t = \mathcal{f}_\theta(\xi_t; s_t)
 
 .. math::
     
-    \tilde{a'}_{\theta}(s, \xi) = tanh(\mu_\theta(s) + \sigma_\theta(s) \odot \xi)
+    \tilde{a}'_{\theta}(s, \xi) = tanh(\mu_\theta(s) + \sigma_\theta(s) \odot \xi)
 
 .. math::
 
@@ -105,7 +108,7 @@ The maximisation objective is now defined as
 
 .. math::
 
-    max_{\theta} \mathbb{E}_{s \sim \mathcal{D}, \xi \sim \mathcal{N}}[min_{j=1,2}Q_{\phi_j}(s, \tilde{a}_\theta(s, \xi)) - \alpha log \pi_{\theta}(\tilde{a}_{\theta}(s, \xi) \vert s)]
+    max_{\theta} \mathbb{E}_{(s \sim \mathcal{D}, \xi \sim \mathcal{N})}[min_{j=1,2}Q_{\phi_j}(s, \tilde{a}_\theta(s, \xi)) - \alpha log \pi_{\theta}(\tilde{a}_{\theta}(s, \xi) \vert s)]
 
 Training through the API
 ========================
