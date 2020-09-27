@@ -1,4 +1,4 @@
-    Deep RL Tutorials
+Deep RL Tutorials
 =================
 
 .. toctree::
