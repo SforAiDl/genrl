@@ -1,4 +1,3 @@
-import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, List
@@ -36,7 +35,6 @@ class BanditTrainer(ABC):
         """
         To be defined in inherited classes
         """
-        pass
 
 
 class MABTrainer(BanditTrainer):
@@ -73,42 +71,32 @@ class MABTrainer(BanditTrainer):
         regret_mv_avgs = []
         reward_mv_avgs = []
 
-        try:
-            for t in range(1, timesteps + 1):
-                action = self.agent.select_action(context)
-                context, reward = self.bandit.step(action)
-                self.agent.action_hist.append(action)
-                self.agent.update_params(context, action, reward)
-                regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
-                reward_mv_avgs.append(np.mean(self.bandit.reward_hist[-mv_len:]))
-                if t % log_every == 0:
-                    self.logger.write(
-                        {
-                            "timestep": t,
-                            "regret/regret": self.bandit.regret_hist[-1],
-                            "reward/reward": reward,
-                            "regret/cumulative_regret": self.bandit.cum_regret,
-                            "reward/cumulative_reward": self.bandit.cum_reward,
-                            "regret/regret_moving_avg": regret_mv_avgs[-1],
-                            "reward/reward_moving_avg": reward_mv_avgs[-1],
-                        }
-                    )
+        for t in range(1, timesteps + 1):
+            action = self.agent.select_action(context)
+            context, reward = self.bandit.step(action)
+            self.agent.action_hist.append(action)
+            self.agent.update_params(context, action, reward)
+            regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
+            reward_mv_avgs.append(np.mean(self.bandit.reward_hist[-mv_len:]))
+            if t % log_every == 0:
+                self.logger.write(
+                    {
+                        "timestep": t,
+                        "regret/regret": self.bandit.regret_hist[-1],
+                        "reward/reward": reward,
+                        "regret/cumulative_regret": self.bandit.cum_regret,
+                        "reward/cumulative_reward": self.bandit.cum_reward,
+                        "regret/regret_moving_avg": regret_mv_avgs[-1],
+                        "reward/reward_moving_avg": reward_mv_avgs[-1],
+                    }
+                )
 
-        except KeyboardInterrupt:
-            print("\nTraining interrupted by user!\n")
-
-        except Exception as e:
-            print(f"\nEncounterred exception during training!\n{e}\n")
-            traceback.print_exc()
-            raise e
-
-        finally:
-            self.logger.close()
-            print(
-                f"Training completed in {(datetime.now() - start_time).seconds} seconds\n"
-                f"Final Regret Moving Average: {regret_mv_avgs[-1]} | "
-                f"Final Reward Moving Average: {reward_mv_avgs[-1]}"
-            )
+        self.logger.close()
+        print(
+            f"Training completed in {(datetime.now() - start_time).seconds} seconds\n"
+            f"Final Regret Moving Average: {regret_mv_avgs[-1]} | "
+            f"Final Reward Moving Average: {reward_mv_avgs[-1]}"
+        )
 
         return {
             "regrets": self.bandit.regret_hist,
@@ -180,58 +168,48 @@ class DCBTrainer(BanditTrainer):
                 init_train_epochs, train_epochs, train_epochs_decay_steps
             )
 
-        try:
-            for t in range(1, timesteps + 1):
-                action = self.agent.select_action(context)
-                new_context, reward = self.bandit.step(action)
-                self.agent.update_db(context, action, reward)
-                context = new_context
+        for t in range(1, timesteps + 1):
+            action = self.agent.select_action(context)
+            new_context, reward = self.bandit.step(action)
+            self.agent.update_db(context, action, reward)
+            context = new_context
 
-                if train_epochs_schedule is not None and t < train_epochs_decay_steps:
-                    train_epochs = int(train_epochs_schedule[t])
+            if train_epochs_schedule is not None and t < train_epochs_decay_steps:
+                train_epochs = int(train_epochs_schedule[t])
 
-                if t > update_after and t % update_interval == 0:
-                    self.agent.update_params(
-                        action, kwargs.get("batch_size", 64), train_epochs
+            if t > update_after and t % update_interval == 0:
+                self.agent.update_params(
+                    action, kwargs.get("batch_size", 64), train_epochs
+                )
+
+            if t > ignore_init:
+                regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
+                reward_mv_avgs.append(np.mean(self.bandit.reward_hist[-mv_len:]))
+                if t % log_every == 0:
+                    self.logger.write(
+                        {
+                            "timestep": t,
+                            "regret/regret": self.bandit.regret_hist[-1],
+                            "reward/reward": reward,
+                            "regret/cumulative_regret": self.bandit.cum_regret,
+                            "reward/cumulative_reward": self.bandit.cum_reward,
+                            "regret/regret_moving_avg": regret_mv_avgs[-1],
+                            "reward/reward_moving_avg": reward_mv_avgs[-1],
+                        }
                     )
 
-                if t > ignore_init:
-                    regret_mv_avgs.append(np.mean(self.bandit.regret_hist[-mv_len:]))
-                    reward_mv_avgs.append(np.mean(self.bandit.reward_hist[-mv_len:]))
-                    if t % log_every == 0:
-                        self.logger.write(
-                            {
-                                "timestep": t,
-                                "regret/regret": self.bandit.regret_hist[-1],
-                                "reward/reward": reward,
-                                "regret/cumulative_regret": self.bandit.cum_regret,
-                                "reward/cumulative_reward": self.bandit.cum_reward,
-                                "regret/regret_moving_avg": regret_mv_avgs[-1],
-                                "reward/reward_moving_avg": reward_mv_avgs[-1],
-                            }
-                        )
+        self.logger.close()
+        print(
+            f"Training completed in {(datetime.now() - start_time).seconds} seconds\n"
+            f"Final Regret Moving Average: {regret_mv_avgs[-1]} | "
+            f"Final Reward Moving Average: {reward_mv_avgs[-1]}"
+        )
 
-        except KeyboardInterrupt:
-            print("\nTraining interrupted by user!\n")
-
-        except Exception as e:
-            print(f"\nEncounterred exception during training!\n{e}\n")
-            traceback.print_exc()
-            raise e
-
-        finally:
-            self.logger.close()
-            print(
-                f"Training completed in {(datetime.now() - start_time).seconds} seconds\n"
-                f"Final Regret Moving Average: {regret_mv_avgs[-1]} | "
-                f"Final Reward Moving Average: {reward_mv_avgs[-1]}"
-            )
-
-            return {
-                "regrets": self.bandit.regret_hist,
-                "rewards": self.bandit.reward_hist,
-                "cumulative_regrets": self.bandit.cum_regret_hist,
-                "cumulative_rewards": self.bandit.cum_reward_hist,
-                "regret_moving_avgs": regret_mv_avgs,
-                "reward_moving_avgs": reward_mv_avgs,
-            }
+        return {
+            "regrets": self.bandit.regret_hist,
+            "rewards": self.bandit.reward_hist,
+            "cumulative_regrets": self.bandit.cum_regret_hist,
+            "cumulative_rewards": self.bandit.cum_reward_hist,
+            "regret_moving_avgs": regret_mv_avgs,
+            "reward_moving_avgs": reward_mv_avgs,
+        }

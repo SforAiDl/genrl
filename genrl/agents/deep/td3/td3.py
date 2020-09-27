@@ -67,10 +67,13 @@ class TD3(OffPolicyAgentAC):
             )
 
         if isinstance(self.network, str):
-            # Below, the "12" corresponds to the Single Actor, Double Critic network architecture
-            self.ac = get_model("ac", self.network + "12")(
+            arch = self.network + "12"
+            if self.shared_layers is not None:
+                arch += "s"
+            self.ac = get_model("ac", arch)(
                 state_dim,
                 action_dim,
+                shared_layers=self.shared_layers,
                 policy_layers=self.policy_layers,
                 value_layers=self.value_layers,
                 val_type="Qsa",
@@ -85,14 +88,9 @@ class TD3(OffPolicyAgentAC):
             )
 
         self.ac_target = deepcopy(self.ac)
-
-        self.critic_params = list(self.ac.critic1.parameters()) + list(
-            self.ac.critic2.parameters()
-        )
-        self.optimizer_value = torch.optim.Adam(self.critic_params, lr=self.lr_value)
-        self.optimizer_policy = torch.optim.Adam(
-            self.ac.actor.parameters(), lr=self.lr_policy
-        )
+        actor_params, critic_params = self.ac.get_params()
+        self.optimizer_value = torch.optim.Adam(critic_params, lr=self.lr_value)
+        self.optimizer_policy = torch.optim.Adam(actor_params, lr=self.lr_policy)
 
     def update_params(self, update_interval: int) -> None:
         """Update parameters of the model
@@ -127,6 +125,7 @@ class TD3(OffPolicyAgentAC):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -138,10 +137,9 @@ class TD3(OffPolicyAgentAC):
             "polyak": self.polyak,
             "policy_frequency": self.policy_frequency,
             "noise_std": self.noise_std,
-            "weights": self.ac.state_dict(),
         }
 
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
