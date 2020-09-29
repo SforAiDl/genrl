@@ -1,6 +1,7 @@
 from typing import List, Type, Union
 
 import numpy as np
+import torch
 
 from genrl.core import PrioritizedBuffer, ReplayBuffer
 from genrl.trainers import Trainer
@@ -156,8 +157,10 @@ class OffPolicyTrainer(Trainer):
             # true_dones contains the "true" value of the dones (game over statuses). It is set
             # to False when the environment is not actually done but instead reaches the max
             # episode length.
-            true_dones = [info[i]["done"] for i in range(self.env.n_envs)]
-            self.buffer.push((state, action, reward, next_state, true_dones))
+            true_dones = torch.FloatTensor(
+                [info[i]["done"] for i in range(self.env.n_envs)]
+            )
+            self.buffer.add((state, action, reward, next_state, true_dones))
 
             state = next_state.detach().clone()
 

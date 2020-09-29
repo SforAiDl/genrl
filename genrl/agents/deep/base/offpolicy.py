@@ -5,11 +5,10 @@ import torch
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import BaseAgent
-from genrl.core import (
+
+from genrl.core import (  # PrioritizedReplayBufferSamples,; ReplayBufferSamples,
     PrioritizedBuffer,
-    PrioritizedReplayBufferSamples,
     ReplayBuffer,
-    ReplayBufferSamples,
 )
 
 
@@ -98,15 +97,15 @@ class OffPolicyAgent(BaseAgent):
         states, actions, rewards, next_states, dones = self._reshape_batch(batch)
 
         # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if isinstance(self.replay_buffer, ReplayBuffer):
-            batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
-        elif isinstance(self.replay_buffer, PrioritizedBuffer):
-            indices, weights = batch[5], batch[6]
-            batch = PrioritizedReplayBufferSamples(
-                *[states, actions, rewards, next_states, dones, indices, weights]
-            )
-        else:
-            raise NotImplementedError
+        # if isinstance(self.replay_buffer, ReplayBuffer):
+        #     batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
+        # elif isinstance(self.replay_buffer, PrioritizedBuffer):
+        #     indices, weights = batch[5], batch[6]
+        #     batch = PrioritizedReplayBufferSamples(
+        #         *[states, actions, rewards, next_states, dones, indices, weights]
+        #     )
+        # else:
+        #     raise NotImplementedError
         return batch
 
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:

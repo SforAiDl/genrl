@@ -1,10 +1,7 @@
 from genrl.core.actor_critic import MlpActorCritic, get_actor_critic_from_name  # noqa
-from genrl.core.bandit import Bandit, BanditAgent
+from genrl.core.bandit import Bandit, BanditAgent  # noqa
 from genrl.core.base import BaseActorCritic  # noqa
-from genrl.core.buffers import PrioritizedBuffer  # noqa
-from genrl.core.buffers import PrioritizedReplayBufferSamples  # noqa
-from genrl.core.buffers import ReplayBuffer  # noqa
-from genrl.core.buffers import ReplayBufferSamples  # noqa
+from genrl.core.buffer import PrioritizedBuffer, ReplayBuffer  # noqa
 from genrl.core.noise import ActionNoise  # noqa
 from genrl.core.noise import NoisyLinear  # noqa
 from genrl.core.noise import NormalActionNoise  # noqa

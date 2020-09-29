@@ -153,6 +153,7 @@ class DQN(OffPolicyAgent):
             q_values (:obj:`torch.Tensor`): Q values for the given states and actions
         """
         q_values = self.model(states)
+        print(q_values.shape, actions.shape)
         q_values = q_values.gather(2, actions)
         return q_values
 
