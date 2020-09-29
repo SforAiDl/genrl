@@ -5,7 +5,7 @@ import pytest
 from genrl.utils.models import TabularModel
 
 
-def test_tabular_model(self):
+def test_tabular_model():
     model = TabularModel(4, 2)
 
     assert model.s_model.shape == (4, 2)
