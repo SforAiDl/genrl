@@ -27,7 +27,7 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=10,
+            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -45,7 +45,7 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=10,
+            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -66,7 +66,7 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=10,
+            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -86,7 +86,7 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=10,
+            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -106,7 +106,7 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=10,
+            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -114,7 +114,7 @@ class TestDQNCNN:
     def test_categorical_dqn(self):
         env = VectorEnv("Pong-v0", env_type="atari")
         algo = CategoricalDQN(
-            "cnn", env, batch_size=5, replay_size=100, value_layers=[1, 1]
+            "cnn", env, batch_size=5, replay_size=100, value_layers=[1, 1], max_epsilon=0.02
         )
         assert algo.dqn_type == "categorical"
         assert algo.noisy
@@ -128,7 +128,7 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=10,
+            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
