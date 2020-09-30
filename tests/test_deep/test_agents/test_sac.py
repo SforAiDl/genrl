@@ -18,6 +18,7 @@ def test_sac():
         max_ep_len=500,
         warmup_steps=10,
         start_update=10,
+        max_timesteps=100,
     )
     trainer.train()
     shutil.rmtree("./logs")
@@ -32,6 +33,7 @@ def test_sac_shared():
         shared_layers=[1, 1],
         policy_layers=[1, 1],
         value_layers=[1, 1],
+        max_timesteps=100,
     )
 
     trainer = OffPolicyTrainer(
@@ -43,6 +45,7 @@ def test_sac_shared():
         max_ep_len=500,
         warmup_steps=10,
         start_update=10,
+        max_timesteps=100,
     )
     trainer.train()
     shutil.rmtree("./logs")
