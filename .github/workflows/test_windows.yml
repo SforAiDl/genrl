@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         python-version: [ '3.6','3.7','3.8' ]
-        platform: [ubuntu-20.04, windows-2019, macOS-10.15]
+        platform: [windows-2019]
     runs-on: ${{ matrix.platform }}
     
     name: Python ${{ matrix.python-version }} - ${{ matrix.platform }}
@@ -69,7 +69,6 @@ jobs:
       # Install Dependencies
       - name: Install Windows dependencies
         shell: pwsh
-        if: startsWith(runner.os, 'Windows')
         run: |
           ./.scripts/windows_cpu_build.ps1
 
