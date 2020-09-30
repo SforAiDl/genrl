@@ -33,6 +33,7 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
+            max_timesteps=10,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -50,6 +51,7 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
+            max_timesteps=10,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -70,6 +72,7 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
+            max_timesteps=10,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -90,6 +93,7 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
+            max_timesteps=10,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -109,6 +113,7 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
+            max_timesteps=10,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -130,6 +135,7 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-        )
+            max_timesteps=10,
+       )
         trainer.train()
         shutil.rmtree("./logs")
