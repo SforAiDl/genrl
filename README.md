@@ -18,7 +18,9 @@
 
 [![Build Status](https://travis-ci.com/SforAiDl/genrl.svg?branch=master)](https://travis-ci.com/SforAiDl/genrl)
 [![Documentation Status](https://readthedocs.org/projects/genrl/badge/?version=latest)](https://genrl.readthedocs.io/en/latest/?badge=latest)
-![Tests](https://github.com/SforAiDl/genrl/workflows/Tests/badge.svg)
+![Tests MacOS](https://github.com/SforAiDl/genrl/workflows/Tests%20MacOS/badge.svg)
+![Tests Linux](https://github.com/SforAiDl/genrl/workflows/Tests%20Linux/badge.svg)
+![Tests Windows](https://github.com/SforAiDl/genrl/workflows/Tests%20Windows/badge.svg)
 
 [![Slack - Chat](https://img.shields.io/badge/Slack-Chat-blueviolet)](https://join.slack.com/t/genrlworkspace/shared_invite/zt-gwlgnymd-Pw3TYC~0XDLy6VQDml22zg)
 
