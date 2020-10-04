@@ -470,65 +470,6 @@ class CNNActorCritic(BaseActorCritic):
         return value
 
 
-class MultiAgentActor(MlpPolicy):
-    def __init__(
-        self,
-        state_dim: spaces.Space,
-        action_dim: spaces.Space,
-        hidden: Tuple = (32, 32),
-        discrete: bool = True,
-        **kwargs,
-    ):
-        super(MultiAgentActor, self).__init__(
-            state_dim, action_dim, hidden, discrete ** kwargs
-        )
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    def forward(self, state):
-        state = self.model(state)
-        return state
-
-    def get_action(self, state, deterministic=False):
-        # state = torch.FloatTensor(state).to(self.device)
-        logits = self.forward(state)
-
-        dist = F.softmax(logits, dim=0)
-        probs = Categorical(dist)
-        if deterministic:
-            index = torch.argmax(probs)
-        else:
-            index = probs.sample().cpu().detach().item()
-        return index
-
-
-class MultiAgentCritic(MlpValue):
-    def __init__(
-        self,
-        state_dim: spaces.Space,
-        action_dim: spaces.Space,
-        fc_layers: Tuple = (32, 32),
-        val_type: str = "V",
-        **kwargs,
-    ):
-        super(MultiAgentCritic, self).__init__(
-            state_dim, action_dim, fc_layers, val_type, **kwargs
-        )
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    def forward(self, state):
-
-        state = self.model(state)
-
-        return state
-
-    def get_value(self, state):
-        # state = torch.FloatTensor(state).to(self.device)
-        value = self.forward(state)
-        return value
-
-
 actor_critic_registry = {
     "mlp": MlpActorCritic,
     "cnn": CNNActorCritic,
