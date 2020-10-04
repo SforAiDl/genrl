@@ -164,6 +164,7 @@ class MlpSharedActorCritic(BaseActorCritic):
             value = self.critic(shared_features)
         return value
 
+
 class MlpSingleActorTwoCritic(BaseActorCritic):
     """MLP Actor Critic
 
