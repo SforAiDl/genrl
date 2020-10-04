@@ -332,7 +332,7 @@ class MultiAgentRolloutBuffer(BaseBuffer):
             self.buffer_size, self.env.n_envs, self.num_agents
         )
         self.generator_ready = False
-        super(RolloutBuffer, self).reset()
+        super(MultiAgentRolloutBuffer, self).reset()
 
     def add(
         self,
