@@ -6,7 +6,8 @@ repos:
           args: [--exclude=^((examples|docs)/.*)$]
 
   - repo: https://github.com/timothycrosley/isort
-    rev: 5.5.0
+
+    rev: 5.4.2
     hooks:
         - id: isort
 

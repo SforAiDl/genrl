@@ -6,7 +6,12 @@ import torch.optim as opt
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import OnPolicyAgent
-from genrl.utils import get_env_properties, get_model, safe_mean
+from genrl.utils import (
+    compute_returns_and_advantage,
+    get_env_properties,
+    get_model,
+    safe_mean,
+)
 
 
 class A2C(OnPolicyAgent):
@@ -65,8 +70,12 @@ class A2C(OnPolicyAgent):
         state_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network
         )
-        if isinstance(self.network, str) and self.shared_layers is None:
+
+        if isinstance(self.network, str):
             arch_type = self.network
+            if self.shared_layers is not None:
+                arch_type += "s"
+
             self.ac = get_model("ac", arch_type)(
                 state_dim,
                 action_dim,
@@ -77,18 +86,7 @@ class A2C(OnPolicyAgent):
                 discrete=discrete,
                 action_lim=action_lim,
             ).to(self.device)
-        elif isinstance(self.network, str) and self.shared_layers is not None:
-            arch_type = self.network + "s"
-            self.ac = get_model("ac", arch_type)(
-                state_dim,
-                action_dim,
-                critic_prev=self.critic_prev,
-                actor_prev=self.actor_prev,
-                shared_layers=self.shared_layers,
-                critic_post=self.value_layers,
-                actor_post=self.policy_layers,
-                val_type="V",
-            ).to(self.device)
+
         else:
             self.ac = self.network.to(self.device)
 
@@ -132,7 +130,9 @@ class A2C(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout.compute_returns_and_advantage(values.detach().cpu().numpy(), dones)
+        compute_returns_and_advantage(
+            self.rollout, values.detach().cpu().numpy(), dones.cpu().numpy()
+        )
 
     def evaluate_actions(self, states: torch.Tensor, actions: torch.Tensor):
         """Evaluates actions taken by actor
@@ -195,6 +195,7 @@ class A2C(OnPolicyAgent):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural network weights
         """
         hyperparams = {
             "network": self.network,
@@ -203,17 +204,16 @@ class A2C(OnPolicyAgent):
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
             "rollout_size": self.rollout_size,
-            "weights": self.ac.state_dict(),
         }
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.Tensor`): neural net weights
         """
-        self.ac.load_state_dict(weights["weights"])
+        self.ac.load_state_dict(weights)
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
