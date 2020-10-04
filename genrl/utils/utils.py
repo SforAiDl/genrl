@@ -103,7 +103,7 @@ def mlp_concat(
             continue
         act = activation if layer < limit - 2 else nn.Identity()
         layers += [nn.Linear(layer_sizes[layer], layer_sizes[layer + 1])]
-        weight_init(layers[-1][0].weight)
+        weight_init(layers[-1].weight)
         layers += [act]
 
     return nn.Sequential(*layers)
