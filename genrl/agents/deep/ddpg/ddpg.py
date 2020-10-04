@@ -62,8 +62,11 @@ class DDPG(OffPolicyAgentAC):
                 torch.zeros(action_dim), self.noise_std * torch.ones(action_dim)
             )
 
-        if isinstance(self.network, str) and self.shared_layers is None:
+        if isinstance(self.network, str):
             arch_type = self.network
+            if self.shared_layers is not None:
+                arch_type += "s"
+
             self.ac = get_model("ac", arch_type)(
                 state_dim,
                 action_dim,
@@ -124,6 +127,7 @@ class DDPG(OffPolicyAgentAC):
 
         Returns:
             hyperparams (:obj:`dict`): Hyperparameters to be saved
+            weights (:obj:`torch.Tensor`): Neural Network weights
         """
         hyperparams = {
             "network": self.network,
@@ -134,9 +138,8 @@ class DDPG(OffPolicyAgentAC):
             "noise_std": self.noise_std,
             "lr_policy": self.lr_policy,
             "lr_value": self.lr_value,
-            "weights": self.ac.state_dict(),
         }
-        return hyperparams
+        return hyperparams, self.ac.state_dict()
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging

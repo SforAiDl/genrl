@@ -34,8 +34,7 @@ class BaseAgent(ABC):
         create_model: bool = True,
         batch_size: int = 64,
         gamma: float = 0.99,
-        actor_prev=[],
-        critic_prev=[],
+
         shared_layers=None,
         policy_layers: Tuple = (64, 64),
         value_layers: Tuple = (64, 64),
@@ -99,11 +98,11 @@ class BaseAgent(ABC):
         """
         raise NotImplementedError
 
-    def load_weights(self, weights) -> None:
+    def _load_weights(self, weights) -> None:
         """Load weights for the agent from pretrained model
 
         Args:
-            weights (:obj:`dict`): Dictionary of different neural net weights
+            weights (:obj:`torch.tensor`): neural net weights
         """
 
         raise NotImplementedError
