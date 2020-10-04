@@ -531,7 +531,6 @@ class SharedActorCritic(BaseActorCritic):
         # state = torch.FloatTensor(state).to(self.device)
         logits = self.forward(None, state)
 
-
         probs = nn.Softmax(dim=-1)(logits)
         dist = Categorical(probs)
         if deterministic:
