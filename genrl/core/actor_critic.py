@@ -13,7 +13,6 @@ from genrl.core.values import MlpValue
 from genrl.utils.utils import cnn, mlp
 
 
-
 class MlpActorCritic(BaseActorCritic):
     """MLP Actor Critic
 
