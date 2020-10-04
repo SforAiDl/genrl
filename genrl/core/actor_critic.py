@@ -9,9 +9,7 @@ from torch.distributions import Categorical, Normal
 from genrl.core.base import BaseActorCritic
 from genrl.core.policies import MlpPolicy
 from genrl.core.values import MlpValue
-
 from genrl.utils.utils import cnn, mlp
-
 
 
 class MlpActorCritic(BaseActorCritic):
@@ -48,7 +46,6 @@ class MlpActorCritic(BaseActorCritic):
         actor_params = self.actor.parameters()
         critic_params = self.critic.parameters()
         return actor_params, critic_params
-
 
 
 class MlpSharedActorCritic(BaseActorCritic):
@@ -165,6 +162,7 @@ class MlpSharedActorCritic(BaseActorCritic):
             shared_features = self.shared_network(state)
             value = self.critic(shared_features)
         return value
+
 
 class MlpSingleActorTwoCritic(BaseActorCritic):
     """MLP Actor Critic
@@ -469,83 +467,6 @@ class CNNActorCritic(BaseActorCritic):
         inp = inp.view(inp.size(0), -1)
 
         value = self.critic(inp).squeeze(-1)
-        return value
-
-
-class SharedActorCritic(BaseActorCritic):
-    def __init__(
-        self,
-        state_dim,
-        action_dim,
-        shared_layers,
-        critic_post,
-        actor_post,
-        val_type="V",
-        weight_init="xavier_uniform",
-        activation_func="relu",
-        critic_prev=[],
-        actor_prev=[],
-    ):
-        super(SharedActorCritic, self).__init__()
-        if len(actor_prev) > 0 and len(critic_prev) > 0:
-            actor_prev = [state_dim] + list(actor_prev)
-            if val_type == "Qsa":
-                critic_prev = [state_dim + action_dim] + list(critic_prev)
-            else:
-                critic_prev = [state_dim] + critic_prev
-        else:
-            shared_layers = [state_dim] + list(shared_layers)
-
-        if val_type == "V" or val_type == "Qsa":
-            critic_post = list(critic_post) + [1]
-        elif val_type == "Qs":
-            critic_post = list(critic_post) + [action_dim]
-        else:
-            raise NotImplementedError
-
-        actor_post = list(actor_post) + [action_dim]
-        self.critic, self.actor = shared_mlp(
-            critic_prev,
-            actor_prev,
-            shared_layers,
-            critic_post,
-            actor_post,
-            weight_init,
-            activation_func,
-            False,
-        )
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    def get_params(self):
-        actor_params = self.actor.parameters()
-        critic_params = self.critic.parameters()
-        return actor_params, critic_params
-
-    def forward(self, state_critic, state_action):
-
-        if state_critic is not None:
-            return self.critic(state_critic)
-
-        if state_action is not None:
-            return self.actor(state_action)
-
-    def get_action(self, state, deterministic=False):
-        # state = torch.FloatTensor(state).to(self.device)
-        logits = self.forward(None, state)
-
-
-        probs = nn.Softmax(dim=-1)(logits)
-        dist = Categorical(probs)
-        if deterministic:
-            index = torch.argmax(probs, dim=-1).unsqueeze(-1).float()
-        else:
-            index = dist.sample()
-        print(index.shape)
-        return index, dist
-
-    def get_value(self, state):
-        # state = torch.FloatTensor(state).to(self.device)
-        value = self.forward(state, None)
         return value
 
 
