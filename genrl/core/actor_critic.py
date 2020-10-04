@@ -49,7 +49,6 @@ class MlpActorCritic(BaseActorCritic):
         return actor_params, critic_params
 
 
-
 class MlpSharedActorCritic(BaseActorCritic):
     """MLP Shared Actor Critic
 
