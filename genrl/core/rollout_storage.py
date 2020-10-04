@@ -288,7 +288,6 @@ class MultiAgentRolloutBuffer(BaseBuffer):
             :type num_agents: int
             :param capacity: Max buffer size
             :type capacity: int
-
         """
         self.buffer_size = buffer_size
         self.num_agents = num_agents
