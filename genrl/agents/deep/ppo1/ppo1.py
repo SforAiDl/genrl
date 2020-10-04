@@ -74,7 +74,6 @@ class PPO1(OnPolicyAgent):
             arch = self.network
             if self.shared_layers is not None:
                 arch += "s"
-                
             self.ac = get_model("ac", arch)(
                 state_dim,
                 action_dim,
