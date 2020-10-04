@@ -2,7 +2,6 @@ from typing import Tuple
 
 import torch  # noqa
 import torch.nn as nn  # noqa
-import torch.nn.functional as F
 from gym import spaces
 from torch.distributions import Categorical, Normal
 

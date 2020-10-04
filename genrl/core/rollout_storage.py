@@ -282,13 +282,7 @@ class MultiAgentRolloutBuffer(BaseBuffer):
         gamma: float = 0.99,
     ):
         super(MultiAgentRolloutBuffer, self).__init__(buffer_size, env, device)
-        """
-        Initialising the buffer
-            :param num_agents: number of agents in the environment
-            :type num_agents: int
-            :param capacity: Max buffer size
-            :type capacity: int
-        """
+
         self.buffer_size = buffer_size
         self.num_agents = num_agents
         self.env = env
