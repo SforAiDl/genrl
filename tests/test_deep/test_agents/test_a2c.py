@@ -19,3 +19,18 @@ def test_a2c_cnn():
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
     shutil.rmtree("./logs")
+
+
+def test_a2c_shared():
+    env = VectorEnv("CartPole-v0", 1)
+    algo = A2C(
+        "mlp",
+        env,
+        policy_layers=(32, 32),
+        value_layers=(32, 32),
+        shared_layers=(32, 32),
+        rollout_size=128,
+    )
+    trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
+    trainer.train()
+    shutil.rmtree("./logs")

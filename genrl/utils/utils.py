@@ -102,8 +102,9 @@ def mlp_concat(
         if layer == concat_ind:
             continue
         act = activation if layer < limit - 2 else nn.Identity()
-        layers += [nn.Linear(layer_sizes[layer], layer_sizes[layer + 1]), act]
+        layers += [nn.Linear(layer_sizes[layer], layer_sizes[layer + 1])]
         weight_init(layers[-1][0].weight)
+        layers += [act]
 
     return nn.Sequential(*layers)
 
@@ -111,7 +112,7 @@ def mlp_concat(
 def shared_mlp(
     network1_prev: Tuple,
     network2_prev: Tuple,
-    shared: Tuple,
+    shared_layers: Tuple,
     network1_post: Tuple,
     network2_post: Tuple,
     weight_init: str = "xavier_uniform",
@@ -137,15 +138,15 @@ def shared_mlp(
     """
 
     if len(network1_prev) != 0:
-        network1_prev = nn.ModuleList()
+        net1_prev = nn.ModuleList()
     if len(network2_prev) != 0:
-        network2_prev = nn.ModuleList()
-    if len(shared) != 0:
+        net2_prev = nn.ModuleList()
+    if len(shared_layers) != 0:
         shared = nn.ModuleList()
     if len(network1_post) != 0:
-        network1_post = nn.ModuleList()
+        net1_post = nn.ModuleList()
     if len(network2_post) != 0:
-        network2_post = nn.ModuleList()
+        net2_post = nn.ModuleList()
 
     # add more weight init
     if weight_init == "xavier_uniform":
@@ -162,53 +163,63 @@ def shared_mlp(
     else:
         activation = None
 
-    if len(shared) != 0 or len(network1_post) != 0 or len(network2_post) != 0:
-        if not (
-            network1_prev[-1] == network2_prev[-1]
-            and network1_prev[-1] == shared[0]
-            and network1_post[0] == network2_post[0]
-            and network1_post[0] == shared[-1]
-        ):
-            raise ValueError
+    if len(shared_layers) != 0 or len(network1_post) != 0 or len(network2_post) != 0:
+        if len(network1_prev) != 0 and len(network2_prev) != 0:
+            if not (
+                network1_prev[-1] == network2_prev[-1]
+                and network1_prev[-1] == shared_layers[0]
+                and network1_post[0] == network2_post[0]
+                and network1_post[0] == shared_layers[-1]
+            ):
+                raise ValueError
+        else:
+            if not (
+                network1_post[0] == network2_post[0]
+                and network1_post[0] == shared_layers[-1]
+            ):
+                raise ValueError
 
     for i in range(len(network1_prev) - 1):
-        network1_prev.append(nn.Linear(network1_prev[i], network1_prev[i + 1]))
-        if activation is not None:
-            network1_prev.append(activation)
+        net1_prev.append(nn.Linear(network1_prev[i], network1_prev[i + 1]))
         if weight_init is not None:
-            weight_init(network1_prev[-1].weight)
+            weight_init(net1_prev[-1].weight)
+        if activation is not None:
+            net1_prev.append(activation)
 
     for i in range(len(network2_prev) - 1):
-        network2_prev.append(nn.Linear(network2_prev[i], network2_prev[i + 1]))
-        if activation is not None:
-            network2_prev.append(activation)
+        net2_prev.append(nn.Linear(network2_prev[i], network2_prev[i + 1]))
         if weight_init is not None:
-            weight_init(network2_prev[-1].weight)
-
-    for i in range(len(shared) - 1):
-        shared.append(nn.Linear(shared[i], shared[i + 1]))
+            weight_init(net2_prev[-1].weight)
         if activation is not None:
-            shared.append(activation)
+            net2_prev.append(activation)
+
+    for i in range(len(shared_layers) - 1):
+        shared.append(nn.Linear(shared_layers[i], shared_layers[i + 1]))
         if weight_init is not None:
             weight_init(shared[-1].weight)
+        if activation is not None:
+            shared.append(activation)
 
     for i in range(len(network1_post) - 1):
-        network1_post.append(nn.Linear(network1_post[i], network1_post[i + 1]))
-        if activation is not None:
-            network1_post.append(activation)
+        net1_post.append(nn.Linear(network1_post[i], network1_post[i + 1]))
         if weight_init is not None:
-            weight_init(network1_post[-1].weight)
+            weight_init(net1_post[-1].weight)
+        if activation is not None:
+            net1_post.append(activation)
 
     for i in range(len(network2_post) - 1):
-        network2_post.append(nn.Linear(network2_post[i], network2_post[i + 1]))
-        if activation is not None:
-            network2_post.append(activation)
+        net2_post.append(nn.Linear(network2_post[i], network2_post[i + 1]))
         if weight_init is not None:
-            weight_init(network2_post[-1].weight)
+            weight_init(net2_post[-1].weight)
+        if activation is not None:
+            net2_post.append(activation)
 
-    network1 = nn.Sequential(network1_prev, shared, network1_post)
-    network2 = nn.Sequential(network2_prev, shared, network2_post)
-
+    if len(network1_prev) != 0 and len(network2_prev) != 0:
+        network1 = nn.Sequential(*net1_prev, *shared, *net1_post)
+        network2 = nn.Sequential(*net2_prev, *shared, *net2_post)
+    else:
+        network1 = nn.Sequential(*shared, *net1_post)
+        network2 = nn.Sequential(*shared, *net2_post)
     return network1, network2
 
 

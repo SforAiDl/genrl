@@ -231,7 +231,6 @@ class OffPolicyAgentAC(OffPolicyAgent):
             next_q_target_values = self.ac_target.get_value(
                 torch.cat([next_states, next_target_actions], dim=-1)
             )
-
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
 
         return target_q_values
