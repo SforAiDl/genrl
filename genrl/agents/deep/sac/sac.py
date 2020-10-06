@@ -22,6 +22,7 @@ class SAC(OffPolicyAgentAC):
         gamma (float): The discount factor for rewards
         policy_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the policy
         value_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the critics
+        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer

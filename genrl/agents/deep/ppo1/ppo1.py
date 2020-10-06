@@ -29,6 +29,7 @@ class PPO1(OnPolicyAgent):
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
+        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the Q-value function
         rollout_size (int): Capacity of the Rollout Buffer

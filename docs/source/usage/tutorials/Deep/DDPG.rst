@@ -65,7 +65,7 @@ DDPG makes use of target networks for the actor(policy) and the critic(value) ne
 
 .. math::
 
-    y_t = r(s_t, a_t) + \gamma Q_targ(s_{t+1}, \mu_targ(s_{t+1}) \vert \theta^{Q})
+    y_t = r(s_t, a_t) + \gamma Q_{targ}(s_{t+1}, \mu_{targ}(s_{t+1}) \vert \theta^{Q})
 
 Buliding up on Deterministic Policy Gradients, the gradient of the policy can be determined using the action-value function as
 
