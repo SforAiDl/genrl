@@ -8,10 +8,10 @@ from genrl.environments.vec_env import VecEnv
 
 
 class RolloutBufferSamples(NamedTuple):
-    states: torch.Tensor
+    observations: torch.Tensor
     actions: torch.Tensor
     old_values: torch.Tensor
-    old_log_probs: torch.Tensor
+    old_log_prob: torch.Tensor
     advantages: torch.Tensor
     returns: torch.Tensor
 
@@ -19,22 +19,28 @@ class RolloutBufferSamples(NamedTuple):
 class RolloutBuffer(BaseBuffer):
     """Rollout buffer used in on-policy algorithms like A2C/PPO
 
-    buffer_size (int): Max number of element in the buffer
-    device (:obj:`torch.device` or str):  PyTorch device to which the values will be converted
-    env (Environment): The environment being trained on
-    gae_lambda (float): Factor for trade-off of bias vs variance for Generalized Advantage Estimator
-        Equivalent to classic advantage when set to 1.
+    Attributes:
+        buffer_size (int): Max number of element in the buffer
+        env (Environment): The environment being trained on
+        device (:obj:`torch.device` or str):  PyTorch device to which the values will be converted
+        gae_lambda (float): Factor for trade-off of bias vs variance for Generalized Advantage Estimator
+            Equivalent to classic advantage when set to 1.
+        gamma (float): Discount factor
     """
 
     def __init__(
         self,
-        *args,
+        buffer_size: int,
         env: Union[gym.Env, VecEnv],
+        device: Union[torch.device, str] = "cpu",
         gae_lambda: float = 1,
-        **kwargs,
+        gamma: float = None,
     ):
-        super(RolloutBuffer, self).__init__(*args, **kwargs)
+        super(RolloutBuffer, self).__init__(buffer_size)
+        self.device = device if type(device) is torch.device else torch.device(device)
+        self.env = env
         self.gae_lambda = gae_lambda
+        self.gamma = gamma
         self.observations, self.actions, self.rewards, self.advantages = (
             None,
             None,
@@ -46,6 +52,7 @@ class RolloutBuffer(BaseBuffer):
         self.reset()
 
     def reset(self) -> None:
+        """Resets the buffer"""
         self.observations = torch.zeros(
             *(self.buffer_size, self.env.n_envs, *self.env.obs_shape)
         )
@@ -63,22 +70,24 @@ class RolloutBuffer(BaseBuffer):
 
     def add(
         self,
-        obs: torch.zeros,
-        action: torch.zeros,
-        reward: torch.zeros,
-        done: torch.zeros,
+        obs: torch.Tensor,
+        action: torch.Tensor,
+        reward: torch.Tensor,
+        done: torch.Tensor,
         value: torch.Tensor,
         log_prob: torch.Tensor,
     ) -> None:
-        """
-        :param obs: (torch.zeros) Observation
-        :param action: (torch.zeros) Action
-        :param reward: (torch.zeros)
-        :param done: (torch.zeros) End of episode signal.
-        :param value: (torch.Tensor) estimated value of the current state
-            following the current policy.
-        :param log_prob: (torch.Tensor) log probability of the action
-            following the current policy.
+        """Adds elements to the buffer
+
+        Args:
+            obs (torch.Tensor): Observation
+            action (torch.Tensor): Action
+            reward (torch.Tensor): Reward
+            done (torch.Tensor): End of episode signal.
+            value (torch.Tensor): Estimated value of the current state
+                following the current policy.
+            log_prob (torch.Tensor): Log probability of the action
+                following the current policy.
         """
         if len(log_prob.shape) == 0:
             # Reshape 0-d tensor to avoid error
@@ -121,7 +130,7 @@ class RolloutBuffer(BaseBuffer):
             yield self._get_samples(indices[start_idx : start_idx + batch_size])
             start_idx += batch_size
 
-    def _get_samples(self, batch_inds: np.ndarray) -> RolloutBufferSamples:
+    def _get_samples(self, batch_inds: torch.Tensor) -> RolloutBufferSamples:
         data = (
             self.observations[batch_inds],
             self.actions[batch_inds],
@@ -130,4 +139,4 @@ class RolloutBuffer(BaseBuffer):
             self.advantages[batch_inds].flatten(),
             self.returns[batch_inds].flatten(),
         )
-        return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
+        return RolloutBufferSamples(*data)
