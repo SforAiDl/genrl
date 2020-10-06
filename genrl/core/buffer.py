@@ -1,12 +1,9 @@
 import random
 from collections import deque
-from typing import Generator, NamedTuple, Optional, Tuple, Union
+from typing import NamedTuple, Tuple, Union
 
-import gym
 import numpy as np
 import torch
-
-from genrl.environments.vec_env import VecEnv
 
 
 class BaseBuffer(object):
@@ -57,11 +54,7 @@ class BaseBuffer(object):
         Returns:
             size (int): The current size of the buffer
         """
-        if self.full:
-            size = self.buffer_size
-        else:
-            size = self.pos
-        return size
+        raise NotImplementedError()
 
     def add(self, *args, **kwargs) -> None:
         """Adds elements to the buffer"""
@@ -80,22 +73,6 @@ class BaseBuffer(object):
 
         Args:
             batch_size (int): Number of element to sample
-
-        Returns:
-            samples (:obj:`namedtuple`): Named tuple of the sampled experiences
-        """
-        upper_bound = self.buffer_size if self.full else self.pos
-        batch_indices = np.random.randint(0, upper_bound, size=batch_size)
-        return self._get_samples(batch_indices)
-
-    def _get_samples(
-        self,
-        batch_indices: torch.Tensor,
-    ):
-        """Implements the actual sampling functionality
-
-        Args:
-            batch_indices (:obj:`torch.Tensor`): The indices that need to be sampled
 
         Returns:
             samples (:obj:`namedtuple`): Named tuple of the sampled experiences

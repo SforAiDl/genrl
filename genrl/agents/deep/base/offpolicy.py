@@ -66,19 +66,6 @@ class OffPolicyAgent(BaseAgent):
         """
         raise NotImplementedError
 
-    def _reshape_batch(self, batch: List):
-        """Function to reshape experiences
-
-        Can be modified for individual algorithm usage
-
-        Args:
-            batch (:obj:`list`): List of experiences that are being replayed
-
-        Returns:
-            batch (:obj:`list`): Reshaped experiences for replay
-        """
-        return [*batch]
-
     def sample_from_buffer(self, beta: float = None):
         """Samples experiences from the buffer and converts them into usable formats
 
@@ -94,18 +81,6 @@ class OffPolicyAgent(BaseAgent):
         else:
             batch = self.replay_buffer.sample(self.batch_size)
 
-        states, actions, rewards, next_states, dones = self._reshape_batch(batch)
-
-        # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        # if isinstance(self.replay_buffer, ReplayBuffer):
-        #     batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
-        # elif isinstance(self.replay_buffer, PrioritizedBuffer):
-        #     indices, weights = batch[5], batch[6]
-        #     batch = PrioritizedReplayBufferSamples(
-        #         *[states, actions, rewards, next_states, dones, indices, weights]
-        #     )
-        # else:
-        #     raise NotImplementedError
         return batch
 
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
