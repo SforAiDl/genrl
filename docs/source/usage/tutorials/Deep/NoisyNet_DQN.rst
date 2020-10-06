@@ -29,7 +29,7 @@ A noisy parameter :math:`\theta` is defined as:
 
 .. math::
 
-    \theta \coloneqq \mu + \Sigma \odot \epsilon
+    \theta := \mu + \Sigma \odot \epsilon
 
 where :math:`\Sigma` and :math:`\mu` are vectors of trainable parameters and :math:`\epsilon` is a vector of zero mean noise. Hence, the loss function is now defined with respect to :math:`\Sigma` and :math:`\mu`
 and the optimization now takes place with respect to :math:`\Sigma` and :math:`\mu`. :math:`\epsilon` is sampled from factorised gaussian noise.
