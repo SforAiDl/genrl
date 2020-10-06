@@ -6,6 +6,7 @@ We often want to checkpoint our training model in the RL setting, GenRL offers t
 Following is a sample code to save checkpoints - 
 
 .. code-block:: python
+
     import gym
     import shutil
     
@@ -33,6 +34,7 @@ Following is a sample code to save checkpoints -
 Let's say you have a saved weights and hyperparameters file to load onto the model you can change your trainer as below to load it - 
 
 .. code-block:: python
+
     trainer = OnPolicyTrainer(
         algo,
         env,
