@@ -79,14 +79,14 @@ class DDPG(OffPolicyAgentAC):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-    def update_params(self, update_interval: int) -> None:
+    def update_params(self, batch, update_interval: int) -> None:
         """Update parameters of the model
 
         Args:
             update_interval (int): Interval between successive updates of the target model
         """
         for timestep in range(update_interval):
-            batch = self.sample_from_buffer()
+            batch = self.sample_from_buffer(batch=batch)
 
             value_loss = self.get_q_loss(batch)
             self.logs["value_loss"].append(value_loss.item())

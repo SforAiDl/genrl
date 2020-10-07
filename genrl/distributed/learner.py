@@ -33,16 +33,13 @@ class LearnerNode(Node):
         **kwargs,
     ):
         rpc.init_rpc(name=name, world_size=world_size, rank=rank)
-        print("inited trainer rpc")
+        print(f"{name}: Initialised RPC")
         rref = rpc.RRef(trainer)
-        print(rref)
         store_rref(name, rref)
-        print("starting to train")
         parameter_server_rref = get_rref(parameter_server_name)
         experience_server_rref = get_rref(
             experience_server_name,
         )
-        print(f"{name}: {parameter_server_rref} {experience_server_rref}")
-        print("TRAINER: CALLING WRAPPER")
+        print(f"{name}: Beginning training")
         trainer.train_wrapper(parameter_server_rref, experience_server_rref)
         rpc.shutdown()

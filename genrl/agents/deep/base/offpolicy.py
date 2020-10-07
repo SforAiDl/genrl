@@ -80,7 +80,7 @@ class OffPolicyAgent(BaseAgent):
         """
         return [*batch]
 
-    def sample_from_buffer(self, beta: float = None):
+    def sample_from_buffer(self, beta: float = None, batch = None):
         """Samples experiences from the buffer and converts them into usable formats
 
         Args:
@@ -89,11 +89,12 @@ class OffPolicyAgent(BaseAgent):
         Returns:
             batch (:obj:`list`): Replay experiences sampled from the buffer
         """
-        # Samples from the buffer
-        if beta is not None:
-            batch = self.replay_buffer.sample(self.batch_size, beta=beta)
-        else:
-            batch = self.replay_buffer.sample(self.batch_size)
+        if batch is None:
+            # Samples from the buffer
+            if beta is not None:
+                batch = self.replay_buffer.sample(self.batch_size, beta=beta)
+            else:
+                batch = self.replay_buffer.sample(self.batch_size)
 
         states, actions, rewards, next_states, dones = self._reshape_batch(batch)
 

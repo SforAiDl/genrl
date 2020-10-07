@@ -43,22 +43,15 @@ class ActorNode(Node):
         **kwargs,
     ):
         rpc.init_rpc(name=name, world_size=world_size, rank=rank)
-        print("actor rpc inited")
+        print(f"{name}: RPC Initialised")
         rref = rpc.RRef(agent)
-        print(rref)
         store_rref(name, rref)
-        print("stored rref")
         parameter_server_rref = get_rref(parameter_server_name)
         experience_server_rref = get_rref(experience_server_name)
         learner_rref = get_rref(learner_name)
-        print(
-            f"{name}: {parameter_server_rref} {experience_server_rref} {learner_rref}"
-        )
+        print(f"{name}: Begining experience collection")
         while not learner_rref.rpc_sync().is_done():
-            print(f"{name}: going to load weights!")
             agent.load_weights(parameter_server_rref.rpc_sync().get_weights())
-            print("Done loadiing weights")
             collect_experience(agent, experience_server_rref)
-            print("Done collecting experience")
 
         rpc.shutdown()

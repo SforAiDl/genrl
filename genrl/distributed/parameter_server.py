@@ -16,12 +16,11 @@ class ParameterServer(Node):
     @staticmethod
     def run_paramater_server(name, world_size, rank, init_params, **kwargs):
         rpc.init_rpc(name=name, world_size=world_size, rank=rank)
-        print("inited param server rpc")
+        print(f"{name}: Initialised RPC")
         params = init_params
         rref = rpc.RRef(params)
-        print(rref)
         store_rref(name, rref)
-        print("serving params")
+        print(f"{name}: Serving parameters")
         rpc.shutdown()
 
 

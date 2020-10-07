@@ -4,11 +4,11 @@ from genrl.distributed import (
     ParameterServer,
     ActorNode,
     LearnerNode,
-    DistributedTrainer,
     WeightHolder,
 )
 from genrl.core import ReplayBuffer
 from genrl.agents import DDPG
+from genrl.trainers import DistributedTrainer
 import gym
 import argparse
 import torch.multiprocessing as mp
@@ -21,7 +21,7 @@ N_ACTORS = 2
 BUFFER_SIZE = 10
 MAX_ENV_STEPS = 100
 TRAIN_STEPS = 10
-BATCH_SIZE = 5
+BATCH_SIZE = 1
 
 
 def collect_experience(agent, experience_server_rref):
@@ -30,9 +30,7 @@ def collect_experience(agent, experience_server_rref):
     for i in range(MAX_ENV_STEPS):
         action = agent.select_action(obs)
         next_obs, reward, done, info = agent.env.step(action)
-        print("Sending experience")
-        experience_server_rref.rpc_sync().push((obs, action, reward, done, next_obs))
-        print("Done sending experience")
+        experience_server_rref.rpc_sync().push((obs, action, reward, next_obs, done))
         obs = next_obs
         if done:
             break
@@ -45,24 +43,20 @@ class MyTrainer(DistributedTrainer):
         self.batch_size = batch_size
 
     def train(self, parameter_server_rref, experience_server_rref):
-        print("IN TRAIN")
-        for i in range(self.train_steps):
-            print("GETTING BATCH")
+        i = 0
+        while i < self.train_steps:
             batch = experience_server_rref.rpc_sync().sample(self.batch_size)
-            print("GOT BATCH")
             if batch is None:
                 continue
-            self.agent.update_params(batch)
-            print("Storing weights")
+            self.agent.update_params(batch, 1)
             parameter_server_rref.rpc_sync().store_weights(self.agent.get_weights())
-            # remote_method(WeightHolder.store_weights, parameter_server_rref, self.agent.get_weights())
-            print("Done storing weights")
-            print(f"TRAINER: {i} STESPS done")
+            print(f"Trainer: {i + 1} / {self.train_steps} steps completed")
+            i += 1
 
 
 mp.set_start_method("fork")
 
-master = Master(world_size=6, address="localhost", port=29504)
+master = Master(world_size=6, address="localhost", port=29500)
 env = gym.make("Pendulum-v0")
 agent = DDPG("mlp", env)
 parameter_server = ParameterServer(

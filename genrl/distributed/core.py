@@ -23,6 +23,10 @@ def _get_rref(idx):
 def _store_rref(idx, rref):
     global _rref_reg
     with _global_lock:
+        if idx in _rref_reg.keys():
+            raise Warning(
+                f"Re-assigning RRef for key: {idx}. Make sure you are not using duplicate names for nodes"
+            )
         _rref_reg[idx] = rref
 
 
@@ -142,22 +146,3 @@ class Master:
     @property
     def node_count(self):
         return self._node_counter
-
-
-class DistributedTrainer(ABC):
-    def __init__(self, agent):
-        self.agent = agent
-        self._completed_training_flag = False
-
-    @abstractmethod
-    def train(self, parameter_server_rref, experience_server_rref):
-        pass
-
-    def train_wrapper(self, parameter_server_rref, experience_server_rref):
-        self._completed_training_flag = False
-        print("TRAINER: CALLING TRAIN")
-        self.train(parameter_server_rref, experience_server_rref)
-        self._completed_training_flag = True
-
-    def is_done(self):
-        return self._completed_training_flag
