@@ -1,57 +1,131 @@
 import torch.distributed.rpc as rpc
 
-from genrl.distributed.utils import remote_method, set_environ
+import threading
+
+from abc import ABC, abstractmethod
+import torch.multiprocessing as mp
+import os
+import time
+
+_rref_reg = {}
+_global_lock = threading.Lock()
+
+
+def _get_rref(idx):
+    global _rref_reg
+    with _global_lock:
+        if idx in _rref_reg.keys():
+            return _rref_reg[idx]
+        else:
+            return None
+
+
+def _store_rref(idx, rref):
+    global _rref_reg
+    with _global_lock:
+        _rref_reg[idx] = rref
+
+
+def get_rref(idx):
+    rref = rpc.rpc_sync("master", _get_rref, args=(idx,))
+    while rref is None:
+        time.sleep(0.5)
+        rref = rpc.rpc_sync("master", _get_rref, args=(idx,))
+    return rref
+
+
+def store_rref(idx, rref):
+    rpc.rpc_sync("master", _store_rref, args=(idx, rref))
+
+
+def set_environ(address, port):
+    os.environ["MASTER_ADDR"] = str(address)
+    os.environ["MASTER_PORT"] = str(port)
 
 
 class Node:
     def __init__(self, name, master, rank):
         self._name = name
         self.master = master
-        self.master.increment_node_count()
         if rank is None:
             self._rank = master.node_count
-        elif rank > 0 and rank < master.world_size:
+        elif rank >= 0 and rank < master.world_size:
             self._rank = rank
-        elif rank == 0:
-            raise ValueError("Rank of 0 is invalid for node")
         elif rank >= master.world_size:
             raise ValueError("Specified rank greater than allowed by world size")
         else:
             raise ValueError("Invalid value of rank")
+        self.p = None
+
+    def __del__(self):
+        if self.p is None:
+            raise RuntimeWarning(
+                "Removing node when process was not initialised properly"
+            )
+        else:
+            self.p.join()
+
+    @staticmethod
+    def _target_wrapper(target, **kwargs):
+        pid = os.getpid()
+        print(f"Starting {kwargs['name']} with pid {pid}")
+        set_environ(kwargs["master_address"], kwargs["master_port"])
+        target(**kwargs)
+        print(f"Shutdown {kwargs['name']} with pid {pid}")
+
+    def init_proc(self, target, kwargs):
+        kwargs.update(
+            dict(
+                name=self.name,
+                master_address=self.master.address,
+                master_port=self.master.port,
+                world_size=self.master.world_size,
+                rank=self.rank,
+            )
+        )
+        self.p = mp.Process(target=self._target_wrapper, args=(target,), kwargs=kwargs)
+
+    def start_proc(self):
+        if self.p is None:
+            raise RuntimeError("Trying to start uninitialised process")
+        self.p.start()
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def rref(self):
-        return self.master[self.name]
+        return get_rref(self.name)
 
     @property
     def rank(self):
         return self._rank
 
 
-class Master(Node):
-    def __init__(self, world_size, address="localhost", port=29500):
-        print("initing master")
+def _run_master(world_size):
+    print(f"Starting master at {os.getpid()}")
+    rpc.init_rpc("master", rank=0, world_size=world_size)
+    rpc.shutdown()
+
+
+class Master:
+    def __init__(self, world_size, address="localhost", port=29501):
         set_environ(address, port)
-        print("initing master")
-        rpc.init_rpc(name="master", rank=0, world_size=world_size)
-        print("initing master")
         self._world_size = world_size
-        self._rref = rpc.RRef(self)
-        print("initing master")
-        self._rref_reg = {}
         self._address = address
         self._port = port
         self._node_counter = 0
+        self.p = mp.Process(target=_run_master, args=(world_size,))
+        self.p.start()
 
-    def store_rref(self, parent_rref, idx):
-        self._rref_reg[idx] = parent_rref
-
-    def fetch_rref(self, idx):
-        return self._rref_reg[idx]
-
-    @property
-    def rref(self):
-        return self._rref
+    def __del__(self):
+        if self.p is None:
+            raise RuntimeWarning(
+                "Shutting down master when it was not initialised properly"
+            )
+        else:
+            self.p.join()
 
     @property
     def world_size(self):
@@ -69,22 +143,19 @@ class Master(Node):
     def node_count(self):
         return self._node_counter
 
-    def increment_node_counter(self):
-        self._node_counter += 1
-        if self.node_count >= self.world_size:
-            raise Exception("Attempt made to add more nodes than specified by world size")
 
-
-class DistributedTrainer:
+class DistributedTrainer(ABC):
     def __init__(self, agent):
         self.agent = agent
         self._completed_training_flag = False
 
+    @abstractmethod
     def train(self, parameter_server_rref, experience_server_rref):
-        raise NotImplementedError
+        pass
 
     def train_wrapper(self, parameter_server_rref, experience_server_rref):
         self._completed_training_flag = False
+        print("TRAINER: CALLING TRAIN")
         self.train(parameter_server_rref, experience_server_rref)
         self._completed_training_flag = True
 

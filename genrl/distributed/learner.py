@@ -1,48 +1,48 @@
-from genrl.distributed import Master, Node
-from genrl.distributed.utils import remote_method, set_environ
+from genrl.distributed import Node
+from genrl.distributed.core import get_rref, store_rref
 
-import torch.multiprocessing as mp
 import torch.distributed.rpc as rpc
 
 
 class LearnerNode(Node):
-    def __init__(self, name, master, parameter_server, experience_server, trainer, rank=None):
+    def __init__(
+        self, name, master, parameter_server, experience_server, trainer, rank=None
+    ):
         super(LearnerNode, self).__init__(name, master, rank)
         self.parameter_server = parameter_server
         self.experience_server = experience_server
 
-        mp.Process(
-            target=self.run_paramater_server,
-            args=(
-                name,
-                master.rref,
-                master.address,
-                master.port,
-                master.world_size,
-                self.rank,
-                parameter_server.rref,
-                experience_server.rref,
-                trainer,
+        self.init_proc(
+            target=self.learn,
+            kwargs=dict(
+                parameter_server_name=self.parameter_server.name,
+                experience_server_name=self.experience_server.name,
+                trainer=trainer,
             ),
         )
+        self.start_proc()
 
     @staticmethod
-    def train(
+    def learn(
         name,
-        master_rref,
-        master_address,
-        master_port,
         world_size,
         rank,
-        parameter_server_rref,
-        experience_server_rref,
-        agent,
+        parameter_server_name,
+        experience_server_name,
         trainer,
+        **kwargs,
     ):
-        print("Starting Learner")
-        set_environ(master_address, master_port)
         rpc.init_rpc(name=name, world_size=world_size, rank=rank)
-        remote_method(Master.store_rref, master_rref, rpc.RRef(trainer), name)
+        print("inited trainer rpc")
+        rref = rpc.RRef(trainer)
+        print(rref)
+        store_rref(name, rref)
+        print("starting to train")
+        parameter_server_rref = get_rref(parameter_server_name)
+        experience_server_rref = get_rref(
+            experience_server_name,
+        )
+        print(f"{name}: {parameter_server_rref} {experience_server_rref}")
+        print("TRAINER: CALLING WRAPPER")
         trainer.train_wrapper(parameter_server_rref, experience_server_rref)
         rpc.shutdown()
-        print("Shutdown learner")
