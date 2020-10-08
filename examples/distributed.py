@@ -10,17 +10,13 @@ from genrl.core import ReplayBuffer
 from genrl.agents import DDPG
 from genrl.trainers import DistributedTrainer
 import gym
-import argparse
 import torch.multiprocessing as mp
 
-parser = argparse.ArgumentParser()
-parser.add_argument("-n", type=int)
-args = parser.parse_args()
 
 N_ACTORS = 2
 BUFFER_SIZE = 10
 MAX_ENV_STEPS = 100
-TRAIN_STEPS = 10
+TRAIN_STEPS = 50
 BATCH_SIZE = 1
 
 
@@ -56,7 +52,7 @@ class MyTrainer(DistributedTrainer):
 
 mp.set_start_method("fork")
 
-master = Master(world_size=6, address="localhost", port=29500)
+master = Master(world_size=8, address="localhost", port=29500)
 env = gym.make("Pendulum-v0")
 agent = DDPG("mlp", env)
 parameter_server = ParameterServer(
@@ -66,17 +62,17 @@ buffer = ReplayBuffer(BUFFER_SIZE)
 experience_server = ExperienceServer("experience-0", master, buffer, rank=2)
 trainer = MyTrainer(agent, TRAIN_STEPS, BATCH_SIZE)
 learner = LearnerNode(
-    "learner-0", master, parameter_server, experience_server, trainer, rank=3
+    "learner-0", master, "param-0", "experience-0", trainer, rank=3
 )
 actors = [
     ActorNode(
-        f"actor-{i}",
-        master,
-        parameter_server,
-        experience_server,
-        learner,
-        agent,
-        collect_experience,
+        name=f"actor-{i}",
+        master=master,
+        parameter_server_name="param-0",
+        experience_server_name="experience-0",
+        learner_name="learner-0",
+        agent=agent,
+        collect_experience=collect_experience,
         rank=i + 4,
     )
     for i in range(N_ACTORS)

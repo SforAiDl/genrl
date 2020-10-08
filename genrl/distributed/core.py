@@ -2,7 +2,6 @@ import torch.distributed.rpc as rpc
 
 import threading
 
-from abc import ABC, abstractmethod
 import torch.multiprocessing as mp
 import os
 import time
@@ -30,6 +29,12 @@ def _store_rref(idx, rref):
         _rref_reg[idx] = rref
 
 
+def _get_num_rrefs():
+    global _rref_reg
+    with _global_lock:
+        return len(_rref_reg.keys())
+
+
 def get_rref(idx):
     rref = rpc.rpc_sync("master", _get_rref, args=(idx,))
     while rref is None:
@@ -51,9 +56,7 @@ class Node:
     def __init__(self, name, master, rank):
         self._name = name
         self.master = master
-        if rank is None:
-            self._rank = master.node_count
-        elif rank >= 0 and rank < master.world_size:
+        if rank >= 0 and rank < master.world_size:
             self._rank = rank
         elif rank >= master.world_size:
             raise ValueError("Specified rank greater than allowed by world size")
@@ -107,29 +110,29 @@ class Node:
         return self._rank
 
 
-def _run_master(world_size):
-    print(f"Starting master at {os.getpid()}")
-    rpc.init_rpc("master", rank=0, world_size=world_size)
-    rpc.shutdown()
-
-
 class Master:
-    def __init__(self, world_size, address="localhost", port=29501):
+    def __init__(self, world_size, address="localhost", port=29501, secondary=False):
         set_environ(address, port)
         self._world_size = world_size
         self._address = address
         self._port = port
-        self._node_counter = 0
-        self.p = mp.Process(target=_run_master, args=(world_size,))
-        self.p.start()
+        self._secondary = secondary
+
+        if not self._secondary:
+            self.p = mp.Process(target=self._run_master, args=(world_size,))
+            self.p.start()
+        else:
+            self.p = None
 
     def __del__(self):
-        if self.p is None:
-            raise RuntimeWarning(
-                "Shutting down master when it was not initialised properly"
-            )
-        else:
+        if not self.p is None:
             self.p.join()
+
+    @staticmethod
+    def _run_master(world_size):
+        print(f"Starting master at {os.getpid()}")
+        rpc.init_rpc("master", rank=0, world_size=world_size)
+        rpc.shutdown() 
 
     @property
     def world_size(self):
@@ -144,5 +147,5 @@ class Master:
         return self._port
 
     @property
-    def node_count(self):
-        return self._node_counter
+    def is_secondary(self):
+        return self._secondary

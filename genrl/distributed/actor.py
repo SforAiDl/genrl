@@ -8,22 +8,20 @@ class ActorNode(Node):
         self,
         name,
         master,
-        parameter_server,
-        experience_server,
-        learner,
+        parameter_server_name,
+        experience_server_name,
+        learner_name,
         agent,
         collect_experience,
         rank=None,
     ):
         super(ActorNode, self).__init__(name, master, rank)
-        self.parameter_server = parameter_server
-        self.experience_server = experience_server
         self.init_proc(
             target=self.act,
             kwargs=dict(
-                parameter_server_name=parameter_server.name,
-                experience_server_name=experience_server.name,
-                learner_name=learner.name,
+                parameter_server_name=parameter_server_name,
+                experience_server_name=experience_server_name,
+                learner_name=learner_name,
                 agent=agent,
                 collect_experience=collect_experience,
             ),
