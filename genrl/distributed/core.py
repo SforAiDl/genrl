@@ -132,7 +132,7 @@ class Master:
     def _run_master(world_size):
         print(f"Starting master at {os.getpid()}")
         rpc.init_rpc("master", rank=0, world_size=world_size)
-        rpc.shutdown() 
+        rpc.shutdown()
 
     @property
     def world_size(self):

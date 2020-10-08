@@ -6,7 +6,13 @@ import torch.distributed.rpc as rpc
 
 class LearnerNode(Node):
     def __init__(
-        self, name, master, parameter_server_name, experience_server_name, trainer, rank=None
+        self,
+        name,
+        master,
+        parameter_server_name,
+        experience_server_name,
+        trainer,
+        rank=None,
     ):
         super(LearnerNode, self).__init__(name, master, rank)
         self.init_proc(
