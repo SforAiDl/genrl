@@ -48,5 +48,5 @@ class TestAgents:
             start_steps=0,
             evaluate_frequency=1,
         )
-        ep_rs = trainer.train()
+        _ = trainer.train()
         trainer.evaluate()
