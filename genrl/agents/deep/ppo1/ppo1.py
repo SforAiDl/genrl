@@ -86,6 +86,17 @@ class PPO1(OnPolicyAgent):
                 action_lim=action_lim,
                 activation=self.activation,
             ).to(self.device)
+        elif isinstance(self.network, str) and self.shared_layers is not None:
+            arch_type = self.network + "s"
+            self.ac = get_model("ac", arch_type)(
+                state_dim,
+                action_dim,
+                critic_prev=self.critic_prev,
+                actor_prev=self.actor_prev,
+                shared_layers=self.shared_layers,
+                critic_post=self.value_layers,
+                actor_post=self.policy_layers,
+            ).to(self.device)
         else:
             self.ac = self.network.to(self.device)
 

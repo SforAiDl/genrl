@@ -13,13 +13,13 @@ from genrl.environments.vec_env import VecEnv
 
 def get_model(type_: str, name_: str) -> Union:
     """
-        Utility to get the class of required function
+            Utility to get the class of required function
 
-        :param type_: "ac" for Actor Critic, "v" for Value, "p" for Policy
-        :param name_: Name of the specific structure of model. (
+            :param type_: "ac" for Actor Critic, "v" for Value, "p" for Policy
+            :param name_: Name of the specific structure of model. (
     Eg. "mlp" or "cnn")
-        :type type_: string
-        :returns: Required class. Eg. MlpActorCritic
+            :type type_: string
+            :returns: Required class. Eg. MlpActorCritic
     """
     if type_ == "ac":
         from genrl.core import get_actor_critic_from_name
@@ -42,13 +42,13 @@ def mlp(
     sac: bool = False,
 ):
     """
-        Generates an MLP model given sizes of each layer
+            Generates an MLP model given sizes of each layer
 
-        :param sizes: Sizes of hidden layers
-        :param sac: True if Soft Actor Critic is being used, else False
-        :type sizes: tuple or list
-        :type sac: bool
-        :returns: (Neural Network with fully-connected linear layers and
+            :param sizes: Sizes of hidden layers
+            :param sac: True if Soft Actor Critic is being used, else False
+            :type sizes: tuple or list
+            :type sac: bool
+            :returns: (Neural Network with fully-connected linear layers and
     activation layers)
     """
     layers = []
@@ -63,6 +63,166 @@ def mlp(
     return nn.Sequential(*layers)
 
 
+# If at all you need to concatenate states to actions after passing states through n FC layers
+def mlp_concat(
+    layer_sizes: Tuple,
+    weight_init: str = "xavier_uniform",
+    activation_func: str = "relu",
+    concat_ind: int = -1,  # negative number means no concatenation
+    sac: bool = False,
+):
+    """
+            Generates an MLP model given sizes of each layer
+
+            :param layer_sizes: Sizes of hidden layers
+            :param weight_init: type of weight initialization
+            :param activation_func: type of activation function
+            :param concat_ind: index of layer at which actions to be concatenated
+            :param sac: True if Soft Actor Critic is being used, else False
+            :type layer_sizes: tuple or list
+            :type concat_ind: int
+            :type sac: bool
+            :type weight_init,activation_func: string
+            :returns: (Neural Network with fully-connected linear layers and
+    activation layers)
+    """
+    layers = []
+    limit = len(layer_sizes) if sac is False else len(layer_sizes) - 1
+
+    # add more activations
+    activation = nn.Tanh() if activation_func == "tanh" else nn.ReLU()
+
+    # add more weight init
+    if weight_init == "xavier_uniform":
+        weight_init = torch.nn.init.xavier_uniform_
+    elif weight_init == "xavier_normal":
+        weight_init = torch.nn.init.xavier_normal_
+
+    for layer in range(limit - 1):
+        if layer == concat_ind:
+            continue
+        act = activation if layer < limit - 2 else nn.Identity()
+        layers += [nn.Linear(layer_sizes[layer], layer_sizes[layer + 1])]
+        weight_init(layers[-1].weight)
+        layers += [act]
+
+    return nn.Sequential(*layers)
+
+
+def shared_mlp(
+    network1_prev: Tuple,
+    network2_prev: Tuple,
+    shared_layers: Tuple,
+    network1_post: Tuple,
+    network2_post: Tuple,
+    weight_init: str = "xavier_uniform",
+    activation_func: str = "relu",
+    sac: bool = False,
+):
+    """
+            Generates an MLP model given sizes of each layer (Mostly used for SharedActorCritic)
+
+            :param network1_prev: Sizes of network1's initial layers
+            :param network2_prev: Sizes of network2's initial layers
+            :param shared: Sizes of shared layers
+            :param network1_post: Sizes of network1's latter layers
+            :param network2_post: Sizes of network2's latter layers
+            :param weight_init: type of weight initialization
+            :param activation_func: type of activation function
+            :param sac: True if Soft Actor Critic is being used, else False
+            :type network1_prev,network2_prev,shared,network1_post,network2_post: tuple or list
+            :type weight_init,activation_func: string
+            :type sac: bool
+            :returns: network1 and networ2(Neural Network with fully-connected linear layers and
+    activation layers)
+    """
+
+    if len(network1_prev) != 0:
+        net1_prev = nn.ModuleList()
+    if len(network2_prev) != 0:
+        net2_prev = nn.ModuleList()
+    if len(shared_layers) != 0:
+        shared = nn.ModuleList()
+    if len(network1_post) != 0:
+        net1_post = nn.ModuleList()
+    if len(network2_post) != 0:
+        net2_post = nn.ModuleList()
+
+    # add more weight init
+    if weight_init == "xavier_uniform":
+        weight_init = torch.nn.init.xavier_uniform_
+    elif weight_init == "xavier_normal":
+        weight_init = torch.nn.init.xavier_normal_
+    else:
+        weight_init = None
+
+    if activation_func == "relu":
+        activation = nn.ReLU()
+    elif activation_func == "tanh":
+        activation = nn.Tanh()
+    else:
+        activation = None
+
+    if len(shared_layers) != 0 or len(network1_post) != 0 or len(network2_post) != 0:
+        if len(network1_prev) != 0 and len(network2_prev) != 0:
+            if not (
+                network1_prev[-1] == network2_prev[-1]
+                and network1_prev[-1] == shared_layers[0]
+                and network1_post[0] == network2_post[0]
+                and network1_post[0] == shared_layers[-1]
+            ):
+                raise ValueError
+        else:
+            if not (
+                network1_post[0] == network2_post[0]
+                and network1_post[0] == shared_layers[-1]
+            ):
+                raise ValueError
+
+    for i in range(len(network1_prev) - 1):
+        net1_prev.append(nn.Linear(network1_prev[i], network1_prev[i + 1]))
+        if weight_init is not None:
+            weight_init(net1_prev[-1].weight)
+        if activation is not None:
+            net1_prev.append(activation)
+
+    for i in range(len(network2_prev) - 1):
+        net2_prev.append(nn.Linear(network2_prev[i], network2_prev[i + 1]))
+        if weight_init is not None:
+            weight_init(net2_prev[-1].weight)
+        if activation is not None:
+            net2_prev.append(activation)
+
+    for i in range(len(shared_layers) - 1):
+        shared.append(nn.Linear(shared_layers[i], shared_layers[i + 1]))
+        if weight_init is not None:
+            weight_init(shared[-1].weight)
+        if activation is not None:
+            shared.append(activation)
+
+    for i in range(len(network1_post) - 1):
+        net1_post.append(nn.Linear(network1_post[i], network1_post[i + 1]))
+        if weight_init is not None:
+            weight_init(net1_post[-1].weight)
+        if activation is not None:
+            net1_post.append(activation)
+
+    for i in range(len(network2_post) - 1):
+        net2_post.append(nn.Linear(network2_post[i], network2_post[i + 1]))
+        if weight_init is not None:
+            weight_init(net2_post[-1].weight)
+        if activation is not None:
+            net2_post.append(activation)
+
+    if len(network1_prev) != 0 and len(network2_prev) != 0:
+        network1 = nn.Sequential(*net1_prev, *shared, *net1_post)
+        network2 = nn.Sequential(*net2_prev, *shared, *net2_post)
+    else:
+        network1 = nn.Sequential(*shared, *net1_post)
+        network2 = nn.Sequential(*shared, *net2_post)
+    return network1, network2
+
+
 def cnn(
     channels: Tuple = (4, 16, 32),
     kernel_sizes: Tuple = (8, 4),
@@ -70,18 +230,18 @@ def cnn(
     **kwargs,
 ) -> (Tuple):
     """
-        (Generates a CNN model given input dimensions, channels, kernel_sizes and
+            (Generates a CNN model given input dimensions, channels, kernel_sizes and
     strides)
 
-        :param channels: Input output channels before and after each convolution
-        :param kernel_sizes: Kernel sizes for each convolution
-        :param strides: Strides for each convolution
-        :param in_size: Input dimensions (assuming square input)
-        :type channels: tuple
-        :type kernel_sizes: tuple
-        :type strides: tuple
-        :type in_size: int
-        :returns: (Convolutional Neural Network with convolutional layers and
+            :param channels: Input output channels before and after each convolution
+            :param kernel_sizes: Kernel sizes for each convolution
+            :param strides: Strides for each convolution
+            :param in_size: Input dimensions (assuming square input)
+            :type channels: tuple
+            :type kernel_sizes: tuple
+            :type strides: tuple
+            :type in_size: int
+            :returns: (Convolutional Neural Network with convolutional layers and
     activation layers)
     """
 
@@ -107,12 +267,12 @@ def noisy_mlp(fc_layers: List[int], noisy_layers: List[int], activation="relu"):
     """Noisy MLP generating helper function
 
     Args:
-        fc_layers (:obj:`list` of :obj:`int`): List of fully connected layers
-        noisy_layers (:obj:`list` of :obj:`int`): :ist of noisy layers
-        activation (str): Activation function to be used. ["tanh", "relu"]
+            fc_layers (:obj:`list` of :obj:`int`): List of fully connected layers
+            noisy_layers (:obj:`list` of :obj:`int`): :ist of noisy layers
+            activation (str): Activation function to be used. ["tanh", "relu"]
 
     Returns:
-        Noisy MLP model
+            Noisy MLP model
     """
     model = []
     act = nn.Tanh if activation == "tanh" else nn.ReLU()
@@ -134,15 +294,15 @@ def get_env_properties(
     env: Union[gym.Env, VecEnv], network: Union[str, Any] = "mlp"
 ) -> (Tuple[int]):
     """
-        Finds important properties of environment
+            Finds important properties of environment
 
-        :param env: Environment that the agent is interacting with
-        :type env: Gym Environment
-        :param network: Type of network architecture, eg. "mlp", "cnn"
-        :type network: str
-        :returns: (State space dimensions, Action space dimensions,
+            :param env: Environment that the agent is interacting with
+            :type env: Gym Environment
+            :param network: Type of network architecture, eg. "mlp", "cnn"
+            :type network: str
+            :returns: (State space dimensions, Action space dimensions,
     discreteness of action space and action limit (highest action value)
-        :rtype: int, float, ...; int, float, ...; bool; int, float, ...
+            :rtype: int, float, ...; int, float, ...; bool; int, float, ...
     """
     if network == "cnn":
         state_dim = env.framestack
@@ -199,3 +359,21 @@ def safe_mean(log: Union[torch.Tensor, List[int]]):
     else:
         func = np.mean
     return func(log)
+
+
+def onehot_from_logits(self, logits, eps=0.0):
+    # get best (according to current policy) actions in one-hot form
+    argmax_acs = (logits == logits.max(0, keepdim=True)[0]).float()
+    if eps == 0.0:
+        return argmax_acs
+    # get random actions in one-hot form
+    rand_acs = torch.eye(logits.shape[1])[
+        [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
+    ]
+    # chooses between best and random actions using epsilon greedy
+    return torch.stack(
+        [
+            argmax_acs[i] if r > eps else rand_acs[i]
+            for i, r in enumerate(torch.rand(logits.shape[0]))
+        ]
+    )

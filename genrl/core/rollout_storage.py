@@ -257,3 +257,202 @@ class RolloutBuffer(BaseBuffer):
             self.returns[batch_inds].flatten(),
         )
         return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
+
+
+class MultiAgentRolloutBuffer(BaseBuffer):
+    """
+    Rollout buffer used in on-policy algorithms like MAA2C/MAA3C.
+    :param num_agents: (int) Max number of agents in the environment
+    :param buffer_size: (int) Max number of element in the buffer
+    :param env: (Environment) The environment being trained on
+    :param device: (torch.device)
+    :param gae_lambda: (float) Factor for trade-off of bias vs variance for Generalized Advantage Estimator
+        Equivalent to classic advantage when set to 1.
+    :param gamma: (float) Discount factor
+    :param n_envs: (int) Number of parallel environments
+    """
+
+    def __init__(
+        self,
+        num_agents: int,
+        buffer_size: int,
+        env,
+        device: Union[torch.device, str] = "cpu",
+        gae_lambda: float = 1,
+        gamma: float = 0.99,
+    ):
+        super(MultiAgentRolloutBuffer, self).__init__(buffer_size, env, device)
+
+        self.buffer_size = buffer_size
+        self.num_agents = num_agents
+        self.env = env
+        self.device = device
+        self.gae_lambda = gae_lambda
+        self.gamma = gamma
+
+        self.observations, self.actions, self.rewards, self.advantages = (
+            [None] * self.num_agents,
+            [None] * self.num_agents,
+            [None] * self.num_agents,
+            [None] * self.num_agents,
+        )
+        self.returns, self.dones, self.values, self.log_probs = (
+            [None] * self.num_agents,
+            [None] * self.num_agents,
+            [None] * self.num_agents,
+            [None] * self.num_agents,
+        )
+        self.generator_ready = False
+        self.reset()
+
+    def reset(self) -> None:
+        self.observations = torch.zeros(
+            *(self.buffer_size, self.env.n_envs, self.num_agents, *self.env.obs_shape)
+        )
+        self.actions = torch.zeros(
+            *(
+                self.buffer_size,
+                self.env.n_envs,
+                self.num_agents,
+                *self.env.action_shape,
+            )
+        )
+        self.rewards = torch.zeros(self.buffer_size, self.env.n_envs, self.num_agents)
+        self.returns = torch.zeros(self.buffer_size, self.env.n_envs, self.num_agents)
+        self.dones = torch.zeros(self.buffer_size, self.env.n_envs, self.num_agents)
+        self.values = torch.zeros(self.buffer_size, self.env.n_envs, self.num_agents)
+        self.log_probs = torch.zeros(self.buffer_size, self.env.n_envs, self.num_agents)
+        self.advantages = torch.zeros(
+            self.buffer_size, self.env.n_envs, self.num_agents
+        )
+        self.generator_ready = False
+        super(MultiAgentRolloutBuffer, self).reset()
+
+    def add(
+        self,
+        obs: torch.zeros,
+        action: torch.zeros,
+        reward: torch.zeros,
+        done: torch.zeros,
+        value: torch.Tensor,
+        log_prob: torch.Tensor,
+    ) -> None:
+        """
+        :param obs: (torch.zeros) Observation
+        :param action: (torch.zeros) Action
+        :param reward: (torch.zeros)
+        :param done: (torch.zeros) End of episode signal.
+        :param value: (torch.Tensor) estimated value of the current state
+            following the current policy.
+        :param log_prob: (torch.Tensor) log probability of the action
+            following the current policy.
+        """
+        if len(log_prob.shape) == 0:
+            # Reshape 0-d tensor to avoid error
+            log_prob = log_prob.reshape(-1, 1)
+
+        self.observations[self.pos] = obs.detach().clone()
+        self.actions[self.pos] = action.squeeze().detach().clone()
+        self.rewards[self.pos] = reward.detach().clone()
+        self.dones[self.pos] = done.detach().clone()
+        self.values[self.pos] = (
+            value.detach().clone().flatten().reshape(-1, self.num_agents)
+        )
+        self.log_probs[self.pos] = (
+            log_prob.detach().clone().flatten().reshape(-1, self.num_agents)
+        )
+        self.pos += 1
+
+        if self.pos == self.buffer_size:
+            self.full = True
+
+    def get(
+        self, batch_size: Optional[int] = None
+    ) -> Generator[RolloutBufferSamples, None, None]:
+        assert self.full, ""
+        indices = np.random.permutation(self.buffer_size * self.env.n_envs)
+        # Prepare the data
+        if not self.generator_ready:
+            for tensor in [
+                "observations",
+                "actions",
+                "values",
+                "log_probs",
+                "advantages",
+                "returns",
+            ]:
+                self.__dict__[tensor] = self.swap_and_flatten(self.__dict__[tensor])
+            self.generator_ready = True
+
+        # Return everything, don't create minibatches
+        if batch_size is None:
+            batch_size = self.buffer_size * self.env.n_envs
+
+        start_idx = 0
+        while start_idx < self.buffer_size * self.env.n_envs:
+            yield self._get_samples(indices[start_idx : start_idx + batch_size])
+            start_idx += batch_size
+
+    def _get_samples(self, batch_inds: np.ndarray) -> RolloutBufferSamples:
+        data = (
+            self.observations[batch_inds],
+            self.actions[batch_inds],
+            self.values[batch_inds].flatten().reshape(-1, self.num_agents),
+            self.log_probs[batch_inds].flatten().reshape(-1, self.num_agents),
+            self.advantages[batch_inds].flatten().reshape(-1, self.num_agents),
+            self.returns[batch_inds].flatten().reshape(-1, self.num_agents),
+        )
+        return RolloutBufferSamples(*tuple(map(self.to_torch, data)))
+
+    def compute_returns_and_advantage(
+        self, last_value: torch.Tensor, dones: torch.zeros, use_gae: bool = False
+    ) -> None:
+        """
+        Post-processing step: compute the returns (sum of discounted rewards)
+        and advantage (A(s) = R - V(S)).
+        Adapted from Stable-Baselines PPO2.
+        :param last_value: (torch.Tensor)
+        :param dones: (torch.zeros)
+        :param use_gae: (bool) Whether to use Generalized Advantage Estimation
+            or normal advantage for advantage computation.
+        """
+        last_value = last_value.flatten().reshape(-1, self.num_agents)
+
+        if use_gae:
+            last_gae_lam = 0
+            for step in reversed(range(self.buffer_size)):
+                if step == self.buffer_size - 1:
+                    next_non_terminal = 1.0 - dones
+                    next_value = last_value
+                else:
+                    next_non_terminal = 1.0 - self.dones[step + 1]
+                    next_value = self.values[step + 1]
+                delta = (
+                    self.rewards[step]
+                    + self.gamma * next_value * next_non_terminal
+                    - self.values[step]
+                )
+                last_gae_lam = (
+                    delta
+                    + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+                )
+                self.advantages[step] = last_gae_lam
+            self.returns = self.advantages + self.values
+        else:
+            # Discounted return with value bootstrap
+            # Note: this is equivalent to GAE computation
+            # with gae_lambda = 1.0
+            last_return = 0.0
+            for step in reversed(range(self.buffer_size)):
+                if step == self.buffer_size - 1:
+                    next_non_terminal = 1.0 - dones
+                    next_value = last_value
+                    last_return = self.rewards[step] + next_non_terminal * next_value
+                else:
+                    next_non_terminal = 1.0 - self.dones[step + 1]
+                    last_return = (
+                        self.rewards[step]
+                        + self.gamma * last_return * next_non_terminal
+                    )
+                self.returns[step] = last_return
+            self.advantages = self.returns - self.values

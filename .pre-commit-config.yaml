@@ -1,11 +1,12 @@
 repos:
   - repo: https://github.com/asottile/seed-isort-config
-    rev: v1.9.4
+    rev: v2.2.0
     hooks:
         - id: seed-isort-config
           args: [--exclude=^((examples|docs)/.*)$]
 
   - repo: https://github.com/timothycrosley/isort
+
     rev: 5.4.2
     hooks:
         - id: isort
@@ -14,7 +15,7 @@ repos:
     rev: 20.8b1
     hooks:
         - id: black
-          language_version: python3.7
+          language_version: python3
 
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.3

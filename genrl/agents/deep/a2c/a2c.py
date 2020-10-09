@@ -71,10 +71,12 @@ class A2C(OnPolicyAgent):
         state_dim, action_dim, discrete, action_lim = get_env_properties(
             self.env, self.network
         )
+
         if isinstance(self.network, str):
             arch_type = self.network
             if self.shared_layers is not None:
                 arch_type += "s"
+
             self.ac = get_model("ac", arch_type)(
                 state_dim,
                 action_dim,
