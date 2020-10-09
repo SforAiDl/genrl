@@ -3,7 +3,7 @@ from typing import Generator, NamedTuple, Optional, Union
 import gym
 import torch
 
-from genrl.core.buffer import BaseBuffer
+from genrl.core.buffers import BaseBuffer
 from genrl.environments.vec_env import VecEnv
 
 

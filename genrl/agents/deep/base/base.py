@@ -17,8 +17,9 @@ class BaseAgent(ABC):
         create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
-        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
-            of the Q-value function
+        policy_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the policy
+        value_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the critics
+        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the Q-value function
         seed (int): Seed for randomness

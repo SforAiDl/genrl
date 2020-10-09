@@ -131,6 +131,8 @@ class OffPolicyTrainer(Trainer):
                 self.env.reset_single_env(i)
                 self.episodes += 1
                 game_over = True
+            if timestep == self.max_ep_len:
+                game_over = True
 
         return game_over
 

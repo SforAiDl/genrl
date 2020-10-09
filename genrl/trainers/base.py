@@ -52,6 +52,7 @@ class Trainer(ABC):
         run_num: int = None,
         load_weights: str = None,
         load_hyperparams: str = None,
+        load_buffer: str = None,
         render: bool = False,
         evaluate_episodes: int = 50,
         seed: Optional[int] = None,
@@ -70,6 +71,7 @@ class Trainer(ABC):
         self.run_num = run_num
         self.load_weights = load_weights
         self.load_hyperparams = load_hyperparams
+        self.load_buffer = load_buffer
         self.render = render
         self.evaluate_episodes = evaluate_episodes
 
@@ -123,7 +125,7 @@ class Trainer(ABC):
                 )
                 return
 
-    def save(self, timestep: int) -> None:
+    def save(self, timestep: int, save_buffer: bool = False) -> None:
         """Function to save all relevant parameters of a given agent
 
         Args:
@@ -158,6 +160,12 @@ class Trainer(ABC):
 
         torch.save(weights, filename_weights)
 
+        if save_buffer:
+            if self.off_policy:
+                self.agent.replay_buffer.save(path, run_num)
+            else:
+                self.agent.rollout.save(path, run_num)
+
     def load(self):
         """Function to load saved parameters of a given agent"""
         try:
@@ -177,7 +185,15 @@ class Trainer(ABC):
         except FileNotFoundError:
             raise Exception("Invalid weights File Name")
 
-        print("Loaded Pretrained Model weights and hyperparameters!")
+        try:
+            if self.off_policy:
+                self.agent.replay_buffer.load(self.load_buffer)
+            else:
+                self.agent.rollout.load(self.load_buffer)
+        except FileNotFoundError:
+            raise Exception("Invalid buffer File Name")
+
+        print("Loaded Pretrained Model weights, buffer and hyperparameters!")
 
     @property
     def n_envs(self) -> int:

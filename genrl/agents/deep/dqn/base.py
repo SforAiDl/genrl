@@ -56,7 +56,7 @@ class DQN(OffPolicyAgent):
         if self.create_model:
             self._create_model()
 
-    def _create_model(self, *args, **kwargs) -> None:
+    def _create_model(self, **kwargs) -> None:
         """Function to initialize Q-value model
 
         This will create the Q-value function of the agent.
