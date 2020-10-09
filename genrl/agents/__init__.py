@@ -25,6 +25,7 @@ from genrl.agents.bandits.multiarmed.thompson import ThompsonSamplingMABAgent  #
 from genrl.agents.bandits.multiarmed.ucb import UCBMABAgent  # noqa
 from genrl.agents.classical.qlearning.qlearning import QLearning  # noqa
 from genrl.agents.classical.sarsa.sarsa import SARSA  # noqa
+from genrl.agents.classical.valueiteration.valueiteration import ValueIterator  # noqa
 from genrl.agents.deep.a2c.a2c import A2C  # noqa
 from genrl.agents.deep.base.base import BaseAgent  # noqa
 from genrl.agents.deep.base.offpolicy import OffPolicyAgent, OffPolicyAgentAC  # noqa
