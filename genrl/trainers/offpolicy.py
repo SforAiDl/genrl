@@ -107,14 +107,13 @@ class OffPolicyTrainer(Trainer):
         )
         self.training_rewards = []
 
-    def check_game_over_status(self, timestep: int, dones: List[bool]) -> bool:
+    def check_game_over_status(self, dones: List[bool]) -> bool:
         """Takes care of game over status of envs
 
         Whenever an env shows done, the reward accumulated is stored in a list
         and the env is reset. Note that not all envs in the Vectorised Env are reset.
 
         Args:
-            timestep (int): Current timestep of training
             dones (:obj:`list`): Game over statuses of all envs
 
         Return:
@@ -161,11 +160,14 @@ class OffPolicyTrainer(Trainer):
 
             state = next_state.detach().clone()
 
-            if self.check_game_over_status(timestep, done):
+            if self.check_game_over_status(done):
                 self.noise_reset()
 
                 if self.episodes % self.log_interval == 0:
                     self.log(timestep)
+
+                if self.episodes % self.epochs == 0:
+                    break
 
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.agent.update_params(self.update_interval)
