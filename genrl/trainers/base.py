@@ -111,8 +111,9 @@ class Trainer(ABC):
                 for i, di in enumerate(done):
                     if di:
                         episode += 1
-                        episode_rewards.append(episode_reward[i])
+                        episode_rewards.append(episode_reward[i].clone().detach())
                         episode_reward[i] = 0
+                        self.env.reset_single_env(i)
             if episode == self.evaluate_episodes:
                 print(
                     "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
