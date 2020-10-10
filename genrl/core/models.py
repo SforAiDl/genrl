@@ -38,7 +38,7 @@ class VAE(nn.Module):
         # When sampling from the VAE, the latent vector is clipped to [-0.5, 0.5]
         if z is None:
             z = (
-                torch.randn((state.shape[0], state.shape[1], self.vae_layers))
+                torch.randn((*state.shape[:-1], self.vae_layers))
                 .to(self.device)
                 .clamp(-0.5, 0.5)
             )

@@ -1,6 +1,9 @@
+from typing import List
+
+import numpy as np
 import torch
 
-from genrl.trainers import OffPolicyTrainer
+from genrl.trainers.offpolicy import OffPolicyTrainer
 
 
 class OfflineTrainer(OffPolicyTrainer):
@@ -34,7 +37,9 @@ class OfflineTrainer(OffPolicyTrainer):
     """
 
     def __init__(self, *args, buffer_path: str = None, **kwargs):
-        super(OfflineTrainer, self).__init__(*args, **kwargs)
+        super(OfflineTrainer, self).__init__(
+            *args, start_update=0, warmup_steps=0, update_interval=1, **kwargs
+        )
         self.buffer_path = buffer_path
 
         if self.buffer_path is None:
@@ -49,34 +54,62 @@ class OfflineTrainer(OffPolicyTrainer):
         """
         raise NotImplementedError
 
+    def check_game_over_status(self, timestep: int) -> bool:
+        """Takes care of game over status of envs
+
+        Whenever a trajectory shows done, the reward accumulated is stored in a list
+
+        Args:
+            timestep (int): Timestep for which game over condition needs to be checked
+
+        Return:
+            game_over (bool): True, if at least one environment was done. Else, False
+        """
+        game_over = False
+
+        for i, batch_done in enumerate(self.agent.batch.dones):
+            for j, done in enumerate(batch_done):
+                if done or timestep == self.max_ep_len:
+                    self.episodes += 1
+                    game_over = True
+
+        return game_over
+
+    def log(self, timestep: int) -> None:
+        """Helper function to log
+
+        Sends useful parameters to the logger.
+
+        Args:
+            timestep (int): Current timestep of training
+        """
+        self.logger.write(
+            {
+                "timestep": timestep,
+                "Episode": self.episodes,
+                **self.agent.get_logging_params(),
+            },
+            self.log_key,
+        )
+
     def train(self) -> None:
         """Main training method"""
-
         self.buffer.load(self.buffer_path)
-
-        state = self.env.reset()
         self.noise_reset()
 
         self.training_rewards = []
         self.episodes = 0
 
-        for timestep in range(0, self.max_timesteps, self.env.n_envs):
-            done = self.env.dones
+        for timestep in range(0, self.max_timesteps):
+            self.agent.update_params()
 
-            if self.check_game_over_status(timestep, done):
-                self.noise_reset()
+            if timestep % self.log_interval == 0:
+                self.log(timestep)
 
-                if self.episodes % self.log_interval == 0:
-                    self.log(timestep)
+            if self.episodes >= self.epochs:
+                break
 
-            if timestep >= self.start_update and timestep % self.update_interval == 0:
-                self.agent.update_params(self.update_interval)
-
-            if (
-                timestep >= self.start_update
-                and self.save_interval != 0
-                and timestep % self.save_interval == 0
-            ):
+            if self.save_interval != 0 and timestep % self.save_interval == 0:
                 self.save(timestep)
 
         self.env.close()

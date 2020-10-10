@@ -113,8 +113,9 @@ class Trainer(ABC):
                 for i, di in enumerate(done):
                     if di:
                         episode += 1
-                        episode_rewards.append(episode_reward[i])
+                        episode_rewards.append(episode_reward[i].clone())
                         episode_reward[i] = 0
+                        self.env.reset_single_env(i)
             if episode == self.evaluate_episodes:
                 print(
                     "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
@@ -154,6 +155,7 @@ class Trainer(ABC):
 
         filename_hyperparams = "{}/{}-log-{}.toml".format(path, run_num, timestep)
         filename_weights = "{}/{}-log-{}.pt".format(path, run_num, timestep)
+        filename_buffer = "{}/{}-buffer-{}.pt".format(path, run_num, timestep)
         hyperparameters, weights = self.agent.get_hyperparams()
         with open(filename_hyperparams, mode="w") as f:
             toml.dump(hyperparameters, f)
@@ -162,9 +164,9 @@ class Trainer(ABC):
 
         if save_buffer:
             if self.off_policy:
-                self.agent.replay_buffer.save(path, run_num)
+                self.agent.replay_buffer.save(filename_buffer)
             else:
-                self.agent.rollout.save(path, run_num)
+                self.agent.rollout.save(filename_buffer)
 
     def load(self):
         """Function to load saved parameters of a given agent"""

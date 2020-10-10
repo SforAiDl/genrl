@@ -186,7 +186,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        """Get target Q values for the TD3
+        """Get target Q values
 
         Args:
             next_states (:obj:`torch.Tensor`): Next states for which target Q-values
@@ -195,7 +195,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
             dones (:obj:`list`): Game over status for each environment
 
         Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
+            target_q_values (:obj:`torch.Tensor`): Target Q values
         """
         next_target_actions = self.ac_target.get_action(next_states, True)[0]
 
@@ -241,7 +241,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             loss (:obj:`torch.Tensor`): Calculated policy loss
         """
-        next_best_actions = self.ac.get_action(states, True)[0]
+        next_best_actions = self.select_action(states, deterministic=True)
         q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
         policy_loss = -torch.mean(q_values)
         return policy_loss

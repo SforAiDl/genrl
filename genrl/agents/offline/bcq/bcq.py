@@ -7,8 +7,9 @@ import torch.nn.functional as F
 import torch.optim as opt
 
 from genrl.agents import OffPolicyAgentAC
-from genrl.core import ActionNoise
 from genrl.core.models import VAE
+from genrl.core.noise import ActionNoise
+from genrl.core.policies import MlpPolicy
 from genrl.utils.utils import get_env_properties, get_model, safe_mean
 
 
@@ -86,6 +87,9 @@ class BCQ(OffPolicyAgentAC):
                 val_type="Qsa",
                 discrete=False,
             )
+            self.ac.actor = MlpPolicy(
+                state_dim + action_dim, action_dim, self.policy_layers, discrete
+            )
             self.vae = VAE(
                 state_dim, action_dim, self.vae_layers, action_lim, self.device
             )
@@ -103,78 +107,77 @@ class BCQ(OffPolicyAgentAC):
         self.optimizer_policy = opt.Adam(actor_params, lr=self.lr_policy)
         self.optimizer_vae = opt.Adam(self.vae.parameters(), lr=self.lr_vae)
 
-    def update_params(self, update_interval: int) -> None:
-        """Update parameters of the model
+    def select_action(
+        self, state: torch.Tensor, deterministic: bool = True
+    ) -> torch.Tensor:
+        """Select action given state
+
+        Deterministic Action Selection with Noise
 
         Args:
-            update_interval (int): Interval between successive updates of the target model
+            state (:obj:`torch.Tensor`): Current state of the environment
+            deterministic (bool): Should the policy be deterministic or stochastic
+
+        Returns:
+            action (:obj:`torch.Tensor`): Action taken by the agent
         """
-        for timestep in range(update_interval):
-            batch = self.sample_from_buffer()
+        action, _ = self.ac.get_action(
+            torch.cat([state, self.vae.decode(state)], dim=-1), deterministic
+        )
+        action = action.detach()
 
-            vae_loss = self.get_vae_loss(batch)
+        # add noise to output from policy network
+        if self.noise is not None:
+            action += self.noise()
 
-            self.optimizer_vae.zero_grad()
-            vae_loss.backward()
-            self.optimizer_vae.step()
+        return torch.clamp(
+            action, self.env.action_space.low[0], self.env.action_space.high[0]
+        )
 
-            value_loss = self.get_q_loss(batch)
+    def update_params(self) -> None:
+        """Update parameters of the model"""
+        self.batch = self.sample_from_buffer()
 
-            self.optimizer_value.zero_grad()
-            value_loss.backward()
-            self.optimizer_value.step()
+        vae_loss = self.get_vae_loss()
 
-            policy_loss = self.get_p_loss(batch.states)
+        self.optimizer_vae.zero_grad()
+        vae_loss.backward()
+        self.optimizer_vae.step()
 
-            self.optimizer_policy.zero_grad()
-            policy_loss.backward()
-            self.optimizer_policy.step()
+        value_loss = self.get_q_loss(self.batch)
 
-            self.logs["policy_loss"].append(policy_loss.item())
-            self.logs["value_loss"].append(value_loss.item())
-            self.logs["vae_loss"].append(vae_loss.item())
+        self.optimizer_value.zero_grad()
+        value_loss.backward()
+        self.optimizer_value.step()
 
-            self.update_target_model()
+        policy_loss = self.get_p_loss(self.batch.states)
 
-    def get_vae_loss(self, batch: collections.namedtuple) -> None:
+        self.optimizer_policy.zero_grad()
+        policy_loss.backward()
+        self.optimizer_policy.step()
+
+        self.logs["policy_loss"].append(policy_loss.item())
+        self.logs["value_loss"].append(value_loss.item())
+        self.logs["vae_loss"].append(vae_loss.item())
+
+        self.update_target_model()
+
+    def get_vae_loss(self) -> None:
         """BCQ Function to calculate the loss of the VAE
-
-        Args:
-            batch (:obj:`collections.namedtuple` of :obj:`torch.Tensor`): Batch of experiences
 
         Returns:
             loss (:obj:`torch.Tensor`): Calculated loss of the VAE of the BCQ
         """
-        recon, mean, std = self.vae(batch.states, batch.actions)
-        recon_loss = F.mse_loss(recon, batch.actions)
+        recon, mean, std = self.vae(self.batch.states, self.batch.actions)
+        recon_loss = F.mse_loss(recon, self.batch.actions)
         KL_loss = -0.5 * (1 + torch.log(std.pow(2)) - mean.pow(2) - std.pow(2)).mean()
         vae_loss = recon_loss + 0.5 * KL_loss
         return vae_loss
 
-    def get_p_loss(self, states: torch.Tensor) -> torch.Tensor:
-        """Function to get the Policy loss
-
-        Args:
-            states (:obj:`torch.Tensor`): States for which Q-values need to be found
-
-        Returns:
-            loss (:obj:`torch.Tensor`): Calculated policy loss
-        """
-        sampled_actions = self.vae.decode(states)
-        sampled_action_state = torch.cat([states, sampled_actions], dim=-1)
-        perturbed_actions = self.ac.get_action(
-            sampled_action_state, deterministic=True
-        )[0]
-        perturbed_action_state = torch.cat([states, perturbed_actions], dim=-1)
-
-        q_values = self.ac.get_value(perturbed_action_state)
-        policy_loss = -torch.mean(q_values)
-        return policy_loss
-
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        """Get target Q values for the TD3
+        """Get target Q values for the BCQ
 
         Args:
             next_states (:obj:`torch.Tensor`): Next states for which target Q-values
@@ -183,8 +186,9 @@ class BCQ(OffPolicyAgentAC):
             dones (:obj:`list`): Game over status for each environment
 
         Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
+            target_q_values (:obj:`torch.Tensor`): Target Q values for the BCQ
         """
+        # next_states = torch.repeat_interleave(next_states, 10, 0)
         next_state_actions = torch.cat(
             [next_states, self.vae.decode(next_states)], dim=-1
         )

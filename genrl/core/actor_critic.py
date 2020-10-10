@@ -193,9 +193,7 @@ class MlpSingleActorTwoCritic(BaseActorCritic):
 
         self.num_critics = num_critics
 
-        self.actor = MlpPolicy(
-            state_dim + action_dim, action_dim, policy_layers, discrete, **kwargs
-        )
+        self.actor = MlpPolicy(state_dim, action_dim, policy_layers, discrete, **kwargs)
         self.critic1 = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
         self.critic2 = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
 

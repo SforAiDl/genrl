@@ -145,26 +145,16 @@ class ReplayBuffer(BaseBuffer):
         states, actions, rewards, next_states, dones = map(torch.stack, zip(*batch))
         return ReplayBufferSamples(states, actions, rewards, next_states, dones)
 
-    def save(self, directory: str = None, run_num: int = None) -> None:
+    def save(self, path: str = None) -> None:
         """Saves the buffer locally
 
         The buffers are saved locally so they can be used as a dataset for
             Offline RL or for other purposes
 
         Args:
-            directory (string): Directory to save buffers in
-            run_num (int): The run number associated with the training run
+            path (string): Path to save buffers in
         """
-        if run_num is None:
-            if list(os.scandir(directory)) == []:
-                run_num = 0
-            else:
-                last_path = sorted(
-                    os.scandir(directory), key=lambda d: d.stat().st_mtime
-                )[-1].path
-                run_num = int(last_path[len(directory) + 1 :].split("-")[0]) + 1
-
-        torch.save(self.buffer, "{}/run-{}.pt".format(directory, run_num))
+        torch.save(self.buffer, path)
 
     def load(self, path: str) -> None:
         """Loads the buffer from the file
