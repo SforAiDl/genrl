@@ -55,11 +55,9 @@ class VecEnv(ABC):
         self.envs = envs
         self.env = envs[0]
         self._n_envs = n_envs
-
+        self.episode_reward = torch.zeros(self.n_envs)
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
-
-        self.episode_reward = torch.zeros(self.n_envs)
 
     def __getattr__(self, name: str) -> Any:
         env = super(VecEnv, self).__getattribute__("env")
