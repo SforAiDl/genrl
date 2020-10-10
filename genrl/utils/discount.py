@@ -49,3 +49,5 @@ def compute_returns_and_advantage(
         rollout_buffer.advantages[step] = running_advantage
 
     rollout_buffer.returns = rollout_buffer.advantages + rollout_buffer.values
+
+    return rollout_buffer
