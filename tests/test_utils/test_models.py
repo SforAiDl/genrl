@@ -5,18 +5,19 @@ import pytest
 from genrl.utils.models import TabularModel
 
 
-def test_tabular_model():
-    model = TabularModel(4, 2)
+class TestClassicalModel:
+    def test_tabular_model(self):
+        model = TabularModel(4, 2)
 
-    assert model.s_model.shape == (4, 2)
-    assert model.r_model.shape == (4, 2)
-    assert model.is_empty() is True
+        assert model.s_model.shape == (4, 2)
+        assert model.r_model.shape == (4, 2)
+        assert model.is_empty() is True
 
-    model.add(3, 1, 3.1, 1)
-    assert model.is_empty() is False
+        model.add(3, 1, 3.1, 1)
+        assert model.is_empty() is False
 
-    assert model.s_model[3, 1] == 1
-    assert model.r_model[3, 1] == 3.1
+        assert model.s_model[3, 1] == 1
+        assert model.r_model[3, 1] == 3.1
 
-    assert model.sample() == (3, 1)
-    assert model.step(3, 1) == (3.1, 1)
+        assert model.sample() == (3, 1)
+        assert model.step(3, 1) == (3.1, 1)

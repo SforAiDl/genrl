@@ -53,7 +53,7 @@ class Trainer(ABC):
         load_weights: str = None,
         load_hyperparams: str = None,
         render: bool = False,
-        evaluate_episodes: int = 50,
+        evaluate_episodes: int = 25,
         seed: Optional[int] = None,
     ):
         self.agent = agent
