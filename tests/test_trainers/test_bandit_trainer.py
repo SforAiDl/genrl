@@ -2,7 +2,7 @@ from genrl.agents import NeuralGreedyAgent
 from genrl.trainers import DCBTrainer, MABTrainer
 from genrl.utils import CovertypeDataBandit
 
-from .utils import write_data
+from ..test_agents.test_bandit.utils import write_data
 
 
 def test_bandit_trainer():
