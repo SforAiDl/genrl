@@ -128,7 +128,7 @@ class A2C(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout = compute_returns_and_advantage(
+        self.rollout.returns, self.rollout.advantages = compute_returns_and_advantage(
             self.rollout, values.detach().cpu().numpy(), dones.cpu().numpy()
         )
 
