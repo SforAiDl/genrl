@@ -54,7 +54,7 @@ class Trainer(ABC):
         load_hyperparams: str = None,
         load_buffer: str = None,
         render: bool = False,
-        evaluate_episodes: int = 50,
+        evaluate_episodes: int = 25,
         seed: Optional[int] = None,
     ):
         self.agent = agent
@@ -113,7 +113,7 @@ class Trainer(ABC):
                 for i, di in enumerate(done):
                     if di:
                         episode += 1
-                        episode_rewards.append(episode_reward[i].clone())
+                        episode_rewards.append(episode_reward[i].detach().clone())
                         episode_reward[i] = 0
                         self.env.reset_single_env(i)
             if episode == self.evaluate_episodes:

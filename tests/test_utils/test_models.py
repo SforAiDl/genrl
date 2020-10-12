@@ -5,7 +5,7 @@ import pytest
 from genrl.utils.models import TabularModel
 
 
-class TestModels:
+class TestClassicalModel:
     def test_tabular_model(self):
         model = TabularModel(4, 2)
 
