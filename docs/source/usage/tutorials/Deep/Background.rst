@@ -60,7 +60,7 @@ The State Value Function is defined as the expected return starting from only St
     V^{\pi}(s) = E\left[ R_{t} \right]
 
 State Action Value Function
----------------------
+---------------------------
 
 The Action Value Function is defined as the expected return starting from a state s and a taking an action a.
 

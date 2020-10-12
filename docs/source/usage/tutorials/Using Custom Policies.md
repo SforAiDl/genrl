@@ -11,7 +11,7 @@ Import the required libraries (eg. torch, torch.nn) and from GenRL, the algorith
 import torch
 import torch.nn as nn
 
-from genrl import VPG
+from genrl.agents import VPG
 from genrl.core.policies import MlpPolicy
 from genrl.environments import VectorEnv
 from genrl.trainers import OnPolicyTrainer

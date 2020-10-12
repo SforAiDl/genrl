@@ -37,6 +37,11 @@ jobs:
       - name: Tests
         run: pytest --cov-report xml --cov='./genrl/' --cov-config=.coveragerc
 
-      - name: Code Coverage CodeCov.io
-        shell: bash
-        run: codecov --token=16dca61f-670e-4a9a-bda6-e016cb5579db
+      - name: Code Coverage Report
+        uses: codecov/codecov-action@v1
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          file: coverage.xml
+          env_vars: OS,PYTHON
