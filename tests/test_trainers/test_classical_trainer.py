@@ -6,8 +6,8 @@ from genrl.agents import SARSA, QLearning
 from genrl.trainers import ClassicalTrainer
 
 
-class TestTrainer:
-    def test_trainer(self):
+class TestClassicalTrainer:
+    def test_classical_trainer(self):
         env = gym.make("FrozenLake-v0")
         agent = QLearning(env)
         trainer = ClassicalTrainer(

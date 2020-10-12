@@ -55,11 +55,9 @@ class VecEnv(ABC):
         self.envs = envs
         self.env = envs[0]
         self._n_envs = n_envs
-
+        self.episode_reward = torch.zeros(self.n_envs)
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
-
-        self.episode_reward = torch.zeros(self.n_envs)
 
     def __getattr__(self, name: str) -> Any:
         env = super(VecEnv, self).__getattribute__("env")
@@ -119,12 +117,22 @@ class VecEnv(ABC):
 
     @property
     def obs_shape(self):
-        obs_shape = self.observation_space.shape
+        if isinstance(self.observation_space, gym.spaces.Discrete):
+            obs_shape = (1,)
+        elif isinstance(self.observation_space, gym.spaces.Box):
+            obs_shape = self.observation_space.shape
+        else:
+            raise NotImplementedError
         return obs_shape
 
     @property
     def action_shape(self):
-        action_shape = self.action_space.shape
+        if isinstance(self.action_space, gym.spaces.Box):
+            action_shape = self.action_space.shape
+        elif isinstance(self.action_space, gym.spaces.Discrete):
+            action_shape = (1,)
+        else:
+            raise NotImplementedError
         return action_shape
 
 

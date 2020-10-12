@@ -46,6 +46,7 @@ class TestDQNCNN:
             start_update=10,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_dueling_dqn(self):
@@ -66,6 +67,7 @@ class TestDQNCNN:
             start_update=10,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_prioritized_dqn(self):
