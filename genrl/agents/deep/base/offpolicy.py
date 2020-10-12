@@ -130,7 +130,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         self.doublecritic = False
 
     def select_action(
-        self, state: torch.Tensor, deterministic: bool = True
+        self, state: torch.Tensor, deterministic: bool = True, noise: bool = True
     ) -> torch.Tensor:
         """Select action given state
 
@@ -139,6 +139,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Args:
             state (:obj:`torch.Tensor`): Current state of the environment
             deterministic (bool): Should the policy be deterministic or stochastic
+            noise (bool): Should noise be added to the agent
 
         Returns:
             action (:obj:`torch.Tensor`): Action taken by the agent
@@ -147,7 +148,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         action = action.detach()
 
         # add noise to output from policy network
-        if self.noise is not None:
+        if noise and self.noise is not None:
             action += self.noise()
 
         return torch.clamp(
@@ -241,7 +242,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             loss (:obj:`torch.Tensor`): Calculated policy loss
         """
-        next_best_actions = self.select_action(states, deterministic=True)
+        next_best_actions = self.select_action(states, deterministic=True, noise=False)
         q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
         policy_loss = -torch.mean(q_values)
         return policy_loss

@@ -90,12 +90,16 @@ class BCQ(OffPolicyAgentAC):
             self.ac.actor = MlpPolicy(
                 state_dim + action_dim, action_dim, self.policy_layers, discrete
             )
-            self.vae = VAE(
-                state_dim, action_dim, self.vae_layers, action_lim, self.device
-            )
+            self.vae = VAE(state_dim, action_dim, action_lim, self.vae_layers)
         else:
-            self.ac, self.vae = self.network
+            (
+                self.ac,
+                self.vae,
+            ) = (
+                self.network
+            )  # Network must be defined as a tuple of the Actor Critic Network and the VAE
 
+        # Perturbation Model of the BCQ
         if self.noise is not None:
             self.noise = self.noise(
                 torch.zeros(action_dim), self.noise_std * torch.ones(action_dim)
@@ -108,7 +112,10 @@ class BCQ(OffPolicyAgentAC):
         self.optimizer_vae = opt.Adam(self.vae.parameters(), lr=self.lr_vae)
 
     def select_action(
-        self, state: torch.Tensor, deterministic: bool = True
+        self,
+        state: torch.Tensor,
+        deterministic: bool = True,
+        noise=True,
     ) -> torch.Tensor:
         """Select action given state
 
@@ -127,40 +134,12 @@ class BCQ(OffPolicyAgentAC):
         action = action.detach()
 
         # add noise to output from policy network
-        if self.noise is not None:
+        if noise and self.noise is not None:
             action += self.noise()
 
         return torch.clamp(
             action, self.env.action_space.low[0], self.env.action_space.high[0]
         )
-
-    def update_params(self) -> None:
-        """Update parameters of the model"""
-        self.batch = self.sample_from_buffer()
-
-        vae_loss = self.get_vae_loss()
-
-        self.optimizer_vae.zero_grad()
-        vae_loss.backward()
-        self.optimizer_vae.step()
-
-        value_loss = self.get_q_loss(self.batch)
-
-        self.optimizer_value.zero_grad()
-        value_loss.backward()
-        self.optimizer_value.step()
-
-        policy_loss = self.get_p_loss(self.batch.states)
-
-        self.optimizer_policy.zero_grad()
-        policy_loss.backward()
-        self.optimizer_policy.step()
-
-        self.logs["policy_loss"].append(policy_loss.item())
-        self.logs["value_loss"].append(value_loss.item())
-        self.logs["vae_loss"].append(vae_loss.item())
-
-        self.update_target_model()
 
     def get_vae_loss(self) -> None:
         """BCQ Function to calculate the loss of the VAE
@@ -200,6 +179,34 @@ class BCQ(OffPolicyAgentAC):
         target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
 
         return target_q_values
+
+    def update_params(self) -> None:
+        """Update parameters of the model"""
+        self.batch = self.sample_from_buffer()
+
+        vae_loss = self.get_vae_loss()
+
+        self.optimizer_vae.zero_grad()
+        vae_loss.backward()
+        self.optimizer_vae.step()
+
+        value_loss = self.get_q_loss(self.batch)
+
+        self.optimizer_value.zero_grad()
+        value_loss.backward()
+        self.optimizer_value.step()
+
+        policy_loss = self.get_p_loss(self.batch.states)
+
+        self.optimizer_policy.zero_grad()
+        policy_loss.backward()
+        self.optimizer_policy.step()
+
+        self.logs["policy_loss"].append(policy_loss.item())
+        self.logs["value_loss"].append(value_loss.item())
+        self.logs["vae_loss"].append(vae_loss.item())
+
+        self.update_target_model()
 
     def get_hyperparams(self) -> Dict[str, Any]:
         """Get relevant hyperparameters to save
