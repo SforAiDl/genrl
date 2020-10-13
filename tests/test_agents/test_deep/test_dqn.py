@@ -33,9 +33,9 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_double_dqn(self):
@@ -51,7 +51,6 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -72,7 +71,6 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -93,10 +91,10 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=20,
             log_interval=1,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_noisy_dqn(self):
@@ -114,7 +112,6 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -136,7 +133,7 @@ class TestDQN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")

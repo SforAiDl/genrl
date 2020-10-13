@@ -27,7 +27,6 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -45,9 +44,9 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_dueling_dqn(self):
@@ -66,9 +65,9 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_prioritized_dqn(self):
@@ -86,7 +85,6 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -106,7 +104,6 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")
@@ -128,7 +125,6 @@ class TestDQNCNN:
             epochs=4,
             warmup_steps=10,
             start_update=10,
-            max_timesteps=100,
         )
         trainer.train()
         shutil.rmtree("./logs")

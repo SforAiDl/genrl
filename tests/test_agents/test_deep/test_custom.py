@@ -46,27 +46,31 @@ class custom_actorcritic(MlpActorCritic):
         return actor_params, critic_params
 
 
-def test_custom_vpg():
-    env = VectorEnv("CartPole-v0", 1)
-    state_dim = env.observation_space.shape[0]
-    action_dim = env.action_space.n
-    policy = custom_policy(state_dim, action_dim)
+class TestCustomAgents:
+    def test_custom_vpg(self):
+        env = VectorEnv("CartPole-v0", 1)
+        state_dim = env.observation_space.shape[0]
+        action_dim = env.action_space.n
+        policy = custom_policy(state_dim, action_dim)
 
-    algo = VPG(policy, env)
+        algo = VPG(policy, env)
 
-    trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
+        shutil.rmtree("./logs")
 
+    def test_custom_ppo1(self):
+        env = VectorEnv("CartPole-v0", 1)
+        state_dim = env.observation_space.shape[0]
+        action_dim = env.action_space.n
+        actorcritic = custom_actorcritic(state_dim, action_dim)
 
-def test_custom_ppo1():
-    env = VectorEnv("CartPole-v0", 1)
-    state_dim = env.observation_space.shape[0]
-    action_dim = env.action_space.n
-    actorcritic = custom_actorcritic(state_dim, action_dim)
+        algo = PPO1(actorcritic, env)
 
-    algo = PPO1(actorcritic, env)
-
-    trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
-    trainer.train()
-    shutil.rmtree("./logs")
+        trainer = OnPolicyTrainer(
+            algo, env, log_mode=["csv"], logdir="./logs", epochs=1
+        )
+        trainer.train()
+        shutil.rmtree("./logs")

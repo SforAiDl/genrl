@@ -2,10 +2,11 @@ import gym
 import numpy as np
 import pytest
 
-from genrl.agents import SARSA, QLearning
+from genrl.agents import SARSA, QLearning, ValueIterator
+from genrl.trainers import ClassicalTrainer
 
 
-class TestAgents:
+class TestClassicalAgents:
     def test_qlearning(self):
         env = gym.make("FrozenLake-v0")
         agent = QLearning(env)
@@ -34,3 +35,18 @@ class TestAgents:
 
         assert np.all(agent.Q == pytest.approx(answer_Q))
         assert np.all(agent.e == pytest.approx(answer_e))
+
+    def test_valueiteration(self):
+        env = gym.make("FrozenLake-v0")
+        agent = ValueIterator(env)
+        trainer = ClassicalTrainer(
+            agent,
+            env,
+            mode="dyna",
+            model="tabular",
+            n_episodes=5,
+            start_steps=0,
+            evaluate_frequency=1,
+        )
+        _ = trainer.train()
+        trainer.evaluate()

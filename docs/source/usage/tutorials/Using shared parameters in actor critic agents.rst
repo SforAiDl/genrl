@@ -29,7 +29,7 @@ critic network act on this feature vector to select an action and estimate the v
      action               value
 
 GenRL provides support to incorporte this decoder network in all of the actor critic agents through a ``shared_layers``
-parameter. ``shared_layers`` takes the sizes of the mlp layers o be used, and ``None`` if no decoder network is to be
+parameter. ``shared_layers`` takes the sizes of the mlp layers to be used, and ``None`` if no decoder network is to be
 used
 
 As an example - in A2C -
