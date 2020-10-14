@@ -15,6 +15,7 @@ from genrl.agents.bandits.contextual.neural_noise_sampling import (  # noqa,
     NeuralNoiseSamplingAgent,
 )
 from genrl.agents.bandits.contextual.variational import VariationalAgent  # noqa
+from genrl.agents.bandits.multiarmed.base import MABAgent  # noqa
 from genrl.agents.bandits.multiarmed.bayesian import BayesianUCBMABAgent  # noqa
 from genrl.agents.bandits.multiarmed.bernoulli_mab import BernoulliMAB  # noqa
 from genrl.agents.bandits.multiarmed.epsgreedy import EpsGreedyMABAgent  # noqa
@@ -41,5 +42,3 @@ from genrl.agents.deep.ppo1.ppo1 import PPO1  # noqa
 from genrl.agents.deep.sac.sac import SAC  # noqa
 from genrl.agents.deep.td3.td3 import TD3  # noqa
 from genrl.agents.deep.vpg.vpg import VPG  # noqa
-
-from genrl.agents.bandits.multiarmed.base import MABAgent  # noqa; noqa; noqa
