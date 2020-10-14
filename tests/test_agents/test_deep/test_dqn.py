@@ -35,6 +35,7 @@ class TestDQN:
             start_update=10,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_double_dqn(self):
@@ -93,6 +94,7 @@ class TestDQN:
             log_interval=1,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
 
     def test_noisy_dqn(self):
@@ -133,4 +135,5 @@ class TestDQN:
             start_update=10,
         )
         trainer.train()
+        trainer.evaluate()
         shutil.rmtree("./logs")
