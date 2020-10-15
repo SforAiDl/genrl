@@ -41,6 +41,7 @@ from genrl.agents.deep.ppo1.ppo1 import PPO1  # noqa
 from genrl.agents.deep.sac.sac import SAC  # noqa
 from genrl.agents.deep.td3.td3 import TD3  # noqa
 from genrl.agents.deep.vpg.vpg import VPG  # noqa
-from genrl.agents.modelbased.base import ModelBasedAgent
+from genrl.agents.modelbased.base import ModelBasedAgent  # noqa
+from genrl.agents.modelbased.cem.cem import CEM  # noqa
 
 from genrl.agents.bandits.multiarmed.base import MABAgent  # noqa; noqa; noqa

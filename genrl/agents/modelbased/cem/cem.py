@@ -1,11 +1,9 @@
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 
 from genrl.agents import ModelBasedAgent
-from genrl.core import MlpPolicy, RolloutBuffer
+from genrl.core import RolloutBuffer
 from genrl.utils import get_env_properties, get_model, safe_mean
 
 
@@ -75,9 +73,7 @@ class CEM(ModelBasedAgent):
 
     def update_params(self):
         sess = [self.plan() for _ in range(100)]
-        batch_states, batch_actions, batch_rewards = zip(
-            *sess
-        )  # map(np.array, zip(*sess))
+        batch_states, batch_actions, batch_rewards = zip(*sess)
         elite_states, elite_actions = self.select_elites(
             batch_states, batch_actions, batch_rewards
         )

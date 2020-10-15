@@ -1,6 +1,4 @@
-import gym
-
-from genrl.agents.modelbased.cem.cem import CEM
+from genrl.agents import CEM
 from genrl.environments import VectorEnv
 from genrl.trainers import OnPolicyTrainer
 
