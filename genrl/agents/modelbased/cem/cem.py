@@ -5,7 +5,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from genrl.agents import ModelBasedAgent
-from genrl.core import RolloutBuffer
+from genrl.core import MlpPolicy, RolloutBuffer
 from genrl.utils import get_env_properties, get_model, safe_mean
 
 
@@ -15,14 +15,17 @@ class CEM(ModelBasedAgent):
         *args,
         network: str = "mlp",
         policy_layers: tuple = (100,),
+        lr_policy=1e-3,
         percentile: int = 70,
+        rollout_size,
         **kwargs
     ):
         super(CEM, self).__init__(*args, **kwargs)
         self.network = network
-        self.rollout_size = int(1e4)
+        self.rollout_size = rollout_size
         self.rollout = RolloutBuffer(self.rollout_size, self.env)
         self.policy_layers = policy_layers
+        self.lr_policy = lr_policy
         self.percentile = percentile
 
         self._create_model()
@@ -40,31 +43,24 @@ class CEM(ModelBasedAgent):
             discrete,
             action_lim,
         )
-        self.optim = torch.optim.Adam(
-            self.agent.parameters(), lr=1e-3
-        )  # make this a hyperparam
+        self.optim = torch.optim.Adam(self.agent.parameters(), lr=self.lr_policy)
 
-    def plan(self, timesteps=1e4):
+    def plan(self):
         state = self.env.reset()
         self.rollout.reset()
-        _, _ = self.collect_rollouts(state)
-        return (
-            self.rollout.observations,
-            self.rollout.actions,
-            torch.sum(self.rollout.rewards).detach(),
-        )
+        states, actions = self.collect_rollouts(state)
+        return (states, actions, self.rewards[-1])
 
     def select_elites(self, states_batch, actions_batch, rewards_batch):
         reward_threshold = np.percentile(rewards_batch, self.percentile)
-        print(reward_threshold)
         elite_states = [
-            s.unsqueeze(0)
+            s.unsqueeze(0).clone()
             for i in range(len(states_batch))
             if rewards_batch[i] >= reward_threshold
             for s in states_batch[i]
         ]
         elite_actions = [
-            a.unsqueeze(0)
+            a.unsqueeze(0).clone()
             for i in range(len(actions_batch))
             if rewards_batch[i] >= reward_threshold
             for a in actions_batch[i]
@@ -75,25 +71,24 @@ class CEM(ModelBasedAgent):
     def select_action(self, state):
         state = torch.as_tensor(state).float()
         action, dist = self.agent.get_action(state)
-        return action
+        return action, torch.zeros((1, self.env.n_envs)), dist.log_prob(action).cpu()
 
     def update_params(self):
         sess = [self.plan() for _ in range(100)]
-        batch_states, batch_actions, batch_rewards = zip(*sess)
+        batch_states, batch_actions, batch_rewards = zip(
+            *sess
+        )  # map(np.array, zip(*sess))
         elite_states, elite_actions = self.select_elites(
             batch_states, batch_actions, batch_rewards
         )
-        print(elite_actions.shape)
-        action_probs = self.agent.forward(torch.as_tensor(elite_states).float())
-        print(action_probs.shape)
-        print(self.action_dim)
+        action_probs = self.agent.forward(elite_states.float())
         loss = F.cross_entropy(
             action_probs.view(-1, self.action_dim),
-            torch.as_tensor(elite_actions).long().view(-1),
+            elite_actions.long().view(-1),
         )
         self.logs["crossentropy_loss"].append(loss.item())
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.agent.parameters(), 0.5)
+        # torch.nn.utils.clip_grad_norm_(self.agent.parameters(), 0.5)
         self.optim.step()
 
     def get_traj_loss(self, values, dones):
@@ -113,8 +108,12 @@ class CEM(ModelBasedAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`torch.Tensor`): Game over statuses of each environment
         """
+        states = []
+        actions = []
         for i in range(self.rollout_size):
-            action = self.select_action(state)
+            action, value, log_probs = self.select_action(state)
+            states.append(state)
+            actions.append(action)
 
             next_state, reward, dones, _ = self.env.step(action)
 
@@ -126,8 +125,8 @@ class CEM(ModelBasedAgent):
                 action.reshape(self.env.n_envs, 1),
                 reward,
                 dones,
-                torch.tensor(0),
-                torch.tensor(0),
+                value,
+                log_probs.detach(),
             )
 
             state = next_state
@@ -137,7 +136,7 @@ class CEM(ModelBasedAgent):
             if dones:
                 break
 
-        return torch.tensor(0), dones
+        return states, actions
 
     def collect_rewards(self, dones: torch.Tensor, timestep: int):
         """Helper function to collect rewards
@@ -151,11 +150,15 @@ class CEM(ModelBasedAgent):
         for i, done in enumerate(dones):
             if done or timestep == self.rollout_size - 1:
                 self.rewards.append(self.env.episode_reward[i].detach().clone())
-                self.env.reset_single_env(i)
+                # self.env.reset_single_env(i)
 
     def get_hyperparams(self):
-        # return self.agent.get_hyperparams()
-        pass
+        hyperparams = {
+            "network": self.network,
+            "lr_policy": self.lr_policy,
+            "rollout_size": self.rollout_size,
+        }
+        return hyperparams
 
     def get_logging_params(self):
         logs = {
@@ -165,7 +168,6 @@ class CEM(ModelBasedAgent):
         return logs
 
     def empty_logs(self):
-        # self.agent.empty_logs()
         self.logs = {}
         self.logs["crossentropy_loss"] = []
         self.rewards = []
