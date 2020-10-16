@@ -94,7 +94,7 @@ class RolloutBuffer(BaseBuffer):
             log_prob = log_prob.reshape(-1, 1)
 
         self.observations[self.pos] = obs.detach().clone()
-        self.actions[self.pos] = action.squeeze().detach().clone()
+        self.actions[self.pos] = action.detach().clone()
         self.rewards[self.pos] = reward.detach().clone()
         self.dones[self.pos] = done.detach().clone()
         self.values[self.pos] = value.detach().clone().flatten()

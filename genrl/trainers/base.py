@@ -188,13 +188,16 @@ class Trainer(ABC):
         except FileNotFoundError:
             raise Exception("Invalid weights File Name")
 
-        try:
-            if self.off_policy:
-                self.agent.replay_buffer.load(self.load_buffer)
-            else:
-                self.agent.rollout.load(self.load_buffer)
-        except FileNotFoundError:
-            raise Exception("Invalid buffer File Name")
+        if self.load_buffer is not None:
+            try:
+                if self.off_policy:
+                    self.agent.replay_buffer.load(self.load_buffer)
+                else:
+                    self.agent.rollout.load(self.load_buffer)
+            except FileNotFoundError:
+                raise Exception("Invalid buffer File Name")
+        else:
+            print("Not loading buffer as no File Name has been passed...")
 
         print("Loaded Pretrained Model weights, buffer and hyperparameters!")
 
