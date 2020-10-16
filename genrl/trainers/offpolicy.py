@@ -166,8 +166,8 @@ class OffPolicyTrainer(Trainer):
                 if self.episodes % self.log_interval == 0:
                     self.log(timestep)
 
-                if self.episodes >= self.epochs:
-                    break
+            if self.episodes >= self.epochs:
+                break
 
             if timestep >= self.start_update and timestep % self.update_interval == 0:
                 self.agent.update_params(self.update_interval)
