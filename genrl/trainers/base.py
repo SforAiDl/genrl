@@ -31,6 +31,7 @@ class Trainer(ABC):
         run_num (int): A run number allotted to the save of parameters
         load_weights (str): Weights file
         load_hyperparams (str): File to load hyperparameters
+        load_buffer (str): File to load buffer from
         render (bool): True if environment is to be rendered during training, else False
         evaluate_episodes (int): Number of episodes to evaluate for
         seed (int): Set seed for reproducibility
