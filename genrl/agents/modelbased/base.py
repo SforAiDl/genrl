@@ -2,6 +2,8 @@ from abc import ABC
 
 import torch
 
+from genrl.agents import BaseAgent
+
 
 class Planner:
     def __init__(self, initial_state, dynamics_model=None):
@@ -19,12 +21,10 @@ class Planner:
         raise NotImplementedError
 
 
-class ModelBasedAgent(ABC):
-    def __init__(self, env, planner=None, render=False, device="cpu"):
-        self.env = env
+class ModelBasedAgent(BaseAgent):
+    def __init__(self, *args, planner=None, **kwargs):
+        super(ModelBasedAgent, self).__init__(*args, **kwargs)
         self.planner = planner
-        self.render = render
-        self.device = torch.device(device)
 
     def plan(self):
         """
@@ -44,22 +44,4 @@ class ModelBasedAgent(ABC):
         """
         To be used for approximate value estimation methods e.g. Value Iteration Networks
         """
-        raise NotImplementedError
-
-    def update_params(self):
-        """
-        Update the parameters (Parameters of the learnt model and/or Parameters of the policy being used)
-        """
-        raise NotImplementedError
-
-    def get_hyperparans(self):
-        raise NotImplementedError
-
-    def get_logging_params(self):
-        raise NotImplementedError
-
-    def _load_weights(self, weights):
-        raise NotImplementedError
-
-    def empty_logs(self):
         raise NotImplementedError
