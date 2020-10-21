@@ -60,7 +60,7 @@ class CEM(ModelBasedAgent):
             "V",
             discrete,
             action_lim,
-        )
+        ).to(self.device)
         self.optim = torch.optim.Adam(self.agent.parameters(), lr=self.lr_policy)
 
     def plan(self):
@@ -136,7 +136,7 @@ class CEM(ModelBasedAgent):
         elite_states, elite_actions = self.select_elites(
             batch_states, batch_actions, batch_rewards
         )
-        action_probs = self.agent.forward(elite_states.float())
+        action_probs = self.agent.forward(elite_states.float().to(self.device))
         loss = F.cross_entropy(
             action_probs.view(-1, self.action_dim),
             elite_actions.long().view(-1),
