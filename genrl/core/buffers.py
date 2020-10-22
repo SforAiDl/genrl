@@ -146,15 +146,7 @@ class PrioritizedBuffer:
 
         return [
             torch.as_tensor(v, dtype=torch.float32)
-            for v in [
-                states,
-                actions,
-                rewards,
-                next_states,
-                dones,
-                indices,
-                weights,
-            ]
+            for v in [states, actions, rewards, next_states, dones, indices, weights,]
         ]
 
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:
@@ -180,4 +172,114 @@ class PrioritizedBuffer:
 
     @property
     def pos(self):
+        return len(self.buffer)
+
+
+class MultiAgentReplayBuffer:
+    """
+    Implements the basic Experience Replay Mechanism for MultiAgents
+    by feeding in global states, global actions, global rewards,
+    global next_states, global dones
+        :param capacity: Size of the replay buffer
+        :type capacity: int
+        :param num_agents: Number of agents in the environment
+        :type num_agents: int
+    """
+
+    def __init__(self, num_agents: int, capacity: int):
+        """
+        Initialising the buffer
+            :param num_agents: number of agents in the environment
+            :type num_agents: int
+            :param capacity: Max buffer size
+            :type capacity: int
+        """
+        self.capacity = capacity
+        self.num_agents = num_agents
+        self.buffer = deque(maxlen=self.capacity)
+
+    def push(self, inp: Tuple) -> None:
+        """
+        Adds new experience to buffer
+            :param inp: (Tuple containing `state`, `action`, `reward`,
+            `next_state` and `done`)
+            :type inp: tuple
+            :returns: None
+        """
+        self.buffer.append(inp)
+
+    def sample(self, batch_size):
+
+        """
+        Returns randomly sampled experiences from replay memory
+            :param batch_size: Number of samples per batch
+            :type batch_size: int
+            :returns: (Tuple composing of `indiv_obs_batch`,
+            `indiv_action_batch`, `indiv_reward_batch`, `indiv_next_obs_batch`,
+            `global_state_batch`, `global_actions_batch`, `global_next_state_batch`,
+            `done_batch`)
+        """
+        indiv_obs_batch = [
+            [] for _ in range(self.num_agents)
+        ]  # [ [states of agent 1], ... ,[states of agent n] ]    ]
+        indiv_action_batch = [
+            [] for _ in range(self.num_agents)
+        ]  # [ [actions of agent 1], ... , [actions of agent n]]
+        indiv_reward_batch = [[] for _ in range(self.num_agents)]
+        indiv_next_obs_batch = [[] for _ in range(self.num_agents)]
+
+        global_state_batch = []
+        global_next_state_batch = []
+        global_actions_batch = []
+        done_batch = []
+
+        batch = random.sample(self.buffer, batch_size)
+
+        for experience in batch:
+            state, action, reward, next_state, done = experience
+
+            for i in range(self.num_agents):
+                indiv_obs_batch[i].append(state[i])
+                indiv_action_batch[i].append(action[i])
+                indiv_reward_batch[i].append(reward[i])
+                indiv_next_obs_batch[i].append(next_state[i])
+
+            global_state_batch.append(torch.cat(state))
+            global_actions_batch.append(torch.cat(action))
+            global_next_state_batch.append(torch.cat(next_state))
+            done_batch.append(done)
+
+        global_state_batch = torch.stack(global_state_batch)
+        global_actions_batch = torch.stack(global_actions_batch)
+        global_next_state_batch = torch.stack(global_next_state_batch)
+        done_batch = torch.stack(done_batch)
+        indiv_obs_batch = torch.stack(
+            [torch.FloatTensor(obs) for obs in indiv_obs_batch]
+        )
+        indiv_action_batch = torch.stack(
+            [torch.FloatTensor(act) for act in indiv_action_batch]
+        )
+        indiv_reward_batch = torch.stack(
+            [torch.FloatTensor(rew) for rew in indiv_reward_batch]
+        )
+        indiv_next_obs_batch = torch.stack(
+            [torch.FloatTensor(next_obs) for next_obs in indiv_next_obs_batch]
+        )
+
+        return (
+            indiv_obs_batch,
+            indiv_action_batch,
+            indiv_reward_batch,
+            indiv_next_obs_batch,
+            global_state_batch,
+            global_actions_batch,
+            global_next_state_batch,
+            done_batch,
+        )
+
+    def __len__(self):
+        """
+        Gives number of experiences in buffer currently
+        :returns: Length of replay memory
+        """
         return len(self.buffer)
