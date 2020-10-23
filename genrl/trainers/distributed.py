@@ -1,5 +1,6 @@
 from genrl.trainers import Trainer
 import numpy as np
+from genrl.utils import safe_mean
 
 
 class DistributedTrainer:
@@ -19,7 +20,7 @@ class DistributedTrainer:
     def is_done(self):
         return self._completed_training_flag
 
-    def evaluate(self, render: bool = False) -> None:
+    def evaluate(self, timestep, render: bool = False) -> None:
         """Evaluate performance of Agent
 
         Args:
@@ -37,10 +38,11 @@ class DistributedTrainer:
                 state = next_state
             episode_rewards.append(episode_reward)
             episode_reward = 0
-        print(
-            "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
-                10,
-                np.mean(episode_rewards),
-                np.std(episode_rewards),
-            )
+        self.logger.write(
+            {
+                "timestep": timestep,
+                **self.agent.get_logging_params(),
+                "Episode Reward": safe_mean(episode_rewards),
+            },
+            "timestep",
         )

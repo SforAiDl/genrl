@@ -79,7 +79,7 @@ class DDPG(OffPolicyAgentAC):
         self.optimizer_policy = opt.Adam(self.ac.actor.parameters(), lr=self.lr_policy)
         self.optimizer_value = opt.Adam(self.ac.critic.parameters(), lr=self.lr_value)
 
-    def update_params(self, batch, update_interval: int) -> None:
+    def update_params(self, update_interval: int, batch = None) -> None:
         """Update parameters of the model
 
         Args:

@@ -8,6 +8,7 @@ from genrl.distributed import (
 from genrl.core import ReplayBuffer
 from genrl.agents import DDPG
 from genrl.trainers import DistributedTrainer
+from genrl.utils import Logger
 import gym
 import torch.distributed.rpc as rpc
 
@@ -36,6 +37,7 @@ class MyTrainer(DistributedTrainer):
         super(MyTrainer, self).__init__(agent)
         self.train_steps = train_steps
         self.batch_size = batch_size
+        self.logger = Logger(formats=["stdout"])
 
     def train(self, parameter_server, experience_server):
         i = 0
@@ -43,10 +45,9 @@ class MyTrainer(DistributedTrainer):
             batch = experience_server.sample(self.batch_size)
             if batch is None:
                 continue
-            self.agent.update_params(batch, 1)
+            self.agent.update_params(1, batch)
             parameter_server.store_weights(self.agent.get_weights())
-            print(f"Trainer: {i + 1} / {self.train_steps} steps completed")
-            self.evaluate()
+            self.evaluate(i)
             i += 1
 
 
