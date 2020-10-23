@@ -27,7 +27,7 @@ class DistributedTrainer:
             render (bool): Option to render the environment during evaluation
         """
         episode_rewards = []
-        for i in range(10):
+        for i in range(5):
             state = self.env.reset()
             done = False
             episode_reward = 0
