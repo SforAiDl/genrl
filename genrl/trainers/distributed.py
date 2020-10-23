@@ -12,13 +12,11 @@ class DistributedTrainer:
     def train(self, parameter_server, experience_server):
         raise NotImplementedError
 
-    def train_wrapper(self, parameter_server, experience_server):
-        self._completed_training_flag = False
-        self.train(parameter_server, experience_server)
-        self._completed_training_flag = True
-
-    def is_done(self):
+    def is_completed(self):
         return self._completed_training_flag
+
+    def set_completed(self, value=True):
+        self._completed_training_flag = value
 
     def evaluate(self, timestep, render: bool = False) -> None:
         """Evaluate performance of Agent

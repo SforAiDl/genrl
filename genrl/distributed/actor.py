@@ -48,7 +48,7 @@ class ActorNode(Node):
         experience_server = get_proxy(experience_server_name)
         learner = get_proxy(learner_name)
         print(f"{name}: Begining experience collection")
-        while not learner.is_done():
+        while not learner.is_completed():
             collect_experience(agent, parameter_server, experience_server)
 
         rpc.shutdown()

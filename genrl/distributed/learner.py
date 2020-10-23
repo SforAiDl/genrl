@@ -42,5 +42,6 @@ class LearnerNode(Node):
         parameter_server = get_proxy(parameter_server_name)
         experience_server = get_proxy(experience_server_name)
         print(f"{name}: Beginning training")
-        trainer.train_wrapper(parameter_server, experience_server)
+        trainer.train(parameter_server, experience_server)
+        trainer.set_completed(True)
         rpc.shutdown()
