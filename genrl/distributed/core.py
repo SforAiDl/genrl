@@ -47,6 +47,10 @@ def store_rref(idx, rref):
     rpc.rpc_sync("master", _store_rref, args=(idx, rref))
 
 
+def get_proxy(idx):
+    return get_rref(idx).rpc_sync()
+
+
 def set_environ(address, port):
     os.environ["MASTER_ADDR"] = str(address)
     os.environ["MASTER_PORT"] = str(port)
@@ -111,7 +115,15 @@ class Node:
 
 
 class Master:
-    def __init__(self, world_size, address="localhost", port=29501, secondary=False):
+    def __init__(
+        self,
+        world_size,
+        address="localhost",
+        port=29501,
+        secondary=False,
+        proc_start_method="fork",
+    ):
+        mp.set_start_method(proc_start_method)
         set_environ(address, port)
         self._world_size = world_size
         self._address = address
@@ -130,7 +142,7 @@ class Master:
 
     @staticmethod
     def _run_master(world_size):
-        print(f"Starting master at {os.getpid()}")
+        print(f"Starting master with pid {os.getpid()}")
         rpc.init_rpc("master", rank=0, world_size=world_size)
         rpc.shutdown()
 

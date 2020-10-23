@@ -17,7 +17,6 @@ class ExperienceServer(Node):
     def run_paramater_server(name, world_size, rank, buffer, **kwargs):
         rpc.init_rpc(name=name, world_size=world_size, rank=rank)
         print(f"{name}: Initialised RPC")
-        rref = rpc.RRef(buffer)
-        store_rref(name, rref)
+        store_rref(name, rpc.RRef(buffer))
         print(f"{name}: Serving experience buffer")
         rpc.shutdown()

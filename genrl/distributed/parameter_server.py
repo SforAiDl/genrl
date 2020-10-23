@@ -17,9 +17,8 @@ class ParameterServer(Node):
     def run_paramater_server(name, world_size, rank, init_params, **kwargs):
         rpc.init_rpc(name=name, world_size=world_size, rank=rank)
         print(f"{name}: Initialised RPC")
-        params = init_params
-        rref = rpc.RRef(params)
-        store_rref(name, rref)
+        params = WeightHolder(init_weights=init_params)
+        store_rref(name, rpc.RRef(params))
         print(f"{name}: Serving parameters")
         rpc.shutdown()
 

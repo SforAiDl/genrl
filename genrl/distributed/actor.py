@@ -1,5 +1,5 @@
 from genrl.distributed.core import Node
-from genrl.distributed.core import get_rref, store_rref
+from genrl.distributed.core import get_proxy, store_rref
 import torch.distributed.rpc as rpc
 
 
@@ -42,14 +42,13 @@ class ActorNode(Node):
     ):
         rpc.init_rpc(name=name, world_size=world_size, rank=rank)
         print(f"{name}: RPC Initialised")
-        rref = rpc.RRef(agent)
-        store_rref(name, rref)
-        parameter_server_rref = get_rref(parameter_server_name)
-        experience_server_rref = get_rref(experience_server_name)
-        learner_rref = get_rref(learner_name)
+        store_rref(name, rpc.RRef(agent))
+        parameter_server = get_proxy(parameter_server_name)
+        experience_server = get_proxy(experience_server_name)
+        learner = get_proxy(learner_name)
         print(f"{name}: Begining experience collection")
-        while not learner_rref.rpc_sync().is_done():
-            agent.load_weights(parameter_server_rref.rpc_sync().get_weights())
-            collect_experience(agent, experience_server_rref)
+        while not learner.is_done():
+            agent.load_weights(parameter_server.get_weights())
+            collect_experience(agent, experience_server)
 
         rpc.shutdown()

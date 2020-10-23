@@ -4,13 +4,11 @@ from genrl.distributed import (
     ParameterServer,
     ActorNode,
     LearnerNode,
-    WeightHolder,
 )
 from genrl.core import ReplayBuffer
 from genrl.agents import DDPG
 from genrl.trainers import DistributedTrainer
 import gym
-import torch.multiprocessing as mp
 
 N_ACTORS = 2
 BUFFER_SIZE = 10
@@ -19,13 +17,13 @@ TRAIN_STEPS = 50
 BATCH_SIZE = 1
 
 
-def collect_experience(agent, experience_server_rref):
+def collect_experience(agent, experience_server):
     obs = agent.env.reset()
     done = False
     for i in range(MAX_ENV_STEPS):
         action = agent.select_action(obs)
         next_obs, reward, done, _ = agent.env.step(action)
-        experience_server_rref.rpc_sync().push((obs, action, reward, next_obs, done))
+        experience_server.push((obs, action, reward, next_obs, done))
         obs = next_obs
         if done:
             break
@@ -37,27 +35,23 @@ class MyTrainer(DistributedTrainer):
         self.train_steps = train_steps
         self.batch_size = batch_size
 
-    def train(self, parameter_server_rref, experience_server_rref):
+    def train(self, parameter_server, experience_server):
         i = 0
         while i < self.train_steps:
-            batch = experience_server_rref.rpc_sync().sample(self.batch_size)
+            batch = experience_server.sample(self.batch_size)
             if batch is None:
                 continue
             self.agent.update_params(batch, 1)
-            parameter_server_rref.rpc_sync().store_weights(self.agent.get_weights())
+            parameter_server.store_weights(self.agent.get_weights())
             print(f"Trainer: {i + 1} / {self.train_steps} steps completed")
             self.evaluate()
             i += 1
 
 
-mp.set_start_method("fork")
-
-master = Master(world_size=6, address="localhost", port=29500)
+master = Master(world_size=6, address="localhost", port=29500, proc_start_method="fork")
 env = gym.make("Pendulum-v0")
 agent = DDPG("mlp", env)
-parameter_server = ParameterServer(
-    "param-0", master, WeightHolder(agent.get_weights()), rank=1
-)
+parameter_server = ParameterServer("param-0", master, agent.get_weights(), rank=1)
 buffer = ReplayBuffer(BUFFER_SIZE)
 experience_server = ExperienceServer("experience-0", master, buffer, rank=2)
 trainer = MyTrainer(agent, TRAIN_STEPS, BATCH_SIZE)
