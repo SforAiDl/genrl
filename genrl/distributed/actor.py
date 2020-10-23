@@ -49,7 +49,6 @@ class ActorNode(Node):
         learner = get_proxy(learner_name)
         print(f"{name}: Begining experience collection")
         while not learner.is_done():
-            agent.load_weights(parameter_server.get_weights())
-            collect_experience(agent, experience_server)
+            collect_experience(agent, parameter_server, experience_server)
 
         rpc.shutdown()
