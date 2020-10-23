@@ -2,56 +2,67 @@ import torch
 
 from genrl.agents import DDPG
 from genrl.utils import MultiAgentReplayBuffer, PettingZooInterface, get_model
+from typing import Any, Tuple
+import numpy as np
 
 
 class MADDPG(ABC):
     """MultiAgent Controller using the MADDPG algorithm
 
     Attributes:
-        network (str): The network type of the Q-value function of the agents.
-            Supported types: ["mlp"]
+        network (str): The network type of the Q-value function.
+            Supported types: ["cnn", "mlp"]
+        env (Environment): The environment that the agent is supposed to act on
+        create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
+        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
-        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
         replay_size (int): Capacity of the Replay Buffer
         polyak (float): Target model update parameter (1 for hard update)
-        env (Environment): The environment that the agent is supposed to act on
-        replay_size (int): Capacity of the Replay Buffer
-        render (bool): Should the env be rendered during training?
         noise (:obj:`ActionNoise`): Action Noise function added to aid in exploration
         noise_std (float): Standard deviation of the action noise distribution
         seed (int): Seed for randomness
+        render (bool): Should the env be rendered during training?
         device (str): Hardware being used for training. Options:
             ["cuda" -> GPU, "cpu" -> CPU]
     """
 
     def __init__(
         self,
-        *args,
-        env,
+        network: Any,
+        env: Any,
+        batch_size: int = 64,
+        gamma: float = 0.99,
+        shared_layers=None,
+        policy_layers: Tuple = (64, 64),
+        value_layers: Tuple = (64, 64),
+        lr_policy: float = 0.0001,
+        lr_value: float = 0.001,
         replay_size: int = int(1e6),
-        render: bool = False,
+        polyak: float = 0.995,
         noise: ActionNoise = None,
         noise_std: float = 0.2,
         warmup_steps=1000,
         **kwargs,
-    ):
+    ):  
+        self.noise = noise
+        self.noise_std = noise_std
         self.env = env
         self.network = network
         self.num_agents = self.env.num_agents
         self.replay_buffer = MultiAgentReplayBuffer(self.num_agents, buffer_maxlen)
-        self.EnvInterface = PettingZooInterface(self.env, self.agents)
         self.render = render
         self.warmup_steps = warmup_steps
         self.shared_layers = shared_layers
+        self.policy_layers = policy_layers
+        self.value_layers = value_layers
         ac = self._create_model()
-        self.agents = [
-            DDPG(ac, noise, noise_std, **kwargs) for agent in self.env.agents
-        ]
+        self.agents = [DDPG(network=ac, env=env) for agent in self.env.agents]
+        self.EnvInterface = PettingZooInterface(self.env, self.agents)
 
     def _create_model(self):
         state_dim, action_dim, discrete, _ = self.EnvInterface.get_env_properties()
@@ -59,9 +70,29 @@ class MADDPG(ABC):
             raise Exception(
                 "Discrete Environments not supported for {}.".format(__class__.__name__)
             )
-        model = get_models("ac", self.network)(
-            state_dim, action_dim, self.shared_layers,
-        )
+
+        if self.noise is not None:
+            self.noise = self.noise(
+                torch.zeros(action_dim), self.noise_std * torch.ones(action_dim)
+            )
+        
+        if isinstance(self.network, str):
+            arch_type = self.network
+            if self.shared_layers is not None:
+                arch_type += "s"
+            self.ac = get_model("ac", arch_type)(
+                state_dim,
+                action_dim,
+                self.shared_layers,
+                self.policy_layers,
+                self.value_layers,
+                "Qsa",
+                False,
+            ).to(self.device)
+        else:
+            self.ac = self.network
+
+        return ac
 
     def update(self, batch_size):
         (
@@ -108,13 +139,13 @@ class MADDPG(ABC):
                     self.env.render(mode="human")
 
                 step += 1
-                actions = self.EnvInterface.get_actions(states, steps, warmup_steps)
+                actions = self.EnvInterface.get_actions(states, steps, self.warmup_steps, type="offpolicy", deterministic=True)
                 next_states, rewards, dones, _ = self.env.step(actions)
                 rewards = self.EnvInterface.flatten(rewards)
                 episode_reward += np.mean(agent_rewards)
                 dones = self.EnvInterface.flatten(dones)
                 if all(dones) or step == max_steps - 1:
-                    dones = [1 for _ in range(self.num_agents)]
+                    dones = np.array([1 for _ in range(self.num_agents)])
                     self.replay_buffer.push(
                         states, actions, rewards, next_states, dones
                     )

@@ -23,4 +23,3 @@ from genrl.utils.utils import (  # noqa
     onehot_from_logits
 )
 from genrl.utils.pettingzoo_interface import PettingZooInterface # noqa
-
