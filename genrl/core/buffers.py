@@ -73,7 +73,7 @@ class ReplayBuffer:
 
         :returns: Length of replay memory
         """
-        return self.pos
+        return len(self.memory)
 
 
 class PrioritizedBuffer:

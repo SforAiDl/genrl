@@ -9,12 +9,12 @@ class DistributedTrainer:
         self.env = self.agent.env
         self._completed_training_flag = False
 
-    def train(self, parameter_server_rref, experience_server_rref):
+    def train(self, parameter_server, experience_server):
         raise NotImplementedError
 
-    def train_wrapper(self, parameter_server_rref, experience_server_rref):
+    def train_wrapper(self, parameter_server, experience_server):
         self._completed_training_flag = False
-        self.train(parameter_server_rref, experience_server_rref)
+        self.train(parameter_server, experience_server)
         self._completed_training_flag = True
 
     def is_done(self):
@@ -26,11 +26,11 @@ class DistributedTrainer:
         Args:
             render (bool): Option to render the environment during evaluation
         """
-        episode_reward = 0
         episode_rewards = []
-        state = self.env.reset()
-        done = False
         for i in range(10):
+            state = self.env.reset()
+            done = False
+            episode_reward = 0
             while not done:
                 action = self.agent.select_action(state, deterministic=True)
                 next_state, reward, done, _ = self.env.step(action)
@@ -38,6 +38,7 @@ class DistributedTrainer:
                 state = next_state
             episode_rewards.append(episode_reward)
             episode_reward = 0
+
         self.logger.write(
             {
                 "timestep": timestep,
