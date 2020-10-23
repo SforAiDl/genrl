@@ -9,6 +9,8 @@ from genrl.core import ReplayBuffer
 from genrl.agents import DDPG
 from genrl.trainers import DistributedTrainer
 import gym
+import torch.distributed.rpc as rpc
+
 
 N_ACTORS = 2
 BUFFER_SIZE = 10
@@ -48,7 +50,13 @@ class MyTrainer(DistributedTrainer):
             i += 1
 
 
-master = Master(world_size=6, address="localhost", port=29500, proc_start_method="fork")
+master = Master(
+    world_size=6,
+    address="localhost",
+    port=29500,
+    proc_start_method="fork",
+    rpc_backend=rpc.BackendType.TENSORPIPE,
+)
 env = gym.make("Pendulum-v0")
 agent = DDPG("mlp", env)
 parameter_server = ParameterServer("param-0", master, agent.get_weights(), rank=1)

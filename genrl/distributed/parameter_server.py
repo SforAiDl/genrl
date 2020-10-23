@@ -14,8 +14,10 @@ class ParameterServer(Node):
         self.start_proc()
 
     @staticmethod
-    def run_paramater_server(name, world_size, rank, init_params, **kwargs):
-        rpc.init_rpc(name=name, world_size=world_size, rank=rank)
+    def run_paramater_server(
+        name, world_size, rank, init_params, rpc_backend, **kwargs
+    ):
+        rpc.init_rpc(name=name, world_size=world_size, rank=rank, backend=rpc_backend)
         print(f"{name}: Initialised RPC")
         params = WeightHolder(init_weights=init_params)
         store_rref(name, rpc.RRef(params))

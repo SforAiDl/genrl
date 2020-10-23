@@ -92,6 +92,7 @@ class Node:
                 master_port=self.master.port,
                 world_size=self.master.world_size,
                 rank=self.rank,
+                rpc_backend=self.master.rpc_backend,
             )
         )
         self.p = mp.Process(target=self._target_wrapper, args=(target,), kwargs=kwargs)
@@ -122,6 +123,7 @@ class Master:
         port=29501,
         secondary=False,
         proc_start_method="fork",
+        rpc_backend=rpc.BackendType.PROCESS_GROUP,
     ):
         mp.set_start_method(proc_start_method)
         set_environ(address, port)
@@ -129,9 +131,21 @@ class Master:
         self._address = address
         self._port = port
         self._secondary = secondary
+        self._rpc_backend = rpc_backend
+
+        print(
+            "Configuration - {\n"
+            f"RPC Address : {self.address}\n"
+            f"RPC Port : {self.port}\n"
+            f"RPC World Size : {self.world_size}\n"
+            f"RPC Backend : {self.rpc_backend}\n"
+            f"Process Start Method : {proc_start_method}\n"
+            f"Seondary Master : {self.is_secondary}\n"
+            "}"
+        )
 
         if not self._secondary:
-            self.p = mp.Process(target=self._run_master, args=(world_size,))
+            self.p = mp.Process(target=self._run_master, args=(world_size, rpc_backend))
             self.p.start()
         else:
             self.p = None
@@ -141,9 +155,9 @@ class Master:
             self.p.join()
 
     @staticmethod
-    def _run_master(world_size):
+    def _run_master(world_size, rpc_backend):
         print(f"Starting master with pid {os.getpid()}")
-        rpc.init_rpc("master", rank=0, world_size=world_size)
+        rpc.init_rpc("master", rank=0, world_size=world_size, backend=rpc_backend)
         rpc.shutdown()
 
     @property
@@ -161,3 +175,7 @@ class Master:
     @property
     def is_secondary(self):
         return self._secondary
+
+    @property
+    def rpc_backend(self):
+        return self._rpc_backend

@@ -38,9 +38,10 @@ class ActorNode(Node):
         learner_name,
         agent,
         collect_experience,
+        rpc_backend,
         **kwargs,
     ):
-        rpc.init_rpc(name=name, world_size=world_size, rank=rank)
+        rpc.init_rpc(name=name, world_size=world_size, rank=rank, backend=rpc_backend)
         print(f"{name}: RPC Initialised")
         store_rref(name, rpc.RRef(agent))
         parameter_server = get_proxy(parameter_server_name)

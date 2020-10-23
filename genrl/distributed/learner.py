@@ -33,9 +33,10 @@ class LearnerNode(Node):
         parameter_server_name,
         experience_server_name,
         trainer,
+        rpc_backend,
         **kwargs,
     ):
-        rpc.init_rpc(name=name, world_size=world_size, rank=rank)
+        rpc.init_rpc(name=name, world_size=world_size, rank=rank, backend=rpc_backend)
         print(f"{name}: Initialised RPC")
         store_rref(name, rpc.RRef(trainer))
         parameter_server = get_proxy(parameter_server_name)
