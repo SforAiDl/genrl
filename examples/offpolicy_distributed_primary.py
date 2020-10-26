@@ -23,7 +23,7 @@ INIT_BUFFER_SIZE = 1000
 WARMUP_STEPS = 1000
 
 
-def run_actor(agent, parameter_server, experience_server, learner):
+def collect_experience(agent, parameter_server, experience_server, learner):
     while not learner.is_completed():
         agent.load_weights(parameter_server.get_weights())
         obs = agent.env.reset()
@@ -85,7 +85,7 @@ actors = [
         experience_server_name="experience-0",
         learner_name="learner-0",
         agent=agent,
-        run_actor=run_actor,
+        collect_experience=collect_experience,
         rank=i + 4,
     )
     for i in range(N_ACTORS)
