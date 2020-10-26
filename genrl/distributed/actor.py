@@ -12,7 +12,7 @@ class ActorNode(Node):
         experience_server_name,
         learner_name,
         agent,
-        collect_experience,
+        run_actor,
         rank=None,
     ):
         super(ActorNode, self).__init__(name, master, rank)
@@ -23,7 +23,7 @@ class ActorNode(Node):
                 experience_server_name=experience_server_name,
                 learner_name=learner_name,
                 agent=agent,
-                collect_experience=collect_experience,
+                run_actor=run_actor,
             ),
         )
         self.start_proc()
@@ -37,7 +37,7 @@ class ActorNode(Node):
         experience_server_name,
         learner_name,
         agent,
-        collect_experience,
+        run_actor,
         rpc_backend,
         **kwargs,
     ):
@@ -48,7 +48,6 @@ class ActorNode(Node):
         experience_server = get_proxy(experience_server_name)
         learner = get_proxy(learner_name)
         print(f"{name}: Begining experience collection")
-        while not learner.is_completed():
-            collect_experience(agent, parameter_server, experience_server)
+        run_actor(agent, parameter_server, experience_server, learner)
 
         rpc.shutdown()
