@@ -142,11 +142,12 @@ class OffPolicyTrainer(Trainer):
 
         self.training_rewards = []
         self.episodes = 0
+        self.timesteps = 0
 
-        for timestep in range(0, self.max_timesteps, self.env.n_envs):
-            self.agent.update_params_before_select_action(timestep)
+        while self.timesteps <= self.max_timesteps and self.episodes <= self.epochs:
+            self.agent.update_params_before_select_action(self.timesteps)
 
-            action = self.get_action(state, timestep)
+            action = self.get_action(state, self.timesteps)
             next_state, reward, done, info = self.env.step(action)
 
             if self.render:
@@ -164,20 +165,22 @@ class OffPolicyTrainer(Trainer):
                 self.noise_reset()
 
                 if self.episodes % self.log_interval == 0:
-                    self.log(timestep)
+                    self.log(self.timesteps)
 
-            if self.episodes >= self.epochs:
-                break
-
-            if timestep >= self.start_update and timestep % self.update_interval == 0:
+            if (
+                self.timesteps >= self.start_update
+                and self.timesteps % self.update_interval == 0
+            ):
                 self.agent.update_params(self.update_interval)
 
             if (
-                timestep >= self.start_update
+                self.timesteps >= self.start_update
                 and self.save_interval != 0
-                and timestep % self.save_interval == 0
+                and self.timesteps % self.save_interval == 0
             ):
-                self.save(timestep)
+                self.save(self.timesteps)
+
+            self.timesteps += self.env.n_envs
 
         self.env.close()
         self.logger.close()
