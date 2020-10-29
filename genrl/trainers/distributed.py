@@ -1,6 +1,5 @@
-from genrl.trainers import Trainer
-import numpy as np
 from genrl.utils import safe_mean
+from genrl.utils import Logger
 
 
 class DistributedTrainer:
@@ -8,6 +7,8 @@ class DistributedTrainer:
         self.agent = agent
         self.env = self.agent.env
         self._completed_training_flag = False
+        self.logger = Logger(formats=["stdout"])
+
 
     def train(self, parameter_server, experience_server):
         raise NotImplementedError

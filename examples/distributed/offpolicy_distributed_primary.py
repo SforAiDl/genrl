@@ -47,7 +47,6 @@ class MyTrainer(DistributedTrainer):
         self.train_steps = train_steps
         self.batch_size = batch_size
         self.init_buffer_size = init_buffer_size
-        self.logger = Logger(formats=["stdout"])
         self.log_interval = log_interval
 
     def train(self, parameter_server, experience_server):
