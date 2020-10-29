@@ -41,7 +41,7 @@ class DistributedTrainer:
         self.logger.write(
             {
                 "timestep": timestep,
-                **self.agent.get_logging_params(),
+                # **self.agent.get_logging_params(),
                 "Episode Reward": safe_mean(episode_rewards),
             },
             "timestep",
