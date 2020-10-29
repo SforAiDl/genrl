@@ -42,7 +42,9 @@ def collect_experience(agent, parameter_server, experience_server, learner):
 
 
 class MyTrainer(DistributedTrainer):
-    def __init__(self, agent, train_steps, batch_size, init_buffer_size, log_interval=200):
+    def __init__(
+        self, agent, train_steps, batch_size, init_buffer_size, log_interval=200
+    ):
         super(MyTrainer, self).__init__(agent)
         self.train_steps = train_steps
         self.batch_size = batch_size
