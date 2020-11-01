@@ -469,12 +469,53 @@ class CNNActorCritic(BaseActorCritic):
         return value
 
 
+class MlpActorCentralCritic(BaseActorCritic):
+    """MLP Actor Central Critic
+
+    Attributes:
+        state_dim (int): State dimensions of a single agent in the environment
+        action_dim (int): Action space dimensions of a single agent in the environment
+        n_agents (int): Number of agents in the environment
+        policy_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the policy MLP
+        value_layers (:obj:`list` or :obj:`tuple`): Hidden layers in the value MLP
+        val_type (str): Value type of the critic network
+        discrete (bool): True if the action space is discrete, else False
+        sac (bool): True if a SAC-like network is needed, else False
+        activation (str): Activation function to be used. Can be either "tanh" or "relu"
+    """
+
+    def __init__(
+        self,
+        state_dim: spaces.Space,
+        action_dim: spaces.Space,
+        n_agents: int,
+        shared_layers: Tuple = (32, 32),
+        policy_layers: Tuple = (32, 32),
+        value_layers: Tuple = (32, 32),
+        val_type: str = "V",
+        discrete: bool = True,
+        **kwargs,
+    ):
+        super(MlpActorCentralCritic, self).__init__()
+
+        self.actor = MlpPolicy(state_dim, action_dim, policy_layers, discrete, **kwargs)
+        self.critic = MlpValue(
+            n_agents * state_dim, n_agent * action_dim, val_type, value_layers, **kwargs
+        )
+
+    def get_params(self):
+        actor_params = self.actor.parameters()
+        critic_params = self.critic.parameters()
+        return actor_params, critic_params
+
+
 actor_critic_registry = {
     "mlp": MlpActorCritic,
     "cnn": CNNActorCritic,
     "mlp12": MlpSingleActorTwoCritic,
     "mlps": MlpSharedActorCritic,
     "mlp12s": MlpSharedSingleActorTwoCritic,
+    "mlpc": MlpActorCentralCritic,
 }
 
 

@@ -1,8 +1,8 @@
 from abc import ABC
+from typing import Any, Dict, Tuple
 
 import gym
 import numpy as np
-from typing import Any, Dict, Tuple
 
 
 class PettingZooInterface(ABC):
@@ -34,36 +34,52 @@ class PettingZooInterface(ABC):
 
         return state_dim, action_dim, discrete, action_lim
 
-    def select_offpolicy_action(self, state: np.ndarray, agent, deterministic: bool=False, noise):
+    def select_offpolicy_action(
+        self, state: np.ndarray, agent, noise, deterministic: bool = False
+    ):
         action, _ = agent.ac.get_action(torch.tensor(state), deterministic)
         action = action.detach()
 
         if noise is not None:
             action += noise
 
-        return torch.clamp(action, list(self.env.action_spaces.values())[0].low[0], list(self.env.action_spaces.values())[0].high[0]).numpy()
+        return torch.clamp(
+            action,
+            list(self.env.action_spaces.values())[0].low[0],
+            list(self.env.action_spaces.values())[0].high[0],
+        ).numpy()
 
-    def select_onpolicy_action(self, state: np.ndarray, agent, deterministic: bool=False):
+    def select_onpolicy_action(
+        self, state: np.ndarray, agent, deterministic: bool = False
+    ):
         raise NotImplementedError
 
-    def get_actions(self, states: Dict[str, np.ndarray], steps: int, warmup_steps: int, type: str, deterministic: bool=False):
+    def get_actions(
+        self,
+        states: Dict[str, np.ndarray],
+        steps: int,
+        warmup_steps: int,
+        type: str,
+        deterministic: bool = False,
+    ):
         if steps < warmup_steps:
             actions = {agent: self.env.action_spaces[agent].sample() for key in states}
         else:
-            if (type == "offpolicy"):
+            if type == "offpolicy":
                 actions = {
-                    agent: self.select_offpolicy_action(states[agent], self.agents_list[i], deterministic, noise)
+                    agent: self.select_offpolicy_action(
+                        states[agent], self.agents_list[i], deterministic, noise
+                    )
                     for i, agent in enumerate(states)
                 }
-            elif (type == "onpolicy"):
+            elif type == "onpolicy":
                 raise NotImplementedError
             else:
                 raise NotImplementedError
 
         return actions
 
-    def flatten(self, object: Dict):
-        flattened_object = np.array([object[agent] for agent in self.env.agents])
+    def flatten(self, obj: Dict):
+        flattened_object = np.array([obj[agent] for agent in self.env.agents])
 
         return flattened_object
-
