@@ -95,8 +95,8 @@ class A2C(OnPolicyAgent):
             )
 
         actor_params, critic_params = self.ac.get_params()
-        self.optimizer_policy = opt.Adam(critic_params, lr=self.lr_policy)
-        self.optimizer_value = opt.Adam(actor_params, lr=self.lr_value)
+        self.optimizer_policy = opt.Adam(actor_params, lr=self.lr_policy)
+        self.optimizer_value = opt.Adam(critic_params, lr=self.lr_value)
 
     def select_action(
         self, state: torch.Tensor, deterministic: bool = False
