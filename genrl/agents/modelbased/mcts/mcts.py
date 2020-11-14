@@ -3,14 +3,14 @@ import torch
 import torch.nn as nn
 import torch.optim as opt
 
-from genrl.agents.modelbased.mcts.base import TreePlanner, TreeSearchAgent, Node
+from genrl.agents.modelbased.mcts.base import Node, TreePlanner, TreeSearchAgent
 
 
 class MCTSAgent(TreeSearchAgent):
     def __init__(self, *args, **kwargs):
         super(MCTSAgent, self).__init__(*args, **kwargs)
         self.planner = self._create_planner()
-    
+
     def _create_planner(self):
         prior_policy = None
         rollout_policy = None
@@ -65,20 +65,25 @@ class MCTSNode(Node):
             return None
         actions = list(self.children.keys())
         counts = np.argmax([self.children[a] for a in actions])
-        return actions[np.max(counts, key=(lambda i: self.children[actions[i]].get_value()))]
+        return actions[
+            np.max(counts, key=(lambda i: self.children[actions[i]].get_value()))
+        ]
 
     def sampling_rule(self):
         if self.children:
             actions = list(self.children.keys())
             idx = [self.children[a].selection_strategy(temp) for a in actions]
-            return actions[]
+            random_idx = np.random.choice(np.argmax(idx))
+            return actions[random_idx]
         return None
 
     def expand(self, actions_dist):
         actions, probs = actions_dist
         for i in range(len(actions)):
             if actions[i] not in self.children:
-                self.children[actions[i]] = MCTSNode(parent=self, planner=self.planner, prior=probs[i])
+                self.children[actions[i]] = MCTSNode(
+                    parent=self, planner=self.planner, prior=probs[i]
+                )
 
     def _update(self, total_rew):
         self.count += 1
@@ -93,14 +98,18 @@ class MCTSNode(Node):
         child = self.children[action]
         if obs is not None:
             if str(obs) not in child.children:
-                child.children[str(obs)] = MCTSNode(parent=child, planner=self.planner, prior=0)
+                child.children[str(obs)] = MCTSNode(
+                    parent=child, planner=self.planner, prior=0
+                )
             child = child.children[str(obs)]
         return child
-    
+
     def selection_strategy(self, temp=0):
         if not self.parent:
             return self.get_value()
-        return self.get_value + temp * len(self.parent.children) * self.prior / (self.count-1)
+        return self.get_value + temp * len(self.parent.children) * self.prior / (
+            self.count - 1
+        )
 
     def get_value(self):
         return self.value
@@ -109,7 +118,9 @@ class MCTSNode(Node):
         self.count = 0
         total_count = np.sum([(child.count + 1) for child in self.children])
         for child in self.children.values():
-            child.prior = reg * (child.count + 1) / total_counts + reg / len(self.children)
+            child.prior = reg * (child.count + 1) / total_counts + reg / len(
+                self.children
+            )
             child.convert_visits_to_prior()
 
 
@@ -164,7 +175,7 @@ class MCTSPlanner(TreePlanner):
             self._step_by_prior(action)
         else:
             super().step_planner(action)
-    
+
     def _step_by_prior(self, action):
         self._step_by_subtree(action)
         self.root.convert_visits_to_prior()
