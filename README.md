@@ -6,6 +6,7 @@
 <div align='center'>
 
 [![pypi](https://img.shields.io/badge/pypi%20package-v0.0.2-blue)](https://pypi.org/project/genrl/)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/genrl.svg)](https://pypi.python.org/pypi/ansicolortags/)
 [![Downloads](https://pepy.tech/badge/genrl)](https://pepy.tech/project/genrl)
 [![codecov](https://codecov.io/gh/SforAiDl/genrl/branch/master/graph/badge.svg)](https://codecov.io/gh/SforAiDl/genrl)
 [![GitHub license](https://img.shields.io/github/license/SforAiDl/genrl)](https://github.com/SforAiDl/genrl/blob/master/LICENSE)
@@ -17,7 +18,9 @@
 
 [![Build Status](https://travis-ci.com/SforAiDl/genrl.svg?branch=master)](https://travis-ci.com/SforAiDl/genrl)
 [![Documentation Status](https://readthedocs.org/projects/genrl/badge/?version=latest)](https://genrl.readthedocs.io/en/latest/?badge=latest)
-![Lint, Test, Code Coverage](https://github.com/SforAiDl/genrl/workflows/Lint,%20Test,%20Code%20Coverage/badge.svg)
+![Tests MacOS](https://github.com/SforAiDl/genrl/workflows/Tests%20MacOS/badge.svg)
+![Tests Linux](https://github.com/SforAiDl/genrl/workflows/Tests%20Linux/badge.svg)
+![Tests Windows](https://github.com/SforAiDl/genrl/workflows/Tests%20Windows/badge.svg)
 
 [![Slack - Chat](https://img.shields.io/badge/Slack-Chat-blueviolet)](https://join.slack.com/t/genrlworkspace/shared_invite/zt-gwlgnymd-Pw3TYC~0XDLy6VQDml22zg)
 
@@ -28,6 +31,8 @@
 ---
 
 **GenRL is a PyTorch reinforcement learning library centered around reproducible, generalizable algorithm implementations and improving accessibility in Reinforcement Learning** 
+
+**GenRL's current release is at v0.0.2. Expect breaking changes**
 
 Reinforcement learning research is moving faster than ever before. In order to keep up with the growing trend and ensure that RL research remains reproducible, GenRL aims to aid faster paper reproduction and benchmarking by providing the following main features:
 

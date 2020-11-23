@@ -6,7 +6,12 @@ import torch.optim as opt
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import OnPolicyAgent
-from genrl.utils import get_env_properties, get_model, safe_mean
+from genrl.utils import (
+    compute_returns_and_advantage,
+    get_env_properties,
+    get_model,
+    safe_mean,
+)
 
 
 class A2C(OnPolicyAgent):
@@ -24,6 +29,7 @@ class A2C(OnPolicyAgent):
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
+        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the critic
         rollout_size (int): Capacity of the Replay Buffer
@@ -123,7 +129,9 @@ class A2C(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout.compute_returns_and_advantage(values.detach().cpu().numpy(), dones)
+        compute_returns_and_advantage(
+            self.rollout, values.detach().cpu().numpy(), dones.cpu().numpy()
+        )
 
     def evaluate_actions(self, states: torch.Tensor, actions: torch.Tensor):
         """Evaluates actions taken by actor

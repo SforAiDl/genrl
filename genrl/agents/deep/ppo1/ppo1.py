@@ -6,7 +6,12 @@ import torch.nn as nn  # noqa
 import torch.optim as opt  # noqa
 
 from genrl.agents import OnPolicyAgent
-from genrl.utils import get_env_properties, get_model, safe_mean
+from genrl.utils import (
+    compute_returns_and_advantage,
+    get_env_properties,
+    get_model,
+    safe_mean,
+)
 
 
 class PPO1(OnPolicyAgent):
@@ -24,6 +29,7 @@ class PPO1(OnPolicyAgent):
         gamma (float): The discount factor for rewards
         layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
             of the Q-value function
+        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the Q-value function
         rollout_size (int): Capacity of the Rollout Buffer
@@ -137,7 +143,12 @@ class PPO1(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        self.rollout.compute_returns_and_advantage(values.detach(), dones, use_gae=True)
+        compute_returns_and_advantage(
+            self.rollout,
+            values.detach().cpu().numpy(),
+            dones.cpu().numpy(),
+            use_gae=True,
+        )
 
     def update_params(self):
         """Updates the the A2C network

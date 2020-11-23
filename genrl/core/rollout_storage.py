@@ -187,59 +187,6 @@ class RolloutBuffer(BaseBuffer):
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
-    def compute_returns_and_advantage(
-        self, last_value: torch.Tensor, dones: torch.zeros, use_gae: bool = False
-    ) -> None:
-        """
-        Post-processing step: compute the returns (sum of discounted rewards)
-        and advantage (A(s) = R - V(S)).
-        Adapted from Stable-Baselines PPO2.
-        :param last_value: (torch.Tensor)
-        :param dones: (torch.zeros)
-        :param use_gae: (bool) Whether to use Generalized Advantage Estimation
-            or normal advantage for advantage computation.
-        """
-        last_value = last_value.flatten()
-
-        if use_gae:
-            last_gae_lam = 0
-            for step in reversed(range(self.buffer_size)):
-                if step == self.buffer_size - 1:
-                    next_non_terminal = 1.0 - dones
-                    next_value = last_value
-                else:
-                    next_non_terminal = 1.0 - self.dones[step + 1]
-                    next_value = self.values[step + 1]
-                delta = (
-                    self.rewards[step]
-                    + self.gamma * next_value * next_non_terminal
-                    - self.values[step]
-                )
-                last_gae_lam = (
-                    delta
-                    + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
-                )
-                self.advantages[step] = last_gae_lam
-            self.returns = self.advantages + self.values
-        else:
-            # Discounted return with value bootstrap
-            # Note: this is equivalent to GAE computation
-            # with gae_lambda = 1.0
-            last_return = 0.0
-            for step in reversed(range(self.buffer_size)):
-                if step == self.buffer_size - 1:
-                    next_non_terminal = 1.0 - dones
-                    next_value = last_value
-                    last_return = self.rewards[step] + next_non_terminal * next_value
-                else:
-                    next_non_terminal = 1.0 - self.dones[step + 1]
-                    last_return = (
-                        self.rewards[step]
-                        + self.gamma * last_return * next_non_terminal
-                    )
-                self.returns[step] = last_return
-            self.advantages = self.returns - self.values
-
     def add(
         self,
         obs: torch.zeros,
@@ -264,7 +211,7 @@ class RolloutBuffer(BaseBuffer):
             log_prob = log_prob.reshape(-1, 1)
 
         self.observations[self.pos] = obs.detach().clone()
-        self.actions[self.pos] = action.squeeze().detach().clone()
+        self.actions[self.pos] = action.detach().clone()
         self.rewards[self.pos] = reward.detach().clone()
         self.dones[self.pos] = done.detach().clone()
         self.values[self.pos] = value.detach().clone().flatten()
