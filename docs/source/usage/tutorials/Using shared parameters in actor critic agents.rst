@@ -29,39 +29,12 @@ critic network act on this feature vector to select an action and estimate the v
      action               value
 
 GenRL provides support to incorporte this decoder network in all of the actor critic agents through a ``shared_layers``
-<<<<<<< HEAD
-parameter. ``shared_layers`` takes the sizes of the mlp layers o be used, and ``None`` if no decoder network is to be
-=======
 parameter. ``shared_layers`` takes the sizes of the mlp layers to be used, and ``None`` if no decoder network is to be
->>>>>>> 25eb018f18a9a1d0865c16e5233a2a7ccddbfd78
 used
 
 As an example - in A2C -
 
 .. code-block:: python
-<<<<<<< HEAD
-# The imports
-from genrl.agents import A2C
-from genrl.environments import VectorEnv
-from genrl.trainers import OnPolicyTrainer
-
-# Initializing the environment
-env = VectorEnv("CartPole-v0", 1)
-
-# Initializing the agent to be used
-algo = A2C(
-        "mlp",
-        env,
-        policy_layers=(128,),
-        value_layers=(128,),
-        shared_layers=(32, 64),
-        rollout_size=128,
-    )
-
-# Finally initializing the trainer and trainer
-trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
-trainer.train()
-=======
 
     # The imports
     from genrl.agents import A2C
@@ -84,7 +57,6 @@ trainer.train()
     # Finally initializing the trainer and trainer
     trainer = OnPolicyTrainer(algo, env, log_mode=["csv"], logdir="./logs", epochs=1)
     trainer.train()
->>>>>>> 25eb018f18a9a1d0865c16e5233a2a7ccddbfd78
 
 The above example uses and mlp of layer sizes (32, 64) as the decoder, and can be visualised as follows -
 

@@ -73,7 +73,7 @@ class OnPolicyAgent(BaseAgent):
             dones (:obj:`torch.Tensor`): Game over statuses of each environment
         """
         for i in range(self.rollout_size):
-            action, values, old_log_probs = self.select_action(state)
+            action, values, old_log_probs = self.select_action(state.to(self.device))
 
             next_state, reward, dones, _ = self.env.step(action)
 
