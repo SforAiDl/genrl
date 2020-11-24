@@ -29,23 +29,26 @@ def compute_returns_and_advantage(
     if use_gae:
         gae_lambda = rollout_buffer.gae_lambda
     else:
-        gae_lambda = 1
+        gae_lambda = 1.0
 
-    next_values = last_value
-    next_non_terminal = 1 - dones
+    next_value = last_value
+    next_non_terminal = 1.0 - dones
 
     running_advantage = 0.0
     for step in reversed(range(rollout_buffer.buffer_size)):
         delta = (
             rollout_buffer.rewards[step]
-            + rollout_buffer.gamma * next_non_terminal * next_values
+            + rollout_buffer.gamma * next_value * next_non_terminal
             - rollout_buffer.values[step]
         )
         running_advantage = (
-            delta + rollout_buffer.gamma * gae_lambda * running_advantage
+            delta
+            + rollout_buffer.gamma * gae_lambda * next_non_terminal * running_advantage
         )
         next_non_terminal = 1 - rollout_buffer.dones[step]
-        next_values = rollout_buffer.values[step]
+        next_value = rollout_buffer.values[step]
         rollout_buffer.advantages[step] = running_advantage
 
     rollout_buffer.returns = rollout_buffer.advantages + rollout_buffer.values
+
+    return rollout_buffer.returns, rollout_buffer.advantages
