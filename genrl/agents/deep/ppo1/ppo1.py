@@ -113,7 +113,7 @@ class PPO1(OnPolicyAgent):
         action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
-        return action.detach(), value, dist.log_prob(action).cpu()
+        return action.detach(), value, dist.log_prob(action)
 
     def evaluate_actions(self, states: torch.Tensor, actions: torch.Tensor):
         """Evaluates actions taken by actor
@@ -132,7 +132,7 @@ class PPO1(OnPolicyAgent):
         states, actions = states.to(self.device), actions.to(self.device)
         _, dist = self.ac.get_action(states, deterministic=False)
         values = self.ac.get_value(states)
-        return values, dist.log_prob(actions).cpu(), dist.entropy().cpu()
+        return values, dist.log_prob(actions), dist.entropy()
 
     def get_traj_loss(self, values, dones):
         """Get loss from trajectory traversed by agent during rollouts
@@ -143,10 +143,10 @@ class PPO1(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        compute_returns_and_advantage(
+        self.rollout.returns, self.rollout.advantages = compute_returns_and_advantage(
             self.rollout,
-            values.detach().cpu().numpy(),
-            dones.cpu().numpy(),
+            values.detach(),
+            dones.to(self.device),
             use_gae=True,
         )
 
@@ -180,7 +180,7 @@ class PPO1(OnPolicyAgent):
             values = values.flatten()
 
             value_loss = self.value_coeff * nn.functional.mse_loss(
-                rollout.returns, values.cpu()
+                rollout.returns, values
             )
             self.logs["value_loss"].append(torch.mean(value_loss).item())
 

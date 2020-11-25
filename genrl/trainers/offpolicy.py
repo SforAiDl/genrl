@@ -65,7 +65,9 @@ class OffPolicyTrainer(Trainer):
         self.buffer = self.agent.replay_buffer
 
     def noise_reset(self) -> None:
-        """Resets the agent's action noise functions"""
+        """
+        Reaseas
+        """
         if "noise" in self.agent.__dict__ and self.agent.noise is not None:
             self.agent.noise.reset()
 

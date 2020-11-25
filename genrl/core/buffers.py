@@ -32,9 +32,10 @@ class ReplayBuffer:
     :type capacity: int
     """
 
-    def __init__(self, capacity: int):
+    def __init__(self, capacity: int, device="cpu"):
         self.capacity = capacity
         self.memory = deque([], maxlen=capacity)
+        self.device = device
 
     def push(self, inp: Tuple) -> None:
         """
@@ -60,7 +61,7 @@ class ReplayBuffer:
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
         return [
-            torch.from_numpy(v).float()
+            torch.from_numpy(v).float().to(self.device)
             for v in [state, action, reward, next_state, done]
         ]
 

@@ -118,7 +118,7 @@ class A2C(OnPolicyAgent):
         action, dist = self.ac.get_action(state, deterministic=deterministic)
         value = self.ac.get_value(state)
 
-        return action.detach(), value, dist.log_prob(action).cpu()
+        return action.detach(), value, dist.log_prob(action)
 
     def get_traj_loss(self, values: torch.Tensor, dones: torch.Tensor) -> None:
         """Get loss from trajectory traversed by agent during rollouts
@@ -130,7 +130,7 @@ class A2C(OnPolicyAgent):
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
         self.rollout.returns, self.rollout.advantages = compute_returns_and_advantage(
-            self.rollout, values.detach().cpu().numpy(), dones.cpu().numpy()
+            self.rollout, values.detach(), dones.to(self.device)
         )
 
     def evaluate_actions(self, states: torch.Tensor, actions: torch.Tensor):
@@ -150,7 +150,7 @@ class A2C(OnPolicyAgent):
         states, actions = states.to(self.device), actions.to(self.device)
         _, dist = self.ac.get_action(states, deterministic=False)
         values = self.ac.get_value(states)
-        return values, dist.log_prob(actions).cpu(), dist.entropy().cpu()
+        return values, dist.log_prob(actions), dist.entropy()
 
     def update_params(self) -> None:
         """Updates the the A2C network
@@ -171,7 +171,7 @@ class A2C(OnPolicyAgent):
             policy_loss = -torch.mean(policy_loss)
             self.logs["policy_loss"].append(policy_loss.item())
 
-            value_loss = self.value_coeff * F.mse_loss(rollout.returns, values.cpu())
+            value_loss = self.value_coeff * F.mse_loss(rollout.returns, values)
             self.logs["value_loss"].append(torch.mean(value_loss).item())
 
             entropy_loss = -torch.mean(entropy)  # Change this to entropy

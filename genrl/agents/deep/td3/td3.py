@@ -79,9 +79,9 @@ class TD3(OffPolicyAgentAC):
                 value_layers=self.value_layers,
                 val_type="Qsa",
                 discrete=False,
-            )
+            ).to(self.device)
         else:
-            self.ac = self.network
+            self.ac = self.network.to(self.device)
 
         if self.noise is not None:
             self.noise = self.noise(

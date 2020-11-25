@@ -133,8 +133,8 @@ class BaseBuffer(object):
         :return: (torch.Tensor)
         """
         if copy:
-            return array.detach().clone()
-        return array
+            return array.detach().clone().to(self.device)
+        return array.to(self.device)
 
 
 class RolloutBuffer(BaseBuffer):
@@ -173,17 +173,27 @@ class RolloutBuffer(BaseBuffer):
 
     def reset(self) -> None:
         self.observations = torch.zeros(
-            *(self.buffer_size, self.env.n_envs, *self.env.obs_shape)
+            *(self.buffer_size, self.env.n_envs, *self.env.obs_shape),
+            device=self.device
         )
         self.actions = torch.zeros(
-            *(self.buffer_size, self.env.n_envs, *self.env.action_shape)
+            *(self.buffer_size, self.env.n_envs, *self.env.action_shape),
+            device=self.device
         )
-        self.rewards = torch.zeros(self.buffer_size, self.env.n_envs)
-        self.returns = torch.zeros(self.buffer_size, self.env.n_envs)
-        self.dones = torch.zeros(self.buffer_size, self.env.n_envs)
-        self.values = torch.zeros(self.buffer_size, self.env.n_envs)
-        self.log_probs = torch.zeros(self.buffer_size, self.env.n_envs)
-        self.advantages = torch.zeros(self.buffer_size, self.env.n_envs)
+        self.rewards = torch.zeros(
+            self.buffer_size, self.env.n_envs, device=self.device
+        )
+        self.returns = torch.zeros(
+            self.buffer_size, self.env.n_envs, device=self.device
+        )
+        self.dones = torch.zeros(self.buffer_size, self.env.n_envs, device=self.device)
+        self.values = torch.zeros(self.buffer_size, self.env.n_envs, device=self.device)
+        self.log_probs = torch.zeros(
+            self.buffer_size, self.env.n_envs, device=self.device
+        )
+        self.advantages = torch.zeros(
+            self.buffer_size, self.env.n_envs, device=self.device
+        )
         self.generator_ready = False
         super(RolloutBuffer, self).reset()
 
@@ -210,12 +220,12 @@ class RolloutBuffer(BaseBuffer):
             # Reshape 0-d tensor to avoid error
             log_prob = log_prob.reshape(-1, 1)
 
-        self.observations[self.pos] = obs.detach().clone()
-        self.actions[self.pos] = action.detach().clone()
-        self.rewards[self.pos] = reward.detach().clone()
-        self.dones[self.pos] = done.detach().clone()
-        self.values[self.pos] = value.detach().clone().flatten()
-        self.log_probs[self.pos] = log_prob.detach().clone().flatten()
+        self.observations[self.pos] = obs.detach().clone().to(self.device)
+        self.actions[self.pos] = action.detach().clone().to(self.device)
+        self.rewards[self.pos] = reward.detach().clone().to(self.device)
+        self.dones[self.pos] = done.detach().clone().to(self.device)
+        self.values[self.pos] = value.detach().clone().flatten().to(self.device)
+        self.log_probs[self.pos] = log_prob.detach().clone().flatten().to(self.device)
         self.pos += 1
         if self.pos == self.buffer_size:
             self.full = True

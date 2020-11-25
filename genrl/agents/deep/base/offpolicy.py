@@ -47,6 +47,7 @@ class OffPolicyAgent(BaseAgent):
             self.replay_buffer = PrioritizedBuffer(self.replay_size)
         else:
             raise NotImplementedError
+        # self.replay_buffer = self.replay_buffer.to(self.device)
 
     def update_params_before_select_action(self, timestep: int) -> None:
         """Update any parameters before selecting action like epsilon for decaying epsilon greedy
@@ -107,6 +108,7 @@ class OffPolicyAgent(BaseAgent):
             )
         else:
             raise NotImplementedError
+        # print(batch.device)
         return batch
 
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
@@ -118,9 +120,13 @@ class OffPolicyAgent(BaseAgent):
         Returns:
             loss (:obj:`torch.Tensor`): Calculated loss of the Q-function
         """
-        q_values = self.get_q_values(batch.states, batch.actions)
+        q_values = self.get_q_values(
+            batch.states.to(self.device), batch.actions.to(self.device)
+        )
         target_q_values = self.get_target_q_values(
-            batch.next_states, batch.rewards, batch.dones
+            batch.next_states.to(self.device),
+            batch.rewards.to(self.device),
+            batch.dones.to(self.device),
         )
         loss = F.mse_loss(q_values, target_q_values)
         return loss
@@ -167,15 +173,16 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             action (:obj:`torch.Tensor`): Action taken by the agent
         """
+        state = state.to(self.device)
         action, _ = self.ac.get_action(state, deterministic)
         action = action.detach()
 
         # add noise to output from policy network
         if self.noise is not None:
-            action += self.noise()
+            action += self.noise().to(self.device)
 
         return torch.clamp(
-            action, self.env.action_space.low[0], self.env.action_space.high[0]
+            action.cpu(), self.env.action_space.low[0], self.env.action_space.high[0]
         )
 
     def update_target_model(self) -> None:
@@ -199,6 +206,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             q_values (:obj:`torch.Tensor`): Q values for the given states and actions
         """
+        states, actions = states.to(self.device), actions.to(self.device)
         if self.doublecritic:
             q_values = self.ac.get_value(
                 torch.cat([states, actions], dim=-1), mode="both"
@@ -221,6 +229,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
         """
+        next_states = next_states.to(self.device)
         next_target_actions = self.ac_target.get_action(next_states, True)[0]
 
         if self.doublecritic:
@@ -231,7 +240,10 @@ class OffPolicyAgentAC(OffPolicyAgent):
             next_q_target_values = self.ac_target.get_value(
                 torch.cat([next_states, next_target_actions], dim=-1)
             )
-        target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
+        target_q_values = (
+            rewards.to(self.device)
+            + self.gamma * (1 - dones.to(self.device)) * next_q_target_values
+        )
 
         return target_q_values
 
@@ -265,6 +277,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             loss (:obj:`torch.Tensor`): Calculated policy loss
         """
+        states = states.to(self.device)
         next_best_actions = self.ac.get_action(states, True)[0]
         q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
         policy_loss = -torch.mean(q_values)
