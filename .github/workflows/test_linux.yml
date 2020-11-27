@@ -52,7 +52,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - uses: goanpeca/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v22
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
