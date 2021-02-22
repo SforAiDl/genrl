@@ -146,15 +146,7 @@ class PrioritizedBuffer:
 
         return [
             torch.as_tensor(v, dtype=torch.float32)
-            for v in [
-                states,
-                actions,
-                rewards,
-                next_states,
-                dones,
-                indices,
-                weights,
-            ]
+            for v in [states, actions, rewards, next_states, dones, indices, weights,]
         ]
 
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:
@@ -180,4 +172,88 @@ class PrioritizedBuffer:
 
     @property
     def pos(self):
+        return len(self.buffer)
+
+
+class MultiAgentReplayBuffer:
+    """
+    Implements the basic Experience Replay Mechanism for MultiAgents
+    by feeding in global states, global actions, global rewards,
+    global next_states, global dones
+        :param capacity: Size of the replay buffer
+        :type capacity: int
+        :param num_agents: Number of agents in the environment
+        :type num_agents: int
+    """
+
+    def __init__(self, num_agents: int, capacity: int):
+        """
+        Initialising the buffer
+            :param num_agents: number of agents in the environment
+            :type num_agents: int
+            :param capacity: Max buffer size
+            :type capacity: int
+        """
+        self.capacity = capacity
+        self.num_agents = num_agents
+        self.memory = deque(maxlen=self.capacity)
+
+    def push(self, inp: list) -> None:
+        """
+        Adds new experience to buffer
+            :param inp: (Tuple containing `state`, `action`, `reward`,
+            `next_state` and `done`)
+            :type inp: tuple
+            :returns: None
+        """
+        self.memory.append(inp)
+
+    def sample(self, batch_size: int):
+        """Returns randomly sampled experiences from the replay memory
+
+        Args:
+            batch_size (int): Number of samples per batch
+        """
+        batch = random.sample(self.memory, batch_size)
+        segmented_batch = map(np.stack, zip(*batch))
+
+        for transition in batch:
+            for i, _ in enumerate(transition):
+                if i == 0 or i == 1 or i == 3:
+                    transition[i] = np.concatenate(
+                        np.array(
+                            [transition[i][agent] for agent in transition[i].keys()]
+                        )
+                    )
+                else:
+                    transition[i] = np.array(
+                        [transition[i][agent] for agent in transition[i].keys()]
+                    )
+
+        (
+            global_states,
+            global_actions,
+            global_rewards,
+            global_next_states,
+            global_dones,
+        ) = map(np.stack, zip(*batch))
+
+        global_batch = [
+            torch.from_numpy(v).float()
+            for v in [
+                global_states,
+                global_actions,
+                global_rewards,
+                global_next_states,
+                global_dones,
+            ]
+        ]
+
+        return segmented_batch, global_batch
+
+    def __len__(self):
+        """
+        Gives number of experiences in buffer currently
+        :returns: Length of replay memory
+        """
         return len(self.buffer)

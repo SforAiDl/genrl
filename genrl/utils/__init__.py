@@ -20,4 +20,6 @@ from genrl.utils.utils import (  # noqa
     noisy_mlp,
     safe_mean,
     set_seeds,
+    onehot_from_logits
 )
+from genrl.utils.pettingzoo_interface import PettingZooInterface # noqa

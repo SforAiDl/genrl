@@ -37,9 +37,7 @@ def get_model(type_: str, name_: str) -> Union:
 
 
 def mlp(
-    sizes: Tuple,
-    activation: str = "relu",
-    sac: bool = False,
+    sizes: Tuple, activation: str = "relu", sac: bool = False,
 ):
     """
         Generates an MLP model given sizes of each layer
@@ -199,3 +197,21 @@ def safe_mean(log: Union[torch.Tensor, List[int]]):
     else:
         func = np.mean
     return func(log)
+
+
+def onehot_from_logits(self, logits, eps=0.0):
+    # get best (according to current policy) actions in one-hot form
+    argmax_acs = (logits == logits.max(0, keepdim=True)[0]).float()
+    if eps == 0.0:
+        return argmax_acs
+    # get random actions in one-hot form
+    rand_acs = torch.eye(logits.shape[1])[
+        [np.random.choice(range(logits.shape[1]), size=logits.shape[0])]
+    ]
+    # chooses between best and random actions using epsilon greedy
+    return torch.stack(
+        [
+            argmax_acs[i] if r > eps else rand_acs[i]
+            for i, r in enumerate(torch.rand(logits.shape[0]))
+        ]
+    )
