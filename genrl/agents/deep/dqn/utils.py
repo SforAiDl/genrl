@@ -102,8 +102,10 @@ def categorical_q_values(agent: DQN, states: torch.Tensor, actions: torch.Tensor
     # Size of q_value_dist should be [batch_size, n_envs, action_dim, num_atoms] here
     # To gather the q_values of the respective actions, actions must be of the shape:
     # [batch_size, n_envs, 1, num_atoms]. It's current shape is [batch_size, n_envs, 1]
-    actions = actions.unsqueeze(-1).expand(
-        agent.batch_size, agent.env.n_envs, 1, agent.num_atoms
+    actions = (
+        actions.unsqueeze(-1)
+        .unsqueeze(-1)
+        .expand(agent.batch_size, agent.env.n_envs, 1, agent.num_atoms)
     )
     # Now as we gather q_values from the action_dim dimension which is at index 2
     q_values = q_value_dist.gather(2, actions)

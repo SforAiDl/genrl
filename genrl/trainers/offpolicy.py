@@ -1,6 +1,7 @@
 from typing import List, Type, Union
 
 import numpy as np
+import torch
 
 from genrl.core import PrioritizedBuffer, ReplayBuffer
 from genrl.trainers import Trainer
@@ -30,7 +31,9 @@ class OffPolicyTrainer(Trainer):
         save_interval (int): Timesteps between successive saves of the agent's important hyperparameters
         save_model (str): Directory where the checkpoints of agent parameters should be saved
         run_num (int): A run number allotted to the save of parameters
-        load_model (str): File to load saved parameter checkpoint from
+        load_weights (str): Weights file
+        load_hyperparams (str): File to load hyperparameters
+        load_buffer (str): File to load buffer from
         render (bool): True if environment is to be rendered during training, else False
         evaluate_episodes (int): Number of episodes to evaluate for
         seed (int): Set seed for reproducibility
@@ -155,8 +158,10 @@ class OffPolicyTrainer(Trainer):
             # true_dones contains the "true" value of the dones (game over statuses). It is set
             # to False when the environment is not actually done but instead reaches the max
             # episode length.
-            true_dones = [info[i]["done"] for i in range(self.env.n_envs)]
-            self.buffer.push((state, action, reward, next_state, true_dones))
+            true_dones = torch.FloatTensor(
+                [info[i]["done"] for i in range(self.env.n_envs)]
+            )
+            self.buffer.add((state, action, reward, next_state, true_dones))
 
             state = next_state.detach().clone()
 

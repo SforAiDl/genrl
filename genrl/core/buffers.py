@@ -1,9 +1,97 @@
+import os
 import random
 from collections import deque
 from typing import NamedTuple, Tuple
 
-import numpy as np
 import torch
+
+
+class BaseBuffer(object):
+    """Base class that represents a buffer (rollout or replay)
+
+    Attributes:
+        buffer_size (int): Max number of elements in the buffer
+    """
+
+    def __init__(self, buffer_size: int):
+        super(BaseBuffer, self).__init__()
+        self.buffer_size = buffer_size
+        self.pos = 0
+        self.full = False
+
+    @staticmethod
+    def swap_and_flatten(arr: torch.Tensor) -> torch.Tensor:
+        """Swap and Flatten method
+
+        Swap and then flatten axes 0 (buffer_size) and 1 (n_envs)
+        to convert shape from [n_steps, n_envs, ...] (when ... is the shape of the features)
+        to [n_steps * n_envs, ...] (which maintain the order)
+
+        Args:
+            arr (:obj:`torch.Tensor`): Array to modify
+
+        Returns:
+            new_arr (:obj:`torch.Tensor`): Modified Array
+        """
+        shape = arr.shape
+        if len(shape) < 3:
+            arr = arr.unsqueeze(-1)
+            shape = shape + (1,)
+
+        return arr.permute(1, 0, *(torch.arange(2, len(shape)))).reshape(
+            shape[0] * shape[1], *shape[2:]
+        )
+
+    def size(self) -> int:
+        """Returns size of the buffer
+
+        Returns:
+            size (int): The current size of the buffer
+        """
+        raise NotImplementedError
+
+    def add(self, *args, **kwargs) -> None:
+        """Adds elements to the buffer"""
+        raise NotImplementedError
+
+    def reset(self) -> None:
+        """Resets the buffer"""
+        self.pos = 0
+        self.full = False
+
+    def sample(self, batch_size: int) -> Tuple:
+        """Sample from the buffer
+
+        Args:
+            batch_size (int): Number of element to sample
+
+        Returns:
+            samples (:obj:`namedtuple`): Named tuple of the sampled experiences
+        """
+        raise NotImplementedError
+
+    def save(self, directory: str = None, run_num: int = None) -> None:
+        """Saves the buffer locally
+
+        The buffers are saved locally so they can be used as a dataset for
+            Offline RL or for other purposes
+
+        Args:
+            directory (string): Directory to save buffers in
+            run_num (int): The run number associated with the training run
+        """
+        raise NotImplementedError
+
+    def load(self, path: str) -> None:
+        """Loads the buffer from the file
+
+        Args:
+            path (str): Path of the pickled file of the buffer replays/rollouts
+        """
+        if not os.path.exists(path):
+            raise FileNotFoundError
+
+        raise NotImplementedError
 
 
 class ReplayBufferSamples(NamedTuple):
@@ -12,6 +100,69 @@ class ReplayBufferSamples(NamedTuple):
     rewards: torch.Tensor
     next_states: torch.Tensor
     dones: torch.Tensor
+
+
+class ReplayBuffer(BaseBuffer):
+    """Vanilla Experience Replay Buffer
+
+    Attributes:
+        buffer_size (int): Max number of element in the buffer
+        device (:obj:`torch.device` or str):  PyTorch device to which the values will be converted
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(ReplayBuffer, self).__init__(*args, **kwargs)
+        self.buffer = deque([], maxlen=self.buffer_size)
+
+    def size(self) -> int:
+        """Returns size of the buffer
+
+        Returns:
+            size (int): The current size of the buffer
+        """
+        return len(self.buffer)
+
+    def add(self, experience: Tuple) -> None:
+        """Adds elements to the buffer
+
+        Args:
+            experience (:obj:`tuple`): Tuple containing state, action, reward, next_state and done
+        """
+        self.buffer.append(experience)
+
+    def sample(
+        self, batch_size: int
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Sample from the buffer
+
+        Args:
+            batch_size (int): Number of element to sample
+
+        Returns:
+            samples (:obj:`namedtuple`): Named tuple of the sampled experiences
+        """
+        batch = random.sample(self.buffer, batch_size)
+        states, actions, rewards, next_states, dones = map(torch.stack, zip(*batch))
+        return ReplayBufferSamples(states, actions, rewards, next_states, dones)
+
+    def save(self, path: str = None) -> None:
+        """Saves the buffer locally
+
+        The buffers are saved locally so they can be used as a dataset for
+            Offline RL or for other purposes
+
+        Args:
+            path (string): Path to save buffers in
+        """
+        torch.save(self.buffer, path)
+
+    def load(self, path: str) -> None:
+        """Loads the buffer from the file
+
+        Args:
+            path (str): Path of the pickled file of the buffer replays/rollouts
+        """
+        self.buffer = torch.load(path)
 
 
 class PrioritizedReplayBufferSamples(NamedTuple):
@@ -24,87 +175,36 @@ class PrioritizedReplayBufferSamples(NamedTuple):
     weights: torch.Tensor
 
 
-class ReplayBuffer:
-    """
-    Implements the basic Experience Replay Mechanism
+class PrioritizedBuffer(BaseBuffer):
+    """Prioritized Experience Replay Mechanism
 
-    :param capacity: Size of the replay buffer
-    :type capacity: int
-    """
-
-    def __init__(self, capacity: int):
-        self.capacity = capacity
-        self.memory = deque([], maxlen=capacity)
-
-    def push(self, inp: Tuple) -> None:
-        """
-        Adds new experience to buffer
-
-        :param inp: Tuple containing state, action, reward, next_state and done
-        :type inp: tuple
-        :returns: None
-        """
-        self.memory.append(inp)
-
-    def sample(
-        self, batch_size: int
-    ) -> (Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]):
-        """
-                Returns randomly sampled experiences from replay memory
-
-                :param batch_size: Number of samples per batch
-                :type batch_size: int
-                :returns: (Tuple composing of `state`, `action`, `reward`,
-        `next_state` and `done`)
-        """
-        batch = random.sample(self.memory, batch_size)
-        state, action, reward, next_state, done = map(np.stack, zip(*batch))
-        return [
-            torch.from_numpy(v).float()
-            for v in [state, action, reward, next_state, done]
-        ]
-
-    def __len__(self) -> int:
-        """
-        Gives number of experiences in buffer currently
-
-        :returns: Length of replay memory
-        """
-        return self.pos
-
-
-class PrioritizedBuffer:
-    """
-    Implements the Prioritized Experience Replay Mechanism
-
-    :param capacity: Size of the replay buffer
-    :param alpha: Level of prioritization
-    :type capacity: int
-    :type alpha: int
+    Attributes:
+        buffer_size (int): Max number of element in the buffer
+        alpha (float): Level of prioritization
+        beta (float): Bias factor used to correct IS Weights
+        device (:obj:`torch.device` or str):  PyTorch device to which the values will be converted
     """
 
-    def __init__(self, capacity: int, alpha: float = 0.6, beta: float = 0.4):
+    def __init__(self, *args, alpha: float = 0.6, beta: float = 0.4, **kwargs):
+        super(PrioritizedBuffer, self).__init__(*args, **kwargs)
+
         self.alpha = alpha
         self.beta = beta
-        self.capacity = capacity
-        self.buffer = deque([], maxlen=capacity)
-        self.priorities = deque([], maxlen=capacity)
+        self.buffer = deque([], maxlen=self.buffer_size)
+        self.priorities = deque([], maxlen=self.buffer_size)
 
-    def push(self, inp: Tuple) -> None:
-        """
-                Adds new experience to buffer
+    def add(self, experience: Tuple) -> None:
+        """Adds elements to the buffer
 
-                :param inp: (Tuple containing `state`, `action`, `reward`,
-        `next_state` and `done`)
-                :type inp: tuple
-                :returns: None
+        Args:
+            experience (:obj:`tuple`): Tuple containing state, action, reward, next_state and done
         """
+        self.buffer.append(experience)
         max_priority = max(self.priorities) if self.priorities else 1.0
-        self.buffer.append(inp)
         self.priorities.append(max_priority)
 
     def sample(
-        self, batch_size: int, beta: float = None
+        self, batch_size: int
     ) -> (
         Tuple[
             torch.Tensor,
@@ -116,46 +216,35 @@ class PrioritizedBuffer:
             torch.Tensor,
         ]
     ):
-        """
-                (Returns randomly sampled memories from replay memory along with their
-        respective indices and weights)
+        """Sample from the buffer
 
-                :param batch_size: Number of samples per batch
-                :param beta: (Bias exponent used to correct
-        Importance Sampling (IS) weights)
-                :type batch_size: int
-                :type beta: float
-                :returns: (Tuple containing `states`, `actions`, `next_states`,
-        `rewards`, `dones`, `indices` and `weights`)
-        """
-        if beta is None:
-            beta = self.beta
+        Args:
+            batch_size (int): Number of element to sample
 
+        Returns:
+            samples (:obj:`namedtuple`): Named tuple of the sampled experiences
+        """
         total = len(self.buffer)
-        priorities = np.asarray(self.priorities)
+        priorities = torch.FloatTensor(self.priorities)
         probabilities = priorities ** self.alpha
         probabilities /= probabilities.sum()
-        indices = np.random.choice(total, batch_size, p=probabilities)
+        indices = torch.multinomial(probabilities, batch_size)
 
-        weights = (total * probabilities[indices]) ** (-beta)
+        weights = (total * probabilities[indices]) ** (-self.beta)
         weights /= weights.max()
-        weights = np.asarray(weights, dtype=np.float32)
 
         samples = [self.buffer[i] for i in indices]
-        (states, actions, rewards, next_states, dones) = map(np.stack, zip(*samples))
+        (states, actions, rewards, next_states, dones) = map(torch.stack, zip(*samples))
 
-        return [
-            torch.as_tensor(v, dtype=torch.float32)
-            for v in [
-                states,
-                actions,
-                rewards,
-                next_states,
-                dones,
-                indices,
-                weights,
-            ]
-        ]
+        return PrioritizedReplayBufferSamples(
+            states,
+            actions,
+            rewards,
+            next_states,
+            dones,
+            indices,
+            weights,
+        )
 
     def update_priorities(self, batch_indices: Tuple, batch_priorities: Tuple) -> None:
         """
@@ -170,14 +259,10 @@ class PrioritizedBuffer:
         for idx, priority in zip(batch_indices, batch_priorities):
             self.priorities[int(idx)] = priority.mean()
 
-    def __len__(self) -> int:
-        """
-        Gives number of experiences in buffer currently
+    def size(self) -> int:
+        """Returns size of the buffer
 
-        :returns: Length of replay memory
+        Returns:
+            size (int): The current size of the buffer
         """
-        return len(self.buffer)
-
-    @property
-    def pos(self):
         return len(self.buffer)

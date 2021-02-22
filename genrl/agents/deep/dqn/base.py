@@ -56,7 +56,7 @@ class DQN(OffPolicyAgent):
         if self.create_model:
             self._create_model()
 
-    def _create_model(self, *args, **kwargs) -> None:
+    def _create_model(self, **kwargs) -> None:
         """Function to initialize Q-value model
 
         This will create the Q-value function of the agent.
@@ -153,7 +153,7 @@ class DQN(OffPolicyAgent):
             q_values (:obj:`torch.Tensor`): Q values for the given states and actions
         """
         q_values = self.model(states)
-        q_values = q_values.gather(2, actions)
+        q_values = q_values.gather(2, actions.unsqueeze(-1))
         return q_values
 
     def get_target_q_values(

@@ -36,7 +36,7 @@ class OnPolicyAgent(BaseAgent):
 
         if buffer_type == "rollout":
             self.rollout = RolloutBuffer(
-                self.rollout_size, self.env, gae_lambda=gae_lambda
+                self.rollout_size, self.env, gae_lambda=gae_lambda, gamma=self.gamma
             )
         else:
             raise NotImplementedError

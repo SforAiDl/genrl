@@ -5,11 +5,10 @@ import torch
 from torch.nn import functional as F
 
 from genrl.agents.deep.base import BaseAgent
-from genrl.core import (
+
+from genrl.core import (  # PrioritizedReplayBufferSamples,; ReplayBufferSamples,
     PrioritizedBuffer,
-    PrioritizedReplayBufferSamples,
     ReplayBuffer,
-    ReplayBufferSamples,
 )
 
 
@@ -23,8 +22,9 @@ class OffPolicyAgent(BaseAgent):
         create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
-        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
-            of the Q-value function
+        policy_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the policy
+        value_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the critics
+        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the Q-value function
         replay_size (int): Capacity of the Replay Buffer
@@ -67,19 +67,6 @@ class OffPolicyAgent(BaseAgent):
         """
         raise NotImplementedError
 
-    def _reshape_batch(self, batch: List):
-        """Function to reshape experiences
-
-        Can be modified for individual algorithm usage
-
-        Args:
-            batch (:obj:`list`): List of experiences that are being replayed
-
-        Returns:
-            batch (:obj:`list`): Reshaped experiences for replay
-        """
-        return [*batch]
-
     def sample_from_buffer(self, beta: float = None):
         """Samples experiences from the buffer and converts them into usable formats
 
@@ -95,18 +82,6 @@ class OffPolicyAgent(BaseAgent):
         else:
             batch = self.replay_buffer.sample(self.batch_size)
 
-        states, actions, rewards, next_states, dones = self._reshape_batch(batch)
-
-        # Convert every experience to a Named Tuple. Either Replay or Prioritized Replay samples.
-        if isinstance(self.replay_buffer, ReplayBuffer):
-            batch = ReplayBufferSamples(*[states, actions, rewards, next_states, dones])
-        elif isinstance(self.replay_buffer, PrioritizedBuffer):
-            indices, weights = batch[5], batch[6]
-            batch = PrioritizedReplayBufferSamples(
-                *[states, actions, rewards, next_states, dones, indices, weights]
-            )
-        else:
-            raise NotImplementedError
         return batch
 
     def get_q_loss(self, batch: collections.namedtuple) -> torch.Tensor:
@@ -136,8 +111,9 @@ class OffPolicyAgentAC(OffPolicyAgent):
         create_model (bool): Whether the model of the algo should be created when initialised
         batch_size (int): Mini batch size for loading experiences
         gamma (float): The discount factor for rewards
-        layers (:obj:`tuple` of :obj:`int`): Layers in the Neural Network
-            of the Q-value function
+        policy_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the policy
+        value_layers (:obj:`tuple` of :obj:`int`): Neural network layer dimensions for the critics
+        shared_layers(:obj:`tuple` of :obj:`int`): Sizes of shared layers in Actor Critic if using
         lr_policy (float): Learning rate for the policy/actor
         lr_value (float): Learning rate for the Q-value function
         replay_size (int): Capacity of the Replay Buffer
@@ -154,7 +130,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         self.doublecritic = False
 
     def select_action(
-        self, state: torch.Tensor, deterministic: bool = True
+        self, state: torch.Tensor, deterministic: bool = True, noise: bool = True
     ) -> torch.Tensor:
         """Select action given state
 
@@ -163,6 +139,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Args:
             state (:obj:`torch.Tensor`): Current state of the environment
             deterministic (bool): Should the policy be deterministic or stochastic
+            noise (bool): Should noise be added to the agent
 
         Returns:
             action (:obj:`torch.Tensor`): Action taken by the agent
@@ -171,7 +148,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         action = action.detach()
 
         # add noise to output from policy network
-        if self.noise is not None:
+        if noise and self.noise is not None:
             action += self.noise()
 
         return torch.clamp(
@@ -210,7 +187,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
     def get_target_q_values(
         self, next_states: torch.Tensor, rewards: List[float], dones: List[bool]
     ) -> torch.Tensor:
-        """Get target Q values for the TD3
+        """Get target Q values
 
         Args:
             next_states (:obj:`torch.Tensor`): Next states for which target Q-values
@@ -219,7 +196,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
             dones (:obj:`list`): Game over status for each environment
 
         Returns:
-            target_q_values (:obj:`torch.Tensor`): Target Q values for the TD3
+            target_q_values (:obj:`torch.Tensor`): Target Q values
         """
         next_target_actions = self.ac_target.get_action(next_states, True)[0]
 
@@ -265,7 +242,7 @@ class OffPolicyAgentAC(OffPolicyAgent):
         Returns:
             loss (:obj:`torch.Tensor`): Calculated policy loss
         """
-        next_best_actions = self.ac.get_action(states, True)[0]
+        next_best_actions = self.select_action(states, deterministic=True, noise=False)
         q_values = self.ac.get_value(torch.cat([states, next_best_actions], dim=-1))
         policy_loss = -torch.mean(q_values)
         return policy_loss

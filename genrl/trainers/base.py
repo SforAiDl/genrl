@@ -31,6 +31,7 @@ class Trainer(ABC):
         run_num (int): A run number allotted to the save of parameters
         load_weights (str): Weights file
         load_hyperparams (str): File to load hyperparameters
+        load_buffer (str): File to load buffer from
         render (bool): True if environment is to be rendered during training, else False
         evaluate_episodes (int): Number of episodes to evaluate for
         seed (int): Set seed for reproducibility
@@ -52,6 +53,7 @@ class Trainer(ABC):
         run_num: int = None,
         load_weights: str = None,
         load_hyperparams: str = None,
+        load_buffer: str = None,
         render: bool = False,
         evaluate_episodes: int = 25,
         seed: Optional[int] = None,
@@ -70,6 +72,7 @@ class Trainer(ABC):
         self.run_num = run_num
         self.load_weights = load_weights
         self.load_hyperparams = load_hyperparams
+        self.load_buffer = load_buffer
         self.render = render
         self.evaluate_episodes = evaluate_episodes
 
@@ -111,7 +114,7 @@ class Trainer(ABC):
                 for i, di in enumerate(done):
                     if di:
                         episode += 1
-                        episode_rewards.append(episode_reward[i].clone().detach())
+                        episode_rewards.append(episode_reward[i].detach().clone())
                         episode_reward[i] = 0
                         self.env.reset_single_env(i)
             if episode == self.evaluate_episodes:
@@ -124,7 +127,7 @@ class Trainer(ABC):
                 )
                 return
 
-    def save(self, timestep: int) -> None:
+    def save(self, timestep: int, save_buffer: bool = False) -> None:
         """Function to save all relevant parameters of a given agent
 
         Args:
@@ -153,11 +156,18 @@ class Trainer(ABC):
 
         filename_hyperparams = "{}/{}-log-{}.toml".format(path, run_num, timestep)
         filename_weights = "{}/{}-log-{}.pt".format(path, run_num, timestep)
+        filename_buffer = "{}/{}-buffer-{}.pt".format(path, run_num, timestep)
         hyperparameters, weights = self.agent.get_hyperparams()
         with open(filename_hyperparams, mode="w") as f:
             toml.dump(hyperparameters, f)
 
         torch.save(weights, filename_weights)
+
+        if save_buffer:
+            if self.off_policy:
+                self.agent.replay_buffer.save(filename_buffer)
+            else:
+                self.agent.rollout.save(filename_buffer)
 
     def load(self):
         """Function to load saved parameters of a given agent"""
@@ -178,7 +188,18 @@ class Trainer(ABC):
         except FileNotFoundError:
             raise Exception("Invalid weights File Name")
 
-        print("Loaded Pretrained Model weights and hyperparameters!")
+        if self.load_buffer is not None:
+            try:
+                if self.off_policy:
+                    self.agent.replay_buffer.load(self.load_buffer)
+                else:
+                    self.agent.rollout.load(self.load_buffer)
+            except FileNotFoundError:
+                raise Exception("Invalid buffer File Name")
+        else:
+            print("Not loading buffer as no File Name has been passed...")
+
+        print("Loaded Pretrained Model weights, buffer and hyperparameters!")
 
     @property
     def n_envs(self) -> int:

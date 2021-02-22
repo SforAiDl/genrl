@@ -184,7 +184,7 @@ class MlpSingleActorTwoCritic(BaseActorCritic):
         action_dim: spaces.Space,
         policy_layers: Tuple = (32, 32),
         value_layers: Tuple = (32, 32),
-        val_type: str = "V",
+        val_type: str = "Qsa",
         discrete: bool = True,
         num_critics: int = 2,
         **kwargs,
@@ -194,8 +194,8 @@ class MlpSingleActorTwoCritic(BaseActorCritic):
         self.num_critics = num_critics
 
         self.actor = MlpPolicy(state_dim, action_dim, policy_layers, discrete, **kwargs)
-        self.critic1 = MlpValue(state_dim, action_dim, "Qsa", value_layers, **kwargs)
-        self.critic2 = MlpValue(state_dim, action_dim, "Qsa", value_layers, **kwargs)
+        self.critic1 = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
+        self.critic2 = MlpValue(state_dim, action_dim, val_type, value_layers, **kwargs)
 
         self.action_scale = kwargs["action_scale"] if "action_scale" in kwargs else 1
         self.action_bias = kwargs["action_bias"] if "action_bias" in kwargs else 0
