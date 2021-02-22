@@ -1,0 +1,263 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>DQN &mdash; GenRL 0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/genrl_cropped.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="PPO1" href="genrl.agents.deep.ppo1.html" />
+    <link rel="prev" title="DDPG" href="genrl.agents.deep.ddpg.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/genrl.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/about/about.html">About</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/tutorials/index.html">Tutorials</a></li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Agents</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.deep.a2c.html">A2C</a></li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.deep.ddpg.html">DDPG</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">DQN</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#genrl-agents-deep-dqn-base-module">genrl.agents.deep.dqn.base module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#genrl-agents-deep-dqn-categorical-module">genrl.agents.deep.dqn.categorical module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#genrl-agents-deep-dqn-double-module">genrl.agents.deep.dqn.double module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#genrl-agents-deep-dqn-dueling-module">genrl.agents.deep.dqn.dueling module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#genrl-agents-deep-dqn-noisy-module">genrl.agents.deep.dqn.noisy module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#genrl-agents-deep-dqn-prioritized-module">genrl.agents.deep.dqn.prioritized module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#genrl-agents-deep-dqn-utils-module">genrl.agents.deep.dqn.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.deep.ppo1.html">PPO1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.deep.vpg.html">VPG</a></li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.deep.td3.html">TD3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.deep.sac.html">SAC</a></li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.classical.qlearning.html">Q-Learning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.classical.sarsa.html">SARSA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.bandits.contextual.html">Contextual Bandit</a></li>
+<li class="toctree-l2"><a class="reference internal" href="genrl.agents.bandits.multiarmed.html">Multi-Armed Bandit</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../environments/index.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../trainers/index.html">Trainers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../common/index.html">Common</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">GenRL</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Agents</a> &raquo;</li>
+        
+      <li>DQN</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/api/agents/genrl.agents.deep.dqn.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="dqn">
+<h1>DQN<a class="headerlink" href="#dqn" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="genrl-agents-deep-dqn-base-module">
+<h2>genrl.agents.deep.dqn.base module<a class="headerlink" href="#genrl-agents-deep-dqn-base-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="genrl-agents-deep-dqn-categorical-module">
+<h2>genrl.agents.deep.dqn.categorical module<a class="headerlink" href="#genrl-agents-deep-dqn-categorical-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="genrl-agents-deep-dqn-double-module">
+<h2>genrl.agents.deep.dqn.double module<a class="headerlink" href="#genrl-agents-deep-dqn-double-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="genrl-agents-deep-dqn-dueling-module">
+<h2>genrl.agents.deep.dqn.dueling module<a class="headerlink" href="#genrl-agents-deep-dqn-dueling-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="genrl-agents-deep-dqn-noisy-module">
+<h2>genrl.agents.deep.dqn.noisy module<a class="headerlink" href="#genrl-agents-deep-dqn-noisy-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="genrl-agents-deep-dqn-prioritized-module">
+<h2>genrl.agents.deep.dqn.prioritized module<a class="headerlink" href="#genrl-agents-deep-dqn-prioritized-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="genrl-agents-deep-dqn-utils-module">
+<h2>genrl.agents.deep.dqn.utils module<a class="headerlink" href="#genrl-agents-deep-dqn-utils-module" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="genrl.agents.deep.ppo1.html" class="btn btn-neutral float-right" title="PPO1" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="genrl.agents.deep.ddpg.html" class="btn btn-neutral float-left" title="DDPG" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Society for Artificial Intelligence and Deep Learning (SAiDL)
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

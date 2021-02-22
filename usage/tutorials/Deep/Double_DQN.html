@@ -1,0 +1,362 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Double Deep Q-Network &mdash; GenRL 0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/genrl_cropped.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Dueling Deep Q-Network" href="Dueling_DQN.html" />
+    <link rel="prev" title="Deep Q-Networks (DQN)" href="DQN.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/genrl.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about/about.html">About</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bandit/index.html">Bandit Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Classical/index.html">Classical</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Deep RL Tutorials</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Background.html">Deep Reinforcement Learning Background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VPG.html">Vanilla Policy Gradient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="A2C.html">Advantage Actor Critic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="PPO.html">Proximal Policy Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DQN.html">Deep Q-Networks (DQN)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Double Deep Q-Network</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objective">Objective</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#algorithm-details">Algorithm Details</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#training-through-the-api">Training through the API</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Dueling_DQN.html">Dueling Deep Q-Network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NoisyNet_DQN.html">Deep Q Networks with Noisy Nets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Prioritized_DQN.html">Prioritized Deep Q-Networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DDPG.html">Deep Deterministic Policy Gradients</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TD3.html">Twin Delayed DDPG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SAC.html">Soft Actor-Critic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Categorical_DQN.html">Categorical Deep Q-Networks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20Custom%20Policies.html">Custom Policy Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20A2C.html">Using A2C</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20shared%20parameters%20in%20actor%20critic%20agents.html">Using Shared Parameters in Actor Critic Agents in GenRL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../using_vpg.html">Vanilla Policy Gradient (VPG)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Saving%20and%20loading.html">Saving and Loading Weights and Hyperparameters with GenRL</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/agents/index.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/environments/index.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/trainers/index.html">Trainers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/common/index.html">Common</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GenRL</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Tutorials</a> &raquo;</li>
+        
+          <li><a href="index.html">Deep RL Tutorials</a> &raquo;</li>
+        
+      <li>Double Deep Q-Network</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/usage/tutorials/Deep/Double_DQN.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="double-deep-q-network">
+<h1>Double Deep Q-Network<a class="headerlink" href="#double-deep-q-network" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="objective">
+<h2>Objective<a class="headerlink" href="#objective" title="Permalink to this headline">¶</a></h2>
+<p>Double DQN builds upon the notion of Double Q-Learning and extends it to Deep Q-networks. We use function approximators for predicting the Q-values of the states and a function approximator is always corrupted with some noise.
+Now, when we maximise over the values of state-action pairs while calculating the target for the TD-update, the maximum is taken over the true values plus the noise. Thus, the maximum of a noisy function is always bigger than the maximum
+of the true function:</p>
+<div class="math notranslate nohighlight">
+\[E[max(X_1, X_2)] \ge max[E(X_1), E(X_2)]\]</div>
+<p>where <span class="math notranslate nohighlight">\(X_1\)</span> and <span class="math notranslate nohighlight">\(X_2\)</span> are two random variables. This leads to overestimations of the values of state-action pairs and cnsequently suboptimal action selection. This overestimation is bound to propagate and increase over the course of
+multiple updates because the same approximator is used to select the maximum action and to estimate it’s Q-value.</p>
+<div class="math notranslate nohighlight">
+\[max_{a'}Q_{\phi'}(s', a') = Q_{\phi'}(s', argmax_{a'}Q_{\phi'}(s', a'))\]</div>
+<p>This problem can be solved by decoupling the action selection and the value estimation using two separate function approximators(and hence different noise distributions) for both the purposes which is what a Double-DQN does. The loss function is defined as:</p>
+<div class="math notranslate nohighlight">
+\[E_{s, a \sim \rho(.)}[(y^{DoubleDQN} - Q(s, a; \theta))^{2}]\]</div>
+</div>
+<div class="section" id="algorithm-details">
+<h2>Algorithm Details<a class="headerlink" href="#algorithm-details" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="epsilon-greedy-action-selection">
+<h3>Epsilon-Greedy Action Selection<a class="headerlink" href="#epsilon-greedy-action-selection" title="Permalink to this headline">¶</a></h3>
+<p>The action exploration is stochastic wherein the greedy action is chosen with a probability of <span class="math notranslate nohighlight">\(1 - \epsilon\)</span> and rest of the time, we sample the action randomly. During evaluation, we use only greedy actions to judge how well the agent performs.</p>
+</div>
+<div class="section" id="experience-replay">
+<h3>Experience Replay<a class="headerlink" href="#experience-replay" title="Permalink to this headline">¶</a></h3>
+<p>Every transition occuring during the training is stored in a separate <cite>Replay Buffer</cite></p>
+<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Helper function to log</span>
+
+<span class="sd">        Sends useful parameters to the logger.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timestep (int): Current timestep of training</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;timestep&quot;</span><span class="p">:</span> <span class="n">timestep</span><span class="p">,</span>
+                <span class="s2">&quot;Episode&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">episodes</span><span class="p">,</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">get_logging_params</span><span class="p">(),</span>
+                <span class="s2">&quot;Episode Reward&quot;</span><span class="p">:</span> <span class="n">safe_mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_rewards</span><span class="p">),</span>
+</pre></div>
+</td></tr></table></div>
+<p>The transitions are later sampled in batches from the replay buffer for updating the network.</p>
+</div>
+<div class="section" id="update-the-q-network">
+<h3>Update the Q-Network<a class="headerlink" href="#update-the-q-network" title="Permalink to this headline">¶</a></h3>
+<p>Doble DQN decouples the selection of the action from the evaluation of the Q-values while calculating the target value for the update. The loss function for a time step t is defined as:</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}L_t(\theta_t) = E_{s, a \sim \rho(.)}[(y_{t}^{DoubleDQN} - Q(s, a; \theta_t))^{2}]\\y_t^{DoubleDQN} = R_{t+1} + \gamma Q(s_{t+1}, argmax_{a} Q(s_{t+1}, a; \theta_{t}), \theta_t^{-})\end{aligned}\end{align} \]</div>
+<p>The only thing that differs with DoubleDQN is the <cite>get_target_q_values</cite> function as shown below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">genrl.agents</span> <span class="kn">import</span> <span class="n">DQN</span>
+<span class="kn">from</span> <span class="nn">genrl.trainers</span> <span class="kn">import</span> <span class="n">OffPolicyTrainer</span>
+
+<span class="k">class</span> <span class="nc">DoubleDQN</span><span class="p">(</span><span class="n">DQN</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DoubleDQN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_create_model</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">get_target_q_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">next_states</span><span class="p">,</span> <span class="n">rewards</span><span class="p">,</span> <span class="n">dones</span><span class="p">):</span>
+        <span class="n">next_q_value_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">next_states</span><span class="p">)</span>
+        <span class="n">next_best_actions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">next_q_value_dist</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">rewards</span><span class="p">,</span> <span class="n">dones</span> <span class="o">=</span> <span class="n">rewards</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">dones</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">next_q_target_value_dist</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_model</span><span class="p">(</span><span class="n">next_states</span><span class="p">)</span>
+        <span class="n">max_next_q_target_values</span> <span class="o">=</span> <span class="n">next_q_target_value_dist</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">next_best_actions</span><span class="p">)</span>
+        <span class="n">target_q_values</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="n">agent</span><span class="o">.</span><span class="n">gamma</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span>
+            <span class="n">max_next_q_target_values</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">target_q_values</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="training-through-the-api">
+<h2>Training through the API<a class="headerlink" href="#training-through-the-api" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">genrl.agents</span> <span class="kn">import</span> <span class="n">DoubleDQN</span>
+<span class="kn">from</span> <span class="nn">genrl.environments</span> <span class="kn">import</span> <span class="n">VectorEnv</span>
+<span class="kn">from</span> <span class="nn">genrl.trainers</span> <span class="kn">import</span> <span class="n">OffPolicyTrainer</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">VectorEnv</span><span class="p">(</span><span class="s2">&quot;CartPole-v0&quot;</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">DoubleDQN</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">OffPolicyTrainer</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">max_timesteps</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>timestep         Episode          value_loss       epsilon          Episode Reward
+<span class="m">24</span>               <span class="m">0</span>.0              <span class="m">0</span>                <span class="m">0</span>.9766           <span class="m">0</span>
+<span class="m">720</span>              <span class="m">25</span>.0             <span class="m">0</span>                <span class="m">0</span>.5184           <span class="m">26</span>.96
+<span class="m">1168</span>             <span class="m">50</span>.0             <span class="m">0</span>.49             <span class="m">0</span>.1646           <span class="m">18</span>.6
+<span class="m">3248</span>             <span class="m">75</span>.0             <span class="m">4</span>.1546           <span class="m">0</span>.0326           <span class="m">74</span>.88
+<span class="m">7512</span>             <span class="m">100</span>.0            <span class="m">7</span>.3164           <span class="m">0</span>.0102           <span class="m">166</span>.36
+<span class="m">12424</span>            <span class="m">125</span>.0            <span class="m">12</span>.3175          <span class="m">0</span>.01             <span class="m">200</span>.0
+Evaluated <span class="k">for</span> <span class="m">10</span> episodes, Mean Reward: <span class="m">200</span>.0, Std Deviation <span class="k">for</span> the Reward: <span class="m">0</span>.0
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Dueling_DQN.html" class="btn btn-neutral float-right" title="Dueling Deep Q-Network" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="DQN.html" class="btn btn-neutral float-left" title="Deep Q-Networks (DQN)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Society for Artificial Intelligence and Deep Learning (SAiDL)
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

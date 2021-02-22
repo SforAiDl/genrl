@@ -1,0 +1,399 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Contextual Bandits Overview &mdash; GenRL 0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/genrl_cropped.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="UCB" href="ucb.html" />
+    <link rel="prev" title="Multi Armed Bandit Overview" href="bandit_overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/genrl.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about/about.html">About</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Bandit Tutorials</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="bandit_overview.html">Multi Armed Bandit Overview</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Contextual Bandits Overview</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#problem-setting">Problem Setting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#a-simple-example">A Simple Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-based-conextual-bandits">Data based Conextual Bandits</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data-based-bandit-example">Data based Bandit Example</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#further-material-about-bandits">Further material about bandits</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="ucb.html">UCB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="thompson_sampling.html">Thompson Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesian.html">Bayesian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gradients.html">Gradients</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linpos.html">Linear Posterior Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variational.html">Variational Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bootstrap.html">Bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="noise.html">Parameter Noise Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="adding_data_bandit.html">Adding a new Data Bandit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="adding_dcb_agent.html">Adding a new Deep Contextual Bandit Agent</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../Classical/index.html">Classical</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Deep/index.html">Deep RL Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20Custom%20Policies.html">Custom Policy Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20A2C.html">Using A2C</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20shared%20parameters%20in%20actor%20critic%20agents.html">Using Shared Parameters in Actor Critic Agents in GenRL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../using_vpg.html">Vanilla Policy Gradient (VPG)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Saving%20and%20loading.html">Saving and Loading Weights and Hyperparameters with GenRL</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/agents/index.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/environments/index.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/trainers/index.html">Trainers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/common/index.html">Common</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GenRL</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Tutorials</a> &raquo;</li>
+        
+          <li><a href="index.html">Bandit Tutorials</a> &raquo;</li>
+        
+      <li>Contextual Bandits Overview</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/usage/tutorials/bandit/contextual_overview.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="contextual-bandits-overview">
+<span id="cb-overview"></span><h1>Contextual Bandits Overview<a class="headerlink" href="#contextual-bandits-overview" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="problem-setting">
+<h2>Problem Setting<a class="headerlink" href="#problem-setting" title="Permalink to this headline">¶</a></h2>
+<p>To get some background on the basic multi armed bandit problem, we recommend
+that you go through the <a class="reference internal" href="bandit_overview.html#bandit-overview"><span class="std std-ref">Multi Armed Bandit Overview</span></a> first. The contextual bandit
+(CB) problem varies from the basic case in that at each timestep, a context
+vector <span class="math notranslate nohighlight">\(x \in \mathbb{R}^d\)</span> is presented to the agent. The agent must
+then decide on an action <span class="math notranslate nohighlight">\(a \in \mathcal{A}\)</span> to take based on that
+context. After the action is taken, the reward <span class="math notranslate nohighlight">\(r \in \mathbb{R}\)</span>
+for only that action is revealed to the agent (a feature of all
+reinforcement learning problems). The aim of the agent remains the same
+- minimising regret and thus finding an optimal policy.</p>
+<p>Here you still have the problem of exploration vs exploitation, but the
+agent also needs to find some relation between the context and reward.</p>
+</div>
+<div class="section" id="a-simple-example">
+<h2>A Simple Example<a class="headerlink" href="#a-simple-example" title="Permalink to this headline">¶</a></h2>
+<p>Lets consider the simplest case of the CB problem. Instead of having
+only one <span class="math notranslate nohighlight">\(k\)</span>-armed bandit that needs to be solved, say we have
+<span class="math notranslate nohighlight">\(m\)</span> different <span class="math notranslate nohighlight">\(k\)</span>-armed Bernoulli bandits. At each timestep,
+the context presented is the number of the bandit for which an action
+needs to be selected: <span class="math notranslate nohighlight">\(i \in \mathbb{I}\)</span> where <span class="math notranslate nohighlight">\(0 &lt; i \le m\)</span></p>
+<p>Although real life CB problems usually have much higher dimensional
+contexts, such a toy problem can be usefull for testing and debugging
+agents.</p>
+<p>To instantiate a Bernoulli bandit with <span class="math notranslate nohighlight">\(m =10\)</span> and <span class="math notranslate nohighlight">\(k = 5\)</span>
+(10 different 5-armed bandits) -</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">genrl.bandit</span> <span class="kn">import</span> <span class="n">BernoulliMAB</span>
+
+<span class="n">bandit</span> <span class="o">=</span> <span class="n">BernoulliMAB</span><span class="p">(</span><span class="n">bandits</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">arms</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">context_type</span><span class="o">=</span><span class="s2">&quot;int&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that this is using the same <code class="docutils literal notranslate"><span class="pre">BernoulliMAB</span></code> as in the simple
+bandit case except that instead of the <code class="docutils literal notranslate"><span class="pre">bandits</span></code> argument defaulting
+to <code class="docutils literal notranslate"><span class="pre">1</span></code>, we are explicitly saying we want multiple bandits (a
+contexutal case)</p>
+<p>Suppose you want to solve this bandit with a UCB based policy.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">genrl.bandit</span> <span class="kn">import</span> <span class="n">UCBMABAgent</span>
+
+<span class="n">agent</span> <span class="o">=</span> <span class="n">UCBMABAgent</span><span class="p">(</span><span class="n">bandit</span><span class="p">)</span>
+<span class="n">context</span> <span class="o">=</span> <span class="n">bandit</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+<span class="n">action</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">select_action</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<span class="n">new_context</span><span class="p">,</span> <span class="n">reward</span> <span class="o">=</span> <span class="n">bandit</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To train the agent, you an set up a loop which calls the
+<code class="docutils literal notranslate"><span class="pre">update_params</span></code> method on the agent whenever you want to agent to
+learn from actions it has taken. For convinience it is highly
+recommended to use the <code class="docutils literal notranslate"><span class="pre">MABTrainer</span></code> in such cases.</p>
+</div>
+<div class="section" id="data-based-conextual-bandits">
+<h2>Data based Conextual Bandits<a class="headerlink" href="#data-based-conextual-bandits" title="Permalink to this headline">¶</a></h2>
+<p>Lets consider a more realistic class of CB problem. I real life, you the
+CB setting is usually used to model recommendation or classification
+problems. Here, instead of getting an integer as the context, you will
+get a <span class="math notranslate nohighlight">\(d\)</span>-dimensional feature vector
+<span class="math notranslate nohighlight">\(\mathbf{x} \in \mathbb{R}^d\)</span>. This is also different from regular
+classification since you only get the reward <span class="math notranslate nohighlight">\(r \in \mathbb{R}\)</span>
+for the action you have taken.</p>
+<p>While tabular solutions can work well for integer contexts (see the
+implentation of any <code class="docutils literal notranslate"><span class="pre">genrl.bandit.MABAgent</span></code> for details), when you
+have a high dimensional vector, the agent should be able to infer the
+complex relation between the contexts and rewards. This can be done by
+modelling a conditional distribution over rewards for each action given
+the context.</p>
+<div class="math notranslate nohighlight">
+\[P(r | a, \mathbf{x})\]</div>
+<p>There are many ways to do this. For a detailed explanation and
+comparison of contextual bandit methods you can refer to
+<a class="reference external" href="https://arxiv.org/pdf/1802.09127.pdf">this paper</a>.</p>
+<p>The following are the agents implemented in <code class="docutils literal notranslate"><span class="pre">genrl</span></code></p>
+<ul class="simple">
+<li><p><a class="reference external" href="../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.inpos">Linear Posterior Inference</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.neural_linpos">Neural Network based Linear</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.variational">Variational</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.neural_greedy">Neural Netowork based Espilon Greedy</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.bootstrap_neural">Bootstrap</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.agents.bandits.contextual.html#module-genrl.agents.bandits.contextual.neural_noise_sampling">Parameter noise Sampling</a></p></li>
+</ul>
+<p>You can find the tutorials for most of these in <a class="reference internal" href="index.html#bandit-tutorials"><span class="std std-ref">Bandit Tutorials</span></a>.</p>
+<p>All the methods which use neural networks, provide an option to train
+and evaluate with dropout, have a decaying learning rate and a limit for
+gradient clipping. The sizes of hidden layers for the networks can also
+be specified. Refer to docs of the specific agents to see how to use
+these options.</p>
+<p>Individual agents will have other method specific paramters to control
+behavior. Although default values have been provided, it may be
+neccessary to tune these for individual use cases.</p>
+<p>The following bandits based on datasets are implemented in <code class="docutils literal notranslate"><span class="pre">genrl</span></code></p>
+<ul class="simple">
+<li><p><a class="reference external" href="../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.adult_bandit">Adult Census Income Dataset</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.census_bandit">US Census Dataset</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.covertype_bandit">Forest covertype Datset</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.magic_bandit">MAGIC Gamma Telescope dataset</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.mushroom_bandit">Mushroom Dataset</a></p></li>
+<li><p><a class="reference external" href="../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.statlog_bandit">Statlog Space Shuttle Dataset</a></p></li>
+</ul>
+<p>For each bandit, while instatiating an object you can either specify a
+path to the data file or pass <code class="docutils literal notranslate"><span class="pre">download=True</span></code> as an argument to
+download the data directly.</p>
+</div>
+<div class="section" id="data-based-bandit-example">
+<h2>Data based Bandit Example<a class="headerlink" href="#data-based-bandit-example" title="Permalink to this headline">¶</a></h2>
+<p>For this example, we’ll model the
+<a class="reference external" href="https://archive.ics.uci.edu/ml/datasets/Statlog+(Shuttle)">Statlog</a>
+dataset as a bandit problem. You can read more about the bandit in the
+<a class="reference external" href="../../../api/bandit/genrl.utils.data_bandits.html#module-genrl.utils.data_bandits.statlog_bandit">Statlog docs</a>.
+In brief we have the number of arms as <span class="math notranslate nohighlight">\(k = 7\)</span> and
+dimension of context vector as <span class="math notranslate nohighlight">\(d = 9\)</span>. The agent will get a
+reward <span class="math notranslate nohighlight">\(r =1\)</span> if it selects the correct arm else <span class="math notranslate nohighlight">\(r = 0\)</span>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">genrl.bandit</span> <span class="kn">import</span> <span class="n">StatlogDataBandit</span>
+
+<span class="n">bandit</span> <span class="o">=</span> <span class="n">StatlogDataBandit</span><span class="p">(</span><span class="n">download</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">context</span> <span class="o">=</span> <span class="n">bandit</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Suppose you want to solve this bandit with a Greedy neural network based
+policy.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">genrl.bandit</span> <span class="kn">import</span> <span class="n">NeuralLinearPosteriorAgent</span>
+
+<span class="n">agent</span> <span class="o">=</span> <span class="n">NeuralLinearPosteriorAgent</span><span class="p">(</span><span class="n">bandit</span><span class="p">)</span>
+<span class="n">context</span> <span class="o">=</span> <span class="n">bandit</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+
+<span class="n">action</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">select_action</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+<span class="n">new_context</span><span class="p">,</span> <span class="n">reward</span> <span class="o">=</span> <span class="n">bandit</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To train the agent, we highly reccomend using the <code class="docutils literal notranslate"><span class="pre">DCBTrainer</span></code>. You
+can refer to the implementation of the <code class="docutils literal notranslate"><span class="pre">train</span></code> function to get an idea
+of how to implemente your own training loop.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">genrl.bandit</span> <span class="kn">import</span> <span class="n">DCBTrainer</span>
+
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">DCBTrainer</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">bandit</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">timesteps</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="further-material-about-bandits">
+<h2>Further material about bandits<a class="headerlink" href="#further-material-about-bandits" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://arxiv.org/pdf/1807.09809.pdf">Deep Contextual Multi-armed Bandits</a>, Collier and Llorens, 2018</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/pdf/1802.09127.pdf">Deep Bayesian Bandits Showdown</a>, Riquelme∗ et al, 2018</p></li>
+<li><p><a class="reference external" href="https://arxiv.org/pdf/1802.09127.pdf">A Contextual Bandit Bake-off</a>, Bietti et al, 2020</p></li>
+</ol>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="ucb.html" class="btn btn-neutral float-right" title="UCB" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="bandit_overview.html" class="btn btn-neutral float-left" title="Multi Armed Bandit Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Society for Artificial Intelligence and Deep Learning (SAiDL)
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

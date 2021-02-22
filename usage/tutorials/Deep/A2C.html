@@ -1,0 +1,318 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Advantage Actor Critic &mdash; GenRL 0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/genrl_cropped.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Proximal Policy Optimization" href="PPO.html" />
+    <link rel="prev" title="Vanilla Policy Gradient" href="VPG.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/genrl.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about/about.html">About</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bandit/index.html">Bandit Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Classical/index.html">Classical</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Deep RL Tutorials</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Background.html">Deep Reinforcement Learning Background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VPG.html">Vanilla Policy Gradient</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Advantage Actor Critic</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objective">Objective</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#algorithm-details">Algorithm Details</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#training-through-the-api">Training through the API</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="PPO.html">Proximal Policy Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DQN.html">Deep Q-Networks (DQN)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Double_DQN.html">Double Deep Q-Network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Dueling_DQN.html">Dueling Deep Q-Network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NoisyNet_DQN.html">Deep Q Networks with Noisy Nets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Prioritized_DQN.html">Prioritized Deep Q-Networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DDPG.html">Deep Deterministic Policy Gradients</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TD3.html">Twin Delayed DDPG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SAC.html">Soft Actor-Critic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Categorical_DQN.html">Categorical Deep Q-Networks</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20Custom%20Policies.html">Custom Policy Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20A2C.html">Using A2C</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20shared%20parameters%20in%20actor%20critic%20agents.html">Using Shared Parameters in Actor Critic Agents in GenRL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../using_vpg.html">Vanilla Policy Gradient (VPG)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Saving%20and%20loading.html">Saving and Loading Weights and Hyperparameters with GenRL</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/agents/index.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/environments/index.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/trainers/index.html">Trainers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/common/index.html">Common</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GenRL</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Tutorials</a> &raquo;</li>
+        
+          <li><a href="index.html">Deep RL Tutorials</a> &raquo;</li>
+        
+      <li>Advantage Actor Critic</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/usage/tutorials/Deep/A2C.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="advantage-actor-critic">
+<h1>Advantage Actor Critic<a class="headerlink" href="#advantage-actor-critic" title="Permalink to this headline">¶</a></h1>
+<p>For background on Deep RL, its core definitions and problem formulations refer to <span class="xref std std-ref">Deep RL Background</span></p>
+<div class="section" id="objective">
+<h2>Objective<a class="headerlink" href="#objective" title="Permalink to this headline">¶</a></h2>
+<p>The objective is to maximize the discounted cumulative reward function:</p>
+<div class="math notranslate nohighlight">
+\[E\left[{\sum_{t=0}^{\infty}{\gamma^{t} r_{t}}}\right]\]</div>
+<p>This comprises of two parts in the Adantage Actor Critic Algorithm:</p>
+<ol class="arabic simple">
+<li><p>To choose/learn a policy that will increase the probability of landing an action that has higher expected return than the value of just the state and decrease the probability of landing an action that has lower expected return than the value of the state. The Advantage is computed as:</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[A(s,a) = Q(s,a) - V(s)\]</div>
+<ol class="arabic simple" start="2">
+<li><p>To learn a State Action Value Function (in the name of <strong>Critic</strong>) that estimates the future cumulative rewards given the current state and action. This function helps the policy in evaluation potential state, action pairs.</p></li>
+</ol>
+<p>where we choose the action <span class="math notranslate nohighlight">\(a_{t} = \pi_{\theta}(s_{t})\)</span>.</p>
+</div>
+<div class="section" id="algorithm-details">
+<h2>Algorithm Details<a class="headerlink" href="#algorithm-details" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="action-selection-and-values">
+<h3>Action Selection and Values<a class="headerlink" href="#action-selection-and-values" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">ac</span></code> here is an object of the <code class="docutils literal notranslate"><span class="pre">ActorCritic</span></code> class, which defined two methods: <code class="docutils literal notranslate"><span class="pre">get_value</span></code> and <code class="docutils literal notranslate"><span class="pre">get_action</span></code> and ofcourse they return the value approximation from the Critic and action from the Actor.</p>
+<p>Note: We sample a <strong>stochastic action</strong> from the distribution on the action space by providing <code class="docutils literal notranslate"><span class="pre">False</span></code> as an argument to <code class="docutils literal notranslate"><span class="pre">select_action</span></code>.</p>
+<p>For practical purposes we would assume that we are working with a finite horizon MDP.</p>
+</div>
+<div class="section" id="collect-experience">
+<h3>Collect Experience<a class="headerlink" href="#collect-experience" title="Permalink to this headline">¶</a></h3>
+<p>To make our agent learn, we first need to collect some experience in an online fashion. For this we make use of the <code class="docutils literal notranslate"><span class="pre">collect_rollouts</span></code> method. This method is defined in the <code class="docutils literal notranslate"><span class="pre">OnPolicyAgent</span></code> Base Class.</p>
+<p>For updation, we would need to compute advantages from this experience. So, we store our experience in a Rollout Buffer.</p>
+</div>
+<div class="section" id="compute-discounted-returns-and-advantages">
+<h3>Compute discounted Returns and Advantages<a class="headerlink" href="#compute-discounted-returns-and-advantages" title="Permalink to this headline">¶</a></h3>
+<p>Next we can compute the advantages and the actual discounted returns for each state. This can be done very easily by simply calling <code class="docutils literal notranslate"><span class="pre">compute_returns_and_advantage</span></code>. Note this implementation of the rollout buffer is borrowed from Stable Baselines.</p>
+</div>
+<div class="section" id="update-equations">
+<h3>Update Equations<a class="headerlink" href="#update-equations" title="Permalink to this headline">¶</a></h3>
+<p>Let <span class="math notranslate nohighlight">\(\pi_{\theta}\)</span> denote a policy with parameters <span class="math notranslate nohighlight">\(\theta\)</span>, and <span class="math notranslate nohighlight">\(J(\pi_{\theta})\)</span> denote the expected finite-horizon undiscounted return of the policy.</p>
+<p>At each update timestep, we get value and log probabilities:</p>
+<p>Now, that we have the log probabilities we calculate the gradient of <span class="math notranslate nohighlight">\(J(\pi_{\theta})\)</span> as:</p>
+<div class="math notranslate nohighlight">
+\[\nabla_{\theta} J(\pi_{\theta}) = E_{\tau \sim \pi_{\theta}}\left[{
+    \sum_{t=0}^{T} \nabla_{\theta} \log \pi_{\theta}(a_t|s_t) A^{\pi_{\theta}}(s_t,a_t)
+    }\right],\]</div>
+<p>where <span class="math notranslate nohighlight">\(\tau\)</span> is the trajectory.</p>
+<p>We then update the policy parameters via stochastic gradient ascent:</p>
+<div class="math notranslate nohighlight">
+\[\theta_{k+1} = \theta_k + \alpha \nabla_{\theta} J(\pi_{\theta_k})\]</div>
+<p>The key idea underlying Advantage Actor Critic Algorithm is to push up the probabilities of actions that lead to higher return than the expected return of that state, and push down the probabilities of actions that lead to lower return than the expected return of that state, until you arrive at the optimal policy.</p>
+</div>
+</div>
+<div class="section" id="training-through-the-api">
+<h2>Training through the API<a class="headerlink" href="#training-through-the-api" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gym</span>
+
+<span class="kn">from</span> <span class="nn">genrl.agents</span> <span class="kn">import</span> <span class="n">A2C</span>
+<span class="kn">from</span> <span class="nn">genrl.trainers</span> <span class="kn">import</span> <span class="n">OnPolicyTrainer</span>
+<span class="kn">from</span> <span class="nn">genrl.environments</span> <span class="kn">import</span> <span class="n">VectorEnv</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">VectorEnv</span><span class="p">(</span><span class="s2">&quot;CartPole-v0&quot;</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">A2C</span><span class="p">(</span><span class="s1">&#39;mlp&#39;</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">OnPolicyTrainer</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">log_mode</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;stdout&#39;</span><span class="p">])</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="PPO.html" class="btn btn-neutral float-right" title="Proximal Policy Optimization" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="VPG.html" class="btn btn-neutral float-left" title="Vanilla Policy Gradient" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Society for Artificial Intelligence and Deep Learning (SAiDL)
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

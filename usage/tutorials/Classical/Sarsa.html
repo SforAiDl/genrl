@@ -1,0 +1,291 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>SARSA using GenRL &mdash; GenRL 0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/genrl_cropped.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Deep RL Tutorials" href="../Deep/index.html" />
+    <link rel="prev" title="Q-Learning using GenRL" href="Q_Learning.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/genrl.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about/about.html">About</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bandit/index.html">Bandit Tutorials</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Classical</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Q_Learning.html">Q-Learning using GenRL</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">SARSA using GenRL</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#what-is-sarsa">What is SARSA?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#frozenlake-v0-environment">FrozenLake-v0 environment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#code">Code</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../Deep/index.html">Deep RL Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20Custom%20Policies.html">Custom Policy Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20A2C.html">Using A2C</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20shared%20parameters%20in%20actor%20critic%20agents.html">Using Shared Parameters in Actor Critic Agents in GenRL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../using_vpg.html">Vanilla Policy Gradient (VPG)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Saving%20and%20loading.html">Saving and Loading Weights and Hyperparameters with GenRL</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/agents/index.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/environments/index.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/trainers/index.html">Trainers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/common/index.html">Common</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GenRL</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Tutorials</a> &raquo;</li>
+        
+          <li><a href="index.html">Classical</a> &raquo;</li>
+        
+      <li>SARSA using GenRL</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/usage/tutorials/Classical/Sarsa.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="sarsa-using-genrl">
+<h1>SARSA using GenRL<a class="headerlink" href="#sarsa-using-genrl" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-sarsa">
+<h2>What is SARSA?<a class="headerlink" href="#what-is-sarsa" title="Permalink to this headline">¶</a></h2>
+<p>SARSA is an acronym for State-Action-Reward-State-Action. It is an on-policy TD control method. Our aim is basically to estimate the Q-value or the utility value for state-action pair using the TD update rule given below.</p>
+<div class="math notranslate nohighlight">
+\[Q(S_{t}, A_{t}) = Q(S_{t}, A_{t}) + \alpha * [R_{t+1} + \gamma * Q(S_{t+1}, A_{t+2}) - Q(S_{t}, A_{t})]\]</div>
+</div>
+<div class="section" id="frozenlake-v0-environment">
+<h2>FrozenLake-v0 environment<a class="headerlink" href="#frozenlake-v0-environment" title="Permalink to this headline">¶</a></h2>
+<p>So to demonstrate how easy it is to train a SARSA approach in GenRL, we are taking a very simple gym environment.</p>
+<p>Description of the environment (from the documentation) -</p>
+<p>“The agent controls the movement of a character in a grid world. Some tiles of the grid are walkable, and others lead to the agent falling into the water. Additionally, the movement direction of the agent is uncertain and only partially depends on the chosen direction. The agent is rewarded for finding a walkable path to a goal tile.</p>
+<p>Winter is here. You and your friends were tossing around a frisbee at the park when you made a wild throw that left the frisbee out in the middle of the lake. The water is mostly frozen, but there are a few holes where the ice has melted. If you step into one of those holes, you’ll fall into the freezing water. At this time, there’s an international frisbee shortage, so it’s absolutely imperative that you navigate across the lake and retrieve the disc. However, the ice is slippery, so you won’t always move in the direction you intend.</p>
+<p>The surface is described using a grid like the following:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>SFFF       (S: starting point, safe)
+FHFH       (F: frozen surface, safe)
+FFFH       (H: hole, fall to your doom)
+HFFG       (G: goal, where the frisbee is located)
+</pre></div>
+</div>
+<p>The episode ends when you reach the goal or fall in a hole. You receive a reward of 1 if you reach the goal, and zero otherwise.”</p>
+</div>
+<div class="section" id="code">
+<h2>Code<a class="headerlink" href="#code" title="Permalink to this headline">¶</a></h2>
+<p>Let’s import all the usefull stuff first.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gym</span>
+<span class="kn">from</span> <span class="nn">genrl</span> <span class="kn">import</span> <span class="n">SARSA</span>                                 <span class="c1"># for the agent</span>
+<span class="kn">from</span> <span class="nn">genrl.classical.common</span> <span class="kn">import</span> <span class="n">Trainer</span>              <span class="c1"># for training the agent</span>
+</pre></div>
+</div>
+<p>Now that we have imported all the necessary stuff let’s go ahead and define the environment, the agent and an object for the Trainer class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">env</span> <span class="o">=</span> <span class="n">gym</span><span class="o">.</span><span class="n">make</span><span class="p">(</span><span class="s2">&quot;FrozenLake-v0&quot;</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">SARSA</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">Trainer</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">,</span>
+    <span class="n">env</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;tabular&quot;</span><span class="p">,</span>
+    <span class="n">n_episodes</span><span class="o">=</span><span class="mi">3000</span><span class="p">,</span>
+    <span class="n">start_steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">evaluate_frequency</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Great so far so good! Now moving towards the training process it is just calling the train method in the trainer class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>That’s it! You have successfully trained a SARSA agent. You can now go ahead and play with your own environments using GenRL!</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../Deep/index.html" class="btn btn-neutral float-right" title="Deep RL Tutorials" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Q_Learning.html" class="btn btn-neutral float-left" title="Q-Learning using GenRL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Society for Artificial Intelligence and Deep Learning (SAiDL)
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,354 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Adding a new Data Bandit &mdash; GenRL 0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/genrl_cropped.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Adding a new Deep Contextual Bandit Agent" href="adding_dcb_agent.html" />
+    <link rel="prev" title="Parameter Noise Sampling" href="noise.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/genrl.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about/about.html">About</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Bandit Tutorials</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="bandit_overview.html">Multi Armed Bandit Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="contextual_overview.html">Contextual Bandits Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ucb.html">UCB</a></li>
+<li class="toctree-l3"><a class="reference internal" href="thompson_sampling.html">Thompson Sampling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bayesian.html">Bayesian</a></li>
+<li class="toctree-l3"><a class="reference internal" href="gradients.html">Gradients</a></li>
+<li class="toctree-l3"><a class="reference internal" href="linpos.html">Linear Posterior Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variational.html">Variational Inference</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bootstrap.html">Bootstrap</a></li>
+<li class="toctree-l3"><a class="reference internal" href="noise.html">Parameter Noise Sampling</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Adding a new Data Bandit</a></li>
+<li class="toctree-l3"><a class="reference internal" href="adding_dcb_agent.html">Adding a new Deep Contextual Bandit Agent</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../Classical/index.html">Classical</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Deep/index.html">Deep RL Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20Custom%20Policies.html">Custom Policy Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20A2C.html">Using A2C</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20shared%20parameters%20in%20actor%20critic%20agents.html">Using Shared Parameters in Actor Critic Agents in GenRL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../using_vpg.html">Vanilla Policy Gradient (VPG)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Saving%20and%20loading.html">Saving and Loading Weights and Hyperparameters with GenRL</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/agents/index.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/environments/index.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/trainers/index.html">Trainers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/common/index.html">Common</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GenRL</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Tutorials</a> &raquo;</li>
+        
+          <li><a href="index.html">Bandit Tutorials</a> &raquo;</li>
+        
+      <li>Adding a new Data Bandit</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/usage/tutorials/bandit/adding_data_bandit.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="adding-a-new-data-bandit">
+<h1>Adding a new Data Bandit<a class="headerlink" href="#adding-a-new-data-bandit" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">bandit</span></code> submodule like all of <code class="docutils literal notranslate"><span class="pre">genrl</span></code> has been designed to be
+easily extensible for custom additions. This tutorial will show how to
+create a dataset based bandit which will work with the rest of
+<code class="docutils literal notranslate"><span class="pre">genrl.bandit</span></code></p>
+<p>For this tutorial, we will use the
+<a class="reference external" href="http://archive.ics.uci.edu/ml/datasets/Wine">Wine dataset</a> which is
+a simple datset often used for testing classifiers. It has 178 examples each
+with 14 features, the first of which gives the cultivar of the wine (the
+feature we need to classify each wine sample into) (this can be one of three)
+and the rest give the properties of the wine itself. Formulated as a bandit
+problem we have a bandit with 3 arms and a 13-dimensional context. The
+agent will get a reward of 1 if it correctly selects the arm else 0.</p>
+<p>To start off with lets import necessary modules, specify the data URL and
+make a class which inherits from
+<code class="docutils literal notranslate"><span class="pre">genrl.utils.data_bandits.base.DataBasedBandit</span></code></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="kn">from</span> <span class="nn">genrl.utils.data_bandits.base</span> <span class="kn">import</span> <span class="n">DataBasedBandit</span>
+<span class="kn">from</span> <span class="nn">genrl.utils.data_bandits.utils</span> <span class="kn">import</span> <span class="n">download_data</span>
+
+
+<span class="n">URL</span> <span class="o">=</span> <span class="s2">&quot;http://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data&quot;</span>
+
+<span class="k">class</span> <span class="nc">WineDataBandit</span><span class="p">(</span><span class="n">DataBasedBandit</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">_compute_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+
+    <span class="k">def</span> <span class="nf">_get_context</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+</pre></div>
+</div>
+<p>We will need to implement <code class="docutils literal notranslate"><span class="pre">__init__</span></code>, <code class="docutils literal notranslate"><span class="pre">reset</span></code>, <code class="docutils literal notranslate"><span class="pre">_compute_reward</span></code>
+and <code class="docutils literal notranslate"><span class="pre">_get_context</span></code> to make the class functional.</p>
+<p>For dataset based bandits, we can generally load the data into memory during
+initialisation. This can be in some tabular form (<code class="docutils literal notranslate"><span class="pre">numpy.array</span></code>,
+<code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> or <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>) and maintaining an index. When reset,
+the bandit would set its index to 0 and reshuffle the rows of the table.
+For stepping, the bandit can compute rewards from the current row of the table
+as given by the index and then increment the index to move to the next row.</p>
+<p>Lets start with <code class="docutils literal notranslate"><span class="pre">__init__</span></code>. Here we need to download the data if
+specified and load it into memory. Many utility functions are available
+in <code class="docutils literal notranslate"><span class="pre">genrl.utils.data_bandits.utils</span></code> including
+<code class="docutils literal notranslate"><span class="pre">download_data</span></code> to download data from a URL as well as functions to
+fetch data from memory.</p>
+<p>For most cases, you can load the data into a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code>. You
+also need to specify the <code class="docutils literal notranslate"><span class="pre">n_actions</span></code>, <code class="docutils literal notranslate"><span class="pre">context_dim</span></code> and <code class="docutils literal notranslate"><span class="pre">len</span></code>
+here.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="nb">super</span><span class="p">(</span><span class="n">WineDataBandit</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="n">path</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="s2">&quot;./data/Wine/&quot;</span><span class="p">)</span>
+    <span class="n">download</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;download&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">force_download</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;force_download&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;url&quot;</span><span class="p">,</span> <span class="n">URL</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">download_data</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">force_download</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">n_actions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">())</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">context_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">reset</span></code> method will shuffle the indices of the data and return the
+counting index to 0. You must have a call to <code class="docutils literal notranslate"><span class="pre">_reset</span></code> here to reset
+any metrics, counters etc… (which is implemented in the base class)</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_reset</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">frac</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_context</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The new bandit does not explicitly need to implement the <code class="docutils literal notranslate"><span class="pre">step</span></code> method
+since this is already implmented in the base class. We do however need
+to implement <code class="docutils literal notranslate"><span class="pre">_compute_reward</span></code> and <code class="docutils literal notranslate"><span class="pre">_get_context</span></code> which <code class="docutils literal notranslate"><span class="pre">step</span></code>
+uses.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">_compute_reward</span></code>, we need to figure out whether the given action
+corresponds to the correct label for this index or not and return the
+reward appropriately. This method also return the maxium possible reward
+in the current context which is used to compute regret.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_compute_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">label</span> <span class="o">==</span> <span class="p">(</span><span class="n">action</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">_get_context</span></code> method should return a 13-dimensional
+<code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> (in this case) corresponding to the context for the
+current index.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">_get_context</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+        <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>Once you are done with the above, you can use the <code class="docutils literal notranslate"><span class="pre">WineDataBandit</span></code>
+class like you would any other bandit from from
+<code class="docutils literal notranslate"><span class="pre">genrl.utils.data_bandits</span></code>. You can use it with any of the
+<code class="docutils literal notranslate"><span class="pre">cb_agents</span></code> as well as training on it with
+<a class="reference external" href="../../../api/common/bandit.html#module-genrl.bandit.trainer">genrl.bandit.DCBTrainer</a>.</p>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="adding_dcb_agent.html" class="btn btn-neutral float-right" title="Adding a new Deep Contextual Bandit Agent" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="noise.html" class="btn btn-neutral float-left" title="Parameter Noise Sampling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Society for Artificial Intelligence and Deep Learning (SAiDL)
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

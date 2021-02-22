@@ -1,0 +1,298 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Vanilla Policy Gradient (VPG) &mdash; GenRL 0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../_static/genrl_cropped.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Saving and Loading Weights and Hyperparameters with GenRL" href="Saving%20and%20loading.html" />
+    <link rel="prev" title="Using Shared Parameters in Actor Critic Agents in GenRL" href="Using%20shared%20parameters%20in%20actor%20critic%20agents.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../../index.html">
+          
+
+          
+            
+            <img src="../../_static/genrl.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about/about.html">About</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="bandit/index.html">Bandit Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Classical/index.html">Classical</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Deep/index.html">Deep RL Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Using%20Custom%20Policies.html">Custom Policy Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Using%20A2C.html">Using A2C</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Using%20shared%20parameters%20in%20actor%20critic%20agents.html">Using Shared Parameters in Actor Critic Agents in GenRL</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Vanilla Policy Gradient (VPG)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#vpg-agent-on-a-cartpole-environment">VPG agent on a Cartpole Environment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#vpg-agent-on-an-atari-environment">VPG agent on an Atari Environment</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="Saving%20and%20loading.html">Saving and Loading Weights and Hyperparameters with GenRL</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/agents/index.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/environments/index.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/utils/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/trainers/index.html">Trainers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/common/index.html">Common</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">GenRL</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="index.html">Tutorials</a> &raquo;</li>
+        
+      <li>Vanilla Policy Gradient (VPG)</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/usage/tutorials/using_vpg.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="vanilla-policy-gradient-vpg">
+<h1>Vanilla Policy Gradient (VPG)<a class="headerlink" href="#vanilla-policy-gradient-vpg" title="Permalink to this headline">¶</a></h1>
+<p>If you wanted to explore Policy Gradient algorithms in RL, there is a high chance you would’ve heard of PPO, DDPG, etc. but understanding them can be tricky if you’re just starting.</p>
+<p>VPG is arguably one of the easiest to understand policy gradient algorithms while still performing to a good enough level.</p>
+<p>Let’s understand policy gradient at a high level, unlike the classical algorithms like Q-Learning, Monte Carlo where you try to optimise the outputs of the action-value function of the agent which are then used to determine the optimal policy. In policy gradient, as one would like to say we go directly for the kill shot, basically we optimise the thing we want to use at the end, i.e. the Policy.</p>
+<p>So that explains the “Policy” part of Policy Gradient, so what about “Gradient”, so gradient comes from the fact that we try to optimise the policy by gradient ascent (unlike the popular gradient descent, here we want to increase the values, hence ascent). So that explains the name, but how does it even work.</p>
+<p>For that, have a look at the following Psuedo Code (source: <a class="reference external" href="https://spinningup.openai.com">OpenAI</a>)</p>
+<p><img alt="Psuedo Code" src="https://spinningup.openai.com/en/latest/_images/math/262538f3077a7be8ce89066abbab523575132996.svg" /></p>
+<p>For a more fundamental understanding <a class="reference external" href="https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html">this</a> spinningup article is a good resource</p>
+<p>Now that we have an understanding of how VPG works at a high level let’s jump into the code to see it in action<br />This is a very minimal way to run a VPG agent on <strong>GenRL</strong></p>
+<div class="section" id="vpg-agent-on-a-cartpole-environment">
+<h2>VPG agent on a Cartpole Environment<a class="headerlink" href="#vpg-agent-on-a-cartpole-environment" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">gym</span>  <span class="c1"># OpenAI Gym</span>
+
+<span class="kn">from</span> <span class="nn">genrl.agents</span> <span class="kn">import</span> <span class="n">VPG</span>
+<span class="kn">from</span> <span class="nn">genrl.trainers</span> <span class="kn">import</span> <span class="n">OnPolicyTrainer</span>
+<span class="kn">from</span> <span class="nn">genrl.environments</span> <span class="kn">import</span> <span class="n">VectorEnv</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">VectorEnv</span><span class="p">(</span><span class="s2">&quot;CartPole-v1&quot;</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">VPG</span><span class="p">(</span><span class="s1">&#39;mlp&#39;</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">OnPolicyTrainer</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This will run a VPG agent <code class="docutils literal notranslate"><span class="pre">agent</span></code> which will interact with the <code class="docutils literal notranslate"><span class="pre">CartPole-v1</span></code> <a class="reference external" href="https://gym.openai.com/">gym environment</a> <br />Let’s understand the output on running this (your individual values may differ),</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>timestep         Episode          loss             mean_reward
+<span class="m">0</span>                <span class="m">0</span>                <span class="m">8</span>.022            <span class="m">19</span>.8835
+<span class="m">20480</span>            <span class="m">10</span>               <span class="m">25</span>.969           <span class="m">75</span>.2941
+<span class="m">40960</span>            <span class="m">20</span>               <span class="m">29</span>.2478          <span class="m">144</span>.2254
+<span class="m">61440</span>            <span class="m">30</span>               <span class="m">25</span>.5711          <span class="m">129</span>.6203
+<span class="m">81920</span>            <span class="m">40</span>               <span class="m">19</span>.8718          <span class="m">96</span>.6038
+<span class="m">102400</span>           <span class="m">50</span>               <span class="m">19</span>.2585          <span class="m">106</span>.9452
+<span class="m">122880</span>           <span class="m">60</span>               <span class="m">17</span>.7781          <span class="m">99</span>.9024
+<span class="m">143360</span>           <span class="m">70</span>               <span class="m">23</span>.6839          <span class="m">121</span>.543
+<span class="m">163840</span>           <span class="m">80</span>               <span class="m">24</span>.4362          <span class="m">129</span>.2114
+<span class="m">184320</span>           <span class="m">90</span>               <span class="m">28</span>.1183          <span class="m">156</span>.3359
+<span class="m">204800</span>           <span class="m">100</span>              <span class="m">26</span>.6074          <span class="m">155</span>.1515
+<span class="m">225280</span>           <span class="m">110</span>              <span class="m">27</span>.2012          <span class="m">178</span>.8646
+<span class="m">245760</span>           <span class="m">120</span>              <span class="m">26</span>.4612          <span class="m">164</span>.498
+<span class="m">266240</span>           <span class="m">130</span>              <span class="m">22</span>.8618          <span class="m">148</span>.4058
+<span class="m">286720</span>           <span class="m">140</span>              <span class="m">23</span>.465           <span class="m">153</span>.4082
+<span class="m">307200</span>           <span class="m">150</span>              <span class="m">21</span>.9764          <span class="m">151</span>.1439
+<span class="m">327680</span>           <span class="m">160</span>              <span class="m">22</span>.445           <span class="m">151</span>.1439
+<span class="m">348160</span>           <span class="m">170</span>              <span class="m">22</span>.9925          <span class="m">155</span>.7414
+<span class="m">368640</span>           <span class="m">180</span>              <span class="m">22</span>.6605          <span class="m">165</span>.1613
+<span class="m">389120</span>           <span class="m">190</span>              <span class="m">23</span>.4676          <span class="m">177</span>.316
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">timestep</span></code>: It is basically the units of time the agent has interacted with the environment since the start of training<br /><code class="docutils literal notranslate"><span class="pre">Episode</span></code>: It is one complete rollout of the agent, to put it simply it is one complete run until the agent ends up winning or losing<br /><code class="docutils literal notranslate"><span class="pre">loss</span></code>: The loss encountered in that episode<br /><code class="docutils literal notranslate"><span class="pre">mean_reward</span></code>: The mean reward accumulated in that episode</p>
+<p>Now if you look closely the agent will not converge to the max reward even if you increase the epochs to say 5000, it is because that during training the agent is behaving according to a stochastic policy (Meaning when you try to pick from an action given a state from the policy it doesn’t simply take the one with the maximum return, rather it samples an action from a probability distribution, so in other words, the policy isn’t just like a lookup table, it’s function which outputs a probability distribution over the actions which we sample from when using it to pick our optimal action).<br />So even if the agent has figured out the optimal policy it is not taking the most optimal action at every step there is an inherent stochasticity to it.<br />If we want the agent to make full use of the learnt policy we can add the following line of code at after the training</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">render</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This will not only make the agent follow a deterministic policy and thus help you achieve the maximun reward possible reward attainable from the learnt policy but also allow you to see your agent perform by passing <code class="docutils literal notranslate"><span class="pre">render=True</span></code></p>
+<p>For more information on the VPG implementation and the various hyperparameters available have a look at the official <strong>GenRL</strong> docs <a class="reference external" href="https://genrl.readthedocs.io/en/latest/api/algorithms/genrl.agents.deep.vpg.html">here</a></p>
+<p>Some more implementations</p>
+</div>
+<div class="section" id="vpg-agent-on-an-atari-environment">
+<h2>VPG agent on an Atari Environment<a class="headerlink" href="#vpg-agent-on-an-atari-environment" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">env</span> <span class="o">=</span> <span class="n">VectorEnv</span><span class="p">(</span><span class="s2">&quot;Pong-v0&quot;</span><span class="p">,</span> <span class="n">env_type</span> <span class="o">=</span> <span class="s2">&quot;atari&quot;</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">VPG</span><span class="p">(</span><span class="s1">&#39;cnn&#39;</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">OnPolicyTrainer</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="Saving%20and%20loading.html" class="btn btn-neutral float-right" title="Saving and Loading Weights and Hyperparameters with GenRL" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="Using%20shared%20parameters%20in%20actor%20critic%20agents.html" class="btn btn-neutral float-left" title="Using Shared Parameters in Actor Critic Agents in GenRL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Society for Artificial Intelligence and Deep Learning (SAiDL)
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

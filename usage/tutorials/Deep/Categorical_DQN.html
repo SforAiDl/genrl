@@ -1,0 +1,542 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Categorical Deep Q-Networks &mdash; GenRL 0.1 documentation</title>
+  
+
+  
+  
+    <link rel="shortcut icon" href="../../../_static/genrl_cropped.png"/>
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/jquery.js"></script>
+        <script src="../../../_static/underscore.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script async="async" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="Custom Policy Networks" href="../Using%20Custom%20Policies.html" />
+    <link rel="prev" title="Soft Actor-Critic" href="SAC.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+          
+
+          
+            <a href="../../../index.html">
+          
+
+          
+            
+            <img src="../../../_static/genrl.png" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">User Guide</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../about/about.html">About</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../bandit/index.html">Bandit Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Classical/index.html">Classical</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Deep RL Tutorials</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Background.html">Deep Reinforcement Learning Background</a></li>
+<li class="toctree-l3"><a class="reference internal" href="VPG.html">Vanilla Policy Gradient</a></li>
+<li class="toctree-l3"><a class="reference internal" href="A2C.html">Advantage Actor Critic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="PPO.html">Proximal Policy Optimization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DQN.html">Deep Q-Networks (DQN)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Double_DQN.html">Double Deep Q-Network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Dueling_DQN.html">Dueling Deep Q-Network</a></li>
+<li class="toctree-l3"><a class="reference internal" href="NoisyNet_DQN.html">Deep Q Networks with Noisy Nets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Prioritized_DQN.html">Prioritized Deep Q-Networks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="DDPG.html">Deep Deterministic Policy Gradients</a></li>
+<li class="toctree-l3"><a class="reference internal" href="TD3.html">Twin Delayed DDPG</a></li>
+<li class="toctree-l3"><a class="reference internal" href="SAC.html">Soft Actor-Critic</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Categorical Deep Q-Networks</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#objective">Objective</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#distributional-bellman">Distributional Bellman</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#algorithm-details">Algorithm Details</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#training-through-the-api">Training through the API</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20Custom%20Policies.html">Custom Policy Networks</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20A2C.html">Using A2C</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Using%20shared%20parameters%20in%20actor%20critic%20agents.html">Using Shared Parameters in Actor Critic Agents in GenRL</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../using_vpg.html">Vanilla Policy Gradient (VPG)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../Saving%20and%20loading.html">Saving and Loading Weights and Hyperparameters with GenRL</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/agents/index.html">Agents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/environments/index.html">Environments</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/core/index.html">Core</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/utils/index.html">Utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/trainers/index.html">Trainers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api/common/index.html">Common</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">GenRL</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Tutorials</a> &raquo;</li>
+        
+          <li><a href="index.html">Deep RL Tutorials</a> &raquo;</li>
+        
+      <li>Categorical Deep Q-Networks</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../../../_sources/usage/tutorials/Deep/Categorical_DQN.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="categorical-deep-q-networks">
+<h1>Categorical Deep Q-Networks<a class="headerlink" href="#categorical-deep-q-networks" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="objective">
+<h2>Objective<a class="headerlink" href="#objective" title="Permalink to this headline">¶</a></h2>
+<p>The main objective of Categorical Deep Q-Networks is to learn the distribution of Q-values as unlike to other variants of Deep Q-Networks where the goal is
+is to approximate the <em>expectations</em> of the Q-values as closely as possible. In complicated environments, the Q-values can be stochastic and in that case,
+simply learning the expectation of Q-values will not be able to capture all the information needed (for eg. variance of the distribution) to make an optimal
+decision.</p>
+</div>
+<div class="section" id="distributional-bellman">
+<h2>Distributional Bellman<a class="headerlink" href="#distributional-bellman" title="Permalink to this headline">¶</a></h2>
+<p>The bellman equation can be adapted to this form as</p>
+<div class="math notranslate nohighlight">
+\[Z(x, a) \stackrel{D}{=} R(x, a) + \gamma Z(x', a')\]</div>
+<p>where <span class="math notranslate nohighlight">\(Z(s, a)\)</span> (the value distribution) and <span class="math notranslate nohighlight">\(R(s, a)\)</span> (the reward distribution) are now probability distributions. The equality or similarity of two distributions can be effectivelyevaluated using
+the Kullback-Leibler(KL) - divergence or the cross-entropy loss.</p>
+<div class="math notranslate nohighlight">
+\[Q^{\pi}(x, a) := \mathbb{E} Z^{\pi}(x, a) = \mathbb{E}\left[\sum_{t=0}^{\inf} \gamma^{t} R(x_t, a_t)\right]\]</div>
+<div class="line-block">
+<div class="line">z sim P(odot vert x_{t-1}, a_{t-1}). a_t sim pi(odot vert x_t), x_0 = x, a_0 =a</div>
+</div>
+<p>The transition operator <span class="math notranslate nohighlight">\(P^\pi : \mathcal{Z} \rightarrow \mathcal{Z}\)</span> and the bellman operator <span class="math notranslate nohighlight">\(\mathcal{T} : \mathcal{Z} \rightarrow \mathcal{Z}\)</span>
+can be defined as</p>
+<div class="math notranslate nohighlight">
+\[P^{\pi}Z(x, a) \stackrel{D}{:=} Z(X', A') ; X' \sim P(\odot \vert x, a), A' \sim \pi(\odot \vert X')\]</div>
+<div class="math notranslate nohighlight">
+\[\mathcal{T}^{\pi}Z(x, a) \stackrel{D}{:=} R(x, a)+ \gamma P^{\pi}Z(x, a)\]</div>
+</div>
+<div class="section" id="algorithm-details">
+<h2>Algorithm Details<a class="headerlink" href="#algorithm-details" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="parametric-distribution">
+<h3>Parametric Distribution<a class="headerlink" href="#parametric-distribution" title="Permalink to this headline">¶</a></h3>
+<p>Categorical DQN uses a discrete distribution parameterized by a set of supports/<em>atoms</em> (discrete values) to model the value distribution.
+This set of atoms is determined as</p>
+<div class="math notranslate nohighlight">
+\[{\mathcal{z}_i = V_{MIN} + i \nabla \mathcal{z} : 0 \leq i &lt; N}; \nabla \mathcal{z} := \frac{V_{MAX} - V_{MIN}}{N - 1}\]</div>
+<p>where <span class="math notranslate nohighlight">\(N \in \mathbb{N}\)</span> and <span class="math notranslate nohighlight">\(V_{MAX}, V_{MIN} \in \mathbb{R}\)</span> are the distribution parameters. The probability of each atom is modeled as</p>
+<div class="math notranslate nohighlight">
+\[Z_\theta(x, a) = \mathcal{z}_i w.p. p_i(x, a) := \frac{\exp{\theta_i(x, a)}}{\sum_j \exp{\theta_j(x, a)}}\]</div>
+</div>
+<div class="section" id="action-selection">
+<h3>Action Selection<a class="headerlink" href="#action-selection" title="Permalink to this headline">¶</a></h3>
+<p>GenRL uses greedy action selection for categorical DQN wherein the action with the highest Q-values for all discrete regions is selected.</p>
+<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">categorical_greedy_action</span><span class="p">(</span><span class="n">agent</span><span class="p">:</span> <span class="n">DQN</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Greedy action selection for Categorical DQN</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        agent (:obj:`DQN`): The agent</span>
+<span class="sd">        state (:obj:`torch.Tensor`): Current state of the environment</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        action (:obj:`torch.Tensor`): Action taken by the agent</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">q_value_dist</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>  <span class="c1"># .numpy()</span>
+    <span class="c1"># We need to scale and discretise the Q-value distribution obtained above</span>
+    <span class="n">q_value_dist</span> <span class="o">=</span> <span class="n">q_value_dist</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">v_min</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">v_max</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">num_atoms</span>
+    <span class="p">)</span>
+    <span class="c1"># Then we find the action with the highest Q-values for all discrete regions</span>
+    <span class="c1"># Current shape of the q_value_dist is [1, n_envs, action_dim, num_atoms]</span>
+    <span class="c1"># So we take the sum of all the individual atom q_values and then take argmax</span>
+    <span class="c1"># along action dim to get the optimal action. Since batch_size is 1 for this</span>
+    <span class="c1"># function, we squeeze the first dimension out.</span>
+    <span class="n">action</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">q_value_dist</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">action</span>
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="experience-replay">
+<h3>Experience Replay<a class="headerlink" href="#experience-replay" title="Permalink to this headline">¶</a></h3>
+<p>Categorical DQN like other DQNs uses <em>Replay Buffer</em> like other off-policy algorithms. Whenever a transition <span class="math notranslate nohighlight">\((s_t, a_t, r_t, s_{t+1})\)</span> is encountered, it is stored into the replay buffer. Batches of these transitions are
+sampled while updating the network parameters. This helps in breaking the strong correlation between the updates that would have been present had the transitions been trained and discarded immediately after they are encountered
+and also helps to avoid the rapid forgetting of the possibly rare transitions that would be useful later on.</p>
+<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timestep</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Helper function to log</span>
+
+<span class="sd">        Sends useful parameters to the logger.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            timestep (int): Current timestep of training</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;timestep&quot;</span><span class="p">:</span> <span class="n">timestep</span><span class="p">,</span>
+                <span class="s2">&quot;Episode&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">episodes</span><span class="p">,</span>
+                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">get_logging_params</span><span class="p">(),</span>
+                <span class="s2">&quot;Episode Reward&quot;</span><span class="p">:</span> <span class="n">safe_mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_rewards</span><span class="p">),</span>
+</pre></div>
+</td></tr></table></div>
+</div>
+<div class="section" id="projected-bellman-update">
+<h3>Projected Bellman Update<a class="headerlink" href="#projected-bellman-update" title="Permalink to this headline">¶</a></h3>
+<p>The sample bellman update <span class="math notranslate nohighlight">\(\hat{\mathcal{T}}Z_\theta\)</span> is projected onto the support of <span class="math notranslate nohighlight">\(Z_\theta\)</span> for the update as shown in the
+figure below. The bellman update for each atom <span class="math notranslate nohighlight">\(j\)</span> can be calculated as</p>
+<div class="math notranslate nohighlight">
+\[\hat{\mathcal{T}}\mathcal{z_j} := r + \gamma \mathcal{z_j}\]</div>
+<p>and then it’s probability <span class="math notranslate nohighlight">\(\mathcal{p_j}(x', \pi{x'})\)</span> is distributed to the neighbours of the update. Here, <span class="math notranslate nohighlight">\((x, a, r, x')\)</span> is a sample transition.
+The <span class="math notranslate nohighlight">\(i^{th}\)</span> component of the projected update is calculated as</p>
+<div class="math notranslate nohighlight">
+\[(\Phi \hat{\mathcal{T}} Z_\theta(x, a))_i = \sum_{j=0}^{N-1}\left [1 - \frac{\mid \left [\hat{\mathcal{T}}\mathcal{z_j}\right]_{V_{MIN}}^{V_{MAX}} - \mathcal{z_i} \mid}{\Delta \mathcal{z}}\right]_{0}^{1} \mathcal{p_j}(x', \pi(x'))\]</div>
+<p>The loss is calculated using KL divergence (cross entropy loss). This is also known as the <strong>Bernoulli algorithm</strong></p>
+<div class="math notranslate nohighlight">
+\[D_{KL}(\Phi\hat{\mathcal{T}}Z_\tilde{\theta}(x, a) || Z_\theta (x, a))\]</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<a class="reference internal image-reference" href="../../../_images/Categorical_DQN.png"><img alt="../../../_images/Categorical_DQN.png" class="align-center" src="../../../_images/Categorical_DQN.png" style="width: 600px; height: 400px;" /></a>
+<div class="highlight-default notranslate"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span></pre></div></td><td class="code"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">categorical_q_target</span><span class="p">(</span>
+    <span class="n">agent</span><span class="p">:</span> <span class="n">DQN</span><span class="p">,</span>
+    <span class="n">next_states</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">rewards</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">dones</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Projected Distribution of Q-values</span>
+
+<span class="sd">    Helper function for Categorical/Distributional DQN</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        agent (:obj:`DQN`): The agent</span>
+<span class="sd">        next_states (:obj:`torch.Tensor`): Next states being encountered by the agent</span>
+<span class="sd">        rewards (:obj:`torch.Tensor`): Rewards received by the agent</span>
+<span class="sd">        dones (:obj:`torch.Tensor`): Game over status of each environment</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        target_q_values (object): Projected Q-value Distribution or Target Q Values</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">delta_z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">v_max</span> <span class="o">-</span> <span class="n">agent</span><span class="o">.</span><span class="n">v_min</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">num_atoms</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">support</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">v_min</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">v_max</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">)</span>
+
+    <span class="n">next_q_value_dist</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">target_model</span><span class="p">(</span><span class="n">next_states</span><span class="p">)</span> <span class="o">*</span> <span class="n">support</span>
+    <span class="n">next_actions</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">next_q_value_dist</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">next_actions</span> <span class="o">=</span> <span class="n">next_actions</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span>
+        <span class="n">agent</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">n_envs</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">num_atoms</span>
+    <span class="p">)</span>
+    <span class="n">next_q_values</span> <span class="o">=</span> <span class="n">next_q_value_dist</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">next_actions</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">rewards</span> <span class="o">=</span> <span class="n">rewards</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">next_q_values</span><span class="p">)</span>
+    <span class="n">dones</span> <span class="o">=</span> <span class="n">dones</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand_as</span><span class="p">(</span><span class="n">next_q_values</span><span class="p">)</span>
+
+    <span class="c1"># Refer to the paper in section 4 for notation</span>
+    <span class="n">Tz</span> <span class="o">=</span> <span class="n">rewards</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dones</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.99</span> <span class="o">*</span> <span class="n">support</span>
+    <span class="n">Tz</span> <span class="o">=</span> <span class="n">Tz</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">v_min</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">agent</span><span class="o">.</span><span class="n">v_max</span><span class="p">)</span>
+    <span class="n">bz</span> <span class="o">=</span> <span class="p">(</span><span class="n">Tz</span> <span class="o">-</span> <span class="n">agent</span><span class="o">.</span><span class="n">v_min</span><span class="p">)</span> <span class="o">/</span> <span class="n">delta_z</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">bz</span><span class="o">.</span><span class="n">floor</span><span class="p">()</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">bz</span><span class="o">.</span><span class="n">ceil</span><span class="p">()</span><span class="o">.</span><span class="n">long</span><span class="p">()</span>
+
+    <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">agent</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">n_envs</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">agent</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">,</span>
+            <span class="n">agent</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">agent</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">n_envs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">long</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">n_envs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">agent</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">n_envs</span><span class="p">,</span> <span class="n">agent</span><span class="o">.</span><span class="n">num_atoms</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">target_q_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">next_q_values</span><span class="o">.</span><span class="n">size</span><span class="p">())</span>
+    <span class="n">target_q_values</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">l</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">next_q_values</span> <span class="o">*</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">-</span> <span class="n">bz</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">target_q_values</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">index_add_</span><span class="p">(</span>
+        <span class="mi">0</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">u</span> <span class="o">+</span> <span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">next_q_values</span> <span class="o">*</span> <span class="p">(</span><span class="n">bz</span> <span class="o">-</span> <span class="n">l</span><span class="o">.</span><span class="n">float</span><span class="p">()))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">target_q_values</span>
+
+</pre></div>
+</td></tr></table></div>
+</div>
+</div>
+<div class="section" id="training-through-the-api">
+<h2>Training through the API<a class="headerlink" href="#training-through-the-api" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">genrl.agents</span> <span class="kn">import</span> <span class="n">CategoricalDQN</span>
+<span class="kn">from</span> <span class="nn">genrl.environments</span> <span class="kn">import</span> <span class="n">VectorEnv</span>
+<span class="kn">from</span> <span class="nn">genrl.trainers</span> <span class="kn">import</span> <span class="n">OffPolicyTrainer</span>
+
+<span class="n">env</span> <span class="o">=</span> <span class="n">VectorEnv</span><span class="p">(</span><span class="s2">&quot;CartPole-v0&quot;</span><span class="p">)</span>
+<span class="n">agent</span> <span class="o">=</span> <span class="n">CategoricalDQN</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="n">env</span><span class="p">)</span>
+<span class="n">trainer</span> <span class="o">=</span> <span class="n">OffPolicyTrainer</span><span class="p">(</span><span class="n">agent</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">max_timesteps</span><span class="o">=</span><span class="mi">20000</span><span class="p">)</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+<span class="n">trainer</span><span class="o">.</span><span class="n">evaluate</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../Using%20Custom%20Policies.html" class="btn btn-neutral float-right" title="Custom Policy Networks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="SAC.html" class="btn btn-neutral float-left" title="Soft Actor-Critic" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Society for Artificial Intelligence and Deep Learning (SAiDL)
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
