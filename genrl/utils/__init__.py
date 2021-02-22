@@ -3,6 +3,7 @@ from genrl.utils.data_bandits import (  # noqa
     CensusDataBandit,
     CovertypeDataBandit,
     DataBasedBandit,
+    FinancialDataBandit,
     MagicDataBandit,
     MushroomDataBandit,
     StatlogDataBandit,
