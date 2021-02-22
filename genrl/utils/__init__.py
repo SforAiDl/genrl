@@ -4,6 +4,7 @@ from genrl.utils.data_bandits import (  # noqa
     CovertypeDataBandit,
     DataBasedBandit,
     FinancialDataBandit,
+    JesterDataBandit,
     MagicDataBandit,
     MushroomDataBandit,
     StatlogDataBandit,
