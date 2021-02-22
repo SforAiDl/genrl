@@ -57,6 +57,9 @@ class ReplayBuffer:
                 :returns: (Tuple composing of `state`, `action`, `reward`,
         `next_state` and `done`)
         """
+        if batch_size > len(self.memory):
+            return None
+
         batch = random.sample(self.memory, batch_size)
         state, action, reward, next_state, done = map(np.stack, zip(*batch))
         return [
@@ -70,7 +73,7 @@ class ReplayBuffer:
 
         :returns: Length of replay memory
         """
-        return self.pos
+        return len(self.memory)
 
 
 class PrioritizedBuffer:

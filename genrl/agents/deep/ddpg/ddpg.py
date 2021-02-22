@@ -85,14 +85,14 @@ class DDPG(OffPolicyAgentAC):
         self.optimizer_policy = opt.Adam(actor_params, lr=self.lr_policy)
         self.optimizer_value = opt.Adam(critic_params, lr=self.lr_value)
 
-    def update_params(self, update_interval: int) -> None:
+    def update_params(self, update_interval: int, batch = None) -> None:
         """Update parameters of the model
 
         Args:
             update_interval (int): Interval between successive updates of the target model
         """
         for timestep in range(update_interval):
-            batch = self.sample_from_buffer()
+            batch = self.sample_from_buffer(batch=batch)
 
             value_loss = self.get_q_loss(batch)
             self.logs["value_loss"].append(value_loss.item())
@@ -128,6 +128,9 @@ class DDPG(OffPolicyAgentAC):
             "lr_value": self.lr_value,
         }
         return hyperparams, self.ac.state_dict()
+
+    def get_weights(self):
+        return self.ac.state_dict()
 
     def get_logging_params(self) -> Dict[str, Any]:
         """Gets relevant parameters for logging
