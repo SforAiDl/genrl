@@ -67,10 +67,10 @@ class SAC(OffPolicyAgentAC):
         else:
             self.action_scale = torch.FloatTensor(
                 (self.env.action_space.high - self.env.action_space.low) / 2.0
-            )
+            ).to(self.device)
             self.action_bias = torch.FloatTensor(
                 (self.env.action_space.high + self.env.action_space.low) / 2.0
-            )
+            ).to(self.device)
 
         if isinstance(self.network, str):
             state_dim, action_dim, discrete, _ = get_env_properties(
@@ -89,7 +89,7 @@ class SAC(OffPolicyAgentAC):
                 sac=True,
                 action_scale=self.action_scale,
                 action_bias=self.action_bias,
-            )
+            ).to(self.device)
         else:
             self.model = self.network
 
@@ -102,7 +102,7 @@ class SAC(OffPolicyAgentAC):
             self.target_entropy = -torch.prod(
                 torch.Tensor(self.env.action_space.shape)
             ).item()
-            self.log_alpha = torch.zeros(1, requires_grad=True)
+            self.log_alpha = torch.zeros(1, device=self.device, requires_grad=True)
             self.optimizer_alpha = opt.Adam([self.log_alpha], lr=self.lr_policy)
 
     def select_action(
@@ -119,8 +119,9 @@ class SAC(OffPolicyAgentAC):
         Returns:
             action (:obj:`np.ndarray`): Action taken by the agent
         """
-        action, _, _ = self.ac.get_action(state, deterministic)
-        return action.detach()
+        state = state.to(self.device)
+        action, _, _ = self.ac.get_action(state.to(self.device), deterministic)
+        return action.detach().cpu()
 
     def update_target_model(self) -> None:
         """Function to update the target Q model
@@ -147,11 +148,15 @@ class SAC(OffPolicyAgentAC):
         Returns:
             target_q_values (:obj:`torch.Tensor`): Target Q values for the SAC
         """
+        next_states = next_states.to(self.device)
         next_target_actions, next_log_probs, _ = self.ac.get_action(next_states)
         next_q_target_values = self.ac_target.get_value(
             torch.cat([next_states, next_target_actions], dim=-1), mode="min"
         ).squeeze() - self.alpha * next_log_probs.squeeze(1)
-        target_q_values = rewards + self.gamma * (1 - dones) * next_q_target_values
+        target_q_values = (
+            rewards.to(self.device)
+            + self.gamma * (1 - dones.to(self.device)) * next_q_target_values
+        )
         return target_q_values
 
     def get_p_loss(self, states: torch.Tensor) -> torch.Tensor:
@@ -163,6 +168,7 @@ class SAC(OffPolicyAgentAC):
         Returns:
             loss (:obj:`torch.Tensor`): Calculated policy loss
         """
+        states = states.to(self.device)
         next_best_actions, log_probs, _ = self.ac.get_action(states)
         q_values = self.ac.get_value(
             torch.cat([states, next_best_actions], dim=-1), mode="min"

@@ -86,8 +86,8 @@ class VPG(OnPolicyAgent):
 
         return (
             action.detach(),
-            torch.zeros((1, self.env.n_envs)),
-            dist.log_prob(action).cpu(),
+            torch.zeros((1, self.env.n_envs), device=self.device),
+            dist.log_prob(action),
         )
 
     def get_log_probs(self, states: torch.Tensor, actions: torch.Tensor):
@@ -105,7 +105,7 @@ class VPG(OnPolicyAgent):
         """
         states, actions = states.to(self.device), actions.to(self.device)
         _, dist = self.actor.get_action(states, deterministic=False)
-        return dist.log_prob(actions).cpu()
+        return dist.log_prob(actions)
 
     def get_traj_loss(self, values, dones):
         """Get loss from trajectory traversed by agent during rollouts
@@ -116,8 +116,8 @@ class VPG(OnPolicyAgent):
             values (:obj:`torch.Tensor`): Values of states encountered during the rollout
             dones (:obj:`list` of bool): Game over statuses of each environment
         """
-        compute_returns_and_advantage(
-            self.rollout, values.detach().cpu().numpy(), dones.cpu().numpy()
+        self.rollout.returns, self.rollout.advantages = compute_returns_and_advantage(
+            self.rollout, values.detach().to(self.device), dones.to(self.device)
         )
 
     def update_params(self) -> None:
