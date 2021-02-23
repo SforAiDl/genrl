@@ -95,7 +95,7 @@ class JesterDataBandit(DataBasedBandit):
             torch.Tensor: Current context vector.
         """
         return torch.tensor(
-            self.df[self.idx],
+            self.df[self.idx, : self.context_dim],
             device=self.device,
             dtype=torch.float,
         )
