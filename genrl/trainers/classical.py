@@ -161,9 +161,11 @@ class ClassicalTrainer:
             ep_rew += reward
             if done:
                 ep_rews.append(ep_rew)
-                ep += 1
                 mean_ep_rew = np.mean(ep_rews)
-                if ep == 100:
+                ep += 1
+                state = self.env.reset()
+                ep_rew = 0
+                if ep == eval_ep:
                     print(
                         "Evaluated for {} episodes, Mean Reward: {:.2f}, Std Deviation for the Reward: {:.2f}".format(
                             eval_ep, mean_ep_rew, np.std(ep_rews)
