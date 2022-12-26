@@ -20,4 +20,4 @@ tensorboard==1.15.0
 pre-commit==2.4.0
 importlib-resources==1.0.1
 setuptools==41.0.0
-wheel==0.35.1
+wheel==0.38.1
