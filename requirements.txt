@@ -19,5 +19,5 @@ torchvision==0.5.0
 tensorboard==1.15.0
 pre-commit==2.4.0
 importlib-resources==1.0.1
-setuptools==41.0.0
+setuptools==65.5.1
 wheel==0.35.1
